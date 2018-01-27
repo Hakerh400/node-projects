@@ -90,8 +90,6 @@ function push(repoName, cb = O.nop){
     // Copy files
 
     fsRec.processFilesSync(src, e => {
-      console.log(e.fullPath);
-
       if(e.processed) return;
       if(e.fullPath.includes('node_modules')) return;
       if(noCopyList.some(a => e.name == a)) return;
