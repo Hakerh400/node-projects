@@ -112,10 +112,8 @@ function push(repoName, cb = O.nop){
 
     // Push files
 
-    try{
-      cp.execSync(gitPush, {
-        cwd: dest
-      });
-    }catch(a){}
+    cp.execSync(gitPush, {
+      cwd: dest
+    });
   }
 }
