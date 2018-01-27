@@ -3,8 +3,8 @@
 var nop = require('./nop.js');
 
 var websiteName = 'https://github.com/';
-var accountName = 'chrome-improver';
-var repoName = 'chrome-improver';
+var accountName = 'Hakerh400';
+var repoName = 'javascript-projects';
 var tabName = 'issues';
 
 var githubUrl = getGithubUrl();
