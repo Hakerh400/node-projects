@@ -5,6 +5,13 @@
       "name": "javascript-projects",
       "src": "C:/Projects/JavaScript",
       "dest": "C:/Github/javascript-projects"
+    },
+
+    "extensions": {
+      "name": "extensions",
+      "src": "C:/Extensions",
+      "dest": "C:/Github/extensions",
+      "encrypt": true
     }
   }
 }

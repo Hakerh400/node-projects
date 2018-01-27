@@ -5,6 +5,7 @@ var path = require('path');
 var cp = require('child_process');
 var O = require('../framework');
 var fsRec = require('../fs-recursive');
+var encryptor = require('../encryptor');
 
 var repos = require('./repos.json');
 var noCopyList = require('./no-copy-list.json');
@@ -20,10 +21,11 @@ function push(repoName, cb = O.nop){
   var gitInit = path.join(cwd, 'git-init.bat');
   var gitInitTemp = path.join(cwd, 'git-init-temp.bat');
   var gitPush = path.join(cwd, 'git-push.bat');
+  var tmpDir = path.join(cwd, 'tmp');
 
   var user = repos.user;
   var repo = repos.repos[repoName];
-  var {name, src, dest} = repo;
+  var {name, src, dest, encrypt} = repo;
 
   src = path.normalize(src);
   dest = path.normalize(dest);
@@ -65,32 +67,57 @@ function push(repoName, cb = O.nop){
     fs.unlinkSync(gitInitTemp);
   }
 
-  // Copy files
+  // Encrypt (if encryption is allowed)
 
-  fsRec.processFilesSync(src, e => {
-    if(e.processed) return;
-    if(e.fullPath.includes('node_modules')) return;
-    if(noCopyList.some(a => e.name == a)) return;
+  if(fs.existsSync(tmpDir)){
+    fsRec.deleteFilesSync(tmpDir);
+  }
 
-    var srcPath = e.relativePath.split(/[\/\\]/).slice(1).join`//`;
-    var destPath = path.join(dest, srcPath);
+  if(encrypt){
+    fs.mkdirSync(tmpDir);
 
-    if(e.isDir){
-      if(!fs.existsSync(destPath)){
-        fs.mkdirSync(destPath);
+    encryptor.encrypt(src, tmpDir, O.password, err => {
+      if(err) return cb(err);
+
+      src = tmpDir;
+      copyAndPushFiles();
+    });
+  }else{
+    copyAndPushFiles();
+  }
+
+  function copyAndPushFiles(){
+    // Copy files
+
+    fsRec.processFilesSync(src, e => {
+      console.log(e.fullPath);
+
+      if(e.processed) return;
+      if(e.fullPath.includes('node_modules')) return;
+      if(noCopyList.some(a => e.name == a)) return;
+
+      var srcPath = e.relativePath.split(/[\/\\]/).slice(1).join`//`;
+      var destPath = path.join(dest, srcPath);
+
+      if(e.isDir){
+        if(!fs.existsSync(destPath)){
+          fs.mkdirSync(destPath);
+        }
+      }else{
+        var ext = path.parse(destPath).ext.substring(1);
+        if(!supportedExtensions.some(a => ext == a)) return;
+
+        var content = fs.readFileSync(e.fullPath);
+        fs.writeFileSync(destPath, content);
       }
-    }else{
-      var ext = path.parse(destPath).ext.substring(1);
-      if(!supportedExtensions.some(a => ext == a)) return;
+    });
 
-      var content = fs.readFileSync(e.fullPath);
-      fs.writeFileSync(destPath, content);
-    }
-  });
+    // Push files
 
-  // Push files
-
-  cp.execSync(gitPush, {
-    cwd: dest
-  });
+    try{
+      cp.execSync(gitPush, {
+        cwd: dest
+      });
+    }catch(a){}
+  }
 }

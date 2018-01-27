@@ -13,11 +13,11 @@ var fileNamesBlackList = [
 ];
 
 var extensions = [
-  ['js', /(?:\s*(?:\/\/.*(?:\r\n|\r|\n)|\/\*[\s\S]*?\*\/))+/gm, ''],
+  ['js', /^(?:\s*(?:\/\/.*(?:\r\n|\r|\n)|\/\*[\s\S]*?\*\/))+/gm, ''],
   ['css', /(?:\s*(?:\/\*[\s\S]*?\*\/))+/gm, ''],
-  ['htm', /(?:\s*(?:\<\!\-\-[\s\S]*?\-\-\>))+/gm, ''],
-  ['html', /(?:\s*(?:\<\!\-\-[\s\S]*?\-\-\>))+/gm, ''],
-  ['xml', /(?:\s*(?:\<\!\-\-[\s\S]*?\-\-\>))+/gm, ''],
+  ['htm', /^(?:\s*(?:\<\!\-\-[\s\S]*?\-\-\>))+/gm, ''],
+  ['html', /^(?:\s*(?:\<\!\-\-[\s\S]*?\-\-\>))+/gm, ''],
+  ['xml', /^(?:\s*(?:\<\!\-\-[\s\S]*?\-\-\>))+/gm, ''],
 ];
 
 var binaryExtensions = [
@@ -36,7 +36,10 @@ function remove(input, output){
     if(e.processed) return;
 
     var inputFile = e.fullPath;
-    var outputFile = path.join(output, e.relativePath);
+
+    var relativePath = e.relativePath.split(/[\/\\]/).slice(1);
+    var outputFile = path.join(output, relativePath.join`/`);
+
     var parentDir = path.join(outputFile, '..');
     var fileExtension = path.parse(inputFile).ext.substring(1);
 
@@ -44,7 +47,9 @@ function remove(input, output){
     if(fileNamesBlackList.some(reg => reg.test(e.name))) return;
 
     if(e.isDir){
-      fs.mkdirSync(outputFile);
+      if(!fs.existsSync(outputFile)){
+        fs.mkdirSync(outputFile);
+      }
     }else{
       var d = fs.readFileSync(inputFile);
       var ext;

@@ -1,5 +1,6 @@
 [
   "a.bat",
   "b.bat",
-  "package-lock.json"
+  "package-lock.json",
+  "password.json"
 ]

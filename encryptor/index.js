@@ -182,9 +182,7 @@ function encrypt(input, output, password = '', cb = O.nop){
       data.forEach((byte, i) => data[i] = (i & 3) < 3 ? buff[index++] : 255);
 
       g.putImageData(imgd, 0, 0);
-
-      cb();
-    });
+    }, () => cb());
   });
 }
 

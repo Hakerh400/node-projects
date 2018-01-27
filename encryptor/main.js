@@ -2,6 +2,7 @@
 
 var fs = require('fs');
 var path = require('path');
+var O = require('../framework');
 var fsRec = require('../fs-recursive');
 var encryptor = require('.');
 
@@ -9,7 +10,7 @@ var decryptedDir = 'decrypted';
 var encryptedDir = 'encrypted';
 
 var mode = 'e';
-var password = '';
+var password = O.password;
 
 setTimeout(main);
 

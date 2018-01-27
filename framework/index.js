@@ -1,6 +1,16 @@
 'use strict';
 
+var fs = require('fs');
+
+var password = require('./password.json');
+
 var O = {
+  /*
+    Password
+  */
+
+  password,
+
   /*
     Constants
   */
