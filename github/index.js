@@ -52,7 +52,7 @@ function push(repoName, cb = O.nop){
 
   resetDir(dest);
 
-  // Encrypt (if encryption is allowed)
+  // Encrypt (if encryption is enabled)
 
   if(fs.existsSync(tmpDir)){
     fsRec.deleteFilesSync(tmpDir);
