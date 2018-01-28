@@ -7,6 +7,12 @@
       "dest": "C:/Github/javascript-projects"
     },
 
+    "wamp": {
+      "name": "javascript-browser-projects",
+      "src": "C:/wamp/www",
+      "dest": "C:/Github/javascript-browser-projects"
+    },
+
     "extensions": {
       "name": "extensions",
       "src": "C:/Extensions",

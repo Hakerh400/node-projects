@@ -2,7 +2,7 @@
 
 var github = require('.');
 
-var repo = 'javascript';
+var repo = process.argv[2];
 
 setTimeout(main);
 
