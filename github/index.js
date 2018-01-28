@@ -32,24 +32,7 @@ function push(repoName, cb = O.nop){
 
   // Reset directory
 
-  if(fs.existsSync(dest)){
-    fsRec.processFilesSync(dest, e => {
-      var isGit = e.fullPath.includes('.git');
-
-      if(e.processed){
-        if(e.fullPath != dest && !isGit){
-          fs.rmdirSync(e.fullPath);
-          return;
-        }
-      }
-
-      if(e.isDir) return;
-
-      if(!isGit){
-        fs.unlinkSync(e.fullPath);
-      }
-    });
-  }else{
+  if(!fs.existsSync(dest)){
     fs.mkdirSync(dest);
 
     var replacements = [
@@ -66,6 +49,8 @@ function push(repoName, cb = O.nop){
 
     fs.unlinkSync(gitInitTemp);
   }
+
+  resetDir(dest);
 
   // Encrypt (if encryption is allowed)
 
@@ -116,4 +101,23 @@ function push(repoName, cb = O.nop){
       cwd: dest
     });
   }
+}
+
+function resetDir(dir){
+  fsRec.processFilesSync(dir, e => {
+    var isGit = e.fullPath.includes('.git');
+
+    if(e.processed){
+      if(e.fullPath != dir && !isGit){
+        fs.rmdirSync(e.fullPath);
+        return;
+      }
+    }
+
+    if(e.isDir) return;
+
+    if(!isGit){
+      fs.unlinkSync(e.fullPath);
+    }
+  });
 }
