@@ -1,7 +1,12 @@
 [
+  "txt",
+  "bat",
+
   "js",
   "json",
-  "bat",
-  "txt",
+  "htm",
+  "html",
+  "css",
+  
   "png"
 ]
