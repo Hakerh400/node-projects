@@ -2,7 +2,7 @@
 
 var github = require('.');
 
-var repo = process.argv[2];
+var repo = process.argv[2] || 'node';
 
 setTimeout(main);
 

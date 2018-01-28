@@ -1,16 +1,16 @@
 {
   "user": "Hakerh400",
   "repos": {
-    "javascript": {
-      "name": "javascript-projects",
+    "node": {
+      "name": "node-projects",
       "src": "C:/Projects/JavaScript",
-      "dest": "C:/Github/javascript-projects"
+      "dest": "C:/Github/node-projects"
     },
 
-    "wamp": {
-      "name": "javascript-browser-projects",
+    "browser": {
+      "name": "browser-projects",
       "src": "C:/wamp/www",
-      "dest": "C:/Github/javascript-browser-projects"
+      "dest": "C:/Github/browser-projects"
     },
 
     "extensions": {
