@@ -36,8 +36,6 @@ function main(){
   var red, green, blue;
 
   media.renderVideo('-vid/1.mp4', w, h, fps, hd, (w, h, g, f) => {
-    //logStatus(f, framesNum);
-
     if(f == 1){
       imgd = g.getImageData(0, 0, w, h);
       data = imgd.data;
@@ -71,7 +69,7 @@ function main(){
               dist = e.r / Math.sqrt(dx * dx + dy * dy);
             }
 
-            sum1 += dist * dist;
+            sum1 += dist ** exp1;
             sum2 += dist ** exp2;
 
             dists[j | 0] = dist;
