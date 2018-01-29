@@ -1,12 +1,13 @@
 [
-  "txt",
-  "bat",
-
   "js",
   "json",
   "htm",
   "html",
   "css",
+
+  "txt",
+  "bat",
+  "glsl",
   
   "png"
 ]
