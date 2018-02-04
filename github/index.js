@@ -25,7 +25,7 @@ function push(repoName, cb = O.nop){
 
   var user = repos.user;
   var repo = repos.repos[repoName];
-  var {name, src, dest, encrypt} = repo;
+  var {name, src, dest, encrypt, minify} = repo;
 
   src = path.normalize(src);
   dest = path.normalize(dest);
@@ -52,16 +52,25 @@ function push(repoName, cb = O.nop){
 
   resetDir(dest);
 
-  // Encrypt (if encryption is enabled)
-
   if(fs.existsSync(tmpDir)){
     fsRec.deleteFilesSync(tmpDir);
   }
 
   if(encrypt){
+    // Encrypt
+
     fs.mkdirSync(tmpDir);
 
     encryptor.encrypt(src, tmpDir, O.password, err => {
+      if(err) return cb(err);
+
+      src = tmpDir;
+      copyAndPushFiles();
+    });
+  }else if(minify){
+    fs.mkdirSync(tmpDir);
+
+    minifier.minify(src, tmpDir, err => {
       if(err) return cb(err);
 
       src = tmpDir;

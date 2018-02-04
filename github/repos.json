@@ -1,5 +1,6 @@
 {
   "user": "Hakerh400",
+
   "repos": {
     "node": {
       "name": "node-projects",
@@ -11,6 +12,13 @@
       "name": "browser-projects",
       "src": "C:/wamp/www",
       "dest": "C:/Github/browser-projects"
+    },
+
+    "io": {
+      "name": "%user%.github.io",
+      "src": "C:/wamp/www1",
+      "dest": "C:/wamp/www",
+      "minify": true
     },
 
     "extensions": {
