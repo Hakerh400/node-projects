@@ -76,6 +76,8 @@ function push(repoName, cb = O.nop){
       src = tmpDir;
       copyAndPushFiles();
     });
+
+    console.log(1);
   }else{
     copyAndPushFiles();
   }
