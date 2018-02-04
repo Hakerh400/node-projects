@@ -68,6 +68,8 @@ function push(repoName, cb = O.nop){
       copyAndPushFiles();
     });
   }else if(minify){
+    console.log(1);
+
     fs.mkdirSync(tmpDir);
 
     minifier.minify(src, tmpDir, err => {
@@ -76,8 +78,6 @@ function push(repoName, cb = O.nop){
       src = tmpDir;
       copyAndPushFiles();
     });
-
-    console.log(1);
   }else{
     copyAndPushFiles();
   }
