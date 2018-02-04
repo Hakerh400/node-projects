@@ -71,8 +71,8 @@ class ImageData{
     var d = this.data;
     var i = (x | 0) + (y | 0) * (this.w | 0) << 2;
 
-    if(includeAlpha) return [d[i | 0] | 0, d[(i | 0) + 1 | 0] | 0, d[(i | 0) + 2 | 0] | 0];
-    else return [d[i | 0] | 0, d[(i | 0) + 1 | 0] | 0, d[(i | 0) + 2 | 0] | 0, d[(i | 0) + 3 | 0] | 0];
+    if(includeAlpha) return [d[i | 0] | 0, d[(i | 0) + 1 | 0] | 0, d[(i | 0) + 2 | 0] | 0, d[(i | 0) + 3 | 0] | 0];
+    else return [d[i | 0] | 0, d[(i | 0) + 1 | 0] | 0, d[(i | 0) + 2 | 0] | 0];
   }
 
   set(x, y, r, g, b, a){

@@ -1,0 +1,17 @@
+{
+  "tiles": [
+    {
+      "name": "wall",
+      "col": "#800000"
+    }, {
+      "name": "grass",
+      "col": "#00ff00"
+    }, {
+      "name": "sand",
+      "col": "#ffff80"
+    }, {
+      "name": "water",
+      "col": "#0080ff"
+    }
+  ]
+}
