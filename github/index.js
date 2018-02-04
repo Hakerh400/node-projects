@@ -56,6 +56,8 @@ function push(repoName, cb = O.nop){
     fsRec.deleteFilesSync(tmpDir);
   }
 
+  console.log(encrypt, minify);
+
   if(encrypt){
     // Encrypt
 
@@ -68,7 +70,7 @@ function push(repoName, cb = O.nop){
       copyAndPushFiles();
     });
   }else if(minify){
-    console.log(1);
+    // Minify
 
     fs.mkdirSync(tmpDir);
 
