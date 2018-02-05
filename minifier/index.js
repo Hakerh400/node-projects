@@ -1,7 +1,10 @@
 'use strict';
 
+var fs = require('fs');
+var path = require('path');
 var Canvas = require('../media/node_modules/canvas');
 var O = require('../framework');
+var fsRec = require('../fs-recursive');
 var identGenerator = require('../ident-generator');
 var whiteListedIdents = require('./whitelisted-idents.json');
 var skipIdents = require('./skip-idents.json');
@@ -48,7 +51,41 @@ function generateWhiteList(){
   return arr;
 }
 
-function minify(str, minify = false){
+function minify(input, output, cb = O.nop){
+  if(fs.existsSync(output)){
+    fsRec.deleteFilesSync(output);
+  }
+
+  fsRec.processFilesSync(input, d => {
+    if(!d.isDir && path.parse(d.name).ext.slice(1) == 'js'){
+      var data = fs.readFileSync(d.fullPath);
+      minifyFile(data.toString(), false);
+    }
+  });
+
+  fsRec.processFilesSync(input, d => {
+    if(d.processed) return;
+
+    var relativePath = d.relativePath.split`\\`.slice(1).join`\\`;
+    var outputPath = path.join(output, relativePath);
+
+    if(d.isDir){
+      fs.mkdirSync(outputPath);
+    }else{
+      var data = fs.readFileSync(d.fullPath);
+
+      if(path.parse(d.name).ext.slice(1) == 'js'){
+        data = minifyFile(data.toString(), true);
+      }
+
+      fs.writeFileSync(outputPath, data);
+    }
+  });
+
+  cb(null);
+}
+
+function minifyFile(str, minify = false){
   var templateStrings = [];
   var funcStrings = [];
   var strings = [];

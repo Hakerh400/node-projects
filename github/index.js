@@ -6,6 +6,7 @@ var cp = require('child_process');
 var O = require('../framework');
 var fsRec = require('../fs-recursive');
 var encryptor = require('../encryptor');
+var minifier = require('../minifier');
 
 var repos = require('./repos.json');
 var noCopyList = require('./no-copy-list.json');
@@ -26,6 +27,9 @@ function push(repoName, cb = O.nop){
   var user = repos.user;
   var repo = repos.repos[repoName];
   var {name, src, dest, encrypt, minify} = repo;
+
+  name = normalizeString(name);
+  dest = normalizeString(dest);
 
   src = path.normalize(src);
   dest = path.normalize(dest);
@@ -55,8 +59,6 @@ function push(repoName, cb = O.nop){
   if(fs.existsSync(tmpDir)){
     fsRec.deleteFilesSync(tmpDir);
   }
-
-  console.log(encrypt, minify);
 
   if(encrypt){
     // Encrypt
@@ -118,7 +120,7 @@ function push(repoName, cb = O.nop){
 
 function resetDir(dir){
   fsRec.processFilesSync(dir, e => {
-    var isGit = e.fullPath.includes('.git');
+    var isGit = /(?:^|[\/\\])\.git(?:[^a-zA-Z0-9]|$)/.test(e.fullPath);
 
     if(e.processed){
       if(e.fullPath != dir && !isGit){
@@ -131,6 +133,14 @@ function resetDir(dir){
 
     if(!isGit){
       fs.unlinkSync(e.fullPath);
+    }
+  });
+}
+
+function normalizeString(str){
+  return str.replace(/\%([^\%]*)\%/g, (match, param) => {
+    switch(param){
+      case 'user': return repos.user.toLowerCase(); break;
     }
   });
 }

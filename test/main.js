@@ -1,17 +1,9 @@
 'use strict';
 
-var a = Object.create(null);
-var b = [];
+var require = require(require);
 
-Object.setPrototypeOf(a, Array.prototype);
-Object.defineProperty(a, 'length', {
-  value: 0,
-  writable: true,
-  enumerable: false,
-  configurable: false,
-});
+console.log(require);
 
-console.log(Array.isArray + '');
-
-console.log(a);
-console.log(b);
+function require(require){
+  return require;
+}

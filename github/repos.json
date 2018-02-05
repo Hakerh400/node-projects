@@ -16,8 +16,8 @@
 
     "io": {
       "name": "%user%.github.io",
-      "src": "C:/wamp/www1",
-      "dest": "C:/wamp/www",
+      "src": "C:/wamp/www",
+      "dest": "C:/Github/%user%.github.io",
       "minify": true
     },
 
