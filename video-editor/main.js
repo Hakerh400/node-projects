@@ -6,10 +6,10 @@ var logStatus = require('../log-status');
 var input = '-dw/1.avi';
 var output = '-vid/1.mp4';
 
-var w = 1024;
-var h = 768;
-var fps = 24;
-var hd = false;
+var w = 1920;
+var h = 1080;
+var fps = 60;
+var hd = true;
 
 setTimeout(main);
 
