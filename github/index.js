@@ -10,7 +10,7 @@ var minifier = require('../minifier');
 
 var repos = require('./repos.json');
 var noCopyList = require('./no-copy-list.json');
-var supportedExtensions = require('./supported-extensions');
+var supportedExtensions = require('./supported-extensions.json');
 
 module.exports = {
   push
