@@ -10,7 +10,7 @@ var w = 1920;
 var h = 1080;
 var fps = 60;
 var hd = true;
-var duration = 60 * 10;
+var duration = 3;
 var framesNum = fps * duration;
 
 var url = '/?project=grid';
@@ -28,18 +28,14 @@ function main(){
 function render(window){
   var canvas = window._canvases[0];
 
+  window.emit('keydown', {code: 'KeyG'});
+
   media.renderVideo('-vid/1.mp4', w, h, fps, hd, (w, h, g, f) => {
     logStatus(f, framesNum);
 
     g.drawImage(canvas, 0, 0);
 
-    window.emit('mousedown', {
-      button: [0, 2][O.rand(2)],
-      clientX: Math.random() * w,
-      clientY: Math.random() * h,
-    });
-
-    window.emit('keydown', {code: 'Enter'});
+    window.emit('keydown', {code: `Arrow${'Up,Left,Down,Right'.split`,`[O.rand(4)]}`});
 
     return f != framesNum;
   });

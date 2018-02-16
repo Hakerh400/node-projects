@@ -6,7 +6,7 @@ var urlModule = require('url');
 var O = require('../framework');
 var Canvas = require('../media/node_modules/canvas');
 
-var server = 'http://localhost';
+var server = 'http://localhost/';
 
 class EventTarget extends EventEmitter{
   constructor(){
