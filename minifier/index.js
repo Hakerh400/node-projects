@@ -2,7 +2,7 @@
 
 var fs = require('fs');
 var path = require('path');
-var Canvas = require('../media/node_modules/canvas');
+var {Canvas} = require('../media/node_modules/canvas');
 var O = require('../framework');
 var fsRec = require('../fs-recursive');
 var identGenerator = require('../ident-generator');

@@ -1,6 +1,6 @@
 'use strict';
 
-var Canvas = require('../media/node_modules/canvas');
+var {Canvas} = require('../media/node_modules/canvas');
 
 module.exports = colToRgb;
 

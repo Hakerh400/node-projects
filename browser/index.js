@@ -4,7 +4,7 @@ var EventEmitter = require('events');
 var http = require('http');
 var urlModule = require('url');
 var O = require('../framework');
-var Canvas = require('../media/node_modules/canvas');
+var {Canvas} = require('../media/node_modules/canvas');
 
 var server = 'http://localhost/';
 

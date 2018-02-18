@@ -1,7 +1,7 @@
 'use strict';
 
 var cp = require('child_process');
-var Canvas = require('canvas');
+var {Canvas} = require('../media/node_modules/canvas');
 var O = require('../framework');
 var formatFileName = require('../format-file-name');
 
