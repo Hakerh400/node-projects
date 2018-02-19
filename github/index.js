@@ -10,6 +10,7 @@ var minifier = require('../minifier');
 
 var repos = require('./repos.json');
 var noCopyList = require('./no-copy-list.json');
+var skipList = require('./skip-list.json');
 var supportedExtensions = require('./supported-extensions.json');
 
 module.exports = {
@@ -90,8 +91,10 @@ function push(repoName, cb = O.nop){
     // Copy files
 
     fsRec.processFilesSync(src, e => {
+      var fp = e.fullPath;
+
       if(e.processed) return;
-      if(e.fullPath.includes('node_modules')) return;
+      if(skipList.some(a => fp.endsWith(a) || fp.includes(`${a}\\`))) return;
       if(noCopyList.some(a => e.name == a)) return;
 
       var srcPath = e.relativePath.split(/[\/\\]/).slice(1).join`//`;
@@ -106,6 +109,7 @@ function push(repoName, cb = O.nop){
         if(!supportedExtensions.some(a => ext == a)) return;
 
         var content = fs.readFileSync(e.fullPath);
+        content = processFileContent(e.name, content);
         fs.writeFileSync(destPath, content);
       }
     });
@@ -116,6 +120,16 @@ function push(repoName, cb = O.nop){
       cwd: dest
     });
   }
+}
+
+function processFileContent(file, buff){
+  var str = buff.toString();
+
+  switch(file){
+    case 'projects.txt': return O.sanl(str).filter(a => a !== 'blank' && a !== 'test').join`\n`; break;
+  }
+
+  return buff;
 }
 
 function resetDir(dir){
