@@ -119,6 +119,16 @@ function push(repoName, cb = O.nop){
     cp.execSync(gitPush, {
       cwd: dest
     });
+
+    // Remove temp dir
+
+    if(fs.existsSync(tmpDir)){
+      fsRec.deleteFilesSync(tmpDir);
+    }
+
+    // Call callback
+
+    cb(null);
   }
 }
 

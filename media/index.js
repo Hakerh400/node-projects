@@ -47,7 +47,7 @@ function editImage(input, output, frameFunc, exitCb = O.nop){
     var buff = Buffer.alloc(0);
 
     var proc1 = spawnFfmpeg(`-i "${input}" ${RGBA} -`);
-    var proc2 = spawnFfmpeg(`${BGRA} -s ${w}x${h} -i - -y ${TRUNC} -f apng "${output}"`, exitCb);
+    var proc2 = spawnFfmpeg(`${BGRA} -s ${w}x${h} -i - -y ${TRUNC} "${output}"`, exitCb);
 
     proc1.stdout.on('data', data => {
       buff = Buffer.concat([buff, data]);

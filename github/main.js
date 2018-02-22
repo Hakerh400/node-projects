@@ -8,6 +8,7 @@ setTimeout(main);
 
 function main(){
   github.push(repo, err => {
-    if(err) console.log(err);
+    if(err) return console.log(err);
+    console.log('Finished.');
   });
 }
