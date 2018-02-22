@@ -126,7 +126,7 @@ function processFileContent(file, buff){
   var str = buff.toString();
 
   switch(file){
-    case 'projects.txt': return O.sanl(str).filter(a => a !== 'blank' && a !== 'test').join`\n`; break;
+    case 'projects.txt': return O.sanl(str).filter(a => a !== 'blank' && a !== 'test').join`\r\n`; break;
   }
 
   return buff;

@@ -5,30 +5,24 @@ var O = require('../framework');
 var availableChars = getAvailableChars();
 
 module.exports = {
-  generate
+  generate,
+  getCharOffset,
 };
 
 function getAvailableChars(){
   return [
     [
-      ...O.ca(26, i => {
-        return getCharOffset('a', i);
-      }),
-      ...O.ca(26, i => {
-        return getCharOffset('A', i);
-      }),
+      ...O.ca(26, i => getCharOffset('a', i)),
+      ...O.ca(26, i => getCharOffset('A', i)),
     ],
 
-    O.ca(10, i => {
-      return getCharOffset('0', i);
-    }),
+    O.ca(10, i => getCharOffset('0', i)),
   ];
 }
 
-function generate(i){
+function generate(i, cs = availableChars){
   if(!i) return '';
 
-  var cs = availableChars;
   var len1 = cs[0].length;
   var len = len1 + cs[1].length;
   var str = '';

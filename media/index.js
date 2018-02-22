@@ -47,14 +47,14 @@ function editImage(input, output, frameFunc, exitCb = O.nop){
     var buff = Buffer.alloc(0);
 
     var proc1 = spawnFfmpeg(`-i "${input}" ${RGBA} -`);
-    var proc2 = spawnFfmpeg(`${BGRA} -s ${w}x${h} -i - -y ${TRUNC} "${output}"`, exitCb);
+    var proc2 = spawnFfmpeg(`${BGRA} -s ${w}x${h} -i - -y ${TRUNC} -f apng "${output}"`, exitCb);
 
     proc1.stdout.on('data', data => {
       buff = Buffer.concat([buff, data]);
 
       if(buff.length == buffLen){
         putBuffer(g, buff);
-        frameFunc(w, h, g);
+        frameFunc(w, h, g, proc2.stdout);
 
         proc2.stdin.end(canvas.toBuffer('raw'));
       }
@@ -122,7 +122,7 @@ function editVideo(input, output, w2, h2, fps, hd, frameFunc, exitCb = O.nop){
         
         putBuffer(g1, buff);
         buff = Buffer.alloc(0);
-        frameFunc(w1, h1, w2, h2, g1, g2, ++f, framesNum);
+        frameFunc(w1, h1, w2, h2, g1, g2, ++f, framesNum, proc2.stdout);
 
         proc2.stdin.write(g2.canvas.toBuffer('raw'), () => proc1.stdout.resume());
       }
