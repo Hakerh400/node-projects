@@ -2,7 +2,7 @@
 
 var minifier = require('.');
 
-var input = 'C:/Users/Thomas/Downloads/www';
+var input = 'C:/wamp/www1';
 var output = 'C:/wamp/www';
 
 setTimeout(main);
@@ -10,6 +10,6 @@ setTimeout(main);
 function main(){
   minifier.minify(input, output, err => {
     if(err) return console.log(err);
-    console.log('Success.');
+    console.log('Finished.');
   });
 }

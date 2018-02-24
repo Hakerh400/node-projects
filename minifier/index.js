@@ -77,8 +77,10 @@ function minify(input, output, cb = O.nop){
     }else{
       var data = fs.readFileSync(d.fullPath);
 
-      if(path.parse(d.name).ext.slice(1) == 'js'){
-        data = minifyFile(data.toString(), true);
+      if(!/\_(?:\\|$)/.test(d.fullPath)){
+        if(path.parse(d.name).ext.slice(1) == 'js'){
+          data = minifyFile(data, true);
+        }
       }
 
       fs.writeFileSync(outputPath, data);
@@ -88,7 +90,10 @@ function minify(input, output, cb = O.nop){
   cb(null);
 }
 
-function minifyFile(str, minify = false){
+function minifyFile(data, minify = false){
+  //return data;
+
+  var str = data.toString();
   var templateStrings = [];
   var funcStrings = [];
   var strings = [];
@@ -238,6 +243,8 @@ function processSources(arr, minify = false){
     O.sortAsc(idents);
     idents.sorted = true;
 
+    if(fs.existsSync(tempDir)) require('../fs-recursive').deleteFilesSync(tempDir);
+    fs.mkdirSync(tempDir);
     fs.writeFileSync(identsFile, exportIdents(idents));
   }
 

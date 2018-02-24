@@ -3,7 +3,7 @@
 var fs = require('fs');
 var browser = require('../browser');
 var dirs = require('./dirs.json');
-var password = require('./password.json');
+var passwords = require('./passwords.json');
 
 var O = getFramework();
 
@@ -21,7 +21,8 @@ function getFramework(){
 
   var O = func(window, document);
   O.dirs = dirs;
-  O.password = password;
+  O.passwords = passwords;
+  O.password = passwords[0];
 
   return O;
 }
