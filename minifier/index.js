@@ -6,8 +6,11 @@ var {Canvas} = require('../media/node_modules/canvas');
 var O = require('../framework');
 var fsRec = require('../fs-recursive');
 var identGenerator = require('../ident-generator');
+var tempDir = require('../temp-dir')(__filename);
 var whiteListedIdents = require('./whitelisted-idents.json');
 var skipIdents = require('./skip-idents.json');
+
+var identsFile = path.join(tempDir, 'idents.txt');
 
 var whiteList = generateWhiteList();
 
@@ -234,6 +237,8 @@ function processSources(arr, minify = false){
   if(minify && !idents.sorted){
     O.sortAsc(idents);
     idents.sorted = true;
+
+    fs.writeFileSync(identsFile, exportIdents(idents));
   }
 
   arr.forEach((str, index) => {
@@ -292,6 +297,12 @@ function processSources(arr, minify = false){
 
     arr[index] = str.substring(1, str.length - 1);
   });
+}
+
+function exportIdents(idents){
+  return idents.map((ident, index) => {
+    return `${generateIdentName(index).padEnd(5)}${ident}`;
+  }).join`\n`;
 }
 
 function generateIdentName(index){

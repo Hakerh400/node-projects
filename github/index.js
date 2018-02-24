@@ -7,6 +7,7 @@ var O = require('../framework');
 var fsRec = require('../fs-recursive');
 var encryptor = require('../encryptor');
 var minifier = require('../minifier');
+var tempDir = require('../temp-dir')(__filename);
 
 var repos = require('./repos.json');
 var noCopyList = require('./no-copy-list.json');
@@ -23,7 +24,6 @@ function push(repoName, cb = O.nop){
   var gitInit = path.join(cwd, 'git-init.bat');
   var gitInitTemp = path.join(cwd, 'git-init-temp.bat');
   var gitPush = path.join(cwd, 'git-push.bat');
-  var tmpDir = path.join(cwd, 'tmp');
 
   var user = repos.user;
   var repo = repos.repos[repoName];
@@ -57,30 +57,30 @@ function push(repoName, cb = O.nop){
 
   resetDir(dest);
 
-  if(fs.existsSync(tmpDir)){
-    fsRec.deleteFilesSync(tmpDir);
+  if(fs.existsSync(tempDir)){
+    fsRec.deleteFilesSync(tempDir);
   }
 
   if(encrypt){
     // Encrypt
 
-    fs.mkdirSync(tmpDir);
+    fs.mkdirSync(tempDir);
 
-    encryptor.encrypt(src, tmpDir, O.password, err => {
+    encryptor.encrypt(src, tempDir, O.password, err => {
       if(err) return cb(err);
 
-      src = tmpDir;
+      src = tempDir;
       copyAndPushFiles();
     });
   }else if(minify){
     // Minify
 
-    fs.mkdirSync(tmpDir);
+    fs.mkdirSync(tempDir);
 
-    minifier.minify(src, tmpDir, err => {
+    minifier.minify(src, tempDir, err => {
       if(err) return cb(err);
 
-      src = tmpDir;
+      src = tempDir;
       copyAndPushFiles();
     });
   }else{
@@ -122,8 +122,8 @@ function push(repoName, cb = O.nop){
 
     // Remove temp dir
 
-    if(fs.existsSync(tmpDir)){
-      fsRec.deleteFilesSync(tmpDir);
+    if(fs.existsSync(tempDir)){
+      fsRec.deleteFilesSync(tempDir);
     }
 
     // Call callback
