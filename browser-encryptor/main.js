@@ -1,11 +1,13 @@
 'use strict';
 
+var O = require('../framework');
 var browserEncryptor = require('.');
 
-var inputDir = '-wamp/projects/encrypted';
-var outputDir = inputDir;
+var inputDir = '-encrypted';
+var outputDir = '-wamp/projects/encrypted';
 
-var password = '123';
+var password = O.passwords[1];
+password = '';
 
 setTimeout(main);
 

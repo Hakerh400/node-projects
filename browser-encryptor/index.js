@@ -23,7 +23,7 @@ function encrypt(inputDir, outputDir, password, cb = O.nop){
 
   dirs.forEach(dir => {
     var inputPath = path.join(inputDir, dir);
-    var outputPath = path.join(outputDir, `${dir}_`);
+    var outputPath = path.join(outputDir, dir);
     var files = fs.readdirSync(inputPath);
 
     if(fs.existsSync(outputPath)){

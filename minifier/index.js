@@ -2,7 +2,6 @@
 
 var fs = require('fs');
 var path = require('path');
-var {Canvas} = require('../media/node_modules/canvas');
 var O = require('../framework');
 var fsRec = require('../fs-recursive');
 var identGenerator = require('../ident-generator');
@@ -21,9 +20,6 @@ module.exports = {
 function generateWhiteList(){
   var arr = whiteListedIdents;
 
-  var g = new Canvas(1, 1).getContext('2d');
-  var CanvasRenderingContext2D = g.constructor;
-
   [
     Number,
     String,
@@ -31,7 +27,6 @@ function generateWhiteList(){
     Array,
     Object,
     Function,
-    CanvasRenderingContext2D,
   ].forEach(cs => {
     var idents = Object.getOwnPropertyNames(cs.prototype);
     idents.push(cs.name);
@@ -91,8 +86,6 @@ function minify(input, output, cb = O.nop){
 }
 
 function minifyFile(data, minify = false){
-  //return data;
-
   var str = data.toString();
   var templateStrings = [];
   var funcStrings = [];
