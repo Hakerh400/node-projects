@@ -1,9 +1,9 @@
 {
   "dw": "C:/Users/Thomas/Downloads",
-  "wamp": "C:/wamp/www",
-  "O": "C:/wamp/www/framework.js",
-  "img": "C:/wamp/www/projects/image",
-  "vid": "C:/wamp/www/projects/video",
+  "wamp": "C:/wamp/www1",
+  "O": "C:/wamp/www1/framework.js",
+  "img": "C:/wamp/www1/projects/image",
+  "vid": "C:/wamp/www1/projects/video",
   "temp": "C:/Users/Thomas/AppData/Local/Temp",
   "encrypted": "C:/Projects/Encrypted"
 }
