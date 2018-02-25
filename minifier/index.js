@@ -42,6 +42,10 @@ function minify(input, output, cb = O.nop){
       fs.writeFileSync(outputPath, data);
     }
   });
+
+  setTimeout(() => {
+    cb(null);
+  });
 }
 
 function minifyFile(data){
