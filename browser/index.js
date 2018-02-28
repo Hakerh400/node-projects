@@ -118,6 +118,7 @@ class Node extends EventTarget{
     this.tagName = tagName.toUpperCase();
     this.style = new CSSStyleDeclaration();
     this.children = [];
+    this.classList = new DOMTokenList();
   }
 
   appendChild(node){
@@ -127,6 +128,27 @@ class Node extends EventTarget{
 
 class CSSStyleDeclaration{
   constructor(){}
+};
+
+class DOMTokenList{
+  constructor(){
+    this.classNames = [];
+  }
+
+  add(className){
+    className += '';
+
+    if(!this.classNames.includes(className)){
+      this.classNames.push(className);
+    }
+  }
+
+  remove(className){
+    className += '';
+
+    var index = this.classNames.indexOf(className);
+    if(index !== -1) this.classNames.splice(index, 1);
+  }
 };
 
 class Text{

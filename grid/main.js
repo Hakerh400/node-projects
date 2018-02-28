@@ -2,7 +2,6 @@
 
 var O = require('../framework');
 var media = require('../media');
-var {Canvas} = require('../media/node_modules/canvas');
 var browser = require('../browser');
 var logStatus = require('../log-status');
 
@@ -10,7 +9,7 @@ var w = 1920;
 var h = 1080;
 var fps = 60;
 var hd = true;
-var duration = 10;
+var duration = 60 * 10;
 var framesNum = fps * duration;
 
 var url = '/?project=grid';

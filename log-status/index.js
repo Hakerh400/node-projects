@@ -1,5 +1,6 @@
 'use strict';
 
+var fs = require('fs');
 var formatNumber = require('../format-number');
 var formatTime = require('../format-time');
 
@@ -7,7 +8,7 @@ var startTime = null;
 
 module.exports = logStatus;
 
-function logStatus(f, n, type = 'frame'){
+function logStatus(f, n = null, type = 'frame'){
   if(startTime === null){
     startTime = Date.now();
   }
@@ -19,11 +20,16 @@ function logStatus(f, n, type = 'frame'){
     ...isSizeKnown ? [`Time remaining: ${formatTime(calcTime(startTime, f, n))}`] : [],
   ];
 
-  console.log(msgs.join`  `);
-};
+  log(msgs.join`  `);
+}
 
 function calcTime(t, f, n){
   var dt = Date.now() - t;
   var remaining = dt * (n - f + 1) / f;
   return remaining / 1e3 + .5 | 0;
-};
+}
+
+function log(str){
+  str += '\n';
+  fs.writeSync(process.stdout.fd, str);
+}
