@@ -9,7 +9,7 @@ var encryptor = require('.');
 var decryptedDir = 'decrypted';
 var encryptedDir = 'encrypted';
 
-var mode = 'e';
+var mode = 'd';
 var password = O.password;
 
 setTimeout(main);

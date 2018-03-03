@@ -44,7 +44,7 @@ function checkFunc(dir, cb){
     fsRec.processFilesSync(output, d => {
       if(d.processed || found) return;
 
-      if(d.name.toLowerCase() === 'test'){
+      if(d.name === 'Test'){
         found = true;
       }
     });
