@@ -27,6 +27,10 @@ function main(){
 function render(window){
   var canvas = window._canvases[0];
 
+  var size = 200;
+  var xx = O.rand(w - size);
+  var yy = O.rand(h - size);
+
   media.renderVideo('-vid/1.mp4', w, h, fps, hd, (w, h, g, f) => {
     logStatus(f, framesNum);
 
@@ -36,15 +40,26 @@ function render(window){
 
     if(t <= 179){
       if(Math.random() > .1){
-        window.emit('mousedown', {button: [0, 2][O.rand(2)], clientX: Math.random() * w, clientY: Math.random() * h});
+        window.emit('mousedown', {button: [0, 2][O.rand(2)], clientX: randX(), clientY: randY()});
       }else{
-        window.emit('mousemove', {clientX: Math.random() * w, clientY: Math.random() * h});
+        window.emit('mousemove', {clientX: randX(), clientY: randY()});
         window.emit('keydown', {code: `Key${'WBX'[O.rand(3)]}`});
       }
     }else{
+      xx = O.rand(w - size);
+      yy = O.rand(h - size);
+
       window.emit('keydown', {code: 'Enter'});
     }
 
     return f != framesNum;
   });
+
+  function randX(){
+    return xx + O.rand(200);
+  }
+
+  function randY(){
+    return yy + O.rand(200);
+  }
 }
