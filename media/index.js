@@ -21,6 +21,8 @@ module.exports = {
   custom,
   spawnFfmpeg,
   blurRegion,
+  createCanvas,
+  createContext,
 };
 
 function renderImage(output, w, h, frameFunc, exitCb = O.nop){
@@ -296,4 +298,8 @@ function createCanvas(w, h){
   g.fillStyle = 'white';
 
   return g.canvas;
+}
+
+function createContext(w, h){
+  return createCanvas(w, h).getContext('2d');
 }

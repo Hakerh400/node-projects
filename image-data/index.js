@@ -40,7 +40,7 @@ class ImageData{
     this.g.putImageData(this.imgd, 0, 0);
   }
 
-  iterate(func, includeAlpha){
+  iterate(func, includeAlpha = false){
     var w = this.w;
     var h = this.h;
     var d = this.data;
