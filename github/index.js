@@ -14,6 +14,8 @@ var noCopyList = require('./no-copy-list.json');
 var skipList = require('./skip-list.json');
 var supportedExtensions = require('./supported-extensions.json');
 
+var tabSize = 2;
+
 module.exports = {
   push
 };
@@ -109,7 +111,7 @@ function push(repoName, cb = O.nop){
         if(!supportedExtensions.some(a => ext == a)) return;
 
         var content = fs.readFileSync(e.fullPath);
-        content = processFileContent(e.name, content);
+        content = processFileContent(e.name, ext, content);
         fs.writeFileSync(destPath, content);
       }
     });
@@ -132,8 +134,22 @@ function push(repoName, cb = O.nop){
   }
 }
 
-function processFileContent(file, buff){
+function processFileContent(file, ext, buff){
   var str = buff.toString();
+
+  if([
+    'js',
+    'json',
+    'htm',
+    'html',
+    'css',
+    'java',
+    'bat',
+    'glsl',
+  ].includes(ext)) {
+    str = str.replace(/\t/g, ' '.repeat(tabSize));
+    buff = Buffer.from(str);
+  }
 
   switch(file){
     case 'projects.txt': return O.sanl(str).filter(a => a !== 'blank' && a !== 'test').join`\r\n`; break;
