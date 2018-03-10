@@ -26,6 +26,12 @@
       "src": "C:/Extensions",
       "dest": "C:/Github/extensions",
       "encrypt": true
+    },
+
+    "land": {
+      "name": "land",
+      "src": "C:/Users/Thomas/eclipse-workspace/land/src/land",
+      "dest": "C:/Github/land"
     }
   }
 }
