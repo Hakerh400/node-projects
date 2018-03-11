@@ -13,5 +13,7 @@ function formatFileName(fileName){
     fileName = path.join(O.dirs[dir], fileName);
   }
 
+  fileName = path.normalize(fileName);
+
   return fileName;
 }
