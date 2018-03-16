@@ -10,9 +10,9 @@ var formatFileName = require('../format-file-name');
 var logStatus = require('../log-status');
 
 var tileSize = 16;
-var game = 'minecraft';
 var imageExtension = 'png';
 
+var game = 'minecraft';
 var defaultJarVersionsDir = `C:/Users/Thomas/AppData/Roaming/.${game}/versions`;
 var jarTexturesDir = `assets/${game}/textures/blocks`;
 
