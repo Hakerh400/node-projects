@@ -3,6 +3,7 @@
 var cp = require('child_process');
 var {Canvas} = require('../media/node_modules/canvas');
 var O = require('../framework');
+var logStatus = require('../log-status');
 var formatFileName = require('../format-file-name');
 
 const BGRA = '-f rawvideo -pix_fmt bgra';
@@ -23,6 +24,7 @@ module.exports = {
   blurRegion,
   createCanvas,
   createContext,
+  logStatus,
 };
 
 function renderImage(output, w, h, frameFunc, exitCb = O.nop){

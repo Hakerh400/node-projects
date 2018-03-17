@@ -42,7 +42,7 @@ var binaryExtensions = [
 ];
 
 module.exports = {
-  remove
+  remove,
 };
 
 function remove(input, output){
