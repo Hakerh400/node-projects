@@ -2,15 +2,11 @@
 
 var {Canvas} = require('../media/node_modules/canvas');
 
+var g = new Canvas(1, 1).getContext('2d');
+
 module.exports = colToRgb;
 
 function colToRgb(col){
-  if(!colToRgb.g){
-    colToRgb.g = new Canvas(1, 1).getContext('2d');
-  }
-
-  var g = colToRgb.g;
-  
   g.fillStyle = '#000000';
   g.fillStyle = col;
 

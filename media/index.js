@@ -1,10 +1,13 @@
 'use strict';
 
+var path = require('path');
 var cp = require('child_process');
 var {Canvas} = require('../media/node_modules/canvas');
 var O = require('../framework');
 var logStatus = require('../log-status');
 var formatFileName = require('../format-file-name');
+
+const FFMPEG_DIR = 'C:/Program Files/Ffmpeg/bin/original';
 
 const BGRA = '-f rawvideo -pix_fmt bgra';
 const RGBA = '-f rawvideo -pix_fmt rgba';
@@ -264,6 +267,7 @@ function getMediaParams(mediaFile, cb){
 }
 
 function spawnProc(name, args, exitCb = O.nop){
+  name = path.join(FFMPEG_DIR, name);
   procsNum++;
 
   var proc = cp.spawn(name, [

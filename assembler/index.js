@@ -78,9 +78,12 @@ optimizeInstructions();
 
 class Machine{
   constructor(){
+    this.ignoreErrors = false
+
     this.createRegs();
     this.createMem();
     this.createBuffs();
+    this.createListeners();
   }
 
   createRegs(){
@@ -98,6 +101,11 @@ class Machine{
   createBuffs(){
     this.inputBuff = Buffer.alloc(512);
     this.outputBuff = Buffer.alloc(512);
+  }
+
+  createListeners(){
+    this.beforeIn = O.nop;
+    this.afterOut = O.nop;
   }
 
   compile(src){
@@ -210,8 +218,10 @@ class Machine{
       return;
     }
 
-    if(!(opCode in instructions))
+    if(!(opCode in instructions)){
+      if(this.ignoreErrors) return;
       throw new TypeError(`Value 0x${opCode.toString(16).toUpperCase().padStart(2, '0')} is not a valid opcode`);
+    }
 
     if(DEBUG)
       this.debug(opCode);
@@ -249,15 +259,17 @@ class Machine{
   }
 
   write(val, port){
-    this.inputBuff.writeUInt16LE(val, port << 1);
+    this.inputBuff.writeUInt16LE(val & MEM_MAX_ADDR, port << 1);
   }
 
   in(port){
+    this.beforeIn(port);
     return this.inputBuff.readUInt16LE(port << 1);
   }
 
   out(val, port){
     this.outputBuff.writeUInt16LE(val, port << 1);
+    this.afterOut(val, port);
   }
 
   push(val){
@@ -286,8 +298,8 @@ class Machine{
   }
 
   swap(index1, index2){
-    var addr1 = this.regs.sp + (index1 << 1);
-    var addr2 = this.regs.sp + (index2 << 1);
+    var addr1 = this.regs.sp + (index1 << 1) & MEM_MAX_ADDR;
+    var addr2 = this.regs.sp + (index2 << 1) & MEM_MAX_ADDR;
 
     var val1 = this.mem.read(addr1);
     var val2 = this.mem.read(addr2);
