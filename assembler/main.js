@@ -4,6 +4,7 @@ var fs = require('fs');
 var assembler = require('.');
 
 var srcFile = './src.txt';
+var memFile = './mem.hex';
 
 setTimeout(main);
 
@@ -12,16 +13,8 @@ function main(){
   var machine = new assembler.Machine();
 
   machine.compile(src);
+  fs.writeFileSync(memFile, machine.mem.buff);
 
-  machine.write(5);
-  machine.write(7);
-
-  do{
-    var byte = machine.read();
-    if(byte === null) continue;
-
-    console.log(byte);
-
-    break;
-  }while(1);
+  var output = machine.exec('ABCDE');
+  console.log(Buffer.from(output).toString());
 }

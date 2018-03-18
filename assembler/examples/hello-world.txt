@@ -1,0 +1,32 @@
+:start jmp
+
+msgStart:
+  _0xFF _0xB7 _0xD2 _0xBE
+  _0xD2 _0xBD _0x91 _0xB1
+  _0xE6 _0x89 _0xFB _0x97
+  _0xF3 _0xD2 _0x00
+  msgEnd:
+
+start:
+  :msgStart
+  :loop jmp
+
+loop:
+  push
+  :msgEnd
+  2 sub
+  eqp :exit jnz
+
+  push readB
+  0 1 swap
+  inc
+  push readB
+  1 2 swap
+  xor
+
+  0 out
+  1 1 out
+  :loop jmp
+
+exit:
+  2 1 out

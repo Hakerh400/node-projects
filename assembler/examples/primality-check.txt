@@ -1,0 +1,51 @@
+0 in
+2
+
+loop:
+  lt :exit jnz
+
+  push
+  :isPrime call
+  :push jnz
+  :noPush jmp
+
+  push:
+    push 0 out
+    1 1 out
+    :continue jmp
+
+  noPush:
+    :continue jmp
+
+  continue:
+    inc
+    :loop jmp
+
+isPrime:
+  2
+  1 2 swap
+
+  primeLoop:
+    le :yes jnz
+
+    push2
+    mod
+    :no jz
+    inc
+
+    :primeLoop jmp
+
+  yes:
+    pop pop 1
+    :primeRet jmp
+
+  no:
+    pop pop 0
+    :primeRet jmp
+
+  primeRet:
+    0 1 swap
+    ret
+
+exit:
+  2 1 out
