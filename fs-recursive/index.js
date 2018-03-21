@@ -8,7 +8,9 @@ module.exports = {
   processFiles,
   processFilesSync,
   deleteFiles,
-  deleteFilesSync
+  deleteFilesSync,
+  createDir,
+  createDirSync,
 };
 
 function processFiles(filePath, func, cb = O.nop){
@@ -62,6 +64,35 @@ function deleteFile(obj){
     if(obj.processed) fs.rmdirSync(obj.fullPath);
   }else{
     fs.unlinkSync(obj.fullPath);
+  }
+}
+
+function createDir(dirPath, cb = O.nop){
+  var err = null;
+
+  try{
+    createDirSync(dirPath);
+  }catch(e){
+    err = e;
+  }
+
+  setTimeout(() => {
+    cb(err);
+  });
+}
+
+function createDirSync(dirPath){
+  dirPath = formatPath(dirPath);
+
+  var dirs = dirPath.split`\\`;
+  dirPath = dirs.shift();
+
+  while(dirs.length !== 0){
+    dirPath = path.join(dirPath, dirs.shift());
+
+    if(!fs.existsSync(dirPath)){
+      fs.mkdirSync(dirPath);
+    }
   }
 }
 

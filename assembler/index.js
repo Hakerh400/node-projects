@@ -233,6 +233,34 @@ class Machine{
     inst(this, ...args);
   }
 
+  disassemble(){
+    var buff = this.mem.buff;
+    var arr = [];
+
+    for(var i = 0; i < MEM_SIZE;){
+      var addr = uint2str(i);
+      var opCode = buff[i++];
+      var inst;
+
+      if(opCode === 0){
+        inst = `_${uint2str(this.mem.read(i))}`;
+        i += 2;
+      }else if(opCode in instructions){
+        inst = instructions.opCodes[opCode];
+      }else{
+        continue;
+      }
+
+      arr.push(`${addr}: ${inst}`);
+    }
+
+    return arr.join`\n`;
+
+    function uint2str(uint){
+      return `0x${uint.toString(16).toUpperCase().padStart(4, '0')}`;
+    }
+  }
+
   reset(){
     this.resetRegs();
     this.resetMem();
@@ -335,11 +363,13 @@ class Memory{
   }
 
   read(addr){
+    addr &= MEM_MAX_ADDR;
     if(addr !== MEM_MAX_ADDR) return this.buff.readUInt16LE(addr);
     return (this.buff[0] << 8) | this.buff[MEM_MAX_ADDR];
   }
 
   write(val, addr){
+    addr &= MEM_MAX_ADDR;
     if(addr !== MEM_MAX_ADDR) return this.buff.writeUInt16LE(val & MEM_MAX_ADDR, addr);
     this.buff[MEM_MAX_ADDR] = addr & 255;
     this.buff[0] = addr >> 8;

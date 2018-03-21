@@ -6,8 +6,6 @@ var assembler = require('../assembler');
 var colorConverter = require('../color-converter');
 var clans = require('./clans.json');
 
-const HD = 1;
-
 const BOTS_ENABLED = 0;
 
 const FPS = 60;
@@ -98,18 +96,16 @@ class Entity extends O.Vector{
 
     for(var i = 0; i < len; i++){
       var e = ents[i];
-      if(e.dead) continue;
+      if(e.dead || e === this || !func(e))
+        continue;
 
       var rr = this.radius + e.radius;
       var dx, dy;
 
-      if(e === this || !func(e))
-        continue;
-
       if(ent === null){
+        ent = e;
         dx = this.x - e.x;
         dy = this.y - e.y;
-        ent = e;
         minDist = Math.sqrt(dx * dx + dy * dy) - rr;
         continue;
       }
@@ -199,8 +195,7 @@ class Player extends Entity{
   createMachine(){
     var machine = new assembler.Machine();
 
-    //if(BOTS_ENABLED && this.clanId === 0){
-    if(this.id === 0){
+    if(BOTS_ENABLED && this.clanId === 0){
       var assembly = fs.readFileSync(assemblyFile);
       machine.compile(assembly);
     }else{
@@ -220,11 +215,11 @@ class Player extends Entity{
   updateRadius(){
     //this.radius = this.baseRadius + this.points ** .3;
     this.updateMass();
+    this.calcBounds();
   }
 
   updateMass(){
     this.mass = this.radius * this.radius;
-    this.calcBounds();
   }
 
   calcBounds(){
@@ -232,6 +227,8 @@ class Player extends Entity{
     this.yMin = this.radius;
     this.xMax = this.w - this.radius - 1;
     this.yMax = this.h - this.radius - 1;
+    this.xMinB = this.xMin + CAPTION_BOX_WIDTH;
+    this.yMinB = this.yMin + CAPTION_BOX_HEIGHT;
   }
 
   clone(){
@@ -284,10 +281,7 @@ class Player extends Entity{
     this.add(this.speed);
     this.speed.mul(FRICTION);
 
-    if(this.x < this.xMin) this.x = this.xMin, this.speed.x = -this.speed.x;
-    else if(this.x > this.xMax) this.x = this.xMax, this.speed.x = -this.speed.x;
-    if(this.y < this.yMin) this.y = this.yMin, this.speed.y = -this.speed.y;
-    else if(this.y > this.yMax) this.y = this.yMax, this.speed.y = -this.speed.y;
+    this.boundCoords();
   }
 
   draw_(f){
@@ -410,6 +404,21 @@ class Player extends Entity{
       buff[O.rand(len)] = O.rand(256);
     }
   }
+
+  boundCoords(){
+    var dx = this.xMinB - this.x;
+    var dy = this.yMinB - this.y;
+
+    if(dx > 0 && dy > 0){
+      if(dx < dy) this.x = this.xMinB, this.speed.x = -this.speed.x;
+      else this.y = this.yMinB, this.speed.y = -this.speed.y;
+    }else{
+      if(this.x < this.xMin) this.x = this.xMin, this.speed.x = -this.speed.x;
+      else if(this.x > this.xMax) this.x = this.xMax, this.speed.x = -this.speed.x;
+      if(this.y < this.yMin) this.y = this.yMin, this.speed.y = -this.speed.y;
+      else if(this.y > this.yMax) this.y = this.yMax, this.speed.y = -this.speed.y;
+    }
+  }
 };
 
 class Gem extends Entity{
@@ -423,7 +432,11 @@ class Gem extends Entity{
     do{
       this.x = this.radius + O.randf(this.w - this.diameter - 1);
       this.y = this.radius + O.randf(this.h - this.diameter - 1);
-    }while(this.isEaten());
+
+      var dx = CAPTION_BOX_WIDTH + this.radius - this.x;
+      var dy = CAPTION_BOX_HEIGHT + this.radius - this.y;
+      var isInCapBox = dx > 0 && dy > 0;
+    }while(isInCapBox || this.isEaten());
   }
 
   isEaten(givePoints = false){

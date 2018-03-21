@@ -1,26 +1,34 @@
 'use strict';
 
+global.HD = 1;
+
+var fs = require('fs');
+var path = require('path');
 var O = require('../framework');
 var media = require('../media');
+var fsRec = require('../fs-recursive');
 var entities = require('./entities.js');
 
-const HD = 1;
+var entsExportDir = 'D:/Projects/JavaScript/Entities';
+
+var clans = entities.clans;
+var ents = [];
+
+var FONT_SIZE = HD ? 32 : 16;
+var FONT_OFFSET = 5;
 
 const RADIUS = HD ? 10 : 4;
 const DIAMETER = RADIUS * 2;
+
+global.CAPTION_BOX_WIDTH = 250;
+global.CAPTION_BOX_HEIGHT = FONT_OFFSET * 2 + clans.length * FONT_SIZE;
 
 var w = HD ? 1920 : 640;
 var h = HD ? 1080 : 480;
 var fps = 60;
 var hd = true;
-var duration = HD ? 60 * 20 : 60 * 20;
+var duration = HD ? 60 * 30 : 60 * 20;
 var framesNum = fps * duration;
-
-var fontSize = HD ? 32 : 16;
-var fontOffset = 5;
-
-var clans = entities.clans;
-var ents = [];
 
 var cols = {
   bg: 'darkgray',
@@ -43,15 +51,23 @@ function main(){
     g.fillStyle = cols.bg;
     g.fillRect(0, 0, w, h);
 
-    ents.forEach(ent => {
-      ent.draw(f);
-      ent.tick(f);
-    });
+    var startIndex = (f - 1) % ents.length;
+    var endIndex = (startIndex + ents.length - 1) % ents.length;
+
+    for(var i = startIndex; ; i = i !== ents.length - 1 ? i + 1 : 0){
+      ents[i].draw(f);
+      if(i === endIndex) break;
+    }
+
+    for(var i = startIndex; ; i = i !== ents.length - 1 ? i + 1 : 0){
+      ents[i].tick(f);
+      if(i === endIndex) break;
+    }
 
     drawClans(g, ents);
 
     return f !== framesNum;
-  });
+  }, onRenderingDone);
 }
 
 function initEnts(g, ents){
@@ -89,7 +105,15 @@ function initEnts(g, ents){
 }
 
 function drawClans(g, ents){
-  g.font = `bold ${fontSize}px arial`;
+  g.fillStyle = 'white';
+  g.lineWidth = 2;
+  g.beginPath();
+  g.rect(-FONT_OFFSET, -FONT_OFFSET, CAPTION_BOX_WIDTH + FONT_OFFSET, CAPTION_BOX_HEIGHT + FONT_OFFSET);
+  g.fill();
+  g.stroke();
+  g.lineWidth = 1;
+
+  g.font = `bold ${FONT_SIZE}px arial`;
   g.fillStyle = cols.text;
 
   clans.forEach((clan, index) => {
@@ -98,18 +122,42 @@ function drawClans(g, ents){
 
     var str = `${name}: ${points}`;
 
-    g.fillText(str, fontOffset, fontOffset + fontSize * index);
+    g.fillText(str, FONT_OFFSET, FONT_OFFSET + FONT_SIZE * index);
   });
 }
 
-function randCol(){
-  var cols = [
-    '#ffff00',
-    '#00ff00',
-    '#ff8000',
-    '#00ffff',
-    '#ff00ff',
-  ];
+function onRenderingDone(){
+  exportEnts(ents);
+}
 
-  return cols[O.rand(cols.length)];
+function exportEnts(ents){
+  fsRec.createDirSync(entsExportDir);
+  fsRec.deleteFilesSync(entsExportDir);
+  fs.mkdirSync(entsExportDir);
+
+  var clansDir = path.join(entsExportDir, 'Clans');
+  fs.mkdirSync(clansDir);
+
+  clans.forEach((clan, id) => {
+    clan.dir = path.join(clansDir, clan.name);
+    fs.mkdirSync(clan.dir);
+  });
+
+  ents.forEach(ent => {
+    if(!(ent instanceof entities.Player) || ent.dead)
+      return;
+
+    var clan = ent.clan;
+
+    var hexFileName = `${ent.id}.hex`;
+    var hexFilePath = path.join(clan.dir, hexFileName);
+
+    fs.writeFileSync(hexFilePath, ent.machine.mem.buff);
+
+    var txtFileName = `${ent.id}.txt`;
+    var txtFilePath = path.join(clan.dir, txtFileName);
+
+    var disassembled = ent.machine.disassemble();
+    fs.writeFileSync(txtFilePath, disassembled);
+  });
 }
