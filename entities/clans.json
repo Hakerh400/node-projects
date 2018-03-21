@@ -5,5 +5,11 @@
   }, {
     "name": "Green",
     "col": "#00ff00"
+  }, {
+    "name": "Blue",
+    "col": "#00ffff"
+  }, {
+    "name": "Yellow",
+    "col": "#ffff00"
   }
 ]

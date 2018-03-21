@@ -4,17 +4,19 @@ var O = require('../framework');
 var media = require('../media');
 var entities = require('./entities.js');
 
-const RADIUS = 8;
+const HD = 1;
+
+const RADIUS = HD ? 10 : 4;
 const DIAMETER = RADIUS * 2;
 
-var w = 640;
-var h = 480;
+var w = HD ? 1920 : 640;
+var h = HD ? 1080 : 480;
 var fps = 60;
 var hd = true;
-var duration = 20;
+var duration = HD ? 60 * 20 : 60 * 20;
 var framesNum = fps * duration;
 
-var fontSize = 16;
+var fontSize = HD ? 32 : 16;
 var fontOffset = 5;
 
 var clans = entities.clans;
@@ -42,8 +44,8 @@ function main(){
     g.fillRect(0, 0, w, h);
 
     ents.forEach(ent => {
-      ent.draw();
-      ent.tick();
+      ent.draw(f);
+      ent.tick(f);
     });
 
     drawClans(g, ents);
@@ -53,17 +55,25 @@ function main(){
 }
 
 function initEnts(g, ents){
-  O.repeat(100, i => {
-    var x = RADIUS + O.randf(w - DIAMETER);
-    var y = RADIUS + O.randf(h - DIAMETER);
-    var radius = RADIUS;
-    var clan = i === 0 ? 0 : 1;
-    var dir = O.randf(O.pi2);
-    var speed = 0;
+  var num = 50;
+  var rad = (RADIUS * num) / O.pi;
 
-    var ent = new entities.Player(g, ents, x, y, radius, dir, speed, clan);
+  O.repeat(4, clan => {
+    var xx = [w * .25, w * .75][clan & 1];
+    var yy = [h * .25, h * .75][clan >> 1];
 
-    ents.push(ent);
+    O.repeat(num, i => {
+      var angle = i / num * O.pi2;
+
+      var x = xx + rad * Math.cos(angle);
+      var y = yy + rad * Math.sin(angle);
+      var radius = RADIUS;
+      var dir = angle;
+
+      var ent = new entities.Player(g, ents, x, y, radius, dir, clan);
+
+      ents.push(ent);
+    });
   });
 
   O.repeat(10, i => {
@@ -72,6 +82,7 @@ function initEnts(g, ents){
     var radius = RADIUS / 2;
 
     var ent = new entities.Gem(g, ents, x, y, radius);
+    ent.respawn();
 
     ents.push(ent);
   });
