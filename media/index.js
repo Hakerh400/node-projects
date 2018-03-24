@@ -28,6 +28,7 @@ module.exports = {
   createCanvas,
   createContext,
   logStatus,
+  Canvas,
 };
 
 function renderImage(output, w, h, frameFunc, exitCb = O.nop){

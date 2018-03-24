@@ -1,5 +1,7 @@
 'use strict';
 
+throw 0;
+
 global.HD = 1;
 
 var fs = require('fs');
@@ -17,17 +19,18 @@ var ents = [];
 var FONT_SIZE = HD ? 32 : 16;
 var FONT_OFFSET = 5;
 
-const RADIUS = HD ? 10 : 4;
+const RADIUS = HD ? 5 : 4;
 const DIAMETER = RADIUS * 2;
 
 global.CAPTION_BOX_WIDTH = 250;
 global.CAPTION_BOX_HEIGHT = FONT_OFFSET * 2 + clans.length * FONT_SIZE;
+global.MAX_SPEED = HD ? 3 : 3;
 
 var w = HD ? 1920 : 640;
 var h = HD ? 1080 : 480;
 var fps = 60;
 var hd = true;
-var duration = HD ? 60 * 30 : 60 * 20;
+var duration = HD ? 60 * 60 : 60 * 20;
 var framesNum = fps * duration;
 
 var cols = {
@@ -54,9 +57,8 @@ function main(){
     var startIndex = (f - 1) % ents.length;
     var endIndex = (startIndex + ents.length - 1) % ents.length;
 
-    for(var i = startIndex; ; i = i !== ents.length - 1 ? i + 1 : 0){
+    for(var i = 0; i < ents.length; i++){
       ents[i].draw(f);
-      if(i === endIndex) break;
     }
 
     for(var i = startIndex; ; i = i !== ents.length - 1 ? i + 1 : 0){
@@ -71,7 +73,7 @@ function main(){
 }
 
 function initEnts(g, ents){
-  var num = 50;
+  var num = 100;
   var rad = (RADIUS * num) / O.pi;
 
   O.repeat(4, clan => {
@@ -92,7 +94,7 @@ function initEnts(g, ents){
     });
   });
 
-  O.repeat(10, i => {
+  O.repeat(20, i => {
     var x = RADIUS / 2 + O.randf(w - RADIUS);
     var y = RADIUS / 2 + O.randf(h - RADIUS);
     var radius = RADIUS / 2;

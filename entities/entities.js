@@ -11,10 +11,9 @@ const BOTS_ENABLED = 0;
 const FPS = 60;
 const INSTRUCTIONS_PER_FRAME = 100;
 const MUTATION_INTERVAL = FPS * 10;
-const MUTATION_FACTOR = .001;
+const MUTATION_FACTOR = .01;
 const MUTATION_DISPLAY_TIME = FPS * 1;
 
-const MAX_SPEED = HD ? 6 : 3;
 const ROT_SPEED = O.pi * .1;
 const FRICTION = .9;
 
@@ -403,6 +402,8 @@ class Player extends Entity{
     for(var i = 0; i < num; i++){
       buff[O.rand(len)] = O.rand(256);
     }
+
+    this.machine.resetRegs();
   }
 
   boundCoords(){
@@ -412,12 +413,12 @@ class Player extends Entity{
     if(dx > 0 && dy > 0){
       if(dx < dy) this.x = this.xMinB, this.speed.x = -this.speed.x;
       else this.y = this.yMinB, this.speed.y = -this.speed.y;
-    }else{
-      if(this.x < this.xMin) this.x = this.xMin, this.speed.x = -this.speed.x;
-      else if(this.x > this.xMax) this.x = this.xMax, this.speed.x = -this.speed.x;
-      if(this.y < this.yMin) this.y = this.yMin, this.speed.y = -this.speed.y;
-      else if(this.y > this.yMax) this.y = this.yMax, this.speed.y = -this.speed.y;
     }
+    
+    if(this.x < this.xMin) this.x = this.xMin, this.speed.x = -this.speed.x;
+    else if(this.x > this.xMax) this.x = this.xMax, this.speed.x = -this.speed.x;
+    if(this.y < this.yMin) this.y = this.yMin, this.speed.y = -this.speed.y;
+    else if(this.y > this.yMax) this.y = this.yMax, this.speed.y = -this.speed.y;
   }
 };
 
