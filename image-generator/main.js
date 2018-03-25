@@ -4,14 +4,16 @@ var O = require('../framework');
 var media = require('../media');
 var ImageData = require('../image-data');
 
-const MAX_DIFF = 1;
-
 var w = 1920;
 var h = 1080;
 
 setTimeout(main);
 
 function main(){
+  var tx = -.1;
+  var ty = .836900029;
+  var s = .5e-14;
+
   media.renderImage('-img/1.png', w, h, (w, h, g) => {
     var [wh, hh] = [w, h].map(a => a >> 1);
     var d = new ImageData(g);
@@ -20,48 +22,45 @@ function main(){
       if(x === 0)
         media.logStatus(y + 1, h, 'row');
 
-      x = (x - wh) / 100;
-      y = -(y - hh) / 100;
+      x = (x - wh) / 500;
+      y = -(y - hh) / 500;
 
-      var sx = x >= 0 ? 1 : -1;
-      var sy = y >= 0 ? 1 : -1;
+      x = (x * s) + tx;
+      y = (y * s) + ty;
 
-      x *= sx;
-      y *= sy;
+      var a = 10 ** (1 / (1e-8 - 1));
+      var b = Math.log(100) / Math.log(a) - 1;
 
-      var fps = 60;
-      var f = 1;
+      var iters = Math.round(a ** (b + s));
 
-      var angle = (f - 1) / fps * O.pi2;
+      var v = calc(x, y, iters);
+      if(v === 1)
+        return [0, 0, 0];
 
-      var e1 = 1 + Math.sin(angle) * .2;
-      var e2 = 1 + Math.sin(angle * .9 + O.pih) * .2;
-      var e3 = 1 + Math.sin(angle * .8 - O.pih) * .2;
-
-      var col = [
-        calc(sx * x ** e1, sy * y ** e1),
-        calc(sx * x ** e2, sy * y ** e2),
-        calc(sx * x ** e3, sy * y ** e3),
-      ];
-
-      return col.map(a => Math.round(a * 255));
+      var col = O.hsv(v);
+      return col;
     });
 
     d.put();
   });
 }
 
-function calc(x, y){
-  var a = 10;
+function calc(x, y, iters){
+  var cx = x;
+  var cy = y;
+  var zx = 0;
+  var zy = 0;
 
-  var lhs = Math.tanh(a * Math.cos(x) + a * Math.sin(y));
-  var rhs = Math.sin(x) * Math.cos(y);
+  for(var i = 0; i < iters; i++){
+    x = zx * zx - zy * zy + cx;
+    y = 2 * zx * zy + cy;
 
-  var diff = Math.abs(lhs - rhs);
-  if(diff > MAX_DIFF)
-    return 0;
+    zx = x;
+    zy = y;
 
-  diff = 1 - diff / MAX_DIFF;
+    if(zx * zx + zy * zy > 2 ** 2)
+      break;
+  }
 
-  return diff;
+  return i / iters;
 }

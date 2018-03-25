@@ -194,7 +194,8 @@ class Player extends Entity{
   createMachine(){
     var machine = new assembler.Machine();
 
-    if(BOTS_ENABLED && this.clanId === 0){
+    //if(BOTS_ENABLED && this.clanId === 0){
+    if(1){
       var assembly = fs.readFileSync(assemblyFile);
       machine.compile(assembly);
     }else{

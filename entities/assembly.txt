@@ -1,5 +1,5 @@
 loop:
-  0x05 in
-  0x00 out
-  255 0x01 out
+  5 in
+  0 out
+  255 1 out
   :loop jmp

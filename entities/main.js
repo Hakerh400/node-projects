@@ -1,7 +1,5 @@
 'use strict';
 
-throw 0;
-
 global.HD = 1;
 
 var fs = require('fs');
@@ -9,6 +7,7 @@ var path = require('path');
 var O = require('../framework');
 var media = require('../media');
 var fsRec = require('../fs-recursive');
+var formatNumber = require('../format-number');
 var entities = require('./entities.js');
 
 var entsExportDir = 'D:/Projects/JavaScript/Entities';
@@ -30,8 +29,10 @@ var w = HD ? 1920 : 640;
 var h = HD ? 1080 : 480;
 var fps = 60;
 var hd = true;
-var duration = HD ? 60 * 60 : 60 * 20;
+var duration = HD ? 20 : 20;
 var framesNum = fps * duration;
+
+var [wh, hh] = [w, h].map(a => a >> 1);
 
 var cols = {
   bg: 'darkgray',
@@ -41,7 +42,7 @@ var cols = {
 setTimeout(main);
 
 function main(){
-  media.renderVideo('-vid/1.mp4', w, h, fps, hd, (w, h, g, f) => {
+  media.renderVideo('-vid/2.mp4', w, h, fps, hd, (w, h, g, f) => {
     media.logStatus(f, framesNum);
 
     if(f === 1){
@@ -81,14 +82,11 @@ function initEnts(g, ents){
     var yy = [h * .25, h * .75][clan >> 1];
 
     O.repeat(num, i => {
-      var angle = i / num * O.pi2;
+      var x = wh + O.randf(1) - .5;
+      var y = hh + O.randf(1) - .5;
+      var dir = O.randf(O.pi2);
 
-      var x = xx + rad * Math.cos(angle);
-      var y = yy + rad * Math.sin(angle);
-      var radius = RADIUS;
-      var dir = angle;
-
-      var ent = new entities.Player(g, ents, x, y, radius, dir, clan);
+      var ent = new entities.Player(g, ents, x, y, RADIUS, dir, clan);
 
       ents.push(ent);
     });
@@ -97,9 +95,8 @@ function initEnts(g, ents){
   O.repeat(20, i => {
     var x = RADIUS / 2 + O.randf(w - RADIUS);
     var y = RADIUS / 2 + O.randf(h - RADIUS);
-    var radius = RADIUS / 2;
 
-    var ent = new entities.Gem(g, ents, x, y, radius);
+    var ent = new entities.Gem(g, ents, x, y, RADIUS / 2);
     ent.respawn();
 
     ents.push(ent);
@@ -120,7 +117,7 @@ function drawClans(g, ents){
 
   clans.forEach((clan, index) => {
     var name = clan.name;
-    var points = clan.points;
+    var points = formatNumber(clan.points);
 
     var str = `${name}: ${points}`;
 
