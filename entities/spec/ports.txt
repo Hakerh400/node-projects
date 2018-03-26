@@ -3,13 +3,11 @@ Input
   01 - y coordinate
   02 - direction
   03 - speed
-  04 - distance to the nearest gem
-  05 - direction to the nearest gem
-  06 - distance to the nearest friend
-  07 - direction to the nearest friend
-  08 - distance to the nearest enemy
-  09 - direction to the nearest enemy
 
 Output
   00 - direction
   01 - speed
+  02 - take action
+    00 - pause
+    01 - set block
+    02 - remove block

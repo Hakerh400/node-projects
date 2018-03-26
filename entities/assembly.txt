@@ -17,15 +17,8 @@ main:
   :main jmp
 
 calcDir:
-  :h readf
-  2f divf
-  1 inf subf
-
-  :w readf
-  2f divf
-  0 inf subf
-
-  atan2
+  2 inf
+  .01f addf
   0 outf
 
   ret

@@ -3,17 +3,10 @@
 var fs = require('fs');
 var O = require('../framework');
 var assembler = require('../assembler');
+var formatNumber = require('../format-number');
 var colorConverter = require('../color-converter');
+var cols = require('./colors.json');
 var clans = require('./clans.json');
-
-const FPS = 60;
-const INSTRUCTIONS_PER_FRAME = 100;
-const MUTATION_INTERVAL = FPS * 10;
-const MUTATION_FACTOR = .01;
-const MUTATION_DISPLAY_TIME = FPS * 1;
-
-const ROT_SPEED = O.pi * .1;
-const FRICTION = .9;
 
 const SQRT3 = Math.sqrt(3);
 const EYE_RADIUS = SQRT3 / 8;
@@ -25,16 +18,108 @@ var assemblyFile = './assembly.txt';
 
 var id = 0;
 
+class World{
+  constructor(g, tileSize){
+    if(!(g instanceof O.EnhancedRenderingContext))
+      g = new O.EnhancedRenderingContext(g);
+
+    this.iw = g.canvas.width;
+    this.ih = g.canvas.height;
+    this.w = this.iw / tileSize | 0;
+    this.h = this.ih / tileSize | 0;
+    this.g = g;
+    this.tileSize = tileSize;
+
+    this.initGrid();
+    this.initEnts();
+  }
+
+  initGrid(){
+    this.grid = new O.TilesGrid(this.g);
+    var grid = this.grid;
+
+    grid.bgEnabled = false;
+
+    grid.setWH(this.w, this.h);
+    grid.setSize(this.tileSize);
+    grid.create();
+
+    grid.setDrawFunc((x, y, d, g) => {
+      grid.drawFrame(x, y);
+    });
+  }
+
+  initEnts(){
+    this.ents = [];
+  }
+
+  draw(f){
+    var {g, iw, ih, grid, ents} = this;
+
+    g.fillStyle = cols.bg;
+    g.fillRect(0, 0, iw, ih);
+
+    for(var i = 0; i < ents.length; i++){
+      ents[i].draw(f);
+    }
+
+    grid.resize();
+    grid.draw();
+
+    this.drawClans(g.g);
+  }
+
+  tick(f){
+    var {ents} = this;
+
+    var startIndex = (f - 1) % ents.length;
+    var endIndex = (startIndex + ents.length - 1) % ents.length;
+
+    for(var i = startIndex; ; i = i !== ents.length - 1 ? i + 1 : 0){
+      ents[i].tick(f);
+      if(i === endIndex) break;
+    }
+  }
+
+  drawClans(g){
+    g.resetTransform();
+
+    g.fillStyle = 'white';
+    g.lineWidth = 2;
+    g.beginPath();
+    g.rect(-FONT_OFFSET, -FONT_OFFSET, CAPTION_BOX_WIDTH + FONT_OFFSET, CAPTION_BOX_HEIGHT + FONT_OFFSET);
+    g.fill();
+    g.stroke();
+
+    g.textBaseline = 'top';
+    g.textAlign = 'left';
+    g.font = `bold ${FONT_SIZE}px arial`;
+    g.fillStyle = cols.text;
+
+    clans.forEach((clan, index) => {
+      var name = clan.name;
+      var points = formatNumber(clan.points);
+
+      var str = `${name}: ${points}`;
+
+      g.fillText(str, FONT_OFFSET, FONT_OFFSET + FONT_SIZE * index);
+    });
+
+    g.textBaseline = 'middle';
+    g.textAlign = 'center';
+  }
+};
+
 class Entity extends O.Vector{
-  constructor(g, ents, x, y, radius, dir){
+  constructor(world, x, y, radius, dir){
     super(x, y);
 
     this.id = id++;
 
-    this.w = g.canvas.width;
-    this.h = g.canvas.height;
-    this.g = g;
-    this.ents = ents;
+    this.world = world;
+    this.g = this.world.g;
+    this.w = this.g.canvas.width;
+    this.h = this.g.canvas.height;
 
     this.radius = radius;
     this.diameter = this.radius * 2;
@@ -50,20 +135,6 @@ class Entity extends O.Vector{
     if(this.dead)
       return;
 
-    /*var playersNum = this.ents.reduce((val, ent) => {
-      if(!(ent instanceof Player) || ent.dead) return val;
-      return val + 1;
-    }, 0);
-    if(playersNum > 50 * 4){
-      console.log('');
-      console.log('playersNum:', playersNum);
-      console.log('clanId:', this.clanId);
-      console.log('clans:', clans.map((a,b)=>this.ents.filter(c=>!c.dead&&(c instanceof Player)&&c.clanId===b).length).join`,`);
-      console.log('food:', ents.filter(a=>a instanceof Food).length);
-      console.log('dead food:', ents.filter(a=>(a instanceof Food)&&a.dead).length);
-      throw 0;
-    }*/
-
     this.tick_(f);
   }
 
@@ -71,7 +142,9 @@ class Entity extends O.Vector{
     if(this.dead)
       return;
 
-    var g = this.g;
+    var g = this.world.g.g;
+
+    g.resetTransform();
 
     g.translate(this.x, this.y);
     g.scale(this.radius, this.radius);
@@ -79,13 +152,11 @@ class Entity extends O.Vector{
 
     g.lineWidth = 1 / this.radius;
 
-    this.draw_(f);
-
-    g.resetTransform();
+    this.draw_(g, f);
   }
 
   nearest(func){
-    var ents = this.ents;
+    var ents = this.world.ents;
     var len = ents.length;
 
     var ent = null;
@@ -152,7 +223,7 @@ class Entity extends O.Vector{
     setTimeout(() => {
       ent.parent = this;
       this.children.push(ent);
-      this.ents.push(ent);
+      this.world.ents.push(ent);
     });
   }
 
@@ -165,21 +236,21 @@ class Entity extends O.Vector{
     setTimeout(() => {
       this.children.forEach(child => child.parent = null);
       if(this.parent !== null) this.parent.children.splice(this.parent.children.indexOf(this), 1);
-      this.ents.splice(this.ents.indexOf(this), 1);
+      this.world.ents.splice(this.world.ents.indexOf(this), 1);
     });
   }
 };
 
 class Player extends Entity{
-  constructor(g, ents, x, y, radius, dir, clanId, isBot = false){
-    super(g, ents, x, y, radius, dir);
+  constructor(world, x, y, radius, dir, clanId, isBot = false){
+    super(world, x, y, radius, dir);
 
     this.clanId = clanId;
     this.clan = clans[this.clanId];
     this.col = this.clan.col;
     this.targetDir = this.dir;
     this.speed = new O.Vector();
-    this.isBot = isBot;
+    this.isBot = isBot ? true : false;
 
     this.baseRadius = this.radius;
     this.points = 0;
@@ -230,7 +301,7 @@ class Player extends Entity{
   }
 
   clone(){
-    var ent = new Player(this.g, this.ents, this.x, this.y, this.baseRadius, this.dir, this.clanId);
+    var ent = new Player(this.g, this.world.ents, this.x, this.y, this.baseRadius, this.dir, this.clanId);
 
     ent.machine.mem.buff = Buffer.from(this.machine.mem.buff);
     this.appendChild(ent);
@@ -245,7 +316,7 @@ class Player extends Entity{
 
     if(f % MUTATION_INTERVAL === 0){
       if(!this.clan.mutated){
-        var ents = this.ents.filter(ent => ent instanceof Player && !ent.dead && ent.clanId === this.clanId);
+        var ents = this.world.ents.filter(ent => ent instanceof Player && !ent.dead && ent.clanId === this.clanId);
         var ent = ents[O.rand(ents.length)];
 
         ent.mutate();
@@ -282,9 +353,7 @@ class Player extends Entity{
     this.boundCoords();
   }
 
-  draw_(f){
-    var g = this.g;
-
+  draw_(g, f){
     g.fillStyle = this.col;
     drawCirc(g, 0, 0, 1);
 
@@ -341,7 +410,7 @@ class Player extends Entity{
   }
 
   calcCollisions(){
-    this.ents.forEach(ent => {
+    this.world.ents.forEach(ent => {
       if(!(ent instanceof Player) || ent.dead || ent.id >= this.id)
         return;
 
@@ -385,7 +454,7 @@ class Player extends Entity{
     this.clan.points++;
     this.updateRadius();
 
-    var ents = this.ents.filter(ent => ent instanceof Player && !ent.dead && ent.clanId === this.clanId && ent !== this);
+    var ents = this.world.ents.filter(ent => ent instanceof Player && !ent.dead && ent.clanId === this.clanId && ent !== this);
 
     if(ents.length !== 0){
       var ent = ents[O.rand(ents.length)];
@@ -427,8 +496,8 @@ class Player extends Entity{
 };
 
 class Gem extends Entity{
-  constructor(g, ents, x, y, radius){
-    super(g, ents, x, y, radius, 0);
+  constructor(world, x, y, radius){
+    super(world, x, y, radius, 0);
 
     this.col = '#ffff00';
   }
@@ -459,9 +528,7 @@ class Gem extends Entity{
     return false;
   }
 
-  draw_(f){
-    var g = this.g;
-
+  draw_(g, f){
     g.fillStyle = this.col;
     drawCirc(g, 0, 0, 1);
   }
@@ -472,15 +539,30 @@ class Gem extends Entity{
   }
 };
 
-initClans();
+optimize();
 
 module.exports = {
+  clans,
+  World,
   Player,
   Gem,
-  clans,
 };
 
-function initClans(){
+function optimize(){
+  optimizeCols();
+  optimizeClans();
+}
+
+function optimizeCols(){
+  var keys = Object.getOwnPropertyNames(cols);
+
+  keys.forEach(key => {
+    var col = cols[key];
+    cols[key] = colorConverter.normalize(col);
+  });
+}
+
+function optimizeClans(){
   clans.forEach(clan => {
     clan.points = 0;
     clan.mutated = false;
@@ -506,12 +588,4 @@ function angleDiff(target, dir){
   else if(diff < -O.pi) diff += O.pi2
 
   return diff;
-}
-
-function rad2deg(rad){
-  return (rad + O.pi2) / O.pi2 % 1 * 360;
-}
-
-function deg2rad(deg){
-  return normalizeDir(deg / 360 * O.pi2);
 }
