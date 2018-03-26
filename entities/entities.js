@@ -6,8 +6,6 @@ var assembler = require('../assembler');
 var colorConverter = require('../color-converter');
 var clans = require('./clans.json');
 
-const BOTS_ENABLED = 0;
-
 const FPS = 60;
 const INSTRUCTIONS_PER_FRAME = 100;
 const MUTATION_INTERVAL = FPS * 10;
@@ -173,7 +171,7 @@ class Entity extends O.Vector{
 };
 
 class Player extends Entity{
-  constructor(g, ents, x, y, radius, dir, clanId){
+  constructor(g, ents, x, y, radius, dir, clanId, isBot = false){
     super(g, ents, x, y, radius, dir);
 
     this.clanId = clanId;
@@ -181,6 +179,7 @@ class Player extends Entity{
     this.col = this.clan.col;
     this.targetDir = this.dir;
     this.speed = new O.Vector();
+    this.isBot = isBot;
 
     this.baseRadius = this.radius;
     this.points = 0;
@@ -194,8 +193,7 @@ class Player extends Entity{
   createMachine(){
     var machine = new assembler.Machine();
 
-    //if(BOTS_ENABLED && this.clanId === 0){
-    if(1){
+    if(this.isBot){
       var assembly = fs.readFileSync(assemblyFile);
       machine.compile(assembly);
     }else{
@@ -312,24 +310,27 @@ class Player extends Entity{
     switch(port % 0x0A){
       case 0x00: val = this.x; break;
       case 0x01: val = this.y; break;
-      case 0x02: val = rad2deg(this.dir); break;
-      case 0x03: val = this.speed.len() / MAX_SPEED * 255; break;
+      case 0x02: val = this.dir; break;
+      case 0x03: val = this.speed.len() / MAX_SPEED; break;
       case 0x04: val = this.distEnt(this.nearest(e => e instanceof Gem)); break;
-      case 0x05: val = rad2deg(this.direction(this.nearest(e => e instanceof Gem))); break;
+      case 0x05: val = this.direction(this.nearest(e => e instanceof Gem)); break;
       case 0x06: val = this.distEnt(this.nearest(e => e instanceof Player && e.clan === this.clan)); break;
-      case 0x07: val = rad2deg(this.direction(this.nearest(e => e instanceof Player && e.clan === this.clan))); break;
+      case 0x07: val = this.direction(this.nearest(e => e instanceof Player && e.clan === this.clan)); break;
       case 0x08: val = this.distEnt(this.nearest(e => e instanceof Player && e.clan !== this.clan)); break;
-      case 0x09: val = rad2deg(this.direction(this.nearest(e => e instanceof Player && e.clan !== this.clan))); break;
+      case 0x09: val = this.direction(this.nearest(e => e instanceof Player && e.clan !== this.clan)); break;
     }
 
-    this.machine.write(Math.round(val), port);
+    this.machine.writef(val, port);
   }
 
   afterOut(val, port){
+    if(isNaN(val) || Math.abs(val) === Infinity)
+      return;
+
     switch(port % 0x02){
-      case 0x00: this.targetDir = deg2rad(val % 360); break;
+      case 0x00: this.targetDir = normalizeDir(val); break;
       case 0x01:
-        var spNew = (val & 255) / 255 * MAX_SPEED;
+        var spNew = O.bound(val, 0, 1) * MAX_SPEED;
         this.speed.combine(spNew, this.dir).maxLen(MAX_SPEED);
         break;
     }
@@ -385,12 +386,14 @@ class Player extends Entity{
     this.updateRadius();
 
     var ents = this.ents.filter(ent => ent instanceof Player && !ent.dead && ent.clanId === this.clanId && ent !== this);
-    var ent = ents[O.rand(ents.length)];
 
-    ent.machine.mem.buff = Buffer.from(this.machine.mem.buff);
-    ent.machine.resetRegs();
+    if(ents.length !== 0){
+      var ent = ents[O.rand(ents.length)];
 
-    ent.mutationTime = MUTATION_DISPLAY_TIME;
+      ent.machine.mem.buff = Buffer.from(this.machine.mem.buff);
+      ent.machine.resetRegs();
+      ent.mutationTime = MUTATION_DISPLAY_TIME;
+    }
   }
 
   mutate(){

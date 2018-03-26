@@ -1,8 +1,8 @@
 Input
   00 - x coordinate
   01 - y coordinate
-  02 - direction (0 - 359)
-  03 - speed (0 - 255)
+  02 - direction
+  03 - speed
   04 - distance to the nearest gem
   05 - direction to the nearest gem
   06 - distance to the nearest friend

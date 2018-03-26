@@ -62,11 +62,11 @@ function render(window){
 
     g.drawImage(canvas, 0, 0);
 
-    return f != framesNum;
+    return f !== framesNum;
   });
 
   function pressLetter(letter){
-    pressKey(`Key${key.toUpperCase()}`);
+    pressKey(`Key${letter.toUpperCase()}`);
   }
 
   function pressKey(key){

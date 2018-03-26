@@ -1,5 +1,31 @@
-loop:
-  5 in
-  0 out
-  255 1 out
-  :loop jmp
+:init jmp
+
+w: _0 _0 _0 _0
+h: _0 _0 _0 _0
+
+init:
+  1920f :w writef
+  1080f :h writef
+
+  :main jmp
+
+main:
+  :calcDir call
+
+  1f 1 outf
+
+  :main jmp
+
+calcDir:
+  :h readf
+  2f divf
+  1 inf subf
+
+  :w readf
+  2f divf
+  0 inf subf
+
+  atan2
+  0 outf
+
+  ret

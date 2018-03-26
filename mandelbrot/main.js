@@ -1,7 +1,5 @@
 'use strict';
 
-throw 0;
-
 var O = require('../framework');
 var media = require('../media');
 

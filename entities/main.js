@@ -18,18 +18,18 @@ var ents = [];
 var FONT_SIZE = HD ? 32 : 16;
 var FONT_OFFSET = 5;
 
-const RADIUS = HD ? 5 : 4;
+const RADIUS = HD ? 10 : 5;
 const DIAMETER = RADIUS * 2;
 
 global.CAPTION_BOX_WIDTH = 250;
-global.CAPTION_BOX_HEIGHT = FONT_OFFSET * 2 + clans.length * FONT_SIZE;
-global.MAX_SPEED = HD ? 3 : 3;
+global.CAPTION_BOX_HEIGHT = FONT_OFFSET * 3 + clans.length * FONT_SIZE;
+global.MAX_SPEED = HD ? 6 : 3;
 
 var w = HD ? 1920 : 640;
 var h = HD ? 1080 : 480;
 var fps = 60;
 var hd = true;
-var duration = HD ? 20 : 20;
+var duration = HD ? 10 : 20;
 var framesNum = fps * duration;
 
 var [wh, hh] = [w, h].map(a => a >> 1);
@@ -42,7 +42,7 @@ var cols = {
 setTimeout(main);
 
 function main(){
-  media.renderVideo('-vid/2.mp4', w, h, fps, hd, (w, h, g, f) => {
+  media.renderVideo('-vid/1.mp4', w, h, fps, hd, (w, h, g, f) => {
     media.logStatus(f, framesNum);
 
     if(f === 1){
@@ -74,25 +74,27 @@ function main(){
 }
 
 function initEnts(g, ents){
-  var num = 100;
-  var rad = (RADIUS * num) / O.pi;
+  var playersPerClan = 1;
+  var pointsNum = 10;
 
-  O.repeat(4, clan => {
+  var rad = (RADIUS * playersPerClan) / O.pi;
+
+  O.repeat(clans.length, clan => {
     var xx = [w * .25, w * .75][clan & 1];
     var yy = [h * .25, h * .75][clan >> 1];
 
-    O.repeat(num, i => {
+    O.repeat(playersPerClan, i => {
       var x = wh + O.randf(1) - .5;
       var y = hh + O.randf(1) - .5;
       var dir = O.randf(O.pi2);
 
-      var ent = new entities.Player(g, ents, x, y, RADIUS, dir, clan);
+      var ent = new entities.Player(g, ents, x, y, RADIUS, dir, clan, clan === 0);
 
       ents.push(ent);
     });
   });
 
-  O.repeat(20, i => {
+  O.repeat(pointsNum, i => {
     var x = RADIUS / 2 + O.randf(w - RADIUS);
     var y = RADIUS / 2 + O.randf(h - RADIUS);
 

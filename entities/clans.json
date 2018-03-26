@@ -11,5 +11,8 @@
   }, {
     "name": "Yellow",
     "col": "#ffff00"
+  }, {
+    "name": "Orange",
+    "col": "#ff8000"
   }
 ]
