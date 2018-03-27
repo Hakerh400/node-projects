@@ -7,6 +7,7 @@ var formatNumber = require('../format-number');
 var colorConverter = require('../color-converter');
 var cols = require('./colors.json');
 var clans = require('./clans.json');
+var prices = require('./prices.json');
 
 const SQRT3 = Math.sqrt(3);
 const EYE_RADIUS = SQRT3 / 8;
@@ -16,19 +17,24 @@ const EYE_PUPIL_POSITION = .5 + EYE_RADIUS - EYE_PUPIL_RADIUS;
 
 var assemblyFile = './assembly.txt';
 
-var id = 0;
+var tileParams = [
+  'clan',
+];
 
 class World{
   constructor(g, tileSize){
     if(!(g instanceof O.EnhancedRenderingContext))
       g = new O.EnhancedRenderingContext(g);
 
+    this.entsStaticId = 0;
+
+    this.tileSize = tileSize;
     this.iw = g.canvas.width;
     this.ih = g.canvas.height;
     this.w = this.iw / tileSize | 0;
     this.h = this.ih / tileSize | 0;
+
     this.g = g;
-    this.tileSize = tileSize;
 
     this.initGrid();
     this.initEnts();
@@ -38,15 +44,14 @@ class World{
     this.grid = new O.TilesGrid(this.g);
     var grid = this.grid;
 
-    grid.bgEnabled = false;
-
+    grid.setTileParams(tileParams);
     grid.setWH(this.w, this.h);
     grid.setSize(this.tileSize);
-    grid.create();
 
-    grid.setDrawFunc((x, y, d, g) => {
-      grid.drawFrame(x, y);
-    });
+    grid.create(this.gridCreateFunc.bind(this));
+    grid.setDrawFunc(this.gridDrawFunc.bind(this));
+
+    this.get = grid.get.bind(grid);
   }
 
   initEnts(){
@@ -56,15 +61,12 @@ class World{
   draw(f){
     var {g, iw, ih, grid, ents} = this;
 
-    g.fillStyle = cols.bg;
-    g.fillRect(0, 0, iw, ih);
+    grid.resize();
+    grid.draw();
 
     for(var i = 0; i < ents.length; i++){
       ents[i].draw(f);
     }
-
-    grid.resize();
-    grid.draw();
 
     this.drawClans(g.g);
   }
@@ -87,7 +89,7 @@ class World{
     g.fillStyle = 'white';
     g.lineWidth = 2;
     g.beginPath();
-    g.rect(-FONT_OFFSET, -FONT_OFFSET, CAPTION_BOX_WIDTH + FONT_OFFSET, CAPTION_BOX_HEIGHT + FONT_OFFSET);
+    g.rect(-FONT_OFFSET, -FONT_OFFSET - .5, CAPTION_BOX_WIDTH + FONT_OFFSET, CAPTION_BOX_HEIGHT + FONT_OFFSET);
     g.fill();
     g.stroke();
 
@@ -108,15 +110,29 @@ class World{
     g.textBaseline = 'middle';
     g.textAlign = 'center';
   }
+
+  gridCreateFunc(x, y){
+    return [-1];
+  }
+
+  gridDrawFunc(x, y, d, g){
+    var {grid} = this;
+
+    if(d.clan !== -1) g.fillStyle = clans[d.clan].col;
+    else g.fillStyle = cols.bg;
+    g.fillRect(x, y, 1, 1);
+
+    grid.drawFrame(x, y);
+  }
 };
 
 class Entity extends O.Vector{
   constructor(world, x, y, radius, dir){
     super(x, y);
 
-    this.id = id++;
-
     this.world = world;
+    this.id = this.world.entsStaticId++;
+
     this.g = this.world.g;
     this.w = this.g.canvas.width;
     this.h = this.g.canvas.height;
@@ -153,6 +169,46 @@ class Entity extends O.Vector{
     g.lineWidth = 1 / this.radius;
 
     this.draw_(g, f);
+  }
+
+  buy(points){
+    if(this.points < points)
+      return false;
+
+    this.points -= points;
+    this.clan.points -= points;
+
+    return true;
+  }
+
+  getTile(){
+    var world = this.world;
+    var tileSize = world.tileSize;
+
+    var x = this.x / tileSize | 0;
+    var y = this.y / tileSize | 0;
+
+    return world.get(x, y);
+  }
+
+  setBlock(){
+    var d = this.getTile();
+    if(d.clan === this.clanId)
+      return;
+
+    if(!this.buy(prices.block))
+      return;
+
+    if(d.clan === -1) d.clan = this.clanId;
+    else d.clan = -1;
+  }
+
+  removeBlock(){
+    var d = this.getTile();
+    if(d.clan === -1)
+      return;
+
+    d.clan = -1;
   }
 
   nearest(func){
@@ -256,6 +312,7 @@ class Player extends Entity{
     this.points = 0;
 
     this.mutationTime = 0;
+    this.paused = false;
 
     this.createMachine();
     this.updateRadius();
@@ -327,8 +384,10 @@ class Player extends Entity{
       this.clan.mutated = false;
     }
 
+    this.paused = false;
     for(var i = 0; i < INSTRUCTIONS_PER_FRAME; i++){
       this.machine.tick();
+      if(this.paused) break;
     }
 
     if(this.dir !== this.targetDir){
@@ -376,17 +435,12 @@ class Player extends Entity{
   beforeIn(port){
     var val;
 
-    switch(port % 0x0A){
+    switch(port % 0x05){
       case 0x00: val = this.x; break;
       case 0x01: val = this.y; break;
       case 0x02: val = this.dir; break;
       case 0x03: val = this.speed.len() / MAX_SPEED; break;
-      case 0x04: val = this.distEnt(this.nearest(e => e instanceof Gem)); break;
-      case 0x05: val = this.direction(this.nearest(e => e instanceof Gem)); break;
-      case 0x06: val = this.distEnt(this.nearest(e => e instanceof Player && e.clan === this.clan)); break;
-      case 0x07: val = this.direction(this.nearest(e => e instanceof Player && e.clan === this.clan)); break;
-      case 0x08: val = this.distEnt(this.nearest(e => e instanceof Player && e.clan !== this.clan)); break;
-      case 0x09: val = this.direction(this.nearest(e => e instanceof Player && e.clan !== this.clan)); break;
+      case 0x04: val = this.direction(this.nearest(ent => ent instanceof Gem)); break;
     }
 
     this.machine.writef(val, port);
@@ -396,11 +450,22 @@ class Player extends Entity{
     if(isNaN(val) || Math.abs(val) === Infinity)
       return;
 
-    switch(port % 0x02){
-      case 0x00: this.targetDir = normalizeDir(val); break;
+    switch(port % 0x03){
+      case 0x00:
+        this.targetDir = normalizeDir(val);
+        break;
+
       case 0x01:
         var spNew = O.bound(val, 0, 1) * MAX_SPEED;
         this.speed.combine(spNew, this.dir).maxLen(MAX_SPEED);
+        break;
+
+      case 0x02:
+        switch((val & 255) % 0x03){
+          case 0x00: this.paused = true; break;
+          case 0x01: this.setBlock(); break;
+          case 0x02: this.removeBlock(); break;
+        }
         break;
     }
   }
@@ -499,7 +564,7 @@ class Gem extends Entity{
   constructor(world, x, y, radius){
     super(world, x, y, radius, 0);
 
-    this.col = '#ffff00';
+    this.col = cols.gem;
   }
 
   respawn(){
@@ -564,6 +629,9 @@ function optimizeCols(){
 
 function optimizeClans(){
   clans.forEach(clan => {
+    var col = clan.col;
+    clan.col = colorConverter.normalize(col);
+
     clan.points = 0;
     clan.mutated = false;
   });

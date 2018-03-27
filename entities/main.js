@@ -21,11 +21,13 @@ global.MUTATION_DISPLAY_TIME = FPS * 1;
 global.FONT_SIZE = HD ? 32 : 16;
 global.FONT_OFFSET = 5;
 
+global.TILE_SIZE = 40;
+
 const RADIUS = HD ? 10 : 5;
 const DIAMETER = RADIUS * 2;
 
-global.CAPTION_BOX_WIDTH = 250;
-global.CAPTION_BOX_HEIGHT = FONT_OFFSET * 3 + clans.length * FONT_SIZE;
+global.CAPTION_BOX_WIDTH = ceilTileSize(250);
+global.CAPTION_BOX_HEIGHT = ceilTileSize(FONT_OFFSET * 3 + clans.length * FONT_SIZE);
 global.MAX_SPEED = HD ? 6 : 3;
 
 global.ROT_SPEED = O.pi * .1;
@@ -35,7 +37,7 @@ var w = HD ? 1920 : 640;
 var h = HD ? 1080 : 480;
 var fps = 60;
 var hd = true;
-var duration = HD ? 1 : 1;
+var duration = HD ? 10 : 1;
 var framesNum = fps * duration;
 
 var [wh, hh] = [w, h].map(a => a >> 1);
@@ -58,14 +60,14 @@ function main(){
 }
 
 function createWorld(g){
-  var world = new worldModule.World(g, 40);
+  var world = new worldModule.World(g, TILE_SIZE);
   createEnts(world);
 
   return world;
 }
 
 function createEnts(world){
-  var playersPerClan = 50;
+  var playersPerClan = 5;
   var pointsNum = 10;
 
   O.repeat(clans.length, clan => {
@@ -76,7 +78,7 @@ function createEnts(world){
       var x = O.randf(w);
       var y = O.randf(h);
       var dir = O.randf(O.pi2);
-      var isBot = 0;
+      var isBot = clan === 0;
 
       var ent = new worldModule.Player(world, x, y, RADIUS, dir, clan, isBot);
 
@@ -131,4 +133,8 @@ function exportEnts(){
     var disassembled = ent.machine.disassemble();
     fs.writeFileSync(txtFilePath, disassembled);
   });
+}
+
+function ceilTileSize(val){
+  return Math.ceil(val / TILE_SIZE) * TILE_SIZE;
 }

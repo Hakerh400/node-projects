@@ -44,10 +44,10 @@ var instructions = {
   neg:     [0x15, (m, a) => m.push(~a & MEM_MAX_ADDR)],
   not:     [0x16, (m, a) => m.push(a === 0 ? 1 : 0)],
 
-  lt:      [0x17, (m, a, b) => {m.push(a); m.push(b); m.push(a < b ? 1 : 0);}],
-  gt:      [0x18, (m, a, b) => {m.push(a); m.push(b); m.push(a > b ? 1 : 0);}],
-  le:      [0x19, (m, a, b) => {m.push(a); m.push(b); m.push(a <= b ? 1 : 0);}],
-  ge:      [0x1A, (m, a, b) => {m.push(a); m.push(b); m.push(a >= b ? 1 : 0);}],
+  ltp:     [0x17, (m, a, b) => {m.push(a); m.push(b); m.push(a < b ? 1 : 0);}],
+  gtp:     [0x18, (m, a, b) => {m.push(a); m.push(b); m.push(a > b ? 1 : 0);}],
+  lep:     [0x19, (m, a, b) => {m.push(a); m.push(b); m.push(a <= b ? 1 : 0);}],
+  gep:     [0x1A, (m, a, b) => {m.push(a); m.push(b); m.push(a >= b ? 1 : 0);}],
 
   min:     [0x1B, (m, a, b) => m.push(Math.min(a, b))],
   max:     [0x1C, (m, a, b) => m.push(Math.min(a, b))],
@@ -60,18 +60,18 @@ var instructions = {
   ret:     [0x21, (m) => m.ret()],
   swap:    [0x22, (m, a, b) => m.swap(a, b)],
 
-  eq:      [0x23, (m, a, b) => {m.push(a); m.push(b); m.push(a === b ? 1 : 0);}],
-  neq:     [0x24, (m, a, b) => {m.push(a); m.push(b); m.push(a !== b ? 1 : 0);}],
+  eqp:     [0x23, (m, a, b) => {m.push(a); m.push(b); m.push(a === b ? 1 : 0);}],
+  neqp:    [0x24, (m, a, b) => {m.push(a); m.push(b); m.push(a !== b ? 1 : 0);}],
 
   readB:   [0x25, (m, a) => m.push(m.mem.buff[a])],
   writeB:  [0x26, (m, a, b) => m.mem.buff[b] = a],
 
-  ltp:     [0x27, (m, a, b) => m.push(a < b ? 1 : 0)],
-  gtp:     [0x28, (m, a, b) => m.push(a > b ? 1 : 0)],
-  lep:     [0x29, (m, a, b) => m.push(a <= b ? 1 : 0)],
-  gep:     [0x2A, (m, a, b) => m.push(a >= b ? 1 : 0)],
-  eqp:     [0x2B, (m, a, b) => m.push(a === b ? 1 : 0)],
-  neqp:    [0x2C, (m, a, b) => m.push(a !== b ? 1 : 0)],
+  lt:      [0x27, (m, a, b) => m.push(a < b ? 1 : 0)],
+  gt:      [0x28, (m, a, b) => m.push(a > b ? 1 : 0)],
+  le:      [0x29, (m, a, b) => m.push(a <= b ? 1 : 0)],
+  ge:      [0x2A, (m, a, b) => m.push(a >= b ? 1 : 0)],
+  eq:      [0x2B, (m, a, b) => m.push(a === b ? 1 : 0)],
+  neq:     [0x2C, (m, a, b) => m.push(a !== b ? 1 : 0)],
 
   inf:     [0x2D, (m, a) => m.pushf(m.inf(a & 255)), [0]],
   outf:    [0x2E, (m, a, b) => m.outf(a, b & 255), [1, 0]],
@@ -96,21 +96,21 @@ var instructions = {
   minusf:  [0x3B, (m, a) => m.pushf(-a), [1]],
   notf:    [0x3C, (m, a) => m.push(a === 0 ? 1 : 0), [1]],
 
-  ltf:     [0x3D, (m, a, b) => {m.pushf(a); m.pushf(b); m.push(a < b ? 1 : 0);}, [1, 1]],
-  gtf:     [0x3E, (m, a, b) => {m.pushf(a); m.pushf(b); m.push(a > b ? 1 : 0);}, [1, 1]],
-  lef:     [0x3F, (m, a, b) => {m.pushf(a); m.pushf(b); m.push(a <= b ? 1 : 0);}, [1, 1]],
-  gef:     [0x40, (m, a, b) => {m.pushf(a); m.pushf(b); m.push(a >= b ? 1 : 0);}, [1, 1]],
+  ltpf:    [0x3D, (m, a, b) => {m.pushf(a); m.pushf(b); m.push(a < b ? 1 : 0);}, [1, 1]],
+  gtpf:    [0x3E, (m, a, b) => {m.pushf(a); m.pushf(b); m.push(a > b ? 1 : 0);}, [1, 1]],
+  lepf:    [0x3F, (m, a, b) => {m.pushf(a); m.pushf(b); m.push(a <= b ? 1 : 0);}, [1, 1]],
+  gepf:    [0x40, (m, a, b) => {m.pushf(a); m.pushf(b); m.push(a >= b ? 1 : 0);}, [1, 1]],
 
-  ltpf:    [0x41, (m, a, b) => m.push(a < b ? 1 : 0), [1, 1]],
-  gtpf:    [0x42, (m, a, b) => m.push(a > b ? 1 : 0), [1, 1]],
-  lepf:    [0x43, (m, a, b) => m.push(a <= b ? 1 : 0), [1, 1]],
-  gepf:    [0x44, (m, a, b) => m.push(a >= b ? 1 : 0), [1, 1]],
+  ltf:     [0x41, (m, a, b) => m.push(a < b ? 1 : 0), [1, 1]],
+  gtf:     [0x42, (m, a, b) => m.push(a > b ? 1 : 0), [1, 1]],
+  lef:     [0x43, (m, a, b) => m.push(a <= b ? 1 : 0), [1, 1]],
+  gef:     [0x44, (m, a, b) => m.push(a >= b ? 1 : 0), [1, 1]],
 
-  eqf:     [0x45, (m, a, b) => {m.pushf(a); m.pushf(b); m.push(a === b ? 1 : 0);}, [1, 1]],
-  neqf:    [0x46, (m, a, b) => {m.pushf(a); m.pushf(b); m.push(a !== b ? 1 : 0);}, [1, 1]],
+  eqpf:    [0x45, (m, a, b) => {m.pushf(a); m.pushf(b); m.push(a === b ? 1 : 0);}, [1, 1]],
+  neqpf:   [0x46, (m, a, b) => {m.pushf(a); m.pushf(b); m.push(a !== b ? 1 : 0);}, [1, 1]],
 
-  eqpf:    [0x47, (m, a, b) => m.push(a === b ? 1 : 0), [1, 1]],
-  neqpf:   [0x48, (m, a, b) => m.push(a !== b ? 1 : 0), [1, 1]],
+  eqf:     [0x47, (m, a, b) => m.push(a === b ? 1 : 0), [1, 1]],
+  neqf:    [0x48, (m, a, b) => m.push(a !== b ? 1 : 0), [1, 1]],
 
   minf:    [0x49, (m, a, b) => m.push(Math.min(a, b)), [1, 1]],
   maxf:    [0x4A, (m, a, b) => m.push(Math.min(a, b)), [1, 1]],
@@ -163,6 +163,12 @@ var instructions = {
   push2f:  [0x73, (m, a, b) => {m.pushf(a); m.pushf(b); m.pushf(a); m.pushf(b);}, [1, 1]],
 
   modf:    [0x74, (m, a, b) => m.pushf(a % b), [1, 1]],
+
+  argGet:  [0x75, (m, a) => m.push(m.argGet(a))],
+  argSet:  [0x76, (m, a, b) => m.argSet(a, b)],
+
+  argGetf: [0x77, (m, a) => m.push(m.argGetf(a)), [0]],
+  argSetf: [0x78, (m, a, b) => m.argSetf(a, b), [1, 0]],
 };
 
 optimizeInstructions();
@@ -469,8 +475,8 @@ class Machine{
   }
 
   swap(index1, index2){
-    var addr1 = this.regs.sp + (index1 << 1) & MEM_MAX_ADDR;
-    var addr2 = this.regs.sp + (index2 << 1) & MEM_MAX_ADDR;
+    var addr1 = this.regs.sp + index1 & MEM_MAX_ADDR;
+    var addr2 = this.regs.sp + index2 & MEM_MAX_ADDR;
 
     var val1 = this.mem.read(addr1);
     var val2 = this.mem.read(addr2);
@@ -480,14 +486,30 @@ class Machine{
   }
 
   swapf(index1, index2){
-    var addr1 = this.regs.sp + (index1 << 1) & MEM_MAX_ADDR;
-    var addr2 = this.regs.sp + (index2 << 1) & MEM_MAX_ADDR;
+    var addr1 = this.regs.sp + index1 & MEM_MAX_ADDR;
+    var addr2 = this.regs.sp + index2 & MEM_MAX_ADDR;
 
     var val1 = this.mem.readf(addr1);
     var val2 = this.mem.readf(addr2);
 
     this.mem.writef(val1, addr2);
     this.mem.writef(val2, addr1);
+  }
+
+  argGet(index){
+    return this.mem.read(this.regs.sp + index + 2 & MEM_MAX_ADDR);
+  }
+
+  argSet(val, index){
+    return this.mem.write(val, this.regs.sp + index + 2 & MEM_MAX_ADDR);
+  }
+
+  argGetf(index){
+    return this.mem.readf(this.regs.sp + index + 2 & MEM_MAX_ADDR);
+  }
+
+  argSetf(val, index){
+    return this.mem.writef(val, this.regs.sp + index + 2 & MEM_MAX_ADDR);
   }
 
   debug(opCode){

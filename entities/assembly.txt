@@ -1,24 +1,25 @@
 :init jmp
 
-w: _0 _0 _0 _0
-h: _0 _0 _0 _0
+data:
+  w: _0 _0 _0 _0
+  h: _0 _0 _0 _0
 
 init:
   1920f :w writef
   1080f :h writef
 
-  :main jmp
+  :loop jmp
+
+loop:
+  :main call
+  0x00 0x02 out
+  :loop jmp
 
 main:
-  :calcDir call
-
-  1f 1 outf
-
-  :main jmp
-
-calcDir:
-  2 inf
-  .01f addf
-  0 outf
+  0x04 inf
+  0x00 outf
+  
+  1f 0x01 outf
+  0x01 0x02 out
 
   ret

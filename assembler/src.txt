@@ -1,10 +1,45 @@
-0 inf
-1 inf
+12345
 
-0 2 swapf
-push2f
-atan2
-0 outf
+:0 call
+0 out
 
-hypot
-1 outf
+0:
+  0 argGet
+  0
+  :1 jmp
+
+  1:
+    0 2 swap
+    push :2 jz
+    push 10 mod
+
+    0 4 swap
+    2 add
+
+    0 2 swap
+    10 div
+    0 2 swap
+
+    :1 jmp
+
+  2:
+    0 2 swap
+    :3 jmp
+
+  3:
+    push :4 jz
+
+    push argGet
+    0 4 swap
+    10 mul
+    2 4 swap
+    add
+    0 2 swap
+    2 sub
+
+    :3 jmp
+
+  4:
+    pop
+    0 out
+    ret

@@ -36,8 +36,26 @@ function render(window){
   media.renderVideo('-vid/1.mp4', w, h, fps, hd, (w, h, g, f) => {
     logStatus(f, framesNum);
 
-    if(f !== 1){
-      O.repeat(speed, sp => {
+    if(f === 1){
+      var m = Math.max(w, h);
+      var offset = 3;
+
+      O.repeat(m, i => {
+        set(i, offset);
+        set(i, h - offset);
+        set(offset, i);
+        set(w - offset, i);
+
+        function set(x, y){
+          window.emit('mousemove', {clientX: x, clientY: y});
+          O.repeat(2, () => pressLetter('x'));
+        }
+      });
+
+      pressKey('Enter');
+      pressLetter('s');
+
+      /*O.repeat(speed, sp => {
         var ff = (f - 1) * speed + sp;
 
         var t = ff % (fps * 3) + 1;
@@ -55,14 +73,17 @@ function render(window){
 
           pressKey('Enter');
         }
-      });
+      });*/
+    }else{
+      window.emit('_raf');
     }
 
     pressLetter('d');
 
     g.drawImage(canvas, 0, 0);
 
-    return f !== framesNum;
+    //return f !== framesNum;
+    return window._rafEvents.length !== 0;
   });
 
   function pressLetter(letter){

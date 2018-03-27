@@ -3,6 +3,7 @@ Input
   01 - y coordinate
   02 - direction
   03 - speed
+  04 - direction to the nearest gem
 
 Output
   00 - direction
