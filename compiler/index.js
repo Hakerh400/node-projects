@@ -3,16 +3,24 @@
 var fs = require('fs');
 var path = require('path');
 var O = require('../framework');
+var dataTypes = require('./data-types.json');
+var keywords = require('./keywords.json');
+
+const TAB_SIZE = 4;
 
 const CWD = process.cwd();
 const NATIVE_LIBS_DIR = joinNormalize(CWD, 'native-libs');
 const MAIN_HEADER = 'main.h';
 
 const WHITE_SPACE_CHARS = ' \r\n\t'
+const SUPPORTED_CHARS = getSupportedChars();
 const LETTERS_NON_CAP = O.ca(26, i => String.fromCharCode('a'.charCodeAt(0) + i)).join``;
 const LETTERS_CAP = LETTERS_NON_CAP.toUpperCase();
 const LETTERS = LETTERS_NON_CAP + LETTERS_CAP;
-const SUPPORTED_CHARS = getSupportedChars();
+const DIGITS = O.ca(10, i => String.fromCharCode('0'.charCodeAt(0) + i)).join``;
+const DIGITS_HEX = DIGITS + [...LETTERS].filter(a => /[a-f]/i.test(a)).join``;
+const IDENT_CHARS_FIRST = LETTERS + '_';
+const IDENT_CHARS = IDENT_CHARS_FIRST + DIGITS;
 
 var nativeLibs = getNativeLibs();
 
@@ -76,7 +84,8 @@ function compileDir(dirPath){
 }
 
 function link(compiled){
-  return compiled[0];
+  var linker = new Linker(compiled);
+  return linker.link();
 }
 
 class Source{
@@ -112,7 +121,6 @@ class Source{
     this.csrc = this.src;
     this.hsrcs = [];
 
-    this.funcs = [];
     this.globalVars = [];
   }
 
@@ -201,27 +209,263 @@ class Source{
     return null;
   }
 
-  compile(){
-    var asm = this.parse();
-    var compiled = new Compiled(asm);
+  getGlobalVar(name){
+    for(var i = 0; i < this.globalVars.length; i++){
+      if(this.globalVars[i].name === name)
+        return this.globalVars[i];
+    }
 
-    return compiled;
+    return null;
+  }
+
+  compile(){
+    return this.parse();
   }
 
   parse(){
     this.includeFiles();
     this.parser = new Parser(this);
 
-    var parser = this.parser;
-    var asm = [];
+    var {parser} = this;
 
     while(!parser.eof){
-      var ident = parser.letters(1);
-      if(ident === null) break;
-      asm.push(ident);
+      var vari = this.parseGlobalVar();
+
+      if(!this.globalVars.includes(vari))
+        this.globalVars.push(vari);
     }
 
-    return asm.join`\n`;
+    return this.globalVars;
+  }
+
+  parseGlobalVar(){
+    var {parser} = this;
+
+    parser.trim();
+    parser.save();
+    var type = this.parseType(1);
+
+    parser.trim();
+    var name = parser.nonKeyword(1);
+    if(name === null) this.err('Missing variable or function name');
+
+    var vari = this.getGlobalVar(name);
+
+    if(vari !== null){
+      if(!vari.sameType(type)){
+        parser.restore();
+        this.err('Type mismatch');
+      }else if(vari.val !== null){
+        parser.restore();
+        this.err('The variable has already been initialized');
+      }
+      parser.discard();
+    }
+
+    parser.trim();
+    var char = parser.char(0);
+    var isFunc = char === '(';
+
+    if(vari !== null){
+      if(vari.isFunc && !isFunc) this.err('Expected function definition');
+      if(!vari.isFunc && isFunc) this.err('Expected variable initialization');
+    }
+
+    switch(char){
+      case ';':
+        if(vari !== null) this.err('Multiple declarations found');
+        parser.char(1);
+        vari = new Variable(type, name);
+        break;
+
+      case '=':
+        if(vari === null) this.err('Declaration is required before initialization');
+        if(type.asts !== 0) this.err('Cannot perform constant initialization on pointer type');
+        if(type.name === 'void') this.err('Cannot perform constant initialization on void type');
+
+        parser.char(1);
+        var constLiteral = this.parseConstantLiteral(type);
+        vari.assign(constLiteral);
+        break;
+
+      case '(':
+        var args = this.parseFormalArgs(vari);
+
+        parser.trim();
+        char = parser.char(0);
+
+        if(vari === null){
+          if(char !== ';') this.err('Expected `;`');
+          vari = new Function(type, name);
+          vari.setFormalArgs(args);
+        }else{
+          if(char !== '{') this.err('Expected `{`');
+        }
+
+        if(char === '{'){
+          var funcDef = this.parseFuncDef(vari);
+          vari.setDef(funcDef);
+        }else{
+          parser.char(1);
+        }
+        break;
+
+      default:
+        this.err('Expected `;`, `=` or `(`');
+        parser.char(1);
+        break;
+    }
+
+    return vari;
+  }
+
+  parseType(allowVoid = 0){
+    var {parser} = this;
+
+    parser.trim();
+    if(!allowVoid)
+      parser.save();
+
+    var type = parser.type(1);
+    if(type === null) this.err('Unrecognized type');
+    var asts = parser.countAsterisks(1);
+
+    if(!allowVoid){
+      if(type === 'void' && asts === 0){
+        parser.restore();
+        this.err('Illegal use of `void` type');
+      }else{
+        parser.discard();
+      }
+    }
+
+    return new Type(type, asts);
+  }
+
+  parseConstantLiteral(type){
+    var {parser} = this;
+
+    parser.trim();
+
+    var vari = new Variable(type);
+    var val = null;
+
+    switch(type.name){
+      case 'char':
+        this.err('Char not supported');
+        break;
+
+      case 'float':
+        this.err('Float not supported');
+        break;
+
+      case 'int':
+        val = parser.integer(1);
+        if(val === null) this.err('Expected integer');
+        vari.assign(val);
+        break;
+
+      case 'void':
+        this.err('Void not supported');
+        break;
+    }
+
+    parser.trim();
+    if(parser.char(0) !== ';')
+      this.err('Expected `;`');
+
+    parser.char(1);
+
+    return vari;
+  }
+
+  parseFormalArgs(vari = null){
+    var {parser} = this;
+    var src = this
+
+    parser.trim();
+    if(vari !== null)
+      parser.save();
+
+    var char = parser.char(0);
+    if(char !== '(') this.err('Expected `(`');
+    parser.char(1);
+
+    var args = [];
+
+    while(!parser.eof){
+      var type = this.parseType(0);
+      var name = parseArgName();
+
+      var v = new Variable(type, name);
+      args.push(v);
+
+      parser.trim();
+      var char = parser.char(0);
+
+      if(char === ','){
+        parser.char(1);
+        continue;
+      }else if(char === ')'){
+        parser.char(1);
+        break;
+      }else{
+        this.err('Expected `,` or `)`');
+      }
+    }
+
+    if(vari !== null){
+      if(!vari.sameFormalArgs(args)){
+        parser.restore();
+        this.err('Formal arguments mismatch');
+      }else{
+        parser.discard();
+      }
+    }
+
+    return args;
+
+    function parseArgName(){
+      parser.trim();
+      parser.save();
+
+      var name = parser.nonKeyword(1);
+      if(name === null) src.err('Missing argument name');
+
+      var isDupe = args.some(arg => arg.name === name);
+
+      if(isDupe){
+        parser.restore();
+        src.err('Duplicate argument names are not allowed')
+      }else{
+        parser.discard();
+      }
+
+      return name;
+    }
+  }
+
+  parseFuncDef(vari){
+    var {parser} = this;
+
+    parser.trim();
+    var char = parser.char(0);
+    if(char !== '{') this.err('Expected `{`');
+    parser.char(1);
+
+    var args = vari.formalArgs;
+    var funcDef = new FunctionDefinition(vari);
+
+    while(!parser.eof){
+      if(parser.char(1) === '}')
+        break;
+    }
+
+    return funcDef;
+  }
+
+  err(msg = null){
+    this.parser.err(msg);
   }
 };
 
@@ -243,6 +487,8 @@ class Parser{
     this.indexStack = [];
     this.eolStack = [];
     this.eofStack = [];
+
+    this.trimEnabled = true
   }
 
   save(){
@@ -266,6 +512,14 @@ class Parser{
     this.eofStack.pop();
   }
 
+  enableTrim(){
+    this.trimEnabled = true;
+  }
+
+  disableTrim(){
+    this.trimEnabled = false;
+  }
+
   char(modify){
     if(this.eof) return null;
 
@@ -277,22 +531,17 @@ class Parser{
     var char = null;
 
     if(this.eol){
-      if(this.lineIndex !== this.src.length - 1){
-        char = '\n';
+      char = '\n';
 
-        this.lineIndex++;
-        this.index = 0;
-        this.eol = this.src[this.lineIndex].length === 0;
-      }else{
-        this.eof = true;
-      }
+      this.lineIndex++;
+      this.index = 0;
+      this.eol = this.src[this.lineIndex].length === 0;
     }else{
       char = this.src[this.lineIndex][this.index++];
-      this.eol = this.index === this.src[this.lineIndex].length;
-    }
 
-    if(char !== null && !(char in SUPPORTED_CHARS))
-      throw this.err('Invalid character');
+      this.eol = this.index === this.src[this.lineIndex].length;
+      this.eof = this.lineIndex === this.src.length - 1;
+    }
 
     return char;
   }
@@ -326,7 +575,7 @@ class Parser{
     this.save();
 
     if(trim)
-      thris.trim();
+      this.trim();
 
     var str = '';
     var char;
@@ -348,7 +597,7 @@ class Parser{
   }
 
   trim(comments = 1){
-    if(this.eof)
+    if(this.eof || !this.trimEnabled)
       return;
 
     do{
@@ -449,6 +698,107 @@ class Parser{
     return this.chars(modify, LETTERS);
   }
 
+  digits(modify){
+    return this.chars(modify, DIGITS);
+  }
+
+  hexDigits(modify){
+    return this.chars(modify, DIGITS_HEX);
+  }
+
+  ident(modify, strArr = null, exclude = 0){
+    if(this.eof) return null;
+    this.save();
+    this.trim();
+
+    var str = '';
+    var char;
+
+    char = this.char(1);
+
+    if(IDENT_CHARS_FIRST.includes(char)){
+      str += char;
+
+      if(IDENT_CHARS.includes(this.char(0)))
+        str += this.chars(1, IDENT_CHARS);
+    }
+
+    if(str.length === 0){
+      str = null;
+    }else{
+      if(strArr !== null){
+        if(!strArr.includes(str) ^ exclude)
+          str = null;
+      }
+    }
+
+    if(!modify || str === null) this.restore();
+    else this.discard();
+
+    return str;
+  }
+
+  keyword(modify){
+    return this.ident(modify, keywords);
+  }
+
+  nonKeyword(modify){
+    return this.ident(modify, keywords, 1);
+  }
+
+  type(modify){
+    return this.ident(modify, dataTypes);
+  }
+
+  countAsterisks(modify){
+    this.save();
+
+    var num = 0;
+
+    while(1){
+      this.trim();
+      var char = this.char(0);
+      if(char !== '*') break;
+      this.char(1);
+      num++;
+    }
+
+    if(!modify) this.restore();
+    else this.discard();
+
+    return num;
+  }
+
+  integer(modify){
+    if(this.eof) return null;
+
+    this.save();
+    this.trim();
+    this.disableTrim();
+
+    var str = '';
+
+    var sign = this.char(0);
+    if(sign === '+' || sign === '-') this.char(1);
+    else sign = '';
+
+    var s = this.str(2, 0);
+    var isHex = s === '0x' || s === '0X';
+
+    if(isHex) this.str(2, 1);
+    else s = '';
+
+    var digits = isHex ? this.hexDigits(1) : this.digits(1);
+    if(digits !== null) str = sign + s + digits;
+
+    if(str.length === 0) str = null;
+    if(!modify || str === null) this.restore();
+    else this.discard();
+
+    this.enableTrim();
+    return str;
+  }
+
   err(msg = null){
     var hs = this.source.hsrcs;
     var filePath = this.filePath;
@@ -466,7 +816,7 @@ class Parser{
 
     var str = `${filePath}:${lineNum + 1}:${this.index}\n\n`;
     str += `${this.src[this.lineIndex]}\n\n`;
-    str += `${'^'.padStart(this.index)}`;
+    str += `${'^'.padStart(this.index + 1)}`;
 
     if(msg !== null)
       str += `\n\n${msg}`;
@@ -475,17 +825,255 @@ class Parser{
   }
 };
 
-class Compiled{
+class Linker{
+  constructor(srcs){
+    this.setSrc(srcs);
+
+    this.asm = new Assembler();
+    this.mcode = new MachineCode();
+  }
+
+  setSrc(srcs){
+    this.src = [];
+    var {src} = this;
+
+    srcs.forEach(vars => {
+      vars.forEach(vari => {
+        if(!vari.isFunc){
+          if(vari.val === null) return;
+
+          var v = this.getVar(vari);
+          if(v !== null && v.val !== null)
+            this.err(`Multiple initializations for global variable "${vari.name}"`);
+
+          src.push(vari);
+        }else{
+          if(vari.val === null) return;
+
+          var v = this.getVar(vari);
+          if(v !== null && v.val !== null)
+            this.err(`Multiple definitions for function "${vari.name}"`);
+
+          src.push(vari);
+        }
+      });
+    });
+  }
+
+  getVar(name){
+    if(name instanceof Variable)
+      name = name.name;
+
+    for(var i = 0; i < this.src.length; i++){
+      if(this.src[i].name === name)
+        return this.src[i];
+    }
+
+    return null;
+  }
+
+  link(){
+    var {srcs, asm} = this;
+
+    this.processVars();
+    //this.processFuncs();
+
+    return this.compile();
+  }
+
+  processVars(){
+    var {srcs, asm} = this;
+
+    var vars;
+  }
+
+  compile(){
+    this.mcode.compile(this.asm);
+    return this.mcode;
+  }
+
+  err(msg){
+    msg = `ERROR: ${msg}`;
+    error(msg);
+  }
+};
+
+class Assembler{
+  constructor(src = null){
+    this.src = src;
+    this.indent = 0;
+    this.arr = [];
+  }
+
+  add(str){
+    str = `${' '.repeat(this.indent * TAB_SIZE)}${str}`;
+    this.arr.push(str);
+  }
+
+  inst(inst){
+    this.add(`${inst}`);
+  }
+
+  label(label){
+    var indent = this.indent;
+    if(this.indent !== 0) this.decIndent();
+
+    label = `${label}:`;
+    this.add(label);
+
+    this.setIndent(indent);
+  }
+
+  setSrc(src){
+    this.src = src;
+  }
+
+  setIndent(indent){
+    this.indent = indent;
+  }
+
+  incIndent(){
+    this.indent++;
+  }
+
+  decIndent(){
+    if(this.indent === 0)
+      throw new RangeError('Invalid indentation level');
+
+    this.indent--;
+  }
+
+  toString(){
+    return this.arr.join`\n`;
+  }
+};
+
+class MachineCode{
   constructor(asm = null, hex = null){
+    if(asm instanceof Assembler)
+      asm = asm.toString();
+
     this.asm = asm;
     this.hex = hex;
+  }
 
-    if(this.hex !== null)
-      this.hex = Buffer.from(this.hex);
+  compile(asm = null){
+    if(asm instanceof Assembler)
+      asm = asm.toString();
 
-    if(this.asm !== null && this.hex === null){
-      this.hex = Buffer.alloc(0);
-    }
+    if(asm !== null) this.asm = asm;
+    else asm = this.asm;
+
+    if(asm === null)
+      throw new TypeError('Cannot process `null` assembly data');
+
+    this.hex = Buffer.alloc(0);
+
+    return this.hex;
+  }
+};
+
+class Type{
+  constructor(name, asts = 0){
+    this.name = name;
+    this.asts = asts;
+  }
+
+  sameType(type){
+    if(type instanceof Variable)
+      type = type.type;
+
+    if(type === null)
+      throw new TypeError('Cannot compare `null` types');
+
+    return this.name === type.name && this.asts === type.asts;
+  }
+
+  toString(){
+    return `${this.name}${'*'.repeat(this.asts)}`;
+  }
+};
+
+class Variable{
+  constructor(type = null, name = null, val = null){
+    this.name = name;
+    this.type = type;
+    this.val = val;
+
+    this.isFunc = false;
+  }
+
+  sameType(type){
+    if(this.type === null)
+      throw new TypeError('Cannot compare `null` types');
+
+    return this.type.sameType(type);
+  }
+
+  assign(val){
+    if(val instanceof Variable)
+      val = val.val;
+
+    this.val = val;
+  }
+
+  toString(){
+    var str = `${this.type} ${this.name}`;
+    if(this.val !== null) str += ` = ${this.val}`;
+    return str;
+  }
+};
+
+class Function extends Variable{
+  constructor(type = null, name = null, val = null){
+    super(type, name, val);
+
+    this.isFunc = true;
+    this.formalArgs = null;
+  }
+
+  setFormalArgs(args){
+    this.formalArgs = args;
+  }
+
+  sameFormalArgs(args){
+    if(args instanceof Function)
+      args = args.formalArgs;
+
+    if(this.formalArgs === null || args === null)
+      throw new TypeError('Cannot compare `null` types');
+
+    if(this.formalArgs.length !== args.length)
+      return false;
+
+    return this.formalArgs.every((arg, i) => {
+      return arg.name === args[i].name && arg.sameType(args[i]);
+    });
+  }
+
+  setDef(def){
+    this.assign(def);
+  }
+
+  toString(){
+    return `${this.type} ${this.name}${this.stringifyFormalArgs()}`;
+  }
+
+  stringifyFormalArgs(){
+    if(this.formalArgs === null)
+      return 'null';
+
+    var str = this.formalArgs.map(arg => {
+      return arg.toString();
+    }).join`, `;
+
+    return `(${str})`;
+  }
+};
+
+class FunctionDefinition{
+  onstructor(){
+    /**/
   }
 };
 
