@@ -1,5 +1,6 @@
 'use strict';
 
+var O = require('../framework');
 var media = require('../media');
 var {Canvas, registerFont} = require('./node_modules/canvas');
 
@@ -11,8 +12,11 @@ media.renderImage('-img/1.png', w, h, (w, h, g1) => {
 
   g.fillStyle = 'white';
   g.fillRect(0, 0, w, h);
-  g.fillStyle = 'red';
-  g.fillRect(0, 0, 10, 10);
+
+  g.beginPath();
+  O.repeat(1e3, () => g.lineTo(O.randf(w), O.randf(h)));
+  g.stroke();
+
   g.drawImage(g.canvas, 10, 10);
 
   /////////////////////////////////////////////////////////////////

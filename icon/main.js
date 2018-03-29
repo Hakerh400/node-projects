@@ -18,7 +18,7 @@ function main(){
     var [wh, hh] = [w, h].map(a => a >> 1);
     var wOffset = w * offset2;
 
-    g.fillStyke = 'white';
+    g.fillStyle = 'white';
     g.fillRect(0, 0, w, h);
 
     g.textBaseline = 'middle';

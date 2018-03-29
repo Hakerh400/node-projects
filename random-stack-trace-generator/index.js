@@ -17,8 +17,7 @@ function getIdents(){
   if(idents === null) idents = [];
   else idents.length = 0;
 
-  processScripts(O.dirs.projects);
-  processScripts(O.dirs.wamp);
+  processScripts('C:/Users/Thomas/Downloads/1');
 
   O.sortAsc(idents);
 
@@ -75,7 +74,7 @@ function generate(linesNum){
       '[', randDigits(5), ']',
       O.rand(20) === 0 ? 'ERROR' : 'INFO', ': ',
       randFuncName(2),
-      O.rand(5) === 0 ? ` [${randFuncName(1)}] ` : '',
+      O.rand(5) === 0 ? ` [${randFuncName(1)}] ` : '.',
       randFuncName(2),
       randVersion(),
       ` (${randFileName()})`,
@@ -84,18 +83,6 @@ function generate(linesNum){
 }
 
 function randFuncName(minLen){
-  var identsNum = randInt(minLen);
-
-  var str = O.ca(identsNum, index => {
-    var ident = randIdent();
-    if(index !== 0) ident = O.capitalize(ident);
-    return ident;
-  });
-
-  return str.join``;
-}
-
-function randClassName(minLen){
   var identsNum = randInt(minLen);
 
   var str = O.ca(identsNum, index => {
@@ -161,7 +148,10 @@ function randFileName(ext = 'cc'){
 }
 
 function randIdent(){
-  return idents[O.rand(idents.length)];
+  var index = O.rand(idents.length);
+  var ident = idents[index];
+
+  return ident;
 }
 
 function randInt(min){
