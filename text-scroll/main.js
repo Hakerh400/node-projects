@@ -63,6 +63,5 @@ function main(){
 }
 
 function generateLine(i){
-  var a = require('../random-stack-trace-generator');
-  return a.generate(1);
+  return `${i + 1}`;
 }
