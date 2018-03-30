@@ -12,7 +12,7 @@ const FFMPEG_DIR = 'C:/Program Files/Ffmpeg/bin/original';
 const BGRA = '-f rawvideo -pix_fmt bgra';
 const RGBA = '-f rawvideo -pix_fmt rgba';
 const TRUNC = '-vf "scale=trunc(iw/2)*2:trunc(ih/2)*2"';
-const HD_PRESET = '-c:v libx264 -preset slow -profile:v high -crf 18 -coder 1 -pix_fmt yuv420p -movflags +faststart -g 30 -bf 2 -c:a aac -b:a 384k -profile:a aac_low';
+const HD_PRESET = '-c:v libx264 -preset slow -profile:v high -crf 18 -coder 1 -pix_fmt yuv420p -movflags +faststart -bf 2 -c:a aac -b:a 384k -profile:a aac_low';
 
 var procsNum = 0;
 

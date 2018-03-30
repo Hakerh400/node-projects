@@ -14,7 +14,8 @@ var framesNum = fps * duration;
 
 var url = '/?project=grid';
 
-var speed = 5;
+var speed = 1;
+var interval = fps;
 
 setTimeout(main);
 
@@ -36,54 +37,38 @@ function render(window){
   media.renderVideo('-vid/1.mp4', w, h, fps, hd, (w, h, g, f) => {
     logStatus(f, framesNum);
 
-    if(f === 1){
-      var m = Math.max(w, h);
-      var offset = 3;
+    O.repeat(speed, sp => {
+      var ff = (f - 1) * speed + sp;
+      var t = ff % interval + 1;
 
-      O.repeat(m, i => {
-        set(i, offset);
-        set(i, h - offset);
-        set(offset, i);
-        set(w - offset, i);
+      if(t <= interval - 1){
+        if(Math.random() > .1){
+          var x = randX();
+          var y = randY();
+          var btn = [0, 2][O.rand(2)];
+          var obj = {clientX: x, clientY: y, button: btn};
 
-        function set(x, y){
-          window.emit('mousemove', {clientX: x, clientY: y});
-          O.repeat(2, () => pressLetter('x'));
+          var type = O.rand(4);
+          var code = [null, 'KeyB', 'KeyW', 'KeyX'][type];
+
+          if(type !== 0) window.emit('keydown', {code});
+          window.emit('mousedown', obj);
+          window.emit('mouseup', obj);
+          if(type !== 0) window.emit('keyup', {code});
         }
-      });
+      }else{
+        xx = O.rand(w - size);
+        yy = O.rand(h - size);
 
-      pressKey('Enter');
-      pressLetter('s');
+        pressKey('Enter');
+      }
+    });
 
-      /*O.repeat(speed, sp => {
-        var ff = (f - 1) * speed + sp;
-
-        var t = ff % (fps * 3) + 1;
-
-        if(t <= 179){
-          if(Math.random() > .1){
-            window.emit('mousedown', {button: [0, 2][O.rand(2)], clientX: randX(), clientY: randY()});
-          }else{
-            window.emit('mousemove', {clientX: randX(), clientY: randY()});
-            pressLetter('wbx'[O.rand(2)]);
-          }
-        }else{
-          xx = O.rand(w - size);
-          yy = O.rand(h - size);
-
-          pressKey('Enter');
-        }
-      });*/
-    }else{
-      window.emit('_raf');
-    }
-
-    pressLetter('d');
+    pressKey('Digit1');
 
     g.drawImage(canvas, 0, 0);
 
-    //return f !== framesNum;
-    return window._rafEvents.length !== 0;
+    return f !== framesNum;
   });
 
   function pressLetter(letter){
