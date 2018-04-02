@@ -108,6 +108,10 @@ class Document{
   createTextNode(text){
     return new Text(text);
   }
+
+  querySelector(selector){
+    return new Node(this, 'div');
+  }
 };
 
 class Node extends EventTarget{
@@ -123,6 +127,10 @@ class Node extends EventTarget{
 
   appendChild(node){
     this.children.push(node);
+  }
+
+  remove(){
+    /**/
   }
 };
 

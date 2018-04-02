@@ -164,11 +164,11 @@ var instructions = {
 
   modf:    [0x74, (m, a, b) => m.pushf(a % b), [1, 1]],
 
-  argGet:  [0x75, (m, a) => m.push(m.argGet(a))],
-  argSet:  [0x76, (m, a, b) => m.argSet(a, b)],
+  varGet:  [0x75, (m, a) => m.push(m.varGet(a))],
+  varSet:  [0x76, (m, a, b) => m.varSet(a, b)],
 
-  argGetf: [0x77, (m, a) => m.push(m.argGetf(a)), [0]],
-  argSetf: [0x78, (m, a, b) => m.argSetf(a, b), [1, 0]],
+  varGetf: [0x77, (m, a) => m.push(m.varGetf(a)), [0]],
+  varSetf: [0x78, (m, a, b) => m.varSetf(a, b), [1, 0]],
 };
 
 optimizeInstructions();
@@ -496,20 +496,20 @@ class Machine{
     this.mem.writef(val2, addr1);
   }
 
-  argGet(index){
-    return this.mem.read(this.regs.sp + index + 2 & MEM_MAX_ADDR);
+  varGet(index){
+    return this.mem.read(this.regs.sp + index & MEM_MAX_ADDR);
   }
 
-  argSet(val, index){
-    return this.mem.write(val, this.regs.sp + index + 2 & MEM_MAX_ADDR);
+  varSet(val, index){
+    return this.mem.write(val, this.regs.sp + index & MEM_MAX_ADDR);
   }
 
-  argGetf(index){
-    return this.mem.readf(this.regs.sp + index + 2 & MEM_MAX_ADDR);
+  varGetf(index){
+    return this.mem.readf(this.regs.sp + index & MEM_MAX_ADDR);
   }
 
-  argSetf(val, index){
-    return this.mem.writef(val, this.regs.sp + index + 2 & MEM_MAX_ADDR);
+  varSetf(val, index){
+    return this.mem.writef(val, this.regs.sp + index & MEM_MAX_ADDR);
   }
 
   debug(opCode){

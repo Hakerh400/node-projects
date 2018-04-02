@@ -14,8 +14,8 @@ var framesNum = fps * duration;
 
 var url = '/?project=grid';
 
-var speed = 1;
-var interval = fps;
+var speed = 5;
+var interval = 180;
 
 setTimeout(main);
 
@@ -43,13 +43,15 @@ function render(window){
 
       if(t <= interval - 1){
         if(Math.random() > .1){
-          var x = randX();
-          var y = randY();
+          var angle = O.randf(O.pi2);
+          var x = xx + Math.cos(angle) * size;
+          var y = yy + Math.sin(angle) * size;
+
           var btn = [0, 2][O.rand(2)];
           var obj = {clientX: x, clientY: y, button: btn};
 
-          var type = O.rand(4);
-          var code = [null, 'KeyB', 'KeyW', 'KeyX'][type];
+          var type = O.rand(5);
+          var code = [null, 'KeyB', 'KeyW', 'KeyX', 'KeyV'][type];
 
           if(type !== 0) window.emit('keydown', {code});
           window.emit('mousedown', obj);
@@ -57,10 +59,10 @@ function render(window){
           if(type !== 0) window.emit('keyup', {code});
         }
       }else{
+        pressKey('Enter');
+
         xx = O.rand(w - size);
         yy = O.rand(h - size);
-
-        pressKey('Enter');
       }
     });
 
@@ -78,13 +80,5 @@ function render(window){
   function pressKey(key){
     window.emit('keydown', {code: key});
     window.emit('keyup', {code: key});
-  }
-
-  function randX(){
-    return xx + O.rand(size);
-  }
-
-  function randY(){
-    return yy + O.rand(size);
   }
 }

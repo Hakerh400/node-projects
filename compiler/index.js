@@ -6,7 +6,7 @@ var O = require('../framework');
 var dataTypes = require('./data-types.json');
 var keywords = require('./keywords.json');
 
-const TAB_SIZE = 4;
+const TAB_SIZE = 2;
 
 const CWD = process.cwd();
 const NATIVE_LIBS_DIR = joinNormalize(CWD, 'native-libs');
@@ -22,7 +22,21 @@ const DIGITS_HEX = DIGITS + [...LETTERS].filter(a => /[a-f]/i.test(a)).join``;
 const IDENT_CHARS_FIRST = LETTERS + '_';
 const IDENT_CHARS = IDENT_CHARS_FIRST + DIGITS;
 
+const MEM_SIZE = 1 << 16;
+const MEM_MAX_ADDR = MEM_SIZE - 1;
+
 var nativeLibs = getNativeLibs();
+var globalId = 0;
+
+var operators = [
+  [['+', '-', '++'], 2, 2, -1],
+  [['*', '/'], 3, 3, -1],
+  [['**'], 5, 4, -1],
+  [['('], 6, 0, null],
+  [[')'], 1, null, null],
+];
+
+optimizeOperators();
 
 module.exports = {
   compile,
@@ -228,7 +242,7 @@ class Source{
 
     var {parser} = this;
 
-    while(!parser.eof){
+    while(parser.trim(), !parser.eof){
       var vari = this.parseGlobalVar();
 
       if(!this.globalVars.includes(vari))
@@ -257,7 +271,8 @@ class Source{
         this.err('Type mismatch');
       }else if(vari.val !== null){
         parser.restore();
-        this.err('The variable has already been initialized');
+        if(!vari.isFunc) this.err('The variable has already been initialized');
+        else this.err('The function has already been defined');
       }
       parser.discard();
     }
@@ -275,7 +290,7 @@ class Source{
       case ';':
         if(vari !== null) this.err('Multiple declarations found');
         parser.char(1);
-        vari = new Variable(type, name);
+        vari = new GlobalVariable(this, type, name);
         break;
 
       case '=':
@@ -295,16 +310,16 @@ class Source{
         char = parser.char(0);
 
         if(vari === null){
-          if(char !== ';') this.err('Expected `;`');
-          vari = new Function(type, name);
+          if(char !== ';') this.err('Declaration is required before definition');
+          vari = new Function(this, type, name);
           vari.setFormalArgs(args);
         }else{
+          if(char === ';') this.err('The function has already been declared');
           if(char !== '{') this.err('Expected `{`');
         }
 
         if(char === '{'){
-          var funcDef = this.parseFuncDef(vari);
-          vari.setDef(funcDef);
+          this.parseFuncDef(vari);
         }else{
           parser.char(1);
         }
@@ -347,26 +362,26 @@ class Source{
 
     parser.trim();
 
-    var vari = new Variable(type);
+    var cst = new Constant(type);
     var val = null;
 
     switch(type.name){
       case 'char':
-        this.err('Char not supported');
+        this.err('Char is not supported');
         break;
 
       case 'float':
-        this.err('Float not supported');
+        this.err('Float is not supported');
         break;
 
       case 'int':
         val = parser.integer(1);
         if(val === null) this.err('Expected integer');
-        vari.assign(val);
+        cst.assign(val);
         break;
 
       case 'void':
-        this.err('Void not supported');
+        this.err('Void is not supported');
         break;
     }
 
@@ -376,7 +391,7 @@ class Source{
 
     parser.char(1);
 
-    return vari;
+    return cst;
   }
 
   parseFormalArgs(vari = null){
@@ -394,10 +409,17 @@ class Source{
     var args = [];
 
     while(!parser.eof){
+      parser.trim();
+
+      if(parser.char(0) === ')'){
+        parser.char(1);
+        break;
+      }
+
       var type = this.parseType(0);
       var name = parseArgName();
 
-      var v = new Variable(type, name);
+      var v = new Argument(this, type, name);
       args.push(v);
 
       parser.trim();
@@ -445,7 +467,19 @@ class Source{
     }
   }
 
-  parseFuncDef(vari){
+  parseFuncDef(func){
+    var {parser} = this;
+
+    var args = func.formalArgs;
+    var funcDef = new FunctionDefinition(func);
+
+    func.setDef(funcDef);
+
+    var scope = func.createScope();
+    this.parseScope(scope);
+  }
+
+  parseScope(scope){
     var {parser} = this;
 
     parser.trim();
@@ -453,15 +487,198 @@ class Source{
     if(char !== '{') this.err('Expected `{`');
     parser.char(1);
 
-    var args = vari.formalArgs;
-    var funcDef = new FunctionDefinition(vari);
+    while(parser.trim(), !parser.eof){
+      if(parser.char(0) === '}'){
+        parser.char(1);
+        break;
+      }
 
-    while(!parser.eof){
-      if(parser.char(1) === '}')
+      this.parseStatement(scope);
+    }
+  }
+
+  parseStatement(scope){
+    var {parser} = this;
+    var stat = null;
+
+    parser.trim();
+    parser.save();
+
+    var ident = parser.ident(0);
+
+    if(ident !== null){
+      if(dataTypes.includes(ident)){
+        stat = this.parseVarDecl(scope);
+      }else if(keywords.includes(ident)){
+        switch(ident){
+          case 'return':
+            this.parseReturnStatement(scope);
+            break;
+
+          default:
+            this.restore('Unexpected keyword');
+            break;
+        }
+      }else{
+        throw 2;
+      }
+    }else{
+      throw 0;
+    }
+
+    parser.discard();
+  }
+
+  parseVarDecl(scope){
+    var {parser} = this;
+    var stat = new Statement(scope, 'varDecl');
+    scope.addStatement(stat)
+
+    parser.trim();
+    parser.save();
+
+    var type = this.parseType(0);
+
+    parser.update();
+    var name = parser.nonKeyword(1);
+    if(name === null)
+      this.restore('Missing variable name');
+
+    if(scope.getVar(name, 0) !== null)
+      this.restore('Variable redefined');
+
+    var vari = new Variable(this, type, name);
+    scope.addVar(vari);
+
+    parser.update();
+    var char = parser.char(1);
+    var expr;
+
+    if(char === '='){
+      expr = this.parseExpr(scope, 0);
+      if(!expr.sameType(vari))
+        this.restore(`Variable "${vari.name}" is of type "${vari.type}", ` +
+                     `but the expression on the right hand side resolved to a value of type "${expr.type}"`);
+
+    }else{
+      expr = new Expression(scope);
+      var zero = new Constant('int', 0);
+
+      expr.add(zero);
+    }
+
+    vari.assign(expr);
+
+    parser.update();
+    char = parser.char(1);
+
+    if(char === ',')
+      this.restore('Commas are not supported in variable declarations');
+
+    if(char !== ';')
+      this.restore('Missing semicolon `;`');
+
+    stat.addVar(vari);
+
+    parser.discard();
+  }
+
+  parseReturnStatement(scope){
+    var {parser} = this;
+    var stat = new Statement(scope, 'return');
+    scope.addStatement(stat);
+
+    parser.trim();
+    parser.save();
+
+    var ident = parser.ident(1);
+    if(ident !== 'return')
+      this.restore('Expected return statement');
+
+    parser.update();
+    var voidType = new Type('void');
+    var ret;
+
+    if(scope.sameType(voidType)){
+      if(parser.char(1) !== ';')
+        this.restore('The function returns void, so the return statement must have no arguments');
+
+      ret = new Variable(scope, 'void');
+    }else{
+      var expr = this.parseExpr(scope);
+
+      if(!expr.sameType(scope.type))
+        this.restore(`The function must return "${scope.type}", ` +
+                     `but the expression resolved to "${expr.type}"`);
+
+      if(parser.char(1) !== ';')
+        this.restore('Missing semicolon `;` after the return statement');
+
+      ret = expr;
+    }
+
+    stat.addVar(ret);
+
+    parser.discard();
+  }
+
+  parseExpr(scope, includeCommas = 1){
+    var {parser} = this;
+    var expr = new Expression(scope);
+
+    parser.trim();
+    parser.save();
+
+    while(parser.trim(), !parser.eof){
+      parser.update();
+
+      var opName = parser.operator(1);
+      var op;
+
+      if(opName !== null){
+        op = new Operator(opName);
+      }else{
+        parser.update();
+        var cnst = parser.integer(1);
+
+        if(cnst !== null){
+          op = new Constant('int', cnst | 0);
+        }else{
+          var varName = parser.nonKeyword(1);
+          if(varName === null)
+            this.restore('Unexpected token in expression');
+
+          op = scope.getVar(varName);
+          if(op === null)
+            this.restore('Undefined variable');
+        }
+      }
+
+      var errMsg = expr.add(op);
+      if(errMsg !== null)
+        this.restore(errMsg);
+
+      var char = parser.char(0);
+
+      if(char === ';' || (!includeCommas && char === ','))
         break;
     }
 
-    return funcDef;
+    if(parser.eof)
+      this.err('Unexpected end of file');
+
+    var errMsg = expr.finalize();
+    if(errMsg !== null)
+      this.restore(errMsg);
+
+    parser.discard();
+
+    return expr;
+  }
+
+  restore(msg = null){
+    this.parser.restore();
+    this.err(msg);
   }
 
   err(msg = null){
@@ -481,7 +698,7 @@ class Parser{
     this.index = 0;
 
     this.eol = this.src[0].length === 0;
-    this.eof = this.src.length === 0;
+    this.eof = this.eol && this.src.length === 1;
 
     this.lineIndexStack = [];
     this.indexStack = [];
@@ -503,6 +720,12 @@ class Parser{
     this.index = this.indexStack.pop();
     this.eol = this.eolStack.pop();
     this.eof = this.eofStack.pop();
+  }
+
+  update(trim = 1){
+    this.discard();
+    if(trim) this.trim();
+    this.save();
   }
 
   discard(){
@@ -534,13 +757,19 @@ class Parser{
       char = '\n';
 
       this.lineIndex++;
-      this.index = 0;
-      this.eol = this.src[this.lineIndex].length === 0;
+
+      if(this.lineIndex !== this.src.length){
+        this.index = 0;
+        this.eol = this.src[this.lineIndex].length === 0;
+      }else{
+        this.eolf = true;
+        this.eof = true;
+      }
     }else{
       char = this.src[this.lineIndex][this.index++];
 
       this.eol = this.index === this.src[this.lineIndex].length;
-      this.eof = this.lineIndex === this.src.length - 1;
+      this.eof = this.eol && this.lineIndex === this.src.length - 1;
     }
 
     return char;
@@ -614,7 +843,7 @@ class Parser{
   }
 
   comment(modify, trim = 1){
-    if(this.eof)return null;
+    if(this.eof) return null;
     this.save();
 
     if(trim)
@@ -799,6 +1028,44 @@ class Parser{
     return str;
   }
 
+  operator(modify){
+    if(this.eof) return;
+
+    this.save();
+    this.trim();
+
+    var str = '';
+    var arr = operators.names.slice();
+    var arrPrev = null;
+
+    for(var i = 0; !this.eof; i++){
+      var char = this.char(0);
+
+      arr = arr.filter(op => op[i] === char);
+
+      if(arr.length === 0){
+        if(arrPrev !== null)
+          str = arrPrev[0];
+
+        break;
+      }
+
+      this.char(1);
+      arrPrev = arr;
+
+      if(arr.length === 1){
+        str = arr[0];
+        break;
+      }
+    }
+
+    if(str.length === 0) str = null;
+    if(!modify || str === null) this.restore();
+    else this.discard();
+
+    return str;
+  }
+
   err(msg = null){
     var hs = this.source.hsrcs;
     var filePath = this.filePath;
@@ -827,64 +1094,234 @@ class Parser{
 
 class Linker{
   constructor(srcs){
-    this.setSrc(srcs);
+    this.decls = [];
+    this.defs = [];
 
     this.asm = new Assembler();
     this.mcode = new MachineCode();
+
+    this.setSrc(srcs);
   }
 
   setSrc(srcs){
-    this.src = [];
-    var {src} = this;
+    var {decls, defs} = this;
 
     srcs.forEach(vars => {
       vars.forEach(vari => {
-        if(!vari.isFunc){
-          if(vari.val === null) return;
-
-          var v = this.getVar(vari);
-          if(v !== null && v.val !== null)
-            this.err(`Multiple initializations for global variable "${vari.name}"`);
-
-          src.push(vari);
-        }else{
-          if(vari.val === null) return;
-
-          var v = this.getVar(vari);
-          if(v !== null && v.val !== null)
-            this.err(`Multiple definitions for function "${vari.name}"`);
-
-          src.push(vari);
-        }
+        this.addVar(vari);
       });
     });
+
+    this.decls.forEach(vari => {
+      if(this.getDef(vari.name) === null){
+        if(!vari.isFunc) this.err(`Missing initialization for global variable "${vari}"`);
+        else this.err(`Missing definition for function "${vari}"`);
+      }
+    });
+
+    this.checkMainFunc();
   }
 
-  getVar(name){
-    if(name instanceof Variable)
-      name = name.name;
+  addVar(vari){
+    if(vari.val === null) this.addDecl(vari);
+    else this.addDef(vari);
+  }
 
-    for(var i = 0; i < this.src.length; i++){
-      if(this.src[i].name === name)
-        return this.src[i];
+  addDecl(vari){
+    var decl = this.getDecl(vari.name);
+    if(decl !== null && !vari.sameType(decl))
+      this.err(`Type mismatch for "${vari}"`);
+
+    if(decl === null)
+      this.decls.push(vari);
+  }
+
+  addDef(vari){
+    if(this.getDef(vari.name) !== null){
+      if(!vari.isFunc) this.err(`Multiple initializations for global variable "${vari.name}"`);
+      else this.err(`Multiple definitions for function "${vari.name}"`);
+    }
+
+    var decl = this.getDecl(vari.name);
+    if(decl !== null && !vari.sameType(decl))
+      this.err(`Type mismatch for "${vari}"`);
+
+    if(decl === null)
+      this.decls.push(vari);
+
+    this.defs.push(vari);
+  }
+
+  getDecl(name){
+    var {decls} = this;
+
+    for(var i = 0; i < decls.length; i++){
+      if(decls[i].name === name)
+        return decls[i];
     }
 
     return null;
   }
 
-  link(){
-    var {srcs, asm} = this;
+  getDef(name){
+    var {defs} = this;
 
+    for(var i = 0; i < defs.length; i++){
+      if(defs[i].name === name)
+        return defs[i];
+    }
+
+    return null;
+  }
+
+  getVar(name){
+    return this.getDef(name);
+  }
+
+  checkMainFunc(){
+    var mainFunc = this.getDef('main');
+
+    if(mainFunc === null)
+      this.err('Missing main function');
+
+    var expected = new Function(null, 'void', null, null, []);
+
+    if(!mainFunc.sameType(expected))
+      this.err('Main function must take no arguments and return void');
+  }
+
+  link(){
     this.processVars();
-    //this.processFuncs();
+    this.processFuncs();
 
     return this.compile();
   }
 
   processVars(){
-    var {srcs, asm} = this;
+    var {asm} = this;
 
-    var vars;
+    this.defs.forEach(vari => {
+      if(vari.isFunc) return;
+
+      asm.label(vari.id);
+      asm.incIndent();
+
+      switch(vari.type.name){
+        case 'int':
+          var buff = Buffer.alloc(2);
+          buff.writeUInt16LE(vari.resolve() & MEM_MAX_ADDR);
+          asm.buff(buff);
+          break;
+
+        default:
+          this.err(`Type "${vari.type}" is not supported`);
+          break;
+      }
+
+      asm.decIndent();
+    });
+  }
+
+  processFuncs(){
+    var {asm} = this;
+
+    this.defs.forEach(vari => {
+      if(!vari.isFunc) return;
+
+      var scope = vari.val.scope;
+      var stats = scope.stats;
+
+      asm.label(scope.id);
+      asm.incIndent();
+
+      stats.forEach(stat => {
+        switch(stat.name){
+          case 'varDecl': this.procVarDecl(scope, stat); break;
+          case 'return': this.procRet(scope, stat); break;
+
+          default:
+            this.err('Unrecognized statement type');
+            break;
+        }
+      });
+
+      asm.decIndent();
+    });
+  }
+
+  procVarDecl(scope, stat){
+    var {asm} = this;
+
+    var scope = stat.scope;
+    var vari = stat.vars[0];
+    var expr = vari.val;
+
+    this.procExpr(scope, expr);
+
+    var offset = vari.offsets[scope.id];
+    asm.int(offset);
+    asm.add('argSet');
+  }
+
+  procRet(scope, stat){
+    var {asm} = this;
+
+    asm.add('ret');
+  }
+
+  procExpr(scope, expr){
+    var {asm} = this;
+
+    expr.ops.forEach(op => {
+      if(op instanceof Variable){
+        if(op instanceof Constant){
+          this.type(op.type, op.val);
+        }else{
+          var offset = op.offsets[scope.id];
+          asm.int(offset);
+          asm.add('argGet');
+        }
+      }else{
+        this.op(op);
+      }
+    });
+  }
+
+  type(type, val){
+    var {asm} = this;
+
+    if(type.asts !== 0){
+      asm.int(val);
+      return;
+    }
+
+    switch(type.name){
+      case 'int':
+        asm.int(val);
+        break;
+
+      case 'void':
+        this.err('Illegal use of void type');
+        break;
+
+      default:
+        this.err('Unrecognized type');
+        break;
+    }
+  }
+
+  op(op){
+    var {asm} = this;
+
+    switch(op.name){
+      case '+':
+        asm.add('add');
+        break;
+
+      default:
+        this.err('Unrecognized operator');
+        break;
+    }
   }
 
   compile(){
@@ -915,13 +1352,7 @@ class Assembler{
   }
 
   label(label){
-    var indent = this.indent;
-    if(this.indent !== 0) this.decIndent();
-
-    label = `${label}:`;
-    this.add(label);
-
-    this.setIndent(indent);
+    this.add(`${label}:`);
   }
 
   setSrc(src){
@@ -941,6 +1372,23 @@ class Assembler{
       throw new RangeError('Invalid indentation level');
 
     this.indent--;
+  }
+
+  buff(buff){
+    var str = [...buff].map(byte => {
+      return `_${this.hex(byte, 1)}`;
+    }).join` `;
+
+    this.add(str);
+  }
+
+  int(val){
+    this.add(this.hex(val, 2));
+  }
+
+  hex(val, bytes){
+    val &= MEM_MAX_ADDR;
+    return `0x${val.toString(16).toUpperCase().padStart(bytes << 1, '0')}`;
   }
 
   toString(){
@@ -973,8 +1421,16 @@ class MachineCode{
   }
 };
 
-class Type{
-  constructor(name, asts = 0){
+class Unique{
+  constructor(){
+    this.id = globalId++;
+  }
+};
+
+class Type extends Unique{
+  constructor(name = null, asts = 0){
+    super();
+
     this.name = name;
     this.asts = asts;
   }
@@ -989,32 +1445,116 @@ class Type{
     return this.name === type.name && this.asts === type.asts;
   }
 
+  sizeof(){
+    if(this.name === null)
+      throw new TypeError('Cannt get size of a type which has no name');
+
+    if(this.asts !== 0)
+      return 2;
+
+    switch(this.name){
+      case 'int':
+        return 2;
+        break;
+
+      default:
+        throw new TypeError('Unrecognized type');
+        break;
+    }
+  }
+
   toString(){
     return `${this.name}${'*'.repeat(this.asts)}`;
   }
 };
 
-class Variable{
-  constructor(type = null, name = null, val = null){
+class Variable extends Unique{
+  constructor(scope = null, type = null, name = null, val = null){
+    super();
+
+    if(scope instanceof Variable)
+      ({scope, type, name, val} = scope);
+
+    if(typeof type === 'string')
+      type = new Type(type);
+
+    this.scope = scope;
     this.name = name;
     this.type = type;
     this.val = val;
 
+    this.offsets = Object.create(null);
+
+    this.isGlobal = false;
+    this.isArg = false;
     this.isFunc = false;
+  }
+
+  clone(){
+    var {scope, type, name, val} = this;
+
+    if(type instanceof Type) type = type.clone();
+    if(val instanceof Variable) val = val.clone();
+
+    var vari = new this.constructor();
+
+    vari.scope = scope;
+    vari.type = type;
+    vari.name = name;
+    vari.val = val;
+
+    return vari;
   }
 
   sameType(type){
     if(this.type === null)
-      throw new TypeError('Cannot compare `null` types');
+      return new Type().sameType(this);
+
+    if(type instanceof Variable){
+      if(this.isFunc !== type.isFunc) return false;
+      if(this.isFunc && !this.sameFormalArgs(type)) return false;
+    }
 
     return this.type.sameType(type);
   }
 
   assign(val){
-    if(val instanceof Variable)
+    if(val instanceof Constant)
       val = val.val;
 
     this.val = val;
+  }
+
+  resolve(){
+    var val = this.val;
+
+    if(val === null)
+      throw new TypeError('Cannot resolve a variable without a value');
+
+    if(val instanceof Variable && !(val instanceof Constant))
+      throw new TypeError('Cannot resolve a non-constant variable');
+
+    if(val instanceof Constant)
+      val = val.val;
+
+    return val;
+  }
+
+  getGlobalVars(){
+    if(this.scope === null)
+      throw new TypeError('No scope found');
+
+    return this.scope.globalVars;
+  }
+
+  sizeof(){
+    if(this.type === null)
+      throw new TypeError('Cannot get size of a value which has no type');
+
+    if(this instanceof Function)
+      throw new TypeError('Cannot get size of a function');
+
+    return this.type.sizeof();
   }
 
   toString(){
@@ -1024,12 +1564,141 @@ class Variable{
   }
 };
 
-class Function extends Variable{
-  constructor(type = null, name = null, val = null){
-    super(type, name, val);
+class GlobalVariable extends Variable{
+  constructor(scope = null, type = null, name = null, val = null){
+    super(scope, type, name, val);
 
+    this.isGlobal = true;
+  }
+};
+
+class Constant extends Variable{
+  constructor(type = null, val = null){
+    super(null, type, null, val);
+  }
+};
+
+class Argument extends Variable{
+  constructor(scope = null, type = null, name = null, val = null){
+    super(scope, type, name, val);
+
+    this.isArg = true;
+  }
+};
+
+class Expression extends GlobalVariable{
+  constructor(src = null, type = null){
+    super(src, type, null, null);
+
+    this.rank = 0;
+    this.stack = [];
+    this.ops = [];
+  }
+
+  clone(){
+    var vari = super.clone();
+
+    vari.rank = this.rank;
+    vari.stack = this.stack.map(vari => vari.clone());
+    vari.ops = this.ops.map(vari => vari.clone());
+
+    return vari;
+  }
+
+  add(op){
+    if(op instanceof Variable){
+      this.ops.push(op);
+      this.rank++;
+    }else{
+      while(this.stack.length !== 0 && op.ipr <= this.stack[this.stack.length - 1].spr){
+        var errMsg = this.pop();
+        if(errMsg !== null)
+          return errMsg;
+      }
+
+      if(op.name !== ')'){
+        this.stack.push(op);
+      }else{
+        x = this.stack.pop();
+
+        if(x.name !== '(')
+          return 'Missing open parenthese';
+      }
+    }
+
+    return null;
+  }
+
+  pop(){
+    var x = this.stack.pop();
+
+    this.ops.push(x);
+    this.rank += x.rank;
+
+    if(this.rank < 1)
+      return 'Expression rank cannot be less than 1';
+
+    return null;
+  }
+
+  finalize(){
+    while(this.stack.length !== 0){
+      var errMsg = this.pop();
+      if(errMsg !== null)
+        return errMsg;
+    }
+
+    if(this.rank !== 1)
+      return 'Expression rank is not 1';
+
+    var errMsg = this.resolveType();
+    if(errMsg !== null)
+      return errMsg;
+
+    return null;
+  }
+
+  resolveType(){
+    var ops = this.ops.slice();
+    var stack = [];
+
+    for(var i = 0; i < ops.length; i++){
+      var op = ops[i];
+
+      if(op instanceof Variable){
+        stack.push(op.type);
+      }else{
+        var opsNum = 1 - op.rank;
+        var ops = stack.splice(stack.length - opsNum);
+
+        /*
+          Determine result type
+        */
+
+        var type = new Type('int');
+
+        stack.push(type);
+      }
+    }
+
+    this.type = stack[0];
+
+    return null;
+  }
+};
+
+class Function extends Variable{
+  constructor(src = null, type = null, name = null, val = null, formalArgs = null){
+    super(src, type, name, val);
+
+    this.isGlobal = true;
     this.isFunc = true;
-    this.formalArgs = null;
+
+    this.formalArgs = formalArgs;
+  }
+
+  clone(){
+    throw new TypeError('Cannot clone a function');
   }
 
   setFormalArgs(args){
@@ -1055,6 +1724,27 @@ class Function extends Variable{
     this.assign(def);
   }
 
+  createScope(){
+    if(this.val === null)
+      throw new TypeError('Cannot create a code block on function which has no body');
+
+    return this.val.createScope();
+  }
+
+  addVar(vari){
+    if(this.val === null)
+      throw new TypeError('Cannot add a variable to a function which has no body');
+
+    this.val.addVar(vari);
+  }
+
+  getVar(name){
+    if(this.val === null)
+      throw new TypeError('Cannot get a variable from a function which has no body');
+
+    return this.val.getVar(name);
+  }
+
   toString(){
     return `${this.type} ${this.name}${this.stringifyFormalArgs()}`;
   }
@@ -1071,11 +1761,193 @@ class Function extends Variable{
   }
 };
 
-class FunctionDefinition{
-  onstructor(){
-    /**/
+class FunctionDefinition extends Unique{
+  constructor(func = null, scope = null){
+    super();
+
+    this.func = func;
+    this.scope = scope;
+  }
+
+  createScope(){
+    if(this.scope !== null)
+      throw new TypeError('The function definition already has a code block');
+
+    var scope = new Scope(this);
+    this.scope = scope;
+
+    if(this.func === null)
+      throw new TypeError('The function definition is missing wrapper function');
+
+    var globalVars = this.func.getGlobalVars();
+    globalVars.forEach(vari => scope.addVar(vari));
+
+    var formalArgs = this.func.formalArgs;
+    if(formalArgs === null)
+      throw new TypeError('Cannot create function scope without formal arguments');
+
+    formalArgs.forEach(vari => scope.addVar(vari));
+
+    return scope;
+  }
+
+  addStatement(stat){
+    if(this.scope === null)
+      throw new TypeError('The function has no code blocks assigned to it');
+
+    this.scope.addStatement(stat);
+  }
+
+  addVar(vari){
+    if(this.scope === null)
+      throw new TypeError('Cannot add a variable to a function definition which has no code blocks');
+
+    this.scope.addVar(name);
+  }
+
+  getVar(name){
+    if(this.scope === null)
+      throw new TypeError('Cannot get a variable from a function definition which has no code blocks');
+
+    return this.scope.getVar(name);
+  }
+
+  getType(){
+    if(this.func === null)
+      throw new TypeError('Cannot get type of the function definition, because it is missing wrapper function');
+
+    return this.func.type;
   }
 };
+
+class Scope extends Unique{
+  constructor(funcDef = null, parent = null, stats = []){
+    super();
+
+    this.funcDef = funcDef;
+    this.parent = parent;
+    this.stats = stats;
+
+    this.type = this.getType();
+
+    this.vars = [];
+    this.scopes = [];
+
+    this.varsSize = 0;
+  }
+
+  createScope(){
+    var scope = new Scope(this.funcDef, this);
+    this.scopes.push(scope);
+    return scope;
+  }
+
+  sameType(vari){
+    if(vari === null)
+      throw new TypeError('Cannot compare the scope type to the null type');
+
+    var type = this.getType();
+
+    return vari.sameType(type);
+  }
+
+  addStatement(stat){
+    this.stats.push(stat);
+  }
+
+  addVar(vari){
+    this.vars.push(vari);
+
+    if(!vari.isGlobal){
+      vari.offsets[this.id] = this.varsSize;
+      this.varsSize += vari.sizeof();
+    }
+  }
+
+  getVar(name, searchInParent = 1){
+    var vari = this.vars.find(vari => vari.name === name);
+
+    if(vari !== undefined && (searchInParent || !vari.isGlobal))
+      return vari;
+
+    if(this.parent === null || !searchInParent)
+      return null;
+
+    return this.parent.getVar(name);
+  }
+
+  getFunc(){
+    if(this.funcDef === null)
+      throw new TypeError('Cannot get function of the scope, because it has no function definition');
+
+    return this.funcDef.func;
+  }
+
+  getType(){
+    if(this.funcDef === null)
+      throw new TypeError('Cannot get type of the scope, because it has no function definition');
+
+    return this.funcDef.getType();
+  }
+};
+
+class Statement extends Unique{
+  constructor(scope = null, name = null){
+    super();
+
+    this.scope = scope;
+    this.name = name;
+
+    this.scopes = [];
+    this.vars = [];
+  }
+
+  createScope(){
+    var scope = new Scope(this.scope);
+    this.addScope(scope);
+    return scope;
+  }
+
+  addScope(){
+    this.scopes.push(scope);
+  }
+
+  addVar(vari){
+    this.vars.push(vari);
+  }
+};
+
+class Operator extends Unique{
+  constructor(name){
+    super();
+
+    this.name = name;
+
+    this.optimize();
+  }
+
+  optimize(){
+    var op = operators.find(([a]) => a.includes(this.name));
+    if(op === undefined)
+      throw new TypeError('Unknown operator');
+
+    this.ipr = op[1];
+    this.spr = op[2];
+    this.rank = op[3];
+  }
+};
+
+function optimizeOperators(){
+  operators.names = [];
+  operators.namesObj = [];
+
+  operators.forEach(([op]) => {
+    op.forEach(name => {
+      operators.names.push(name);
+      operators.namesObj[name] = 1;
+    });
+  });
+}
 
 function getSupportedChars(){
   var c1 = ' '.charCodeAt(0);

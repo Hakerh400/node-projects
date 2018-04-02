@@ -1,0 +1,19 @@
+1:
+  _0x05 _0x00
+14:
+  0x0005
+  0x0000
+  argSet
+  0x0007
+  0x0002
+  argSet
+  0x0000
+  argGet
+  0x0000
+  argGet
+  add
+  0x0004
+  argSet
+  ret
+53:
+  ret
