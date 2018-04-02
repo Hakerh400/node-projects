@@ -1,0 +1,12 @@
+Timer
+  00 - Control
+    bit 0 - Enabled
+  01 - Timeout
+
+I/O interface
+  02 - Control
+    bit 0 - Enabled
+    bit 1 - Mode
+      0 - Read
+      1 - Write
+  03 - Address

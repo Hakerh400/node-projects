@@ -29,7 +29,7 @@ var nativeLibs = getNativeLibs();
 var globalId = 0;
 
 var operators = [
-  [['+', '-', '++'], 2, 2, -1],
+  [['+', '-'], 2, 2, -1],
   [['*', '/'], 3, 3, -1],
   [['**'], 5, 4, -1],
   [['('], 6, 0, null],
@@ -548,7 +548,8 @@ class Source{
       this.restore('Variable redefined');
 
     var vari = new Variable(this, type, name);
-    scope.addVar(vari);
+    if(!scope.addVar(vari))
+      this.restore('Variable declarations are not alowed in nested code blocks')
 
     parser.update();
     var char = parser.char(1);
@@ -1208,8 +1209,8 @@ class Linker{
 
       switch(vari.type.name){
         case 'int':
-          var buff = Buffer.alloc(2);
-          buff.writeUInt16LE(vari.resolve() & MEM_MAX_ADDR);
+          var buff = Buffer.alloc(4);
+          buff.writeUInt32LE(vari.resolve() & MEM_MAX_ADDR);
           asm.buff(buff);
           break;
 
@@ -1231,8 +1232,11 @@ class Linker{
       var scope = vari.val.scope;
       var stats = scope.stats;
 
-      asm.label(scope.id);
+      asm.label(vari.id);
       asm.incIndent();
+
+      asm.int(scope.varsSize);
+      asm.add('enter');
 
       stats.forEach(stat => {
         switch(stat.name){
@@ -1252,7 +1256,6 @@ class Linker{
   procVarDecl(scope, stat){
     var {asm} = this;
 
-    var scope = stat.scope;
     var vari = stat.vars[0];
     var expr = vari.val;
 
@@ -1260,13 +1263,22 @@ class Linker{
 
     var offset = vari.offsets[scope.id];
     asm.int(offset);
-    asm.add('argSet');
+    asm.add('varSet');
   }
 
   procRet(scope, stat){
     var {asm} = this;
 
-    asm.add('ret');
+    var expr = stat.vars[0];
+
+    if(expr instanceof Expression){
+      this.procExpr(scope, expr);
+      asm.int(scope.argsSize);
+      asm.add('leave');
+    }else{
+      asm.int(scope.argsSize);
+      asm.add('leavev');
+    }
   }
 
   procExpr(scope, expr){
@@ -1279,7 +1291,7 @@ class Linker{
         }else{
           var offset = op.offsets[scope.id];
           asm.int(offset);
-          asm.add('argGet');
+          asm.add('varGet');
         }
       }else{
         this.op(op);
@@ -1314,9 +1326,10 @@ class Linker{
     var {asm} = this;
 
     switch(op.name){
-      case '+':
-        asm.add('add');
-        break;
+      case '+': asm.add('add'); break;
+      case '-': asm.add('sub'); break;
+      case '*': asm.add('mul'); break;
+      case '/': asm.add('div'); break;
 
       default:
         this.err('Unrecognized operator');
@@ -1376,19 +1389,14 @@ class Assembler{
 
   buff(buff){
     var str = [...buff].map(byte => {
-      return `_${this.hex(byte, 1)}`;
+      return `_${byte}`;
     }).join` `;
 
     this.add(str);
   }
 
   int(val){
-    this.add(this.hex(val, 2));
-  }
-
-  hex(val, bytes){
-    val &= MEM_MAX_ADDR;
-    return `0x${val.toString(16).toUpperCase().padStart(bytes << 1, '0')}`;
+    this.add(val);
   }
 
   toString(){
@@ -1450,11 +1458,11 @@ class Type extends Unique{
       throw new TypeError('Cannt get size of a type which has no name');
 
     if(this.asts !== 0)
-      return 2;
+      return 4;
 
     switch(this.name){
       case 'int':
-        return 2;
+        return 4;
         break;
 
       default:
@@ -1619,9 +1627,9 @@ class Expression extends GlobalVariable{
       if(op.name !== ')'){
         this.stack.push(op);
       }else{
-        x = this.stack.pop();
+        op = this.stack.pop();
 
-        if(x.name !== '(')
+        if(op.name !== '(')
           return 'Missing open parenthese';
       }
     }
@@ -1735,7 +1743,7 @@ class Function extends Variable{
     if(this.val === null)
       throw new TypeError('Cannot add a variable to a function which has no body');
 
-    this.val.addVar(vari);
+    return this.val.addVar(vari);
   }
 
   getVar(name){
@@ -1802,7 +1810,7 @@ class FunctionDefinition extends Unique{
     if(this.scope === null)
       throw new TypeError('Cannot add a variable to a function definition which has no code blocks');
 
-    this.scope.addVar(name);
+    return this.scope.addVar(name);
   }
 
   getVar(name){
@@ -1833,6 +1841,7 @@ class Scope extends Unique{
     this.vars = [];
     this.scopes = [];
 
+    this.argsSize = 0;
     this.varsSize = 0;
   }
 
@@ -1856,18 +1865,36 @@ class Scope extends Unique{
   }
 
   addVar(vari){
+    if(this.parent !== null)
+      return 0;
+
     this.vars.push(vari);
 
-    if(!vari.isGlobal){
-      vari.offsets[this.id] = this.varsSize;
+    if(vari.isArg){
+      vari.offsets[this.id] = this.argsSize + 8;
+      this.argsSize += vari.sizeof();
+    }else if(!vari.isGlobal){
+      vari.offsets[this.id] = -this.varsSize - 4;
       this.varsSize += vari.sizeof();
     }
+
+    return 1;
   }
 
   getVar(name, searchInParent = 1){
-    var vari = this.vars.find(vari => vari.name === name);
+    var vars = this.vars;
+    var vari = null;
 
-    if(vari !== undefined && (searchInParent || !vari.isGlobal))
+    for(var i = 0; i < vars.length; i++){
+      var v = vars[i];
+
+      if(v.name === name && (vari === null || vari.isGlobal)){
+        vari = v;
+        if(!v.isGlobal) break;
+      }
+    }
+
+    if(vari !== null && (searchInParent || !vari.isGlobal))
       return vari;
 
     if(this.parent === null || !searchInParent)

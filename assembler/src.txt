@@ -1,45 +1,128 @@
-12345
+:main call
+halt
 
-:0 call
-0 out
+main:
+  0 enter
+  
+  :initIvt call
+  :initIO call
+  :enableInts call
 
-0:
-  0 argGet
-  0
-  :1 jmp
+  1 0 out
+  1e3f toInt 1 out
 
+  loop:
+    :loop jmp
+
+  0 leavev
+
+intTrap:
+  :num read
+  inc :num write
+  rti
+
+intTimer:
+  3 2 out
+  1 0 out
+  1e3f toInt 1 out
+  rti
+
+intIO:
+  2 in 2 and
+  :onRead jz
+  :onWrite jmp
+
+  onRead:
+    11 8 :53 call
+    :str writeB
+    :next jmp
+
+  onWrite:
+    :next jmp
+
+  next:
+    2 in 3 xor 2 out
+    rti
+
+initIO:
+  0 enter
+  :str 3 out
+  1 2 out
+  0 leavev
+
+initIvt:
+  0 enter
+  :ivt popIvtp
+  :intTrap  :ivt 0 add write
+  :intTimer :ivt 4 add write
+  :intIO    :ivt 8 add write
+  0 leavev
+
+enableInts:
+  0 enter
+  inte
+  0 leavev
+
+ivt:
+  _0 _0 _0 _0
+  _0 _0 _0 _0
+  _0 _0 _0 _0
+
+test:
   1:
-    0 2 swap
-    push :2 jz
-    push 10 mod
-
-    0 4 swap
-    2 add
-
-    0 2 swap
-    10 div
-    0 2 swap
-
-    :1 jmp
-
-  2:
-    0 2 swap
-    :3 jmp
-
-  3:
-    push :4 jz
-
-    push argGet
-    0 4 swap
-    10 mul
-    2 4 swap
+    _8 _0 _0 _0
+  14:
+    12
+    enter
+    5
+    -4
+    varSet
+    7
+    -8
+    varSet
+    -4
+    varGet
+    -8
+    varGet
     add
-    0 2 swap
-    2 sub
+    -12
+    varSet
+    0
+    leavev
+  53:
+    12
+    enter
+    8
+    varGet
+    12
+    varGet
+    2
+    mul
+    add
+    -4
+    varSet
+    -4
+    varGet
+    1
+    sub
+    3
+    mul
+    -8
+    varSet
+    -4
+    varGet
+    -8
+    varGet
+    add
+    -12
+    varSet
+    -12
+    varGet
+    3
+    sub
+    8
+    leave
 
-    :3 jmp
-
-  4:
-    pop
-    0 out
-    ret
+data:
+  num: _0 _0 _0 _0
+  str: _0

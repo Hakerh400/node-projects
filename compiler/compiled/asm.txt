@@ -1,19 +1,53 @@
 1:
-  _0x05 _0x00
-14:
-  0x0005
-  0x0000
-  argSet
-  0x0007
-  0x0002
-  argSet
-  0x0000
-  argGet
-  0x0000
-  argGet
+  _8 _0 _0 _0
+3:
+  12
+  enter
+  5
+  -4
+  varSet
+  7
+  -8
+  varSet
+  -4
+  varGet
+  -8
+  varGet
   add
-  0x0004
-  argSet
-  ret
-53:
-  ret
+  -12
+  varSet
+  0
+  leavev
+46:
+  12
+  enter
+  8
+  varGet
+  12
+  varGet
+  2
+  mul
+  add
+  -4
+  varSet
+  -4
+  varGet
+  1
+  sub
+  3
+  mul
+  -8
+  varSet
+  -4
+  varGet
+  -8
+  varGet
+  add
+  -12
+  varSet
+  -12
+  varGet
+  3
+  sub
+  8
+  leave

@@ -1,4 +1,8 @@
 [
-  "ip",
-  "sp"
+  "eip",
+  "esp",
+  "ebp",
+  "eax",
+  "ivtp",
+  "psw"
 ]
