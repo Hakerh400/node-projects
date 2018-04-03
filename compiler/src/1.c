@@ -1,11 +1,11 @@
 #include "main.h"
 
-int b = 8;
+int b1 = 8;
 
 void main(){
-  int a = 5;
-  int b = 7;
-  int c = a + b;
+  int a = 7;
+  int b = 5;
+  int c = calc(a, b) & 255;
 
   return;
 }

@@ -33,7 +33,8 @@ intIO:
   :onWrite jmp
 
   onRead:
-    11 8 :53 call
+    :3 call
+    48 add
     :str writeB
     :next jmp
 
@@ -71,54 +72,34 @@ ivt:
 test:
   1:
     _8 _0 _0 _0
-  14:
+  3:
     12
     enter
-    5
-    -4
-    varSet
     7
+    -4
+    varSet
+    5
     -8
     varSet
-    -4
-    varGet
     -8
     varGet
-    add
+    -4
+    varGet
+    :52
+    call
+    255
+    and
     -12
     varSet
     0
-    leavev
-  53:
-    12
+    leave
+  52:
+    0
     enter
     8
     varGet
     12
     varGet
-    2
-    mul
-    add
-    -4
-    varSet
-    -4
-    varGet
-    1
-    sub
-    3
-    mul
-    -8
-    varSet
-    -4
-    varGet
-    -8
-    varGet
-    add
-    -12
-    varSet
-    -12
-    varGet
-    3
     sub
     8
     leave

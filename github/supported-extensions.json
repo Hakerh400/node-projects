@@ -5,11 +5,12 @@
   "html",
   "css",
 
-  "java",
-  "h",
   "c",
+  "h",
   "cc",
   "cpp",
+
+  "java",
 
   "txt",
   "md",

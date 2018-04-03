@@ -29,11 +29,24 @@ var nativeLibs = getNativeLibs();
 var globalId = 0;
 
 var operators = [
-  [['+', '-'], 2, 2, -1],
-  [['*', '/'], 3, 3, -1],
-  [['**'], 5, 4, -1],
-  [['('], 6, 0, null],
-  [[')'], 1, null, null],
+  [['(', '['], 20, 0, null],
+  [[')', ']'], 1, null, null],
+
+  [['(\0)', '[\0]', '->', '.', '\0++', '\0--'], 19, 19, -1],
+  [['plus\0', 'minus\0', '!', '~', '++\0', '--\0', 'cast\0', 'deref\0', 'addr\0', 'sizeof\0'], 18, 17, 0],
+  [['*', '/', '%'], 16, 16, -1],
+  [['+', '-'], 15, 15, -1],
+  [['<<', '>>'], 14, 14, -1],
+  [['<', '<=', '>', '>='], 13, 13, -1],
+  [['==', '!='], 12, 12, -1],
+  [['&'], 11, 11, -1],
+  [['^'], 10, 10, -1],
+  [['|'], 9, 9, -1],
+  [['&&'], 8, 8, -1],
+  [['||'], 7, 7, -1],
+  [['?\0:\0'], 6, 5, -1],
+  [['=', '+=', '-=', '*=', '/=', '%=', '>>=', '<<=', '&=', '^=', '|='], 4, 3, -1],
+  [[','], 2, 2, -1],
 ];
 
 optimizeOperators();
@@ -630,11 +643,25 @@ class Source{
     parser.trim();
     parser.save();
 
+    var parens = 0;
+
     while(parser.trim(), !parser.eof){
       parser.update();
-
       var opName = parser.operator(1);
       var op;
+
+      if(!includeCommas && opName === ','){
+        parser.restore();
+        break;
+      }
+
+      if(opName === '(' || opName === '[') parens++;
+      else if(opName === ')' || opName === ']') parens--;
+
+      if(parens < 0){
+        parser.restore();
+        break;
+      }
 
       if(opName !== null){
         op = new Operator(opName);
@@ -652,12 +679,43 @@ class Source{
           op = scope.getVar(varName);
           if(op === null)
             this.restore('Undefined variable');
+
+          if(!op.isFunc){
+            if(op.isGlobal)
+              this.restore('Using global variables in expressions is not allowed');
+          }else{
+            parser.update();
+            var char = parser.char(1);
+            if(char !== '(')
+              this.restore('Expected function call');
+
+            var func = op;
+            var opCall = new Operator('(\0)');
+
+            parser.update();
+            var args = this.parseArgs(scope);
+
+            if(args.val.length !== op.formalArgs.length)
+              this.restore(`Expected ${op.formalArgs.length} arguments, but found ${args.val.length} arguments`);
+
+            for(var i = 0; i < args.val.length; i++){
+              if(!args.val[i].sameType(op.formalArgs[i].type))
+                this.restore('Argument types mismatch');
+            }
+
+            var errMsg = expr.add(args);
+            if(errMsg !== null) this.restore(errMsg);
+
+            var errMsg = expr.add(opCall);
+            if(errMsg !== null) this.restore(errMsg);
+
+            op = func;
+          }
         }
       }
 
       var errMsg = expr.add(op);
-      if(errMsg !== null)
-        this.restore(errMsg);
+      if(errMsg !== null) this.restore(errMsg);
 
       var char = parser.char(0);
 
@@ -669,12 +727,45 @@ class Source{
       this.err('Unexpected end of file');
 
     var errMsg = expr.finalize();
-    if(errMsg !== null)
-      this.restore(errMsg);
+    if(errMsg !== null) this.restore(errMsg);
 
     parser.discard();
 
     return expr;
+  }
+
+  parseArgs(scope){
+    var {parser} = this;
+
+    parser.trim();
+    parser.save();
+
+    var args = [];
+
+    if(parser.char() !== ')'){
+      while(parser.trim(), !parser.eof){
+        parser.update();
+        var expr = this.parseExpr(scope, 0);
+        args.push(expr);
+
+        parser.update();
+        var char = parser.char(1);
+
+        if(char === null)
+          this.restore('Unexpected end of input while parsing function arguments');
+
+        if(char === ')') break;
+        if(char === ',') continue;
+
+        this.restore('Unexpected token in function arguments');
+      }
+    }
+
+    args = new Arguments(scope, args);
+
+    parser.discard();
+
+    return args;
   }
 
   restore(msg = null){
@@ -1045,8 +1136,10 @@ class Parser{
       arr = arr.filter(op => op[i] === char);
 
       if(arr.length === 0){
-        if(arrPrev !== null)
-          str = arrPrev[0];
+        if(arrPrev !== null){
+          str = arrPrev.find(a => a.length === i);
+          if(str === undefined) str = '';
+        }
 
         break;
       }
@@ -1054,7 +1147,7 @@ class Parser{
       this.char(1);
       arrPrev = arr;
 
-      if(arr.length === 1){
+      if(arr.length === 1 && arr[0].length === i){
         str = arr[0];
         break;
       }
@@ -1192,6 +1285,11 @@ class Linker{
   }
 
   link(){
+    this.decls.forEach(decl => {
+      var def = this.getDef(decl.name);
+      decl.id = def.id;
+    });
+
     this.processVars();
     this.processFuncs();
 
@@ -1261,7 +1359,10 @@ class Linker{
 
     this.procExpr(scope, expr);
 
-    var offset = vari.offsets[scope.id];
+    var offset = scope.getOffset(vari);
+    if(offset === null)
+      this.err('Missing offset while parsing variable declaration');
+
     asm.int(offset);
     asm.add('varSet');
   }
@@ -1288,8 +1389,15 @@ class Linker{
       if(op instanceof Variable){
         if(op instanceof Constant){
           this.type(op.type, op.val);
+        }else if(op instanceof Function){
+          this.procFuncLiteral(scope, op);
+        }else if(op instanceof Arguments){
+          this.procArgs(scope, op);
         }else{
-          var offset = op.offsets[scope.id];
+          var offset = scope.getOffset(op);
+          if(offset === null)
+            this.err('Missing offset while parsing expression');
+
           asm.int(offset);
           asm.add('varGet');
         }
@@ -1297,6 +1405,21 @@ class Linker{
         this.op(op);
       }
     });
+  }
+
+  procFuncLiteral(scope, func){
+    var {asm} = this;
+
+    asm.add(`:${func.id}`);
+  }
+
+  procArgs(scope, argsVal){
+    var args = argsVal.val;
+
+    for(var i = args.length - 1; i >= 0; i--){
+      var arg = args[i];
+      this.procExpr(scope, arg);
+    }
   }
 
   type(type, val){
@@ -1324,17 +1447,68 @@ class Linker{
 
   op(op){
     var {asm} = this;
+    var name = op.name;
 
-    switch(op.name){
-      case '+': asm.add('add'); break;
-      case '-': asm.add('sub'); break;
-      case '*': asm.add('mul'); break;
-      case '/': asm.add('div'); break;
+    switch(name){
+      case '(\0)':     this.opCall(op);  break;
+      case '[\0]':     throw new TypeError('Array indexing is not supported'); break;
+      case '->':       throw new TypeError('Arrow operator is not supported'); break;
+      case '.':        throw new TypeError('Dot operator is not supported'); break;
+      case '\0++':     throw new TypeError('Postincrement operator is not supported'); break;
+      case '\0--':     throw new TypeError('Postdecrement is not supported'); break;
+
+      case 'plus\0':   throw new TypeError('Unexpected unary `+` operator'); break;
+      case 'minus\0':  asm.add('minus'); break;
+      case '!':        asm.add('not');   break;
+      case '~':        asm.add('neg');   break;
+      case '++\0':     throw new TypeError('Preincrement operator is not supported'); break;
+      case '--\0':     throw new TypeError('Predecrement operator is not supported'); break;
+      case 'cast\0':   throw new TypeError('Cast is not supported'); break;
+      case 'deref\0':  throw new TypeError('Unary operator `*` is not supported'); break;
+      case 'addr\0':   throw new TypeError('Unary operator `&` is not supported'); break;
+      case 'sizeof\0': throw new TypeError('Unexpected `sizeof` operator'); break;
+
+      case '*':        asm.add('mul');   break;
+      case '/':        asm.add('div');   break;
+      case '%':        asm.add('mod');   break;
+
+      case '+':        asm.add('add');   break;
+      case '-':        asm.add('sub');   break;
+
+      case '<<':       asm.add('shl');   break;
+      case '>>':       asm.add('shr');   break;
+
+      case '<':        asm.add('le');    break;
+      case '<=':       asm.add('leq');   break;
+      case '>':        asm.add('ge');    break;
+      case '>=':       asm.add('geq');   break;
+
+      case '==':       asm.add('eq');    break;
+      case '!=':       asm.add('neq');   break;
+
+      case '&':        asm.add('and');   break;
+      case '^':        asm.add('xor');   break;
+      case '|':        asm.add('or');    break;
+
+      case '&&':       throw new TypeError('Logical `&&` operator is not supported'); break;
+      case '||':       throw new TypeError('Logical `||` operator is not supported'); break;
+
+      case '?\0:\0':   throw new TypeError('Ternary conditional operator is not supported'); break;
+      case ',':        throw new TypeError('Comma operator is not supported'); break;
 
       default:
-        this.err('Unrecognized operator');
+        if(name.endsWith('='))
+          throw new TypeError('Assignment operators are not supported');
+
+        this.err(`Unrecognized operator "${name}"`);
         break;
     }
+  }
+
+  opCall(op){
+    var {asm} = this;
+
+    asm.add('call');
   }
 
   compile(){
@@ -1471,6 +1645,13 @@ class Type extends Unique{
     }
   }
 
+  isVoid(){
+    if(this.name === null)
+      throw new TypeError('Cannot void-check type without a name');
+
+    return this.name === 'void' && this.asts === 0;
+  }
+
   toString(){
     return `${this.name}${'*'.repeat(this.asts)}`;
   }
@@ -1565,6 +1746,13 @@ class Variable extends Unique{
     return this.type.sizeof();
   }
 
+  isVoid(){
+    if(this.type === null)
+      throw new TypeError('Cannot void-check `null` type');
+
+    return this.type.isVoid();
+  }
+
   toString(){
     var str = `${this.type} ${this.name}`;
     if(this.val !== null) str += ` = ${this.val}`;
@@ -1591,6 +1779,12 @@ class Argument extends Variable{
     super(scope, type, name, val);
 
     this.isArg = true;
+  }
+};
+
+class Arguments extends Variable{
+  constructor(scope, arr){
+    super(scope, null, null, arr);
   }
 };
 
@@ -1624,13 +1818,17 @@ class Expression extends GlobalVariable{
           return errMsg;
       }
 
-      if(op.name !== ')'){
+      if(op.name !== ')' && op.name !== ']'){
         this.stack.push(op);
       }else{
+        var name = op.name;
         op = this.stack.pop();
 
-        if(op.name !== '(')
+        if(name === ')' && op.name !== '(')
           return 'Missing open parenthese';
+
+        if(name === ']' && op.name !== '[')
+          return 'Missing open bracket';
       }
     }
 
@@ -1915,6 +2113,13 @@ class Scope extends Unique{
       throw new TypeError('Cannot get type of the scope, because it has no function definition');
 
     return this.funcDef.getType();
+  }
+
+  getOffset(vari){
+    if(!(this.id in vari.offsets))
+      return null;
+
+    return vari.offsets[this.id];
   }
 };
 
