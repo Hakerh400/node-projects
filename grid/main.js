@@ -47,11 +47,11 @@ function render(window){
           var x = xx + Math.cos(angle) * size;
           var y = yy + Math.sin(angle) * size;
 
-          var btn = [0, 2][O.rand(2)];
+          var btn = 0;//[0, 2][O.rand(2)];
           var obj = {clientX: x, clientY: y, button: btn};
 
           var type = O.rand(5);
-          var code = [null, 'KeyB', 'KeyW', 'KeyX', 'KeyV'][type];
+          var code = 'KeyV';//[null, 'KeyB', 'KeyW', 'KeyX', 'KeyV'][type];
 
           if(type !== 0) window.emit('keydown', {code});
           window.emit('mousedown', obj);
