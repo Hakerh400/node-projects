@@ -3,7 +3,7 @@
 var media = require('../media');
 var logStatus = require('../log-status');
 
-var input = '-dw/1.avi';
+var input = '-dw/1.mp4';
 var output = '-vid/1.mp4';
 
 var w = 1920;

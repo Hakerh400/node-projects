@@ -1,1 +1,0 @@
-cls && node main.js
