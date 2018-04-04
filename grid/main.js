@@ -1,5 +1,7 @@
 'use strict';
 
+throw 0;
+
 var O = require('../framework');
 var media = require('../media');
 var browser = require('../browser');
@@ -22,7 +24,7 @@ setTimeout(main);
 function main(){
   var window = new browser.Window(w, h, url);
 
-  window.on('_ready', () => {
+  window.addEventListener('_ready', () => {
     render(window);
   });
 }
@@ -30,9 +32,11 @@ function main(){
 function render(window){
   var canvas = window._canvases[0];
 
-  var size = 100;
-  var xx = O.rand(w - size);
-  var yy = O.rand(h - size);
+  var radius = 100;
+  var diameter = radius * 2;
+
+  var xx = O.rand(w - radius);
+  var yy = O.rand(h - radius);
 
   media.renderVideo('-vid/1.mp4', w, h, fps, hd, (w, h, g, f) => {
     logStatus(f, framesNum);
@@ -44,25 +48,24 @@ function render(window){
       if(t <= interval - 1){
         if(Math.random() > .1){
           var angle = O.randf(O.pi2);
-          var x = xx + Math.cos(angle) * size;
-          var y = yy + Math.sin(angle) * size;
+          var x = xx + Math.cos(angle) * radius;
+          var y = yy + Math.sin(angle) * radius;
 
-          var btn = 0;//[0, 2][O.rand(2)];
+          var code = 'KeyX';
+          var btn = 0;
+
           var obj = {clientX: x, clientY: y, button: btn};
 
-          var type = O.rand(5);
-          var code = 'KeyV';//[null, 'KeyB', 'KeyW', 'KeyX', 'KeyV'][type];
-
-          if(type !== 0) window.emit('keydown', {code});
+          if(code !== null) window.emit('keydown', {code});
           window.emit('mousedown', obj);
           window.emit('mouseup', obj);
-          if(type !== 0) window.emit('keyup', {code});
+          if(code !== null) window.emit('keyup', {code});
         }
       }else{
         pressKey('Enter');
 
-        xx = O.rand(w - size);
-        yy = O.rand(h - size);
+        xx = radius + O.randf(w - diameter);
+        yy = radius + O.randf(h - diameter);
       }
     });
 
