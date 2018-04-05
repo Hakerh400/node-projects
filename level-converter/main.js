@@ -87,6 +87,7 @@ function convertLevel(level){
   var fileName = `${num}.txt`;
   var filePath = path.join(output, fileName);
 
+  bs.pack();
   fs.writeFileSync(filePath, bs.stringify(true));
 }
 
