@@ -1,7 +1,5 @@
 'use strict';
 
-throw 0;
-
 var O = require('../framework');
 var media = require('../media');
 var browser = require('../browser');
@@ -15,9 +13,6 @@ var duration = 60 * 10;
 var framesNum = fps * duration;
 
 var url = '/?project=grid';
-
-var speed = 5;
-var interval = 180;
 
 setTimeout(main);
 
@@ -35,43 +30,47 @@ function render(window){
   var radius = 100;
   var diameter = radius * 2;
 
-  var xx = O.rand(w - radius);
-  var yy = O.rand(h - radius);
+  var xx = radius + O.randf(w - diameter);
+  var yy = radius + O.randf(h - diameter);
 
   media.renderVideo('-vid/1.mp4', w, h, fps, hd, (w, h, g, f) => {
     logStatus(f, framesNum);
 
-    O.repeat(speed, sp => {
-      var ff = (f - 1) * speed + sp;
-      var t = ff % interval + 1;
+    if(f === 1){
+      var str =
+      '0888888888888888888888888888888888888888888888888924924924924924' +
+      '9249249249249249249244924924924924924924924924924924924922492492' +
+      '4924924924924924924924924924912492492492492492492492492492492492' +
+      '4892492492492492492492492492492492492449249249249249249249249249' +
+      '2492492492249249249249249249249249249249249249124924924924924924' +
+      '9249249249249249248924924924924924924924924924924924924492492492' +
+      '4924924924924924924924924922492492492492492492492492492492492491' +
+      '2492492492492492492492492492492492489249249249249249249249249249' +
+      '2492492449249249249249249249249249249249249224924924924924924924' +
+      '9249249249249249124924924924924924924924924924924924892492492492' +
+      '4924924924924924924924924492492492492492492492492492492492492249' +
+      '2492492492492492492492492492492491249249249249249249249249249249' +
+      '2492489249249249249249249249249249249249244924924924924924924924' +
+      '9249249249249224924924924924924924924924924924924912492492492492' +
+      '4924924924924924924924892492492492492492492492492492492492449249' +
+      '24924924924924924924924924924920';
 
-      if(t <= interval - 1){
-        if(Math.random() > .1){
-          var angle = O.randf(O.pi2);
-          var x = xx + Math.cos(angle) * radius;
-          var y = yy + Math.sin(angle) * radius;
+      window.emit('_msg', {type: 'import', data: str});
 
-          var code = 'KeyX';
-          var btn = 0;
+      pressKey('Digit1');
+      g.drawImage(canvas, 0, 0);
+    }else if(f % fps === 1){
+      var evt = {type: 'export'};
+      window.emit('_msg', evt);
 
-          var obj = {clientX: x, clientY: y, button: btn};
+      evt.type = 'import';
+      evt.data = `0${evt.data}`;
+      window.emit('_msg', evt);
+      pressKey('Enter');
 
-          if(code !== null) window.emit('keydown', {code});
-          window.emit('mousedown', obj);
-          window.emit('mouseup', obj);
-          if(code !== null) window.emit('keyup', {code});
-        }
-      }else{
-        pressKey('Enter');
-
-        xx = radius + O.randf(w - diameter);
-        yy = radius + O.randf(h - diameter);
-      }
-    });
-
-    pressKey('Digit1');
-
-    g.drawImage(canvas, 0, 0);
+      pressKey('Digit1');
+      g.drawImage(canvas, 0, 0);
+    }
 
     return f !== framesNum;
   });
