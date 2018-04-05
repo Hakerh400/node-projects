@@ -31,7 +31,7 @@ function render(window){
     logStatus(f, framesNum);
 
     if(f === 1){
-      var str = '';
+      var str = Buffer.from(O.ca(1e6 << 1, () => O.rand(256))).toString('hex');
       window.emit('_msg', {type: 'import', data: str});
 
       pressKey('Digit1');
