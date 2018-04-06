@@ -41,7 +41,7 @@ function render(window){
       window.emit('_msg', evt);
 
       evt.type = 'import';
-      evt.data = evt.data.match(/\S{2}/g).map(a => (parseInt(a) & 1).toString(16).padStart(2, '0')).join``;
+      evt.data = evt.data.match(/\S{2}/g).map(a => (parseInt(a) & 4).toString(16).padStart(2, '0')).join``;
       window.emit('_msg', evt);
       pressKey('Enter');
 

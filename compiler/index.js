@@ -8,7 +8,7 @@ var keywords = require('./keywords.json');
 
 const TAB_SIZE = 2;
 
-const CWD = process.cwd();
+const CWD = __dirname;
 const NATIVE_LIBS_DIR = joinNormalize(CWD, 'native-libs');
 const MAIN_HEADER = 'main.h';
 
