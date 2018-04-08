@@ -1,5 +1,7 @@
 [
   "node_modules",
   "blank",
-  "test"
+  "test",
+  "blank-addon",
+  "test-addon"
 ]
