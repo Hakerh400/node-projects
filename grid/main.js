@@ -3,6 +3,7 @@
 var O = require('../framework');
 var media = require('../media');
 var browser = require('../browser');
+var buffer = require('../buffer');
 var logStatus = require('../log-status');
 
 var w = 1920;
@@ -31,7 +32,8 @@ function render(window){
     logStatus(f, framesNum);
 
     if(f === 1){
-      var str = Buffer.from(O.ca(1e6 << 1, () => O.rand(256))).toString('hex');
+      var arr = [];
+      var str = Buffer.from(arr).toString('hex');
       window.emit('_msg', {type: 'import', data: str});
 
       pressKey('Digit1');
@@ -41,7 +43,14 @@ function render(window){
       window.emit('_msg', evt);
 
       evt.type = 'import';
-      evt.data = evt.data.match(/\S{2}/g).map(a => (parseInt(a) & 4).toString(16).padStart(2, '0')).join``;
+      var arr = [...buffer.fromHex(evt.data)];
+
+      arr = arr.map((a, b) => {
+        if(b !== 0) return a;
+        return ~a;
+      });
+
+      evt.data = Buffer.from(arr).toString('hex');
       window.emit('_msg', evt);
       pressKey('Enter');
 

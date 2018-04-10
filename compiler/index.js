@@ -3,6 +3,7 @@
 var fs = require('fs');
 var path = require('path');
 var O = require('../framework');
+var assembler = require('../assembler');
 var dataTypes = require('./data-types.json');
 var keywords = require('./keywords.json');
 
@@ -10,6 +11,7 @@ const TAB_SIZE = 2;
 
 const CWD = __dirname;
 const NATIVE_LIBS_DIR = joinNormalize(CWD, 'native-libs');
+const ASM_BASE = joinNormalize(NATIVE_LIBS_DIR, 'asm.txt');
 const MAIN_HEADER = 'main.h';
 
 const WHITE_SPACE_CHARS = ' \r\n\t'
@@ -139,8 +141,7 @@ class Source{
       this.filePath = normalizePath(this.filePath);
 
     if(this.src === null && this.filePath !== null){
-      var buff = fs.readFileSync(this.filePath);
-      this.src = buff.toString();
+      this.src = fs.readFileSync(this.filePath, 'utf8');
     }
 
     this.parser = null;
@@ -163,8 +164,7 @@ class Source{
     else if(join) filePath = joinNormalize(this.filePath, filePath);
     else filePath = normalizePath(filePath);
 
-    var buff = fs.readFileSync(filePath);
-    var src = buff.toString();
+    var src = fs.readFileSync(filePath, 'utf8');
     src += '\n';
 
     this.hsrcs.push([O.sanl(src).length, filePath]);
@@ -512,31 +512,34 @@ class Source{
 
   parseStatement(scope){
     var {parser} = this;
-    var stat = null;
 
     parser.trim();
     parser.save();
 
-    var ident = parser.ident(0);
+    if(parser.char(0) === '{'){
+      this.parseCodeBlock(scope);
+    }else{
+      var ident = parser.ident(0);
 
-    if(ident !== null){
-      if(dataTypes.includes(ident)){
-        stat = this.parseVarDecl(scope);
-      }else if(keywords.includes(ident)){
-        switch(ident){
-          case 'return':
-            this.parseReturnStatement(scope);
-            break;
+      if(ident !== null){
+        if(dataTypes.includes(ident)){
+          this.parseVarDecl(scope);
+        }else if(keywords.includes(ident)){
+          switch(ident){
+            case 'return': this.parseReturnStatement(scope); break;
+            case 'if': this.parseIfStatement(scope); break;
+            case 'while': this.parseWhileStatement(scope); break;
 
-          default:
-            this.restore('Unexpected keyword');
-            break;
+            default:
+              this.restore('Unexpected keyword');
+              break;
+          }
+        }else{
+          this.parseExpr(scope, 1, 1);
         }
       }else{
-        throw 2;
+        this.parseExpr(scope, 1, 1);
       }
-    }else{
-      throw 0;
     }
 
     parser.discard();
@@ -562,7 +565,7 @@ class Source{
 
     var vari = new Variable(this, type, name);
     if(!scope.addVar(vari))
-      this.restore('Variable declarations are not alowed in nested code blocks')
+      this.restore('Variable declarations are not allowed in nested code blocks');
 
     parser.update();
     var char = parser.char(1);
@@ -636,7 +639,7 @@ class Source{
     parser.discard();
   }
 
-  parseExpr(scope, includeCommas = 1){
+  parseExpr(scope, includeCommas = 1, standAlone = 0){
     var {parser} = this;
     var expr = new Expression(scope);
 
@@ -729,8 +732,19 @@ class Source{
     var errMsg = expr.finalize();
     if(errMsg !== null) this.restore(errMsg);
 
-    parser.discard();
+    if(standAlone){
+      expr.isStandAlone = true;
 
+      parser.update();
+      if(parser.char(1) !== ';')
+        this.restore('Missing semicolon `;` after expression');
+
+      var stat = new Statement(scope, 'expr');
+      scope.addStatement(stat);
+      stat.addVar(expr);
+    }
+
+    parser.discard();
     return expr;
   }
 
@@ -766,6 +780,103 @@ class Source{
     parser.discard();
 
     return args;
+  }
+
+  parseCodeBlock(scope){
+    var {parser} = this;
+    var stat = new Statement(scope, 'block');
+    scope.addStatement(stat);
+
+    parser.trim();
+    parser.save();
+
+    if(parser.char(1) !== '{')
+      this.restore('Code block must start with `{`');
+
+    var subScope = stat.createScope();
+
+    while(parser.trim(), !parser.eof){
+      parser.update();
+
+      if(parser.char(0) === '}'){
+        parser.char(1);
+        break;
+      }
+
+      this.parseStatement(subScope);
+    }
+
+    parser.discard();
+  }
+
+  parseIfStatement(scope){
+    var {parser} = this;
+    var stat = new Statement(scope, 'if');
+    scope.addStatement(stat);
+
+    parser.trim();
+    parser.save();
+
+    if(parser.ident(1) !== 'if')
+      this.restore('If statement must begin with keyword `if`')
+
+    parser.update();
+    this.parseStatExpr(scope, stat);
+
+    parser.update();
+    var subScope = stat.createScope();
+    this.parseStatement(subScope);
+
+    parser.update();
+    if(parser.ident(0) === 'else'){
+      parser.ident(1);
+      subScope = stat.createScope();
+      this.parseStatement(subScope);
+    }
+
+    parser.discard();
+  }
+
+  parseWhileStatement(scope){
+    var {parser} = this;
+    var stat = new Statement(scope, 'while');
+    scope.addStatement(stat);
+
+    parser.trim();
+    parser.save();
+
+    if(parser.ident(1) !== 'while')
+      this.restore('Expected `while` keyword');
+
+    parser.update();
+    this.parseStatExpr(scope, stat);
+
+    parser.update();
+    var subScope = stat.createScope();
+    this.parseStatement(subScope);
+
+    parser.discard();
+  }
+
+  parseStatExpr(scope, stat){
+    var {parser} = this;
+
+    parser.trim();
+    parser.save();
+
+    parser.update();
+    if(parser.char(1) !== '(')
+      this.restore('Missing open parenthese `(`');
+
+    parser.update();
+    var expr = this.parseExpr(scope);
+    stat.addVar(expr);
+
+    parser.update();
+    if(parser.char(1) !== ')')
+      this.restore('Missing closed parenthese `)`');
+
+    parser.discard();
   }
 
   restore(msg = null){
@@ -1186,423 +1297,6 @@ class Parser{
   }
 };
 
-class Linker{
-  constructor(srcs){
-    this.decls = [];
-    this.defs = [];
-
-    this.asm = new Assembler();
-    this.mcode = new MachineCode();
-
-    this.setSrc(srcs);
-  }
-
-  setSrc(srcs){
-    var {decls, defs} = this;
-
-    srcs.forEach(vars => {
-      vars.forEach(vari => {
-        this.addVar(vari);
-      });
-    });
-
-    this.decls.forEach(vari => {
-      if(this.getDef(vari.name) === null){
-        if(!vari.isFunc) this.err(`Missing initialization for global variable "${vari}"`);
-        else this.err(`Missing definition for function "${vari}"`);
-      }
-    });
-
-    this.checkMainFunc();
-  }
-
-  addVar(vari){
-    if(vari.val === null) this.addDecl(vari);
-    else this.addDef(vari);
-  }
-
-  addDecl(vari){
-    var decl = this.getDecl(vari.name);
-    if(decl !== null && !vari.sameType(decl))
-      this.err(`Type mismatch for "${vari}"`);
-
-    if(decl === null)
-      this.decls.push(vari);
-  }
-
-  addDef(vari){
-    if(this.getDef(vari.name) !== null){
-      if(!vari.isFunc) this.err(`Multiple initializations for global variable "${vari.name}"`);
-      else this.err(`Multiple definitions for function "${vari.name}"`);
-    }
-
-    var decl = this.getDecl(vari.name);
-    if(decl !== null && !vari.sameType(decl))
-      this.err(`Type mismatch for "${vari}"`);
-
-    if(decl === null)
-      this.decls.push(vari);
-
-    this.defs.push(vari);
-  }
-
-  getDecl(name){
-    var {decls} = this;
-
-    for(var i = 0; i < decls.length; i++){
-      if(decls[i].name === name)
-        return decls[i];
-    }
-
-    return null;
-  }
-
-  getDef(name){
-    var {defs} = this;
-
-    for(var i = 0; i < defs.length; i++){
-      if(defs[i].name === name)
-        return defs[i];
-    }
-
-    return null;
-  }
-
-  getVar(name){
-    return this.getDef(name);
-  }
-
-  checkMainFunc(){
-    var mainFunc = this.getDef('main');
-
-    if(mainFunc === null)
-      this.err('Missing main function');
-
-    var expected = new Function(null, 'void', null, null, []);
-
-    if(!mainFunc.sameType(expected))
-      this.err('Main function must take no arguments and return void');
-  }
-
-  link(){
-    this.decls.forEach(decl => {
-      var def = this.getDef(decl.name);
-      decl.id = def.id;
-    });
-
-    this.processVars();
-    this.processFuncs();
-
-    return this.compile();
-  }
-
-  processVars(){
-    var {asm} = this;
-
-    this.defs.forEach(vari => {
-      if(vari.isFunc) return;
-
-      asm.label(vari.id);
-      asm.incIndent();
-
-      switch(vari.type.name){
-        case 'int':
-          var buff = Buffer.alloc(4);
-          buff.writeUInt32LE(vari.resolve() & MEM_MAX_ADDR);
-          asm.buff(buff);
-          break;
-
-        default:
-          this.err(`Type "${vari.type}" is not supported`);
-          break;
-      }
-
-      asm.decIndent();
-    });
-  }
-
-  processFuncs(){
-    var {asm} = this;
-
-    this.defs.forEach(vari => {
-      if(!vari.isFunc) return;
-
-      var scope = vari.val.scope;
-      var stats = scope.stats;
-
-      asm.label(vari.id);
-      asm.incIndent();
-
-      asm.int(scope.varsSize);
-      asm.add('enter');
-
-      stats.forEach(stat => {
-        switch(stat.name){
-          case 'varDecl': this.procVarDecl(scope, stat); break;
-          case 'return': this.procRet(scope, stat); break;
-
-          default:
-            this.err('Unrecognized statement type');
-            break;
-        }
-      });
-
-      asm.decIndent();
-    });
-  }
-
-  procVarDecl(scope, stat){
-    var {asm} = this;
-
-    var vari = stat.vars[0];
-    var expr = vari.val;
-
-    this.procExpr(scope, expr);
-
-    var offset = scope.getOffset(vari);
-    if(offset === null)
-      this.err('Missing offset while parsing variable declaration');
-
-    asm.int(offset);
-    asm.add('varSet');
-  }
-
-  procRet(scope, stat){
-    var {asm} = this;
-
-    var expr = stat.vars[0];
-
-    if(expr instanceof Expression){
-      this.procExpr(scope, expr);
-      asm.int(scope.argsSize);
-      asm.add('leave');
-    }else{
-      asm.int(scope.argsSize);
-      asm.add('leavev');
-    }
-  }
-
-  procExpr(scope, expr){
-    var {asm} = this;
-
-    expr.ops.forEach(op => {
-      if(op instanceof Variable){
-        if(op instanceof Constant){
-          this.type(op.type, op.val);
-        }else if(op instanceof Function){
-          this.procFuncLiteral(scope, op);
-        }else if(op instanceof Arguments){
-          this.procArgs(scope, op);
-        }else{
-          var offset = scope.getOffset(op);
-          if(offset === null)
-            this.err('Missing offset while parsing expression');
-
-          asm.int(offset);
-          asm.add('varGet');
-        }
-      }else{
-        this.op(op);
-      }
-    });
-  }
-
-  procFuncLiteral(scope, func){
-    var {asm} = this;
-
-    asm.add(`:${func.id}`);
-  }
-
-  procArgs(scope, argsVal){
-    var args = argsVal.val;
-
-    for(var i = args.length - 1; i >= 0; i--){
-      var arg = args[i];
-      this.procExpr(scope, arg);
-    }
-  }
-
-  type(type, val){
-    var {asm} = this;
-
-    if(type.asts !== 0){
-      asm.int(val);
-      return;
-    }
-
-    switch(type.name){
-      case 'int':
-        asm.int(val);
-        break;
-
-      case 'void':
-        this.err('Illegal use of void type');
-        break;
-
-      default:
-        this.err('Unrecognized type');
-        break;
-    }
-  }
-
-  op(op){
-    var {asm} = this;
-    var name = op.name;
-
-    switch(name){
-      case '(\0)':     this.opCall(op);  break;
-      case '[\0]':     throw new TypeError('Array indexing is not supported'); break;
-      case '->':       throw new TypeError('Arrow operator is not supported'); break;
-      case '.':        throw new TypeError('Dot operator is not supported'); break;
-      case '\0++':     throw new TypeError('Postincrement operator is not supported'); break;
-      case '\0--':     throw new TypeError('Postdecrement is not supported'); break;
-
-      case 'plus\0':   throw new TypeError('Unexpected unary `+` operator'); break;
-      case 'minus\0':  asm.add('minus'); break;
-      case '!':        asm.add('not');   break;
-      case '~':        asm.add('neg');   break;
-      case '++\0':     throw new TypeError('Preincrement operator is not supported'); break;
-      case '--\0':     throw new TypeError('Predecrement operator is not supported'); break;
-      case 'cast\0':   throw new TypeError('Cast is not supported'); break;
-      case 'deref\0':  throw new TypeError('Unary operator `*` is not supported'); break;
-      case 'addr\0':   throw new TypeError('Unary operator `&` is not supported'); break;
-      case 'sizeof\0': throw new TypeError('Unexpected `sizeof` operator'); break;
-
-      case '*':        asm.add('mul');   break;
-      case '/':        asm.add('div');   break;
-      case '%':        asm.add('mod');   break;
-
-      case '+':        asm.add('add');   break;
-      case '-':        asm.add('sub');   break;
-
-      case '<<':       asm.add('shl');   break;
-      case '>>':       asm.add('shr');   break;
-
-      case '<':        asm.add('le');    break;
-      case '<=':       asm.add('leq');   break;
-      case '>':        asm.add('ge');    break;
-      case '>=':       asm.add('geq');   break;
-
-      case '==':       asm.add('eq');    break;
-      case '!=':       asm.add('neq');   break;
-
-      case '&':        asm.add('and');   break;
-      case '^':        asm.add('xor');   break;
-      case '|':        asm.add('or');    break;
-
-      case '&&':       throw new TypeError('Logical `&&` operator is not supported'); break;
-      case '||':       throw new TypeError('Logical `||` operator is not supported'); break;
-
-      case '?\0:\0':   throw new TypeError('Ternary conditional operator is not supported'); break;
-      case ',':        throw new TypeError('Comma operator is not supported'); break;
-
-      default:
-        if(name.endsWith('='))
-          throw new TypeError('Assignment operators are not supported');
-
-        this.err(`Unrecognized operator "${name}"`);
-        break;
-    }
-  }
-
-  opCall(op){
-    var {asm} = this;
-
-    asm.add('call');
-  }
-
-  compile(){
-    this.mcode.compile(this.asm);
-    return this.mcode;
-  }
-
-  err(msg){
-    msg = `ERROR: ${msg}`;
-    error(msg);
-  }
-};
-
-class Assembler{
-  constructor(src = null){
-    this.src = src;
-    this.indent = 0;
-    this.arr = [];
-  }
-
-  add(str){
-    str = `${' '.repeat(this.indent * TAB_SIZE)}${str}`;
-    this.arr.push(str);
-  }
-
-  inst(inst){
-    this.add(`${inst}`);
-  }
-
-  label(label){
-    this.add(`${label}:`);
-  }
-
-  setSrc(src){
-    this.src = src;
-  }
-
-  setIndent(indent){
-    this.indent = indent;
-  }
-
-  incIndent(){
-    this.indent++;
-  }
-
-  decIndent(){
-    if(this.indent === 0)
-      throw new RangeError('Invalid indentation level');
-
-    this.indent--;
-  }
-
-  buff(buff){
-    var str = [...buff].map(byte => {
-      return `_${byte}`;
-    }).join` `;
-
-    this.add(str);
-  }
-
-  int(val){
-    this.add(val);
-  }
-
-  toString(){
-    return this.arr.join`\n`;
-  }
-};
-
-class MachineCode{
-  constructor(asm = null, hex = null){
-    if(asm instanceof Assembler)
-      asm = asm.toString();
-
-    this.asm = asm;
-    this.hex = hex;
-  }
-
-  compile(asm = null){
-    if(asm instanceof Assembler)
-      asm = asm.toString();
-
-    if(asm !== null) this.asm = asm;
-    else asm = this.asm;
-
-    if(asm === null)
-      throw new TypeError('Cannot process `null` assembly data');
-
-    this.hex = Buffer.alloc(0);
-
-    return this.hex;
-  }
-};
-
 class Unique{
   constructor(){
     this.id = globalId++;
@@ -1615,6 +1309,15 @@ class Type extends Unique{
 
     this.name = name;
     this.asts = asts;
+  }
+
+  clone(){
+    var type = new Type();
+
+    type.name = this.name;
+    type.asts = this.asts;
+
+    return type;
   }
 
   sameType(type){
@@ -1677,10 +1380,11 @@ class Variable extends Unique{
     this.isGlobal = false;
     this.isArg = false;
     this.isFunc = false;
+    this.isLvalue = false;
   }
 
   clone(){
-    var {scope, type, name, val} = this;
+    var {scope, type, name, val, offsets} = this;
 
     if(type instanceof Type) type = type.clone();
     if(val instanceof Variable) val = val.clone();
@@ -1691,6 +1395,9 @@ class Variable extends Unique{
     vari.type = type;
     vari.name = name;
     vari.val = val;
+
+    for(var offset in offsets)
+      vari.offsets[offset] = offsets[offset];
 
     return vari;
   }
@@ -1753,6 +1460,12 @@ class Variable extends Unique{
     return this.type.isVoid();
   }
 
+  toLvalue(){
+    var lvalue = this.clone();
+    lvalue.isLvalue = true;
+    return lvalue;
+  }
+
   toString(){
     var str = `${this.type} ${this.name}`;
     if(this.val !== null) str += ` = ${this.val}`;
@@ -1795,6 +1508,9 @@ class Expression extends GlobalVariable{
     this.rank = 0;
     this.stack = [];
     this.ops = [];
+    this.lvalues = [];
+
+    this.isStandAlone = false;
   }
 
   clone(){
@@ -1803,26 +1519,40 @@ class Expression extends GlobalVariable{
     vari.rank = this.rank;
     vari.stack = this.stack.map(vari => vari.clone());
     vari.ops = this.ops.map(vari => vari.clone());
+    vari.lvalues = this.lvalues.map(vari => vari.clone());
 
     return vari;
   }
 
   add(op){
+    var {stack, ops} = this;
+
+    if(op instanceof Operator && op.name === '='){
+      if(ops.length === 0)
+        return 'Missing lhs of the assignment operator';
+
+      var vari = ops.pop();
+      if(!(vari instanceof Variable))
+        return 'Expected lvalue on the lhs of the assignment operator';
+
+      this.lvalues.push(vari.toLvalue());
+    }
+
     if(op instanceof Variable){
-      this.ops.push(op);
+      ops.push(op);
       this.rank++;
     }else{
-      while(this.stack.length !== 0 && op.ipr <= this.stack[this.stack.length - 1].spr){
+      while(stack.length !== 0 && op.ipr <= stack[stack.length - 1].spr){
         var errMsg = this.pop();
         if(errMsg !== null)
           return errMsg;
       }
 
       if(op.name !== ')' && op.name !== ']'){
-        this.stack.push(op);
+        stack.push(op);
       }else{
         var name = op.name;
-        op = this.stack.pop();
+        op = stack.pop();
 
         if(name === ')' && op.name !== '(')
           return 'Missing open parenthese';
@@ -1836,10 +1566,19 @@ class Expression extends GlobalVariable{
   }
 
   pop(){
-    var x = this.stack.pop();
+    var {stack, ops, lvalues} = this;
+    var op = stack.pop();
 
-    this.ops.push(x);
-    this.rank += x.rank;
+    if(op instanceof Operator && op.name === '='){
+      if(this.lvalues.length === 0)
+        return 'Missing left operand of assignment operator';
+
+      var lvalue = lvalues.pop();
+      ops.push(lvalue);
+    }
+
+    ops.push(op);
+    this.rank += op.rank;
 
     if(this.rank < 1)
       return 'Expression rank cannot be less than 1';
@@ -2115,11 +1854,26 @@ class Scope extends Unique{
     return this.funcDef.getType();
   }
 
-  getOffset(vari){
-    if(!(this.id in vari.offsets))
+  getOffset(vari, searchInParent = 1){
+    if(!(this.id in vari.offsets)){
+      if(searchInParent && this.parent !== null)
+        return this.parent.getOffset(vari, 1);
       return null;
+    }
 
     return vari.offsets[this.id];
+  }
+
+  getArgsSize(searchInParent = 1){
+    if(searchInParent && this.parent !== null)
+      return this.parent.getArgsSize(1);
+    return this.argsSize;
+  }
+
+  getVarsSize(searchInParent = 1){
+    if(searchInParent && this.parent !== null)
+      return this.parent.getVarsSize(1);
+    return this.varsSize;
   }
 };
 
@@ -2132,15 +1886,17 @@ class Statement extends Unique{
 
     this.scopes = [];
     this.vars = [];
+
+    this.after = new Unique();
   }
 
   createScope(){
-    var scope = new Scope(this.scope);
+    var scope = new Scope(this.scope.funcDef, this.scope);
     this.addScope(scope);
     return scope;
   }
 
-  addScope(){
+  addScope(scope){
     this.scopes.push(scope);
   }
 
@@ -2166,6 +1922,471 @@ class Operator extends Unique{
     this.ipr = op[1];
     this.spr = op[2];
     this.rank = op[3];
+  }
+};
+
+class Linker{
+  constructor(srcs){
+    this.decls = [];
+    this.defs = [];
+
+    this.asm = new Assembler();
+    this.machine = new assembler.Machine();
+
+    this.setSrc(srcs);
+  }
+
+  setSrc(srcs){
+    var {decls, defs} = this;
+
+    srcs.forEach(vars => {
+      vars.forEach(vari => {
+        this.addVar(vari);
+      });
+    });
+
+    this.decls.forEach(vari => {
+      if(this.getDef(vari.name) === null){
+        if(!vari.isFunc) this.err(`Missing initialization for global variable "${vari}"`);
+        else this.err(`Missing definition for function "${vari}"`);
+      }
+    });
+
+    this.checkMainFunc();
+  }
+
+  addVar(vari){
+    if(vari.val === null) this.addDecl(vari);
+    else this.addDef(vari);
+  }
+
+  addDecl(vari){
+    var decl = this.getDecl(vari.name);
+    if(decl !== null && !vari.sameType(decl))
+      this.err(`Type mismatch for "${vari}"`);
+
+    if(decl === null)
+      this.decls.push(vari);
+  }
+
+  addDef(vari){
+    if(this.getDef(vari.name) !== null){
+      if(!vari.isFunc) this.err(`Multiple initializations for global variable "${vari.name}"`);
+      else this.err(`Multiple definitions for function "${vari.name}"`);
+    }
+
+    var decl = this.getDecl(vari.name);
+    if(decl !== null && !vari.sameType(decl))
+      this.err(`Type mismatch for "${vari}"`);
+
+    if(decl === null)
+      this.decls.push(vari);
+
+    this.defs.push(vari);
+  }
+
+  getDecl(name){
+    var {decls} = this;
+
+    for(var i = 0; i < decls.length; i++){
+      if(decls[i].name === name)
+        return decls[i];
+    }
+
+    return null;
+  }
+
+  getDef(name){
+    var {defs} = this;
+
+    for(var i = 0; i < defs.length; i++){
+      if(defs[i].name === name)
+        return defs[i];
+    }
+
+    return null;
+  }
+
+  getVar(name){
+    return this.getDef(name);
+  }
+
+  checkMainFunc(){
+    var mainFunc = this.getDef('main');
+
+    if(mainFunc === null)
+      this.err('Missing main function');
+
+    var expected = new Function(null, 'int', null, null, []);
+
+    if(!mainFunc.sameType(expected))
+      this.err('Main function must take no arguments and return int');
+  }
+
+  link(){
+    this.decls.forEach(decl => {
+      var def = this.getDef(decl.name);
+      decl.id = def.id;
+    });
+
+    this.processVars();
+    this.processFuncs();
+
+    return this.compile();
+  }
+
+  processVars(){
+    var {asm} = this;
+
+    this.defs.forEach(vari => {
+      if(vari.isFunc) return;
+
+      asm.label(vari.id);
+      asm.incIndent();
+
+      switch(vari.type.name){
+        case 'int':
+          var buff = Buffer.alloc(4);
+          buff.writeUInt32LE(vari.resolve() & MEM_MAX_ADDR);
+          asm.buff(buff);
+          break;
+
+        default:
+          this.err(`Type "${vari.type}" is not supported`);
+          break;
+      }
+
+      asm.decIndent();
+    });
+  }
+
+  processFuncs(){
+    var {asm} = this;
+
+    this.defs.forEach(vari => {
+      if(!vari.isFunc) return;
+
+      var scope = vari.val.scope;
+
+      if(vari.name === 'main')
+        asm.label('main');
+
+      asm.label(vari.id);
+      asm.incIndent();
+
+      asm.int(scope.varsSize);
+      asm.push('enter');
+
+      this.procScope(scope);
+
+      asm.decIndent();
+    });
+  }
+
+  procScope(scope){
+    var stats = scope.stats;
+
+    stats.forEach(stat => {
+      switch(stat.name){
+        case 'varDecl': this.procVarDecl(scope, stat); break;
+        case 'return': this.procRet(scope, stat); break;
+        case 'block': this.procBlock(scope, stat); break;
+        case 'expr': this.procExpr(scope, stat.vars[0]); break;
+        case 'if': this.procIf(scope, stat); break;
+        case 'while': this.procWhile(scope, stat); break;
+
+        default:
+          this.err('Unrecognized statement type');
+          break;
+      }
+    });
+  }
+
+  procVarDecl(scope, stat){
+    var {asm} = this;
+
+    var vari = stat.vars[0];
+    var expr = vari.val;
+
+    this.procExpr(scope, expr);
+
+    var offset = scope.getOffset(vari);
+    if(offset === null)
+      this.err('Missing offset while parsing variable declaration');
+
+    asm.int(offset);
+    asm.push('varSet');
+  }
+
+  procRet(scope, stat){
+    var {asm} = this;
+
+    var expr = stat.vars[0];
+
+    if(expr instanceof Expression){
+      this.procExpr(scope, expr);
+      asm.int(scope.getArgsSize());
+      asm.push('leave');
+    }else{
+      asm.int(scope.getArgsSize());
+      asm.push('leavev');
+    }
+  }
+
+  procIf(scope, stat){
+    var {asm} = this;
+
+    this.procExpr(scope, stat.vars[0]);
+
+    if(stat.scopes.length === 1){
+      asm.label(stat.after.id, 0);
+      asm.push('jz');
+
+      this.procScope(stat.scopes[0]);
+      asm.label(stat.after.id);
+    }else{
+      asm.label(stat.scopes[1].id, 0);
+      asm.push('jz');
+
+      this.procScope(stat.scopes[0]);
+      asm.label(stat.after.id, 0);
+      asm.push('jmp');
+      asm.label(stat.scopes[1].id);
+
+      this.procScope(stat.scopes[1]);
+      asm.label(stat.after.id);
+    }
+  }
+
+  procWhile(scope, stat){
+    var {asm} = this;
+
+    asm.label(stat.id);
+    this.procExpr(scope, stat.vars[0]);
+    asm.label(stat.after.id, 0);
+    asm.push('jz');
+
+    this.procScope(stat.scopes[0]);
+    asm.label(stat.id, 0);
+    asm.push('jmp');
+
+    asm.label(stat.after.id);
+  }
+
+  procExpr(scope, expr){
+    var {asm} = this;
+
+    expr.ops.forEach(op => {
+      if(op instanceof Variable){
+        if(op instanceof Constant){
+          this.type(op.type, op.val);
+        }else if(op instanceof Function){
+          this.procFuncLiteral(scope, op);
+        }else if(op instanceof Arguments){
+          this.procArgs(scope, op);
+        }else{
+          var offset = scope.getOffset(op);
+          if(offset === null)
+            this.err('Missing offset while parsing expression');
+
+          asm.int(offset);
+          if(!op.isLvalue) asm.push('varGet');
+        }
+      }else{
+        this.op(scope, op);
+      }
+    });
+
+    if(expr.isStandAlone)
+      asm.push('pop');
+  }
+
+  procFuncLiteral(scope, func){
+    var {asm} = this;
+
+    asm.label(func.id, 0);
+  }
+
+  procArgs(scope, argsVal){
+    var args = argsVal.val;
+
+    for(var i = args.length - 1; i >= 0; i--){
+      var arg = args[i];
+      this.procExpr(scope, arg);
+    }
+  }
+
+  procBlock(scope, stat){
+    this.procScope(stat.scopes[0]);
+  }
+
+  type(type, val){
+    var {asm} = this;
+
+    if(type.asts !== 0){
+      asm.int(val);
+      return;
+    }
+
+    switch(type.name){
+      case 'int':
+        asm.int(val);
+        break;
+
+      case 'void':
+        this.err('Illegal use of void type');
+        break;
+
+      default:
+        this.err('Unrecognized type');
+        break;
+    }
+  }
+
+  op(scope, op){
+    var {asm} = this;
+    var name = op.name;
+
+    switch(name){
+      case '(\0)':     this.opCall(op);  break;
+      case '[\0]':     throw new TypeError('Array indexing is not supported'); break;
+      case '->':       throw new TypeError('Arrow operator is not supported'); break;
+      case '.':        throw new TypeError('Dot operator is not supported'); break;
+      case '\0++':     throw new TypeError('Postincrement operator is not supported'); break;
+      case '\0--':     throw new TypeError('Postdecrement is not supported'); break;
+
+      case 'plus\0':   throw new TypeError('Unexpected unary `+` operator'); break;
+      case 'minus\0':  asm.push('minus'); break;
+      case '!':        asm.push('not');   break;
+      case '~':        asm.push('neg');   break;
+      case '++\0':     throw new TypeError('Preincrement operator is not supported'); break;
+      case '--\0':     throw new TypeError('Predecrement operator is not supported'); break;
+      case 'cast\0':   throw new TypeError('Cast is not supported'); break;
+      case 'deref\0':  throw new TypeError('Unary operator `*` is not supported'); break;
+      case 'addr\0':   throw new TypeError('Unary operator `&` is not supported'); break;
+      case 'sizeof\0': throw new TypeError('Unexpected `sizeof` operator'); break;
+
+      case '*':        asm.push('mul');   break;
+      case '/':        asm.push('div');   break;
+      case '%':        asm.push('mod');   break;
+
+      case '+':        asm.push('add');   break;
+      case '-':        asm.push('sub');   break;
+
+      case '<<':       asm.push('shl');   break;
+      case '>>':       asm.push('shr');   break;
+
+      case '<':        asm.push('lt');    break;
+      case '<=':       asm.push('le');    break;
+      case '>':        asm.push('gt');    break;
+      case '>=':       asm.push('ge');    break;
+
+      case '==':       asm.push('eq');    break;
+      case '!=':       asm.push('neq');   break;
+
+      case '&':        asm.push('and');   break;
+      case '^':        asm.push('xor');   break;
+      case '|':        asm.push('or');    break;
+
+      case '&&':       asm.push('land');  break;
+      case '||':       asm.push('lor');   break;
+
+      case '?\0:\0':   throw new TypeError('Ternary conditional operator is not supported'); break;
+      case ',':        throw new TypeError('Comma operator is not supported'); break;
+
+      case '=':
+        var offset = asm.pop();
+        asm.push('push');
+        asm.push(offset);
+        asm.push('varSet');
+        break;
+
+      default:
+        if(name.endsWith('='))
+          throw new TypeError('Assignment operators are not supported');
+
+        this.err(`Unrecognized operator "${name}"`);
+        break;
+    }
+  }
+
+  opCall(op){
+    var {asm} = this;
+
+    asm.push('call');
+  }
+
+  compile(){
+    this.machine.compile(this.asm.toString());
+    return this;
+  }
+
+  err(msg){
+    msg = `ERROR: ${msg}`;
+    error(msg);
+  }
+};
+
+class Assembler{
+  constructor(src = null){
+    this.indent = 0;
+    this.arr = [];
+  }
+
+  push(str){
+    str = `${' '.repeat(this.indent * TAB_SIZE)}${str}`;
+    this.arr.push(str);
+  }
+
+  pop(){
+    if(this.arr.length === 0)
+      throw new TypeError('Cannot pop from empty assembly array');
+
+    var str = this.arr.pop();
+    return str.trim();
+  }
+
+  inst(inst){
+    this.push(`${inst}`);
+  }
+
+  label(label, isDef = 1){
+    if(isDef) this.push(`${label}:`);
+    else this.push(`:${label}`);
+  }
+
+  setIndent(indent){
+    this.indent = indent;
+  }
+
+  incIndent(){
+    this.indent++;
+  }
+
+  decIndent(){
+    if(this.indent === 0)
+      throw new RangeError('Invalid indentation level');
+
+    this.indent--;
+  }
+
+  buff(buff){
+    var str = [...buff].map(byte => {
+      return `_${byte}`;
+    }).join` `;
+
+    this.push(str);
+  }
+
+  int(val){
+    this.push(val);
+  }
+
+  toString(){
+    var base = fs.readFileSync(ASM_BASE, 'utf8');
+    var str = `${base}\n${this.arr.join`\n`}`;
+
+    return str;
   }
 };
 

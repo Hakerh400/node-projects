@@ -1,4 +1,5 @@
 int b1;
 
-void main();
-int calc(int x, int y);
+int main();
+int calc(int num);
+int isPrime(int val);

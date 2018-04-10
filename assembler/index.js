@@ -11,7 +11,7 @@ const MEM_MAX_ADDR = MEM_SIZE - 1 | 0;
 const MEM_MAX_INT_ADDR = MEM_SIZE - 4;
 const MEM_MAX_FLOAT_ADDR = MEM_SIZE - 4;
 
-const SPEED = 10e3 | 0;
+const SPEED = 100e3 | 0;
 
 var instructions = {
   _0x00:    [0x00, (m) => {}],
@@ -198,6 +198,12 @@ var instructions = {
   rti:      [0x8A, (m) => m.rti(), [], 1],
 
   halt:     [0x8B, (m) => m.halt()],
+
+  shl:      [0x8C, (m, a, b) => m.push(a << b)],
+  shr:      [0x8D, (m, a, b) => m.push(a >> b)],
+
+  land:     [0x8E, (m, a, b) => m.push(((a !== 0) & (b !== 0)) & MEM_MAX_ADDR)],
+  lor:      [0x8F, (m, a, b) => m.push(((a !== 0) | (b !== 0)) & MEM_MAX_ADDR)],
 };
 
 optimizeInstructions();
@@ -291,10 +297,9 @@ class Machine{
 
   start(){
     var m = this;
-
+    
     m.halted = false;
-
-    exec();
+    setTimeout(exec);
 
     function exec(){
       for(var i = 0; i < SPEED; i++){
@@ -309,6 +314,22 @@ class Machine{
   }
 
   tick(){
+    var str;
+
+    if(DEBUG){
+      var str = Object.getOwnPropertyNames(this.regs).map(a => {
+        return `${a}=${formatInt(this.regs[a], 1)}`;
+      }).join`, `;
+      var arr = [];
+      for(var i = 0; 1; i -= 4){
+        if(i !== 0)
+          arr.push(formatInt(this.mem.read(i)));
+        if((i & MEM_MAX_ADDR) === this.regs.esp)
+          break;
+      }
+      str += `\n[${arr.join`, `}]`;
+    }
+
     var opCode = this.mem.buff[this.regs.eip];
     this.regs.eip = this.regs.eip + 1 & MEM_MAX_ADDR;
 
@@ -316,6 +337,10 @@ class Machine{
       var val = this.mem.read(this.regs.eip);
       this.regs.eip = this.regs.eip + 4 & MEM_MAX_ADDR;
       this.push(val);
+
+      if(DEBUG)
+        this.debug(`Integer ${formatInt(val)}`, str);
+
       return;
     }
 
@@ -323,6 +348,10 @@ class Machine{
       var val = this.mem.readf(this.regs.eip);
       this.regs.eip = this.regs.eip + 4 & MEM_MAX_ADDR;
       this.pushf(val);
+
+      if(DEBUG)
+        this.debug(`Float ${formatInt(val)}`, str);
+
       return;
     }
 
@@ -332,7 +361,7 @@ class Machine{
     }
 
     if(DEBUG)
-      this.debug(opCode);
+      this.debug(instructions.opCodes[opCode], str);
 
     var inst = instructions[opCode];
     var func = inst[1];
@@ -574,12 +603,19 @@ class Machine{
     return this.mem.writef(val, this.regs.ebp + index & MEM_MAX_ADDR);
   }
 
-  debug(opCode){
-    throw new TypeError('Not implemented');
-  }
+  debug(inst, str){
+    log('');
 
-  logStack(){
-    throw new TypeError('Not implemented');
+    log(inst);
+    log(str);
+
+    var buff = Buffer.alloc(1);
+    fs.readSync(process.stdin.fd, buff, 0, 1);
+    if(buff.toString() !== '\r') process.exit(1);
+
+    function log(a){
+      fs.writeSync(process.stdout.fd, `${a}\n`);
+    }
   }
 };
 
@@ -644,4 +680,9 @@ function optimizeInstructions(){
     instructions[opCode] = inst;
     instructions.opCodes[opCode] = key;
   });
+}
+
+function formatInt(a, unsigned = 0){
+  if(a >= (MEM_MAX_ADDR >> 1)) return `${!unsigned ? '-' : ''}${-a & MEM_MAX_ADDR}`;
+  return `${a}`;
 }

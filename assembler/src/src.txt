@@ -1,0 +1,45 @@
+:init jmp
+ivt:
+  _0 _0 _0 _0
+  _0 _0 _0 _0
+  _0 _0 _0 _0
+init:
+  :ivt
+  popIvtp
+  :intIO :ivt 8 add write
+  inte
+  :main call
+  halt
+intIO:
+  rti
+printf:
+  15 enter
+  pushEbp 5 sub -4 varSet
+  0 -4 varGet writeB
+  printf_1:
+    8 varGet
+    :printf_2 jz
+    8 varGet push
+    10 mod 48 or
+    -4 varGet dec
+    push -4 varSet
+    writeB
+    10 div 8 varSet
+    :printf_1 jmp
+  printf_2:
+    -4 varGet 3 out
+    3 2 out
+  printf_3:
+    2 in 1 and
+    :printf_3 jnz
+  4 leavev
+
+main:
+  4 enter
+  1 -4 varSet
+  loop:
+    -4 varGet
+    push :printf call
+    inc -4 varSet
+    :loop jmp
+  0 leavev

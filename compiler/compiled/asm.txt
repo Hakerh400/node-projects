@@ -1,33 +1,146 @@
+:init jmp
+ivt:
+  _0 _0 _0 _0
+  _0 _0 _0 _0
+  _0 _0 _0 _0
+init:
+  :ivt
+  popIvtp
+  :intIO :ivt 8 add write
+  inte
+  :main call
+  :printf call
+  halt
+intIO:
+  rti
+printf:
+  15 enter
+  pushEbp 5 sub -4 varSet
+  0 -4 varGet writeB
+  printf_1:
+    8 varGet
+    :printf_2 jz
+    8 varGet push
+    10 mod 48 or
+    -4 varGet dec
+    push -4 varSet
+    writeB
+    10 div 8 varSet
+    :printf_1 jmp
+  printf_2:
+    -4 varGet 3 out
+    3 2 out
+  printf_3:
+    2 in 1 and
+    :printf_3 jnz
+  4 leavev
 1:
   _8 _0 _0 _0
+main:
 3:
-  12
+  4
   enter
-  7
+  1000
+  10
+  mul
   -4
   varSet
-  5
-  -8
-  varSet
-  -8
-  varGet
   -4
   varGet
-  :52
+  :43
   call
-  255
-  and
-  -12
+  0
+  leave
+43:
+  8
+  enter
+  0
+  -4
   varSet
-  0
-  leavev
-52:
-  0
+  2
+  -8
+  varSet
+  67:
+  -8
+  varGet
+  8
+  varGet
+  lt
+  :68
+  jz
+  -4
+  varGet
+  -8
+  varGet
+  :47
+  call
+  add
+  push
+  -4
+  varSet
+  pop
+  -8
+  varGet
+  1
+  add
+  push
+  -8
+  varSet
+  pop
+  :67
+  jmp
+  68:
+  -4
+  varGet
+  4
+  leave
+47:
+  4
   enter
   8
   varGet
-  12
+  2
+  lt
+  :115
+  jz
+  0
+  4
+  leave
+  115:
+  2
+  -4
+  varSet
+  135:
+  -4
   varGet
-  sub
   8
+  varGet
+  lt
+  :136
+  jz
+  8
+  varGet
+  -4
+  varGet
+  mod
+  not
+  :145
+  jz
+  0
+  4
+  leave
+  145:
+  -4
+  varGet
+  1
+  add
+  push
+  -4
+  varSet
+  pop
+  :135
+  jmp
+  136:
+  1
+  4
   leave

@@ -6,8 +6,7 @@ var assembler = require('.');
 var Timer = require('./timer.js');
 var Interface = require('./interface.js');
 
-var srcFile = './src.txt';
-var memFile = './mem.hex';
+var srcFile = './src/src.txt';
 
 setTimeout(main);
 
