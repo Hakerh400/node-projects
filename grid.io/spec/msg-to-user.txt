@@ -1,0 +1,26 @@
+00 - Grid fragment
+  2 bytes - X
+  2 bytes - Y
+  2 bytes - Width
+  2 bytes - Height
+  n bytes - Tiles
+    2 bytes - Type
+01 - Single tile
+  2 bytes - X
+  2 bytes - Y
+  2 bytes - Type
+02 - New entity
+  4 bytes - Entity ID
+  8 bytes - X
+  8 bytes - Y
+  4 bytes - Direction
+  2 bytes - Type
+  n bytes - Extra data
+02 - Old entity
+  1 byte - Type of the update
+    00 - Coordinates
+      8 bytes - X
+      8 bytes - Y
+    01 - Direction
+      4 bytes - Direction
+    02 - Extra data

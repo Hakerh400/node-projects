@@ -1,19 +1,11 @@
 'use strict';
 
-var {Canvas, Image} = require('canvas');
+var {Canvas} = require('canvas');
 
-process.stdin.on('data', () => {
-  var loadImageNTimes = n => {
-    if(n !== 0){
-      var image = new Image();
-      image.onload = () => {
-        setTimeout(() => {
-          // image.src = '';
-          loadImageNTimes(n);
-        });
-      };
-      image.src = '1.jpg';
-    }
-  };
-  loadImageNTimes(500);
-});
+var ctx = new Canvas(1, 1).getContext('2d');
+ctx.font = '1px arial';
+
+for(var i = 0; ~i; i = -~i){
+  ctx.rotate(i);
+  ctx.fillText('1', 0, 0);
+}

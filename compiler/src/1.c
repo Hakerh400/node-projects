@@ -3,6 +3,6 @@
 int b1 = 8;
 
 int main(){
-  int num = 1000 * 10;
-  return calc(num);
+  b1 = (5, 7, 11, (b1 + 4));
+  return b1;
 }

@@ -8,37 +8,23 @@ setTimeout(main);
 function main(){
   var tester = new PerformanceTester();
 
-  tester.addFunc(pushArr);
-  tester.addFunc(pushElem);
+  tester.addFunc(func1);
+  tester.addFunc(func2);
 
   var result = tester.test(100);
   console.log(result);
 }
 
-function pushArr(){
-  var q = [];
-
-  for(var i = 0; i < 1e6; i++){
-    q.push([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
-    var [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9] = q.shift();
-  }
+function func1(){
+  var c = 0;
+  var arr = O.ca(1e5, i => i);
+  arr.forEach((a, b) => c = a + b);
 }
 
-function pushElem(){
-  var q = [];
-
-  for(var i = 0; i < 1e6; i++){
-    q.push([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
-    
-    var a0 = q.shift();
-    var a1 = q.shift();
-    var a2 = q.shift();
-    var a3 = q.shift();
-    var a4 = q.shift();
-    var a5 = q.shift();
-    var a6 = q.shift();
-    var a7 = q.shift();
-    var a8 = q.shift();
-    var a9 = q.shift();
-  }
+function func2(){
+  var c = 0;
+  var len = 1e5;
+  var arr = O.ca(len, i => i);
+  for(var i = 0; i < len; i++)
+    c = arr[i] + i;
 }

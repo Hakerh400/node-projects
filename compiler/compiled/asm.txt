@@ -38,109 +38,33 @@ printf:
   _8 _0 _0 _0
 main:
 3:
+  0
+  enter
+  5
+  pop
+  7
+  pop
+  11
+  pop
+  :1
+  read
   4
-  enter
-  1000
-  10
-  mul
-  -4
-  varSet
-  -4
-  varGet
-  :43
-  call
-  0
-  leave
-43:
-  8
-  enter
-  0
-  -4
-  varSet
-  2
-  -8
-  varSet
-  67:
-  -8
-  varGet
-  8
-  varGet
-  lt
-  :68
-  jz
-  -4
-  varGet
-  -8
-  varGet
-  :47
-  call
   add
   push
-  -4
-  varSet
+  :1
+  write
   pop
-  -8
-  varGet
-  1
-  add
-  push
-  -8
-  varSet
-  pop
-  :67
-  jmp
-  68:
-  -4
-  varGet
-  4
+  :1
+  read
+  0
   leave
 47:
-  4
+  0
   enter
   8
   varGet
-  2
-  lt
-  :115
-  jz
-  0
-  4
-  leave
-  115:
-  2
-  -4
-  varSet
-  135:
-  -4
-  varGet
-  8
-  varGet
-  lt
-  :136
-  jz
-  8
-  varGet
-  -4
-  varGet
-  mod
-  not
-  :145
-  jz
-  0
-  4
-  leave
-  145:
-  -4
-  varGet
-  1
+  :1
+  read
   add
-  push
-  -4
-  varSet
-  pop
-  :135
-  jmp
-  136:
-  1
   4
   leave

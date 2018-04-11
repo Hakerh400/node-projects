@@ -14,7 +14,7 @@ const NATIVE_LIBS_DIR = joinNormalize(CWD, 'native-libs');
 const ASM_BASE = joinNormalize(NATIVE_LIBS_DIR, 'asm.txt');
 const MAIN_HEADER = 'main.h';
 
-const WHITE_SPACE_CHARS = ' \r\n\t'
+const WHITE_SPACE_CHARS = ' \r\n\t';
 const SUPPORTED_CHARS = getSupportedChars();
 const LETTERS_NON_CAP = O.ca(26, i => String.fromCharCode('a'.charCodeAt(0) + i)).join``;
 const LETTERS_CAP = LETTERS_NON_CAP.toUpperCase();
@@ -23,9 +23,6 @@ const DIGITS = O.ca(10, i => String.fromCharCode('0'.charCodeAt(0) + i)).join``;
 const DIGITS_HEX = DIGITS + [...LETTERS].filter(a => /[a-f]/i.test(a)).join``;
 const IDENT_CHARS_FIRST = LETTERS + '_';
 const IDENT_CHARS = IDENT_CHARS_FIRST + DIGITS;
-
-const MEM_SIZE = 1 << 16;
-const MEM_MAX_ADDR = MEM_SIZE - 1;
 
 var nativeLibs = getNativeLibs();
 var globalId = 0;
@@ -529,6 +526,9 @@ class Source{
             case 'return': this.parseReturnStatement(scope); break;
             case 'if': this.parseIfStatement(scope); break;
             case 'while': this.parseWhileStatement(scope); break;
+            case 'for': this.parseForStatement(scope); break;
+            case 'break': this.parseBreakStatement(scope); break;
+            case 'continue': this.parseContinueStatement(scope); break;
 
             default:
               this.restore('Unexpected keyword');
@@ -536,9 +536,15 @@ class Source{
           }
         }else{
           this.parseExpr(scope, 1, 1);
+          parser.update();
+          if(parser.char(1) !== ';')
+            this.restore('Missing semicolon `;` after expression');
         }
       }else{
         this.parseExpr(scope, 1, 1);
+        parser.update();
+        if(parser.char(1) !== ';')
+          this.restore('Missing semicolon `;` after expression');
       }
     }
 
@@ -683,10 +689,7 @@ class Source{
           if(op === null)
             this.restore('Undefined variable');
 
-          if(!op.isFunc){
-            if(op.isGlobal)
-              this.restore('Using global variables in expressions is not allowed');
-          }else{
+          if(op.isFunc){
             parser.update();
             var char = parser.char(1);
             if(char !== '(')
@@ -734,10 +737,6 @@ class Source{
 
     if(standAlone){
       expr.isStandAlone = true;
-
-      parser.update();
-      if(parser.char(1) !== ';')
-        this.restore('Missing semicolon `;` after expression');
 
       var stat = new Statement(scope, 'expr');
       scope.addStatement(stat);
@@ -854,6 +853,94 @@ class Source{
     parser.update();
     var subScope = stat.createScope();
     this.parseStatement(subScope);
+
+    parser.discard();
+  }
+
+  parseForStatement(scope){
+    var {parser} = this;
+    var stat = new Statement(scope, 'for');
+    scope.addStatement(stat);
+
+    parser.trim();
+    parser.save();
+
+    if(parser.ident(1) !== 'for')
+      this.restore('Expected `for` keyword');
+
+    parser.update();
+    if(parser.char(1) !== '(')
+      this.restore('Missing open parenthese `(` in `for` statement');
+
+    parser.update();
+    var expr = this.parseExpr(scope, 1, 1);
+    stat.addVar(expr);
+
+    parser.update();
+    if(parser.char(1) !== ';')
+    this.restore('Missing semicolon `;` after the first argument of the `for` statement');
+
+    parser.update();
+    expr = this.parseExpr(scope);
+    stat.addVar(expr);
+
+    parser.update();
+    if(parser.char(1) !== ';')
+    this.restore('Missing semicolon `;` after the second argument of the `for` statement');
+
+    parser.update();
+    expr = this.parseExpr(scope, 1, 1);
+    stat.addVar(expr);
+
+    parser.update();
+    if(parser.char(1) !== ')')
+      this.restore('Missing closed parenthese `)` in `for` statement');
+
+    parser.update();
+    var subScope = stat.createScope();
+    this.parseStatement(subScope);
+
+    parser.discard();
+  }
+
+  parseBreakStatement(scope){
+    var {parser} = this;
+    var stat = new Statement(scope, 'break');
+    scope.addStatement(stat);
+
+    parser.trim();
+    parser.save();
+
+    if(parser.ident(1) !== 'break')
+      this.restore('Expected `break` statement');
+
+    if(scope.getLoop() === null)
+      this.restore('Break statement can appear only in a loop');
+
+    parser.update();
+    if(parser.char(1) !== ';')
+      this.restore('Missing semicolon `;` after `break` statement');
+
+    parser.discard();
+  }
+
+  parseContinueStatement(scope){
+    var {parser} = this;
+    var stat = new Statement(scope, 'continue');
+    scope.addStatement(stat);
+
+    parser.trim();
+    parser.save();
+
+    if(parser.ident(1) !== 'continue')
+      this.restore('Expected `continue` statement');
+
+    if(scope.getLoop() === null)
+      this.restore('Continue statement can appear only in a loop');
+
+    parser.update();
+    if(parser.char(1) !== ';')
+      this.restore('Missing semicolon `;` after `continue` statement');
 
     parser.discard();
   }
@@ -1548,9 +1635,7 @@ class Expression extends GlobalVariable{
           return errMsg;
       }
 
-      if(op.name !== ')' && op.name !== ']'){
-        stack.push(op);
-      }else{
+      if(op.name === ')' || op.name === ']'){
         var name = op.name;
         op = stack.pop();
 
@@ -1559,6 +1644,11 @@ class Expression extends GlobalVariable{
 
         if(name === ']' && op.name !== '[')
           return 'Missing open bracket';
+      }else if(op.name === ','){
+        ops.push(op);
+        this.rank--;
+      }else{
+        stack.push(op);
       }
     }
 
@@ -1780,6 +1870,8 @@ class Scope extends Unique{
 
     this.argsSize = 0;
     this.varsSize = 0;
+
+    this.stat = null
   }
 
   createScope(){
@@ -1875,6 +1967,12 @@ class Scope extends Unique{
       return this.parent.getVarsSize(1);
     return this.varsSize;
   }
+
+  getLoop(){
+    if(this.stat === null)
+      return null;
+    return this.stat.getLoop();
+  }
 };
 
 class Statement extends Unique{
@@ -1897,11 +1995,27 @@ class Statement extends Unique{
   }
 
   addScope(scope){
+    if(scope.stat !== null)
+      throw new TypeError('Cannot add the same scope to two statements');
+
+    scope.stat = this;
     this.scopes.push(scope);
   }
 
   addVar(vari){
     this.vars.push(vari);
+  }
+  
+  getLoop(){
+    var {name} = this;
+
+    if(name === 'for' || name === 'while' || name === 'do')
+      return this;
+
+    if(this.scope === null)
+      return null;
+
+    return this.scope.getLoop();
   }
 };
 
@@ -2047,7 +2161,7 @@ class Linker{
       switch(vari.type.name){
         case 'int':
           var buff = Buffer.alloc(4);
-          buff.writeUInt32LE(vari.resolve() & MEM_MAX_ADDR);
+          buff.writeUInt32LE(vari.resolve() | 0);
           asm.buff(buff);
           break;
 
@@ -2094,6 +2208,9 @@ class Linker{
         case 'expr': this.procExpr(scope, stat.vars[0]); break;
         case 'if': this.procIf(scope, stat); break;
         case 'while': this.procWhile(scope, stat); break;
+        case 'for': this.procFor(scope, stat); break;
+        case 'break': this.procBreak(scope, stat); break;
+        case 'continue': this.procContinue(scope, stat); break;
 
         default:
           this.err('Unrecognized statement type');
@@ -2173,6 +2290,42 @@ class Linker{
     asm.label(stat.after.id);
   }
 
+  procFor(scope, stat){
+    var {asm} = this;
+
+    this.procExpr(scope, stat.vars[0]);
+    asm.label(stat.id);
+
+    this.procExpr(scope, stat.vars[1]);
+    asm.label(stat.after.id, 0);
+    asm.push('jz');
+
+    this.procScope(stat.scopes[0]);
+    asm.label(stat.vars[2].id);
+    this.procExpr(scope, stat.vars[2]);
+    asm.label(stat.id, 0);
+    asm.push('jmp');
+
+    asm.label(stat.after.id);
+  }
+
+  procBreak(scope, stat){
+    var {asm} = this;
+
+    var loop = scope.getLoop();
+    asm.label(loop.after.id, 0);
+    asm.push('jmp');
+  }
+
+  procContinue(scope, stat){
+    var {asm} = this;
+
+    var loop = scope.getLoop();
+    if(loop.name === 'for') asm.label(loop.vars[2].id, 0);
+    else asm.label(loop.id, 0);
+    asm.push('jmp');
+  }
+
   procExpr(scope, expr){
     var {asm} = this;
 
@@ -2185,12 +2338,21 @@ class Linker{
         }else if(op instanceof Arguments){
           this.procArgs(scope, op);
         }else{
-          var offset = scope.getOffset(op);
-          if(offset === null)
-            this.err('Missing offset while parsing expression');
+          var vari = op;
 
-          asm.int(offset);
-          if(!op.isLvalue) asm.push('varGet');
+          if(vari.isGlobal){
+            var isLvalue = vari.isLvalue;
+            vari = this.getVar(vari.name);
+            asm.label(vari.id, 0);
+            if(!isLvalue) asm.push('read');
+          }else{
+            var offset = scope.getOffset(vari);
+            if(offset === null)
+              this.err('Missing offset while parsing expression');
+
+            asm.int(offset);
+            if(!vari.isLvalue) asm.push('varGet');
+          }
         }
       }else{
         this.op(scope, op);
@@ -2292,13 +2454,15 @@ class Linker{
       case '||':       asm.push('lor');   break;
 
       case '?\0:\0':   throw new TypeError('Ternary conditional operator is not supported'); break;
-      case ',':        throw new TypeError('Comma operator is not supported'); break;
+      case ',':        asm.push('pop');   break;
 
       case '=':
         var offset = asm.pop();
         asm.push('push');
         asm.push(offset);
-        asm.push('varSet');
+
+        if(offset[0] === ':') asm.push('write');
+        else asm.push('varSet');
         break;
 
       default:
