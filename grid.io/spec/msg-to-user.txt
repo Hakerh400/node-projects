@@ -1,26 +1,33 @@
 00 - Grid fragment
-  2 bytes - X
-  2 bytes - Y
-  2 bytes - Width
-  2 bytes - Height
+  uint16le - X
+  uint16le - Y
+  uint16le - Width
+  uint16le - Height
   n bytes - Tiles
-    2 bytes - Type
+    uint16le - Type
 01 - Single tile
-  2 bytes - X
-  2 bytes - Y
-  2 bytes - Type
+  uint16le - X
+  uint16le - Y
+  uint16le - Type
 02 - New entity
-  4 bytes - Entity ID
-  8 bytes - X
-  8 bytes - Y
-  4 bytes - Direction
-  2 bytes - Type
+  uint64le - Entity ID
+  float64le - X
+  float64le - Y
+  float32le - Direction
+  uint16le - Type
   n bytes - Extra data
-02 - Old entity
-  1 byte - Type of the update
+03 - Update entity
+  uint64le - Entity ID
+  uint8 - Type of the update
     00 - Coordinates
-      8 bytes - X
-      8 bytes - Y
+      float64le - X
+      float64le - Y
     01 - Direction
-      4 bytes - Direction
+      float32le - Direction
     02 - Extra data
+      n bytes = Extra data
+04 - Remove entity
+  uint64le - Entity ID
+  uint8 - Reason
+    00 - Outside of the viewport
+    01 - Dead

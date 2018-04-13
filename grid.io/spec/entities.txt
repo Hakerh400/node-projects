@@ -1,0 +1,2 @@
+0000 - Base entity
+0001 - Player

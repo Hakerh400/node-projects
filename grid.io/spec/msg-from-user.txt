@@ -1,17 +1,17 @@
 00 - Nick
-  1 byte - Length (between 0 and 15)
-  n bytes - Ascii string
+  uint8 - Length (between 0 and 15)
+  uint8[] - Ascii string
 01 - Direction
-  4 bytes - float (between -pi and pi)
+  float32le - Angle in radians (between -pi and pi)
 02 - Velocity
-  1 byte
+  uint8
     bit 0 - Up
     bit 1 - Left
     bit 2 - Down
     bit 3 - Right
 03 - Inventory
-  1 byte - Selected index (0 - 15)
+  uint8 - Selected index (0 - 15)
 04 - Mouse button
-  1 byte
+  uint8
     00 - LMB
     01 - RMB

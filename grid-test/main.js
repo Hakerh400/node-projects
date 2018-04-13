@@ -7,7 +7,9 @@ var browser = require('../browser');
 var consoleColors = require('../console-colors');
 
 var url = '/?project=grid';
-var testsDir = './tests';
+
+var cwd = __dirname;
+var testsDir = path.join(cwd, 'tests');
 
 setTimeout(main);
 
