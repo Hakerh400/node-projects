@@ -19,12 +19,12 @@
 03 - Update entity
   uint64le - Entity ID
   uint8 - Type of the update
-    00 - Coordinates
+    bit 0 - Coordinates
       float64le - X
       float64le - Y
-    01 - Direction
+    bit 1 - Direction
       float32le - Direction
-    02 - Extra data
+    bit 2 - Extra data
       n bytes = Extra data
 04 - Remove entity
   uint64le - Entity ID

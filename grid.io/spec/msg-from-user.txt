@@ -3,7 +3,7 @@
   uint8[] - Ascii string
 01 - Direction
   float32le - Angle in radians (between -pi and pi)
-02 - Velocity
+02 - Acceleration
   uint8
     bit 0 - Up
     bit 1 - Left

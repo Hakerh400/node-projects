@@ -17,7 +17,7 @@ function main(){
 
     var d = new ImageData(g);
 
-    d.iterate((x, y, r, g, b) => {
+    d.iterate((x, y) => {
       var dd = dist(x, y, wh, hh);
       if(dd > wh) return;
 
@@ -64,7 +64,7 @@ function main(){
 
     g.font = `${fontSize}px ${font}`;
     g.fillStyle = 'black';
-    g.fillText('H400', wh, hh);
+    g.fillText(str, wh, hh);
   });
 }
 

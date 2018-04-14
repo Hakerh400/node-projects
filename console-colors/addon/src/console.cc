@@ -1,8 +1,5 @@
 #include "console.h"
 
-#include <iostream>
-using namespace std;
-
 Console::Console(){
   hConsoleOutput = GetStdHandle(STD_OUTPUT_HANDLE);
   colPrev = getCol();

@@ -16,6 +16,17 @@ const TAB = ' '.repeat(TAB_SIZE);
 
 const MAX_ID_FRAGMENT = 2 ** 32;
 
+const MIN_ANGLE = getMinAngle();
+const MAX_ANGLE = getMaxAngle();
+
+const FRICTION = .9;
+const PLAYER_ACCELERATION = .01;
+const MIN_VELOCITY = .00001;
+const MAX_VELOCITY = .1;
+
+const TICKS_PER_SECOND = 30;
+const TIMEOUT_DELAY = Math.round(1e3 / TICKS_PER_SECOND);
+
 var id1 = 0;
 var id2 = 0;
 
@@ -85,6 +96,8 @@ class Server extends Unique{
     this.tickFunc = this.tick.bind(this);
     this.closed = false;
 
+    this.tickTime = Date.now();
+
     setTimeout(this.tickFunc);
   }
 
@@ -95,22 +108,50 @@ class Server extends Unique{
 
   tick(){
     if(this.closed) return;
-    var {users} = this;
+    var {world, users} = this;
 
     for(var user of users){
       var player = user.player;
       if(player === null) continue;
 
+      var ents1 = player.entsPrev;
+      var ents2 = player.ents;
+
       var entsArr = player.getVisibleEnts();
       for(var ents of entsArr){
         for(var ent of ents){
-          //player.sendUpdates(entsArr);
-          user.send(ent.pack(0x02));
+          ents2.push(ent);
+
+          var index = ents1.indexOf(ent);
+
+          if(index === -1){
+            user.send(ent.packNewEnt());
+          }else{
+            ents1[index] = null;
+            if(ent.updates !== 0)
+              user.send(ent.packUpdateEnt());
+          }
         }
       }
+
+      for(var ent of ents1){
+        if(ent !== null)
+          user.send(ent.packRemoveEnt(0x00));
+      }
+
+      player.entsPrev = ents2;
+      player.ents = ents1;
+      ents1.length = 0;
     }
 
-    setTimeout(this.tickFunc);
+    for(var ent of world.ents){
+      ent.refresh();
+      ent.tick();
+    }
+
+    var time = Math.max(TIMEOUT_DELAY - (Date.now() - this.tickTime), 0);
+    setTimeout(this.tickFunc, time);
+    this.tickTime = Date.now();
   }
 
   close(){
@@ -159,7 +200,10 @@ class User extends Unique{
         var nick = data.slice(2).toString('ascii');
         var x = O.rand(CHUNK_WIDTH);
         var y = O.rand(CHUNK_HEIGHT);
-        this.player = new Player(this.server.world, x, y, 0, nick);
+
+        player = this.player = new Player(this.server.world, x, y, 0, nick);
+        this.send(player.packNewEnt());
+        player.refresh();
         break;
 
       case 0x01:
@@ -167,11 +211,22 @@ class User extends Unique{
           return this.kick();
 
         var dir = data.readFloatLE(1);
-        if(dir < -O.pi || dir > O.pi)
+        if(dir < MIN_ANGLE || dir > MAX_ANGLE)
           return this.kick();
 
         player.dir = dir;
-        player.updates.dir = 1;
+        player.updates |= 2;
+        break;
+
+      case 0x02:
+        if(data.length !== 2)
+          return this.kick();
+
+        var acceleration = data[1];
+        if(acceleration > 15)
+          this.kick();
+
+        player.acceleration = acceleration;
         break;
 
       default:
@@ -233,6 +288,10 @@ class World extends Unique{
   addEnt(ent){
     this.ents.push(ent);
     this.chunksGrid.addEnt(ent);
+  }
+
+  moveEnt(ent){
+    this.chunksGrid.moveEnt(ent);
   }
 
   removeEnt(ent){
@@ -318,6 +377,11 @@ class ChunksGrid extends Unique{
     this.getByCoords(ent.x, ent.y).addEnt(ent);
   }
 
+  moveEnt(ent){
+    ent.chunk.removeEnt(ent);
+    this.getByCoords(ent.x, ent.y).addEnt(ent);
+  }
+
   removeEnt(ent){
     this.getByCoords(ent.x, ent.y).removeEnt(ent);
   }
@@ -362,27 +426,56 @@ class Entity extends Unique{
     super();
 
     this.world = world;
-    this.x = x;
-    this.y = y;
+    this.coords = new O.Vector(x, y);
+    this.velocity = new O.Vector(0, 0);
+    this.acceleration = 0;
     this.dir = dir;
     this.type = 0;
     this.dead = 0;
 
-    this.updates = {
-      coords: 0,
-      dir: 0,
-    };
+    this.extraSize = 0;
+    this.updates = 0;
+
+    this.cacheNewEnt = null;
+    this.cacheUpdateEnt = null;
+
+    var buff = this.cacheRemoveEnt = Buffer.allocUnsafe(10);
+    buff[0] = 0x04;
+    this.writeId(buff, 1);
 
     this.world.addEnt(this);
   }
 
+  tick(){
+    var {coords, velocity, acceleration} = this;
+
+    if(acceleration !== 0){
+      if(acceleration & 1) velocity.add(0, -PLAYER_ACCELERATION);
+      if(acceleration & 2) velocity.add(-PLAYER_ACCELERATION, 0);
+      if(acceleration & 4) velocity.add(0, PLAYER_ACCELERATION);
+      if(acceleration & 8) velocity.add(PLAYER_ACCELERATION, 0);
+    }
+
+    if(velocity.x !== 0 || velocity.y !== 0){
+      coords.add(velocity);
+      velocity.mul(FRICTION);
+
+      var len = velocity.len();
+      if(len > MAX_VELOCITY) velocity.setLen(MAX_VELOCITY);
+      else if(len < MIN_VELOCITY) velocity.x = velocity.y = 0;
+
+      this.world.moveEnt(this);
+      this.updates |= 1;
+    }
+  }
+
   getVisibleEnts(){
-    var {world, chunk} = this;
+    var {world, chunk, coords} = this;
     var {x, y} = chunk;
     var ents = [chunk.ents];
 
-    var dx = this.x / chunk.w % 1 < .5 ? -1 : 1;
-    var dy = this.y / chunk.h % 1 < .5 ? -1 : 1;
+    var dx = coords.x / chunk.w % 1 < .5 ? -1 : 1;
+    var dy = coords.y / chunk.h % 1 < .5 ? -1 : 1;
 
     chunk = world.getChunk(x, y + dy);
     if(chunk !== null) ents.push(chunk.ents);
@@ -396,18 +489,74 @@ class Entity extends Unique{
     return ents;
   }
 
-  pack(type, extraSize = 0){
-    var buff = Buffer.allocUnsafe(extraSize + 31);
+  packNewEnt(){
+    if(this.cacheNewEnt !== null)
+      return this.cacheNewEnt;
 
-    buff[0] = type;
+    var {coords} = this;
+    var buff = Buffer.allocUnsafe(this.extraSize + 31);
+
+    buff[0] = 0x02;
     this.writeId(buff, 1);
 
-    buff.writeDoubleLE(this.x, 9);
-    buff.writeDoubleLE(this.y, 17);
+    buff.writeDoubleLE(coords.x, 9);
+    buff.writeDoubleLE(coords.y, 17);
     buff.writeFloatLE(this.dir, 25);
     buff.writeUInt16LE(this.type, 29);
 
+    if(this.extraSize !== 0)
+      this.packExtraData(buff, 31);
+
+    this.cacheNewEnt = buff;
     return buff;
+  }
+
+  packUpdateEnt(){
+    if(this.cacheUpdateEnt !== null)
+      return this.cacheUpdateEnt;
+
+    var {coords, updates} = this;
+    var size = 10;
+    var index = 10;
+
+    if(updates & 1) size += 16;
+    if(updates & 2) size += 4;
+    if(updates & 4) size += this.extraSize;
+
+    var buff = Buffer.allocUnsafe(size);
+
+    buff[0] = 0x03;
+    this.writeId(buff, 1);
+    buff[9] = updates;
+
+    if(updates & 1){
+      buff.writeDoubleLE(coords.x, index);
+      buff.writeDoubleLE(coords.y, index + 8);
+      index += 16;
+    }
+
+    if(updates & 2){
+      buff.writeFloatLE(this.dir, index);
+      index += 4;
+    }
+
+    if(updates & 4)
+      this.packExtraData(buff, index);
+
+    this.cacheUpdateEnt = buff;
+    return buff;
+  }
+
+  packRemoveEnt(reason){
+    var buff = Buffer.from(this.cacheRemoveEnt);
+    buff[9] = reason;
+    return buff;
+  }
+
+  refresh(){
+    this.updates = 0;
+    this.cacheNewEnt = null;
+    this.cacheUpdateEnt = null;
   }
 
   die(){
@@ -422,27 +571,9 @@ class Player extends Entity{
     this.user = user;
     this.nick = nick;
     this.type = 1;
-  }
 
-  sendUpdates(entsArr){
-    var {updates} = this;
-    var {coords, dir} = updates;
-    if(!(coords || dir)) return;
-
-    for(var ents of entsArr){
-      for(var ent of ents){
-        if(coords){
-          /**/
-        }
-
-        if(dir){
-          /**/
-        }
-      }
-    }
-
-    updates.coords = 0;
-    updates.dir = 0;
+    this.entsPrev = [this];
+    this.ents = [];
   }
 
   toString(){
@@ -456,4 +587,18 @@ module.exports = {
 
 function createObj(){
   return Object.create(null);
+}
+
+function getMinAngle(){
+  var angle = -O.pi;
+  var buff = Buffer.allocUnsafe(4);
+  buff.writeFloatLE(angle, 0);
+  return Math.min(angle, buff.readFloatLE(0));
+}
+
+function getMaxAngle(){
+  var angle = O.pi;
+  var buff = Buffer.allocUnsafe(4);
+  buff.writeFloatLE(angle, 0);
+  return Math.max(angle, buff.readFloatLE(0));
 }
