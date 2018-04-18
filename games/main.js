@@ -8,10 +8,10 @@ var w = 1920;
 var h = 1080;
 var fps = 60;
 var hd = true;
-var duration = 60 * 30;
+var duration = 10;
 var framesNum = fps * duration;
 
-var game = 'snake';
+var game = 'netwalk';
 var url = `/?project=games&game=${game}`;
 
 setTimeout(main);

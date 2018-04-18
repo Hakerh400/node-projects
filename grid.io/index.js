@@ -3,8 +3,8 @@
 var O = require('../framework');
 var webSocket = require('ws');
 
-const GRID_WIDTH = 1e3 | 0;
-const GRID_HEIGHT = 1e3 | 0;
+const GRID_WIDTH = 200 | 0;
+const GRID_HEIGHT = 200 | 0;
 
 const CHUNK_WIDTH = 30;
 const CHUNK_HEIGHT = 17;
@@ -277,6 +277,11 @@ class World extends Unique{
     this.w = w;
     this.h = h;
 
+    this.xMin = .5;
+    this.yMin = .5;
+    this.xMax = this.w - this.xMin;
+    this.yMax = this.h - this.yMin;
+
     this.grid = new Grid(this, w, h);
     this.chunksGrid = new ChunksGrid(this,
       Math.ceil(w / CHUNK_WIDTH), Math.ceil(h / CHUNK_HEIGHT),
@@ -291,6 +296,15 @@ class World extends Unique{
   }
 
   moveEnt(ent){
+    var coords = ent.coords;
+
+    if(coords.x < this.xMin) coords.x = this.xMin;
+    else if(coords.x > this.xMax) coords.x = this.xMax;
+    if(coords.y < this.yMin) coords.y = this.yMin;
+    else if(coords.y > this.yMax) coords.y = this.yMax;
+
+    console.log(coords.x);
+
     this.chunksGrid.moveEnt(ent);
   }
 

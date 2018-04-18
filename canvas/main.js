@@ -2,10 +2,21 @@
 
 var {Canvas} = require('canvas');
 
-var ctx = new Canvas(1, 1).getContext('2d');
-ctx.font = '1px arial';
+var g = new Canvas(2, 2).getContext('2d');
 
-for(var i = 0; ~i; i = -~i){
-  ctx.rotate(i);
-  ctx.fillText('1', 0, 0);
-}
+var fs = require('fs')
+  , out = fs.createWriteStream(__dirname + '/text.png')
+  , stream = g.canvas.pngStream();
+
+stream.on('data', function(chunk){
+  out.write(chunk);
+});
+
+stream.on('end', function(){
+  console.log('The PNG stream ended');
+  //out.end();
+});
+
+out.on('finish', function(){
+  console.log('The PNG file was created.');
+});

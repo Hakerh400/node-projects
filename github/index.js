@@ -14,6 +14,10 @@ var noCopyList = require('./no-copy-list.json');
 var skipList = require('./skip-list.json');
 var supportedExtensions = require('./supported-extensions.json');
 
+var cwd = __dirname;
+var readmesDir = path.join(cwd, 'readmes');
+var readmeFileName = 'readme.md';
+
 var tabSize = 2;
 
 module.exports = {
@@ -59,9 +63,15 @@ function push(repoName, cb = O.nop){
 
   resetDir(dest);
 
-  if(fs.existsSync(tempDir)){
+  if(fs.existsSync(tempDir))
     fsRec.deleteFilesSync(tempDir);
-  }
+
+  // Copy readme file
+
+  var readmeFile = path.join(readmesDir, `${name}.md`);
+  var readmeData = fs.readFileSync(readmeFile, 'utf8');
+  var readmeFileDest = path.join(dest, readmeFileName);
+  fs.writeFileSync(readmeFileDest, readmeData);
 
   if(encrypt){
     // Encrypt
