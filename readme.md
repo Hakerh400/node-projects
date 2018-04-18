@@ -1,1 +1,1 @@
-This is collection of my JavaScript projects. If you want to use any of my scripts or function, feel free to copy-paste it wherever you want without giving any credits (you may give credits if you want, but you are not forced to).
+This is collection of my JavaScript projects. If you want to use any of my scripts or functions, feel free to copy-paste it wherever you want without giving any credits (you may give credits if you want, but you are not forced to). More projects can be found [here](https://github.com/Hakerh400/node-projects/releases).
