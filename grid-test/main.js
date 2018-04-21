@@ -39,7 +39,7 @@ function performTests(window){
     var testFilePath = path.join(testsDir, testFileName);
     var testData = fs.readFileSync(testFilePath).toString();
 
-    testData = O.sanl(testData).join`\n`.split`\n\n`;
+    testData = O.sanl(testData).join('\n').split('\n\n');
 
     var evt = {
       type: 'test',

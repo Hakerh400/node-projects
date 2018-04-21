@@ -41,7 +41,7 @@ function main(){
 
   var input = [0];
   var output = calc(input);
-  console.log(output.map(a => a.toFixed(2)).join`\n`);
+  console.log(output.map(a => a.toFixed(2)).join('\n'));
 
   /////////////////////////////////////////////////////////
 

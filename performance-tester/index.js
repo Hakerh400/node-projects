@@ -58,7 +58,7 @@ class PerformanceTester{
       var paddedTime = `${time}`.padStart(maxTimeStrLen);
 
       return `${paddedName} ${paddedTime}`;
-    }).join`\n`;
+    }).join('\n');
 
     return str;
   }

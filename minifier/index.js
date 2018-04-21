@@ -24,7 +24,7 @@ function minify(input, output, cb = O.nop){
     if(d.processed) return;
 
     var inputPath = d.fullPath;
-    var relativePath = d.relativePath.split(/[\/\\]/).slice(1).join`\\`;
+    var relativePath = d.relativePath.split(/[\/\\]/).slice(1).join('\\');
     if(!relativePath) return;
 
     var outputPath = path.join(output, relativePath);
@@ -65,7 +65,7 @@ function minifyFile(data){
     return line;
   });
 
-  str = str.join``;
+  str = str.join('');
 
   return str;
 }

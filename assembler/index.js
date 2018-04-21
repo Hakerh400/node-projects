@@ -319,7 +319,7 @@ class Machine{
     if(DEBUG){
       var str = Object.getOwnPropertyNames(this.regs).map(a => {
         return `${a}=${formatInt(this.regs[a], 1)}`;
-      }).join`, `;
+      }).join(', ');
       var arr = [];
       for(var i = 0; 1; i -= 4){
         if(i !== 0)
@@ -417,7 +417,7 @@ class Machine{
       arr.push(`${addr}: ${inst}`);
     }
 
-    return arr.join`\n`;
+    return arr.join('\n');
 
     function uint2str(uint){
       return `0x${uint.toString(16).toUpperCase().padStart(4, '0')}`;

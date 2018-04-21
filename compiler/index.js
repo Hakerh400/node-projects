@@ -16,11 +16,11 @@ const MAIN_HEADER = 'main.h';
 
 const WHITE_SPACE_CHARS = ' \r\n\t';
 const SUPPORTED_CHARS = getSupportedChars();
-const LETTERS_NON_CAP = O.ca(26, i => String.fromCharCode('a'.charCodeAt(0) + i)).join``;
+const LETTERS_NON_CAP = O.ca(26, i => String.fromCharCode('a'.charCodeAt(0) + i)).join('');
 const LETTERS_CAP = LETTERS_NON_CAP.toUpperCase();
 const LETTERS = LETTERS_NON_CAP + LETTERS_CAP;
-const DIGITS = O.ca(10, i => String.fromCharCode('0'.charCodeAt(0) + i)).join``;
-const DIGITS_HEX = DIGITS + [...LETTERS].filter(a => /[a-f]/i.test(a)).join``;
+const DIGITS = O.ca(10, i => String.fromCharCode('0'.charCodeAt(0) + i)).join('');
+const DIGITS_HEX = DIGITS + [...LETTERS].filter(a => /[a-f]/i.test(a)).join('');
 const IDENT_CHARS_FIRST = LETTERS + '_';
 const IDENT_CHARS = IDENT_CHARS_FIRST + DIGITS;
 
@@ -198,7 +198,7 @@ class Source{
       src[i] = this.includeFile(includeFilePath);
     }
 
-    src = src.join`\n`;
+    src = src.join('\n');
 
     if(n2)
       this.src = src;
@@ -1790,7 +1790,7 @@ class Function extends Variable{
 
     var str = this.formalArgs.map(arg => {
       return arg.toString();
-    }).join`, `;
+    }).join(', ');
 
     return `(${str})`;
   }
@@ -2537,7 +2537,7 @@ class Assembler{
   buff(buff){
     var str = [...buff].map(byte => {
       return `_${byte}`;
-    }).join` `;
+    }).join(' ');
 
     this.push(str);
   }
@@ -2548,7 +2548,7 @@ class Assembler{
 
   toString(){
     var base = fs.readFileSync(ASM_BASE, 'utf8');
-    var str = `${base}\n${this.arr.join`\n`}`;
+    var str = `${base}\n${this.arr.join('\n')}`;
 
     return str;
   }
@@ -2572,11 +2572,11 @@ function getSupportedChars(){
   var num = c2 - c1 + 1;
 
   var chars = WHITE_SPACE_CHARS;
-  chars += O.ca(num, i => String.fromCharCode(c1 + i)).join``;
+  chars += O.ca(num, i => String.fromCharCode(c1 + i)).join('');
 
   var charsObj = Object.create(null);
 
-  chars.split``.forEach(char => {
+  chars.split('').forEach(char => {
     charsObj[char] = 1;
   });
 

@@ -16,7 +16,7 @@ function main(){
   var intface = new Interface();
 
   intface.on('data', str => {
-    str = str.split` `;
+    str = str.split(' ');
 
     switch(str[0]){
       case 'list':
@@ -38,7 +38,7 @@ function main(){
 
 function logArr(arr){
   if(arr.length === 0) log('[]');
-  else log(`[\n${arr.map(a => `${TAB}${a}`).join`\n`}\n]`);
+  else log(`[\n${arr.map(a => `${TAB}${a}`).join('\n')}\n]`);
 }
 
 function log(str){

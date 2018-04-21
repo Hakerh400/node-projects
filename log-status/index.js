@@ -20,7 +20,7 @@ function logStatus(f, n = null, type = 'frame'){
     ...isSizeKnown ? [`Time remaining: ${formatTime(calcTime(startTime, f, n))}`] : [],
   ];
 
-  log(msgs.join`  `);
+  log(msgs.join('  '));
 }
 
 function calcTime(t, f, n){

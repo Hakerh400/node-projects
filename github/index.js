@@ -109,7 +109,7 @@ function push(repoName, cb = O.nop){
       if(skipList.some(a => fp === a || fp.endsWith(`\\${a}`) || fp.includes(`\\${a}\\`))) return;
       if(noCopyList.some(a => e.name == a)) return;
 
-      var srcPath = e.relativePath.split(/[\/\\]/).slice(1).join`//`;
+      var srcPath = e.relativePath.split(/[\/\\]/).slice(1).join('//');
       var destPath = path.join(dest, srcPath);
 
       if(e.isDir){
@@ -162,7 +162,7 @@ function processFileContent(file, ext, buff){
   }
 
   switch(file){
-    case 'projects.txt': return O.sanl(str).filter(a => a !== 'blank' && a !== 'test').join`\r\n`; break;
+    case 'projects.txt': return O.sanl(str).filter(a => a !== 'blank' && a !== 'test').join('\r\n'); break;
   }
 
   return buff;

@@ -13,7 +13,7 @@ function getFramework(){
   var str = fs.readFileSync(dirs.O).toString();
   str = str.split(/\r\n|\r|\n/);
   str[str.length - 1] = 'return O;';
-  str = str.join`\n`;
+  str = str.join('\n');
 
   var func = new Function('window', 'document', str);
   var window = new browser.Window();

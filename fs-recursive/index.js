@@ -84,7 +84,7 @@ function createDir(dirPath, cb = O.nop){
 function createDirSync(dirPath){
   dirPath = formatPath(dirPath);
 
-  var dirs = dirPath.split`\\`;
+  var dirs = dirPath.split('\\');
   dirPath = dirs.shift();
 
   while(dirs.length !== 0){

@@ -55,7 +55,7 @@ function remove(input, output){
     var inputFile = e.fullPath;
 
     var relativePath = e.relativePath.split(/[\/\\]/).slice(1);
-    var outputFile = path.join(output, relativePath.join`/`);
+    var outputFile = path.join(output, relativePath.join('/'));
 
     var parentDir = path.join(outputFile, '..');
     var fileExtension = path.parse(inputFile).ext.substring(1);
