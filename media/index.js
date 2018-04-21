@@ -2,7 +2,7 @@
 
 var path = require('path');
 var cp = require('child_process');
-var {Canvas} = require('../media/node_modules/canvas');
+var {Canvas} = require('../canvas/node_modules/canvas');
 var O = require('../framework');
 var logStatus = require('../log-status');
 var formatFileName = require('../format-file-name');

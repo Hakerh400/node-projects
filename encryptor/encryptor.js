@@ -4,7 +4,7 @@ var stream = require('stream');
 var hash = require('./hash.js');
 
 module.exports = {
-  createHashStream
+  createHashStream,
 };
 
 function createHashStream(password){

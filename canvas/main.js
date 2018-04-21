@@ -1,22 +1,27 @@
 'use strict';
 
-var {Canvas} = require('canvas');
+var fs = require('fs');
+var O = require('../framework');
+var media = require('../media');
+var {Canvas, registerFont} = require('./node_modules/canvas');
 
-var g = new Canvas(2, 2).getContext('2d');
+var w = 640;
+var h = 480;
 
-var fs = require('fs')
-  , out = fs.createWriteStream(__dirname + '/text.png')
-  , stream = g.canvas.pngStream();
+media.renderImage('-img/1.png', w, h, (w, h, g1) => {
+  new Canvas(1e9, 1e9).getContext('2d').getImageData(0, 0, 1, 1);
+  return;
 
-stream.on('data', function(chunk){
-  out.write(chunk);
+  /////////////////////////////////////////////////////////////////
+
+  var imgd = g.getImageData(0, 0, w, h);
+  var buff = Buffer.from(imgd.data);
+
+  imgd = g1.getImageData(0, 0, w, h);
+  buff.forEach((a, b) => imgd.data[b] = a);
+  g1.putImageData(imgd, 0, 0);
 });
 
-stream.on('end', function(){
-  console.log('The PNG stream ended');
-  //out.end();
-});
-
-out.on('finish', function(){
-  console.log('The PNG file was created.');
-});
+function log(str){
+  fs.writeSync(process.stdout.fd, `${str}\n`);
+}

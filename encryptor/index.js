@@ -17,7 +17,7 @@ module.exports = {
   compress,
   decompress,
   encrypt,
-  decrypt
+  decrypt,
 };
 
 function compress(input, output, password = '', cb = O.nop){
