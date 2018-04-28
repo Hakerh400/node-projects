@@ -4,11 +4,11 @@ var fs = require('fs');
 var path = require('path');
 var O = require('../framework');
 
-var inputLayerSize = 4;
-var outputLayerSize = 2;
+var inputLayerSize = 1;
+var outputLayerSize = 1024 * 3;
 
-var hiddenLayersNum = 2;
-var neuronsPerLayer = 50;
+var hiddenLayersNum = 1;
+var neuronsPerLayer = 1024 * 3;
 
 var neuralNetFile = path.join(__dirname, '../../Python/neural-net/output.txt');
 

@@ -36,7 +36,6 @@ global.FRICTION = .9;
 var w = HD ? 1920 : 640;
 var h = HD ? 1080 : 480;
 var fps = 60;
-var hd = true;
 var duration = HD ? 10 : 1;
 var framesNum = fps * duration;
 
@@ -46,7 +45,7 @@ var world = null;
 setTimeout(main);
 
 function main(){
-  media.renderVideo('-vid/1.mp4', w, h, fps, hd, (w, h, g, f) => {
+  media.renderVideo('-vid/1.mp4', w, h, fps, (w, h, g, f) => {
     media.logStatus(f, framesNum);
 
     if(f === 1)

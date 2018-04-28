@@ -21,5 +21,5 @@ call npm install --save assert-rejects
 cd ..\..
 
 call ./config-tests.bat
-call ./build.bat
+call ./c.bat
 call ./test.bat

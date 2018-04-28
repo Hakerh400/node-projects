@@ -2,7 +2,7 @@
 
 var path = require('path');
 var cp = require('child_process');
-var {Canvas} = require('../canvas/node_modules/canvas');
+var {Canvas} = require('../canvas');
 var O = require('../framework');
 var logStatus = require('../log-status');
 var formatFileName = require('../format-file-name');
@@ -70,7 +70,7 @@ function editImage(input, output, frameFunc, exitCb = O.nop){
   });
 }
 
-function renderVideo(output, w, h, fps, hd, frameFunc, exitCb = O.nop){
+function renderVideo(output, w, h, fps, frameFunc, exitCb = O.nop){
   output = formatFileName(output);
 
   var canvas = createCanvas(w, h);
@@ -78,7 +78,7 @@ function renderVideo(output, w, h, fps, hd, frameFunc, exitCb = O.nop){
   var f = 0;
 
   var proc = spawnFfmpeg(`${BGRA} -s ${w}x${h} -framerate ${fps} -i - -y -pix_fmt yuv420p -framerate ${fps} ${
-    hd ? HD_PRESET : ``
+    HD_PRESET
   } ${TRUNC} "${output}"`, exitCb);
 
   frame();
@@ -99,7 +99,7 @@ function renderVideo(output, w, h, fps, hd, frameFunc, exitCb = O.nop){
   }
 }
 
-function editVideo(input, output, w2, h2, fps, hd, frameFunc, exitCb = O.nop){
+function editVideo(input, output, w2, h2, fps, frameFunc, exitCb = O.nop){
   input = formatFileName(input);
   output = formatFileName(output);
 
@@ -112,7 +112,7 @@ function editVideo(input, output, w2, h2, fps, hd, frameFunc, exitCb = O.nop){
 
     var proc1 = spawnFfmpeg(`-i "${input}" ${RGBA} -r ${fps} -`);
     var proc2 = spawnFfmpeg(`${BGRA} -s ${w2}x${h2} -framerate ${fps} -i - -y -pix_fmt yuv420p -framerate ${fps} ${
-      hd ? HD_PRESET : ``
+      HD_PRESET
     } ${TRUNC} "${output}"`, exitCb);
 
     proc1.stdout.on('data', data => {
@@ -303,6 +303,10 @@ function createCanvas(w, h){
   g.fillStyle = 'black';
   g.fillRect(0, 0, w, h);
   g.fillStyle = 'white';
+
+  g.textBaseline = 'middle';
+  g.textAlign = 'center';
+  g.font = '32px arial';
 
   return g.canvas;
 }

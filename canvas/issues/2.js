@@ -30,14 +30,15 @@ function render(window){
   pr.render('-vid/1.mp4', async (w, h, g, g1) => {
     g1.font = '72px arial';
 
-    await pr.caption(O.ca(1e3, () => {
+    await pr.caption(O.ca(1e5, () => {
       var c1 = '!'.charCodeAt(0);
       var c2 = '~'.charCodeAt(0);
 
-      return String.fromCharCode(c1 + O.rand(c2 - c1 + 1));
+      //return String.fromCharCode(c1 + O.rand(c2 - c1 + 1));
+      return '#';
     }).join(''));
 
-    var str = `${O.ca(1e5, i => i % 7).join('')}`;
+    var str = `${O.ca(1e5, i => i % 5).join('')}`;
     window.emit('_msg', {type: 'import', data: str});
 
     pressKey('Digit1');

@@ -210,7 +210,7 @@ optimizeInstructions();
 
 class Machine{
   constructor(){
-    this.ignoreErrors = false
+    this.ignoreErrors = false;
 
     this.createRegs();
     this.createMem();

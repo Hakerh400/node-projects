@@ -7,7 +7,6 @@ var browser = require('../browser');
 var w = 1920;
 var h = 1080;
 var fps = 60;
-var hd = true;
 var duration = 10;
 var framesNum = fps * duration;
 
@@ -24,7 +23,7 @@ function main(){
 function render(window){
   var canvas = window._canvases[0];
 
-  media.renderVideo('-vid/1.mp4', w, h, fps, hd, (w, h, g, f) => {
+  media.renderVideo('-vid/1.mp4', w, h, fps, (w, h, g, f) => {
     media.logStatus(f, framesNum);
 
     if(f !== 1){

@@ -4,63 +4,44 @@ var O = require('../framework');
 var media = require('../media');
 var nn = require('.');
 
-const HD = 1;
-
-var w = HD ? 1920 : 640;
-var h = HD ? 1080 : 480;
+var w = 1920;
+var h = 1080;
 var fps = 60;
 var duration = 60;
 var framesNum = fps * duration;
-
-var speed = 5;
-
-var entRadius = 16;
-var gemRadius = 8;
 
 setTimeout(main);
 
 function main(){
   var model = nn.loadModel();
 
-  var ent = new O.Vector(O.rand(w), O.rand(h));
-  var gem = new O.Vector(O.rand(w), O.rand(h));
+  var [ws, hs] = [w, h].map(a => a / 32);
 
   media.renderVideo('-vid/1.mp4', w, h, fps, true, (w, h, g, f) => {
     media.logStatus(f, framesNum);
 
-    draw(g);
-    tick();
+    var input = [(f - 1) / (framesNum - 1)];
+    var output = model.feed(input);
+
+    g.fillStyle = 'darkgray';
+    g.fillRect(0, 0, w, h);
+    g.globalAlpha = 1 - (1 - 1 / 9) ** 2;
+
+    for(var y = 0; y < 32; y++){
+      for(var x = 0; x < 32; x++){
+        var i = (x + y * 32) * 3;
+
+        var red = O.bound(Math.round(output[i] * 255), 0, 255);
+        var green = O.bound(Math.round(output[i + 1] * 255), 0, 255);
+        var blue = O.bound(Math.round(output[i + 2] * 255), 0, 255);
+
+        g.fillStyle = O.rgb(red, green, blue);
+        g.fillRect((x - 1) * ws, (y - 1) * hs, ws * 3, hs * 3);
+      }
+    }
+
+    g.globalAlpha = 1;
 
     return f !== framesNum;
   });
-
-  function tick(){
-    var input = [ent.x / w, ent.y / h, gem.x / w, gem.y / h];
-    var output = model.feed(input);
-
-    ent.x += (output[0] * 2 - 1) * speed;
-    ent.y += (output[1] * 2 - 1) * speed;
-
-    if(ent.dist(gem) < entRadius + gemRadius){
-      gem.x = O.rand(w);
-      gem.y = O.rand(h);
-    }
-  }
-
-  function draw(g){
-    g.fillStyle = 'darkgray';
-    g.fillRect(0, 0, w, h);
-
-    g.fillStyle = '#00ff00';
-    g.beginPath();
-    g.arc(ent.x, ent.y, entRadius, 0, O.pi2);
-    g.fill();
-    g.stroke();
-
-    g.fillStyle = '#ffff00';
-    g.beginPath();
-    g.arc(gem.x, gem.y, gemRadius, 0, O.pi2);
-    g.fill();
-    g.stroke();
-  }
 }

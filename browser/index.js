@@ -238,6 +238,7 @@ function createCanvas(window){
   cs.push(canvas);
 
   canvas.style = new CSSStyleDeclaration();
+  canvas.classList = new DOMTokenList();
 
   return canvas;
 }

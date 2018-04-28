@@ -31,16 +31,11 @@ function func(src){
   var found = 0;
 
   lines.forEach((line, i) => {
-    if(found !== 0) return;
-    var chunks = line.split('`');
+    if(found !== 0)
+      return;
 
-    chunks.forEach((chunk, j) => {
-      if(found !== 0 || j % 2 === 1 || j === chunks.length - 1)
-        return;
-
-      if(/[0-9a-z]$/i.test(chunk))
-        found = i + 1;
-    });
+    if(line.includes('w, h, fps, hd'))
+      found = i;
   });
 
   return found;

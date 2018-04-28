@@ -303,8 +303,6 @@ class World extends Unique{
     if(coords.y < this.yMin) coords.y = this.yMin;
     else if(coords.y > this.yMax) coords.y = this.yMax;
 
-    console.log(coords.x);
-
     this.chunksGrid.moveEnt(ent);
   }
 

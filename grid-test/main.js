@@ -110,6 +110,6 @@ function log(...args){
     fs.writeSync(process.stdout.fd, `${args[1]}`);
     resetCol();
   }else{
-    throw new TypeError('Expected 1 or 2 arguments')
+    throw new TypeError('Expected 1 or 2 arguments');
   }
 }
