@@ -14,7 +14,9 @@ const RGBA = '-f rawvideo -pix_fmt rgba';
 const TRUNC = '-vf "scale=trunc(iw/2)*2:trunc(ih/2)*2"';
 const HD_PRESET = '-c:v libx264 -preset slow -profile:v high -crf 18 -coder 1 -pix_fmt yuv420p -movflags +faststart -bf 2 -c:a aac -b:a 384k -profile:a aac_low';
 
-var procsNum = 0;
+var procs = [];
+
+addEventListeners();
 
 module.exports = {
   renderImage,
@@ -269,26 +271,29 @@ function getMediaParams(mediaFile, cb){
 
 function spawnProc(name, args, exitCb = O.nop){
   name = path.join(FFMPEG_DIR, name);
-  procsNum++;
 
   var proc = cp.spawn(name, [
     '-hide_banner',
     ...args.match(/"[^"]*"|\S+/g).map(a => a[0] == '"' ? a.substring(1, a.length - 1) : a)
   ]);
 
+  procs.push(proc);
+
   proc.stderr.on('data', O.nop);
-  proc.on('exit', () => onProcExit(exitCb));
+  proc.on('exit', () => onProcExit(proc, exitCb));
 
   return proc;
 }
 
-function onProcExit(exitCb = O.nop){
-  procsNum--;
+function onProcExit(proc, exitCb = O.nop){
+  var index = procs.indexOf(proc);
+  procs.splice(index, 1);
 
-  if(exitCb !== null) tryToCallExitCb();
+  if(exitCb !== null)
+    tryToCallExitCb();
 
   function tryToCallExitCb(){
-    if(procsNum){
+    if(procs.length !== 0){
       setTimeout(tryToCallExitCb);
       return;
     }
@@ -313,4 +318,28 @@ function createCanvas(w, h){
 
 function createContext(w, h){
   return createCanvas(w, h).getContext('2d');
+}
+
+function addEventListeners(){
+  process.on('SIGINT', () => {
+    closeProcs();
+  });
+
+  process.on('uncaughtException', err => {
+    console.log(err);
+    closeProcs();
+  });
+}
+
+function closeProcs(){
+  procs.forEach(proc => {
+    try{
+      proc.stdin.end();
+    }catch(e){}
+  });
+
+  setInterval(() => {
+    if(procs.length === 0)
+      process.exit();
+  });
 }
