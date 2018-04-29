@@ -5,7 +5,6 @@ var path = require('path');
 var O = require('../framework');
 var Presentation = require('../presentation');
 var browser = require('../browser');
-var hash = require('../hash');
 
 var w = 1920;
 var h = 1080;
