@@ -4,15 +4,19 @@ var fs = require('fs');
 var path = require('path');
 var O = require('../framework');
 var browser = require('../browser');
+var media = require('../media');
 var Presentation = require('../presentation');
 
-var url = '/?project=grid-projects&sub-project=grid';
+var url = '/?project=grid-projects&sub-project=arrows';
 
 var w = 1920;
 var h = 1080;
 var fps = 60;
-var duration = 60 * 10;
+var duration = 10;
 var framesNum = fps * duration;
+
+var tileSize = 40;
+var tileSizeH = tileSize / 2;
 
 setTimeout(main);
 
@@ -29,35 +33,46 @@ function render(window){
   var pr = new Presentation(w, h, fps);
 
   pr.render('-vid/1.mp4', async (w, h, g, g1) => {
-    g1.font = '48px arial';
+    g1.drawImage(canvas, 0, 0);
+    await pr.fade();
 
-    var evt = {
-      type: null,
+    var msgEvt = {
+      type: 'sample',
       data: null,
     };
 
-    var testsDir = path.join(__dirname, '../grid-test/tests');
-    var testsNum = fs.readdirSync(testsDir).length;
+    var mouseEvt = {
+      button: 0,
+      clientX: null,
+      clientY: null,
+    };
 
-    for(var i = 0; i < testsNum; i++){
-      await pr.caption(`Test ${i + 1}/${testsNum}`);
+    while(1){
+      window.emit('_msg', msgEvt);
+      if(msgEvt.data === null)
+        break;
 
-      evt.type = 'import';
-      evt.data = O.sanl(fs.readFileSync(path.join(testsDir, `${i + 1}.txt`), 'utf8')).join('\n').split('\n\n')[0];
-      window.emit('_msg', evt);
-      pressKey('Digit1');
+      var x = msgEvt.data[0] * tileSize + tileSizeH;
+      var y = msgEvt.data[1] * tileSize + tileSizeH;
+
+      g1.globalAlpha = .5;
+      g1.fillStyle = 'red';
+      g1.beginPath();
+      g1.arc(x, y, tileSizeH, 0, O.pi2);
+      g1.fill();
+      g1.globalAlpha = 1;
+      await pr.fade();
+      await pr.wait();
+
+      mouseEvt.clientX = x;
+      mouseEvt.clientY = y;
+      window.emit('mousedown', mouseEvt);
+
       g1.drawImage(canvas, 0, 0);
       await pr.fade();
-      await pr.wait(3e3);
-
-      pressKey('Enter');
-      pressKey('Digit1');
-      g1.drawImage(canvas, 0, 0);
-      await pr.fade();
-      await pr.wait(3e3);
-
-      await pr.fadeOut();
     }
+
+    await pr.fadeOut();
   });
 
   function pressLetter(letter){
