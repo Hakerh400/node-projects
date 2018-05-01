@@ -35,6 +35,7 @@ function render(window){
   pr.render('-vid/1.mp4', async (w, h, g, g1) => {
     g1.drawImage(canvas, 0, 0);
     await pr.fade();
+    await pr.wait(1e3);
 
     var msgEvt = {
       type: 'sample',
@@ -55,23 +56,24 @@ function render(window){
       var x = msgEvt.data[0] * tileSize + tileSizeH;
       var y = msgEvt.data[1] * tileSize + tileSizeH;
 
-      g1.globalAlpha = .5;
+      /*g1.globalAlpha = .5;
       g1.fillStyle = 'red';
       g1.beginPath();
       g1.arc(x, y, tileSizeH, 0, O.pi2);
       g1.fill();
       g1.globalAlpha = 1;
       await pr.fade();
-      await pr.wait();
+      await pr.wait();*/
 
       mouseEvt.clientX = x;
       mouseEvt.clientY = y;
       window.emit('mousedown', mouseEvt);
 
-      g1.drawImage(canvas, 0, 0);
-      await pr.fade();
+      g/*1*/.drawImage(canvas, 0, 0);
+      await pr./*fade*/frame();
     }
 
+    await pr.wait(5e3);
     await pr.fadeOut();
   });
 

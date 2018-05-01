@@ -6,7 +6,7 @@ var O = require('../framework');
 var browser = require('../browser');
 var consoleColors = require('../console-colors');
 
-var url = '/?project=grid';
+var url = '/?project=grid-projects&sub-project=grid';
 
 var cwd = __dirname;
 var testsDir = path.join(cwd, 'tests');
@@ -54,7 +54,7 @@ function performTests(window){
     log(' ');
     totalTime += dt;
 
-    if(evt.data){
+    if(evt.data === true){
       passed++;
       ok(`PASSED (${time})`);
     }else{
