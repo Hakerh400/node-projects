@@ -2,6 +2,8 @@
 
 var O = require('../framework');
 
+const PRECISION = 8;
+
 module.exports = {
   svg2ctx,
 };
@@ -174,7 +176,7 @@ function svg2ctx(src, ctxName='g', indent=0){
   }
 
   var code = lines.map(line => {
-    return `${'  '.repeat(indent)}${line}`;
+    return O.indent(line, indent);
   }).join('\n');
 
   return [w, h, code];
@@ -236,15 +238,17 @@ function svg2ctx(src, ctxName='g', indent=0){
   function addLine(method, ...args){
     if(lines.length === null)
       return;
+
     args = args.map(arg => {
       if(typeof arg !== 'number')
         return arg;
 
-      return +arg.toFixed(5);
+      return +arg.toFixed(PRECISION);
     });
 
     var line = `${ctxName}.${method}(${args.join(', ')});`;
     lines.push(line);
+    
     return line;
   }
 }
