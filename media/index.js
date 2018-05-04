@@ -86,17 +86,20 @@ function renderVideo(output, w, h, fps, frameFunc, exitCb = O.nop){
   frame();
 
   function frame(){
-    var notFinished = frameFunc(w, h, g, ++f);
+    var value = frameFunc(w, h, g, ++f);
+    var buff;
 
-    if(notFinished === null){
+    if(value instanceof Buffer){
+      buff = value;
+    }else if(value === null){
       f--;
       setTimeout(frame);
       return;
+    }else{
+      buff = canvas.toBuffer('raw');
     }
 
-    var buff = canvas.toBuffer('raw');
-
-    if(notFinished) proc.stdin.write(buff, frame);
+    if(value) proc.stdin.write(buff, frame);
     else proc.stdin.end(buff);
   }
 }
