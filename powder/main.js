@@ -16,9 +16,10 @@ setTimeout(main);
 function main(){
   var cols = new Uint8Array([
     0,   0,   0,   255,
+    128, 128, 128, 255,
     255, 0,   0,   255,
+    255, 255, 0,   255,
     0,   255, 0,   255,
-    0,   0,   255, 255,
   ]);
 
   var [wh, hh] = [w, h].map(a => a >> 1);
@@ -66,6 +67,13 @@ function main(){
   for(var i = 3; i < d.length; i += 4)
     d[i] = 255;
 
+  for(var y = 0; y < h; y++){
+    for(var x = 0; x < w; x++){
+      if(Math.abs(x - wh) > (1 - (y - hh) / hh) * wh - 2)
+        set(x, y, 1);
+    }
+  }
+
   media.renderVideo('-vid/1.mp4', w, h, fps, (w, h, g, f) => {
     media.logStatus(f, framesNum);
 
@@ -85,8 +93,13 @@ function main(){
       return false;
     }
 
-    setRect(0, 0, 10, 10, 1);
-    setRect(w1 - 10, 0, 10, 10, 2);
+    var angle1 = f / (fps * 9) * O.pi2;
+    var angle2 = f / (fps * 10) * O.pi2
+    var angle3 = f / (fps * 11) * O.pi2
+    setRect(wh + Math.cos(angle1) * h * .25 - 5 | 0, hh + Math.sin(angle1) * h * .25 - h * .25 - 5 | 0, 10, 10, 2);
+    setRect(wh + Math.cos(angle2) * h * .25 - 5 | 0, hh + Math.sin(angle2) * h * .25 - h * .25 - 5 | 0, 10, 10, 3);
+    setRect(wh + Math.cos(angle3) * h * .25 - 5 | 0, hh + Math.sin(angle3) * h * .25 - h * .25 - 5 | 0, 10, 10, 4);
+    setRect(150, hh + 30, w - 300, 1, 1);
 
     if(f === 1)
       return d;
@@ -106,7 +119,7 @@ function main(){
     for(var y = 0; y < h; y++){
       for(var x = x1; x !== x2; x += dx){
         var p = get(x, y);
-        if(p <= 0) continue;
+        if(p <= 0 || p === 1) continue;
         p = -p;
 
         if(get(x, y + 1) === 0){
