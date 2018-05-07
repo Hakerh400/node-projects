@@ -20,6 +20,8 @@ function main(){
     255, 0,   0,   255,
     255, 255, 0,   255,
     0,   255, 0,   255,
+    0,   255, 255, 255,
+    255, 0,   255, 255,
   ]);
 
   var [wh, hh] = [w, h].map(a => a >> 1);
@@ -70,9 +72,9 @@ function main(){
   for(var i = 3; i < d.length; i += 4)
     d[i] = 255;
 
-  var gs = 10;
+  var gs = 1;
   var gsh = gs >> 1;
-  var [gw, gh] = [14, 16];
+  var [gw, gh] = [150, 150];
   var [gwh, ghh] = [gw, gh].map(a => a >> 1);
   var [gws, ghs] = [gw, gh].map(a => a * gs);
   var [gwsh, ghsh] = [gws, ghs].map(a => a >> 1);
@@ -95,7 +97,10 @@ function main(){
 
   for(var y = 0; y < h; y++){
     for(var x = 0; x < w; x++){
-      if(Math.abs(x - wh + Math.cos(x / 10 + Math.sin(y / 17) * 3.2) * 50) > (1 - (y - hh + Math.sin(y / 15 - Math.cos(x / 22) * 2.7) * 45) / hh) * wh - 2)
+      var b = 1 - (y / 64 & 1);
+      if(b && (x < 35 || x > w - 35))
+        continue;
+      if(y > hh + 35 && Math.hypot((x + b * 32) % 64 - 32, y % 64 - 32) < 16)
         set(x, y, 1);
     }
   }
@@ -119,11 +124,11 @@ function main(){
       return false;
     }
 
-    for(i = 0; i < 9; i++){
-      var angle = (f / (fps * 100) + i / 9) * O.pi2;
-      var type = i % 3 + 2;
+    for(i = 0; i < 5; i++){
+      var angle = (f / (fps * 100) + i / 5) * O.pi2;
+      var type = i % 5 + 2;
 
-      setRect(wh + Math.cos(angle) * (wh - 10) - 5 | 0, hh + Math.sin(angle) * h * .25 - h * .25 | 0, 10, 10, type);
+      setRect(wh + Math.cos(angle) * (wh - 5) - 5 | 0, hh + Math.sin(angle) * h * .25 - h * .25 | 0, 10, 10, type);
     }
 
     if(f === 1)
@@ -182,38 +187,9 @@ function main(){
 }
 
 function icon(g){
-  g.beginPath();
-  g.moveTo(12.83, 2.17);
-  g.bezierCurveTo(12.08, 1.42, 11.14, 1.03, 10, 1);
-  g.bezierCurveTo(8.87, 1.03, 7.92, 1.42, 7.17, 2.17);
-  g.bezierCurveTo(6.42, 2.92, 6.04, 3.86, 6.01, 5);
-  g.bezierCurveTo(6.01, 5.3, 6.04, 5.59, 6.1, 5.89);
-  g.lineTo(0, 12);
-  g.lineTo(0, 13);
-  g.lineTo(1, 14);
-  g.lineTo(3, 14);
-  g.lineTo(4, 13);
-  g.lineTo(4, 12);
-  g.lineTo(5, 12);
-  g.lineTo(5, 11);
-  g.lineTo(6, 11);
-  g.lineTo(6, 10);
-  g.lineTo(8, 10);
-  g.lineTo(9.09, 8.89);
-  g.bezierCurveTo(9.39, 8.97, 9.68, 9, 10, 9);
-  g.bezierCurveTo(11.14, 8.97, 12.08, 8.58, 12.83, 7.83);
-  g.bezierCurveTo(13.58, 7.08, 13.97, 6.14, 14, 5);
-  g.bezierCurveTo(13.97, 3.86, 13.58, 2.92, 12.83, 2.17);
-  g.closePath();
-  g.fill();
-  g.stroke();
-  g.beginPath();
-  g.moveTo(11, 5.38);
-  g.bezierCurveTo(10.23, 5.38, 9.62, 4.77, 9.62, 4);
-  g.bezierCurveTo(9.62, 3.23, 10.23, 2.62, 11, 2.62);
-  g.bezierCurveTo(11.77, 2.62, 12.38, 3.23, 12.38, 4);
-  g.bezierCurveTo(12.38, 4.77, 11.77, 5.38, 11, 5.38);
-  g.closePath();
-  g.fill();
-  g.stroke();
+  var w = g.canvas.width;
+  var h = g.canvas.height;
+
+  g.font = '100px Cambria';
+  g.fillText('∰', w / 2, h / 2);
 }

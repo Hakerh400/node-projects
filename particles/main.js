@@ -48,7 +48,7 @@ function main(){
     }
   }
 
-  media.renderVideo('-vid/2.mp4', w, h, fps, (w, h, g, f) => {
+  media.renderVideo('-vid/1.mp4', w, h, fps, (w, h, g, f) => {
     media.logStatus(f, framesNum);
 
     if(f === 1)
