@@ -14,15 +14,10 @@ var framesNum = fps * duration;
 setTimeout(main);
 
 function main(){
-  var cols = new Uint8Array([
-    0,   0,   0,   255,
-    128, 128, 128, 255,
-    255, 0,   0,   255,
-    255, 255, 0,   255,
-    0,   255, 0,   255,
-    0,   255, 255, 255,
-    255, 0,   255, 255,
-  ]);
+  var cols = [
+    [0, 0, 0],
+    [128, 128, 128],
+  ];
 
   var [wh, hh] = [w, h].map(a => a >> 1);
   var [w1, h1] = [w, h].map(a => a - 1 | 0);
@@ -34,23 +29,29 @@ function main(){
   var nn = w * h << 2;
 
   var d = Buffer.alloc(nn);
-  var p = new Int32Array(n);
+  var p = new Float32Array(n).fill(2);
+
+  var hsv = O.hsv;
 
   var get = (x, y) => {
     if((x | 0) < 0 || (y | 0) < 0 || (x | 0) >= (w | 0) || (y | 0) >= (h | 0))
       return null;
 
-    return p[(x | 0) + (y | 0) * (w | 0) | 0] | 0;
+    return p[(x | 0) + (y | 0) * (w | 0) | 0];
   };
 
   var set = (x, y, a) => {
     if((x | 0) < 0 || (y | 0) < 0 || (x | 0) >= (w | 0) || (y | 0) >= (h | 0))
       return;
 
-    p[x = (x | 0) + (y | 0) * (w | 0) | 0] = a | 0;
-    d[x <<= 2] = cols[a = ((a < 0 ? -a : a) << 2) + 2 | 0] | 0;
-    d[(x | 0) + 1 | 0] = cols[(a | 0) - 1 | 0] | 0;
-    d[(x | 0) + 2 | 0] = cols[(a | 0) - 2 | 0] | 0;
+    p[x = (x | 0) + (y | 0) * (w | 0) | 0] = a;
+
+    a = a < 0 ? -a : a;
+    a = a >= 0 && a <= 1 ? hsv(a) : cols[(a | 0) - 2 | 0];
+
+    d[x <<= 2] = a[2] | 0;
+    d[(x | 0) + 1 | 0] = a[1] | 0;
+    d[(x | 0) + 2 | 0] = a[0] | 0;
   };
 
   var setRect = (x1, y1, w, h, a) => {
@@ -64,8 +65,8 @@ function main(){
 
   var update = () => {
     for(var i = 0; i < n; i++){
-      if((p[i | 0] | 0) < 0)
-        p[i | 0] = -p[i | 0] | 0;
+      if(p[i | 0] < 0)
+        p[i | 0] = -p[i | 0];
     }
   };
 
@@ -74,7 +75,7 @@ function main(){
 
   var gs = 1;
   var gsh = gs >> 1;
-  var [gw, gh] = [150, 150];
+  var [gw, gh] = [300, 300];
   var [gwh, ghh] = [gw, gh].map(a => a >> 1);
   var [gws, ghs] = [gw, gh].map(a => a * gs);
   var [gwsh, ghsh] = [gws, ghs].map(a => a >> 1);
@@ -91,7 +92,7 @@ function main(){
     for(var x = 0; x < gws; x++){
       var i = x + y * gws << 2;
       if(data[i] >= 128)
-        set(cx - gwsh + x, cy - ghsh + y, 1);
+        set(cx - gwsh + x, cy - ghsh + y, 3);
     }
   }  
 
@@ -101,7 +102,7 @@ function main(){
       if(b && (x < 35 || x > w - 35))
         continue;
       if(y > hh + 35 && Math.hypot((x + b * 32) % 64 - 32, y % 64 - 32) < 16)
-        set(x, y, 1);
+        set(x, y, 3);
     }
   }
 
@@ -124,9 +125,11 @@ function main(){
       return false;
     }
 
-    for(i = 0; i < 5; i++){
+    var base = f / (fps * 2);
+
+    for(i = 0; i < 10; i++){
       var angle = (f / (fps * 100) + i / 5) * O.pi2;
-      var type = i % 5 + 2;
+      var type = (base + i / 10) % 1;
 
       setRect(wh + Math.cos(angle) * (wh - 5) - 5 | 0, hh + Math.sin(angle) * h * .25 - h * .25 | 0, 10, 10, type);
     }
@@ -149,12 +152,12 @@ function main(){
     for(var y = 0; y < h; y++){
       for(var x = x1; x !== x2; x += dx){
         var p = get(x, y);
-        if(p <= 0 || p === 1) continue;
+        if(p < 0 || p > 1) continue;
         p = -p;
 
-        if(get(x, y + 1) === 0){
+        if(get(x, y + 1) === 2){
           if(O.rand(2) === 0){
-            set(x, y, 0);
+            set(x, y, 2);
             set(x, y + 1, p);
             continue;
           }
@@ -163,18 +166,17 @@ function main(){
             continue;
         }
 
-        var p1 = get(x - 1, y) === 0;
-        var p2 = get(x + 1, y) === 0;
+        var p1 = get(x - 1, y) === 2;
+        var p2 = get(x + 1, y) === 2;
 
         if(p1 && p2){
-          var dir = O.rand(2);
-          set(x, y, 0);
-          set(dir === 0 ? x - 1 : x + 1, y, p);
+          set(x, y, 2);
+          set(O.rand(2) === 0 ? x - 1 : x + 1, y, p);
         }else if(p1){
-          set(x, y, 0);
+          set(x, y, 2);
           set(x - 1, y, p);
         }else if(p2){
-          set(x, y, 0);
+          set(x, y, 2);
           set(x + 1, y, p);
         }
       }
@@ -191,5 +193,6 @@ function icon(g){
   var h = g.canvas.height;
 
   g.font = '100px Cambria';
-  g.fillText('∰', w / 2, h / 2);
+  g.fillText('><', w / 2, h / 2);
+  g.fillText('>.<', w / 2, h / 2);
 }

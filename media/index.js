@@ -79,7 +79,7 @@ function renderVideo(output, w, h, fps, frameFunc, exitCb = O.nop){
   var g = canvas.getContext('2d');
   var f = 0;
 
-  var proc = spawnFfmpeg(`${BGRA} -s ${w}x${h} -framerate ${fps} -i - -y -pix_fmt yuv420p -framerate ${fps} ${
+  var proc = spawnFfmpeg(`${BGRA} -s ${w}x${h} -framerate ${fps} -i - -y -framerate ${fps} ${
     HD_PRESET
   } ${TRUNC} "${output}"`, exitCb);
 
