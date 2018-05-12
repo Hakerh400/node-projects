@@ -64,8 +64,8 @@ var instructions = {
   eqp:      [0x23, (m, a, b) => {m.push(a); m.push(b); m.push(a === b ? 1 : 0);}],
   neqp:     [0x24, (m, a, b) => {m.push(a); m.push(b); m.push(a !== b ? 1 : 0);}],
 
-  readB:    [0x25, (m, a) => m.push(m.mem.buff[a])],
-  writeB:   [0x26, (m, a, b) => m.mem.buff[b] = a],
+  readB:    [0x25, (m, a) => m.push(m.mem.readb(a))],
+  writeB:   [0x26, (m, a, b) => m.mem.writeb(a, b)],
 
   lt:       [0x27, (m, a, b) => m.push(a < b ? 1 : 0)],
   gt:       [0x28, (m, a, b) => m.push(a > b ? 1 : 0)],
@@ -74,8 +74,8 @@ var instructions = {
   eq:       [0x2B, (m, a, b) => m.push(a === b ? 1 : 0)],
   neq:      [0x2C, (m, a, b) => m.push(a !== b ? 1 : 0)],
 
-  inf:      [0x2D, (m, a) => m.pushf(m.inf(a & 255)), [0]],
-  outf:     [0x2E, (m, a, b) => m.outf(a, b & 255), [1, 0]],
+  //inf:      [0x2D, (m, a) => m.pushf(m.inf(a & 255)), [0]],
+  //outf:     [0x2E, (m, a, b) => m.outf(a, b & 255), [1, 0]],
 
   pushf:    [0x2F, (m, a) => {m.pushf(a); m.pushf(a);}, [1]],
   popf:     [0x30, (m, a) => {}, [1]],
@@ -214,10 +214,11 @@ class Machine{
 
     this.createRegs();
     this.createMem();
-    this.createBuffs();
 
     this.halted = true;
     this.intReqs = [];
+
+    this.pers = [];
   }
 
   createRegs(){
@@ -232,8 +233,11 @@ class Machine{
     this.mem = new Memory();
   }
 
-  createBuffs(){
-    this.portsBuff = Buffer.alloc(256 * 4);
+  addPers(pers){
+    pers.forEach(per => {
+      this.pers.push(per);
+      per.machine = this;
+    });
   }
 
   compile(src){
@@ -297,6 +301,10 @@ class Machine{
 
   start(){
     var m = this;
+
+    this.pers.forEach(per => {
+      per.start();
+    });
     
     m.halted = false;
     setTimeout(exec);
@@ -311,6 +319,14 @@ class Machine{
 
       setTimeout(exec);
     }
+  }
+
+  stop(){
+    this.pers.forEach(per => {
+      per.stop();
+    });
+
+    this.halt();
   }
 
   tick(){
@@ -440,24 +456,16 @@ class Machine{
     this.mem.fill(0);
   }
 
-  resetBuffs(){
-    this.portsBuff.fill(0);
-  }
-
   in(port){
-    return this.portsBuff.readUInt32LE(port << 2);
+    var {pers} = this;
+    var per = this.pers[(port >> 4) % pers.length];
+    return per.getReg(port & 15);
   }
 
   out(val, port){
-    this.portsBuff.writeUInt32LE(val, port << 2);
-  }
-
-  inf(port){
-    return this.portsBuff.readFloatLE(port << 2);
-  }
-
-  outf(val, port){
-    this.portsBuff.writeFloatLE(val, port << 2);
+    var {pers} = this;
+    var per = this.pers[(port >> 4) % pers.length];
+    per.setReg(val & MEM_MAX_ADDR, port & 15);
   }
 
   push(val){
@@ -638,6 +646,14 @@ class Memory{
       return;
 
     this.buff.writeUInt32LE(val & MEM_MAX_ADDR, addr);
+  }
+
+  readb(addr){
+    return this.buff[addr & MEM_MAX_ADDR];
+  }
+
+  writeb(val, addr){
+    return this.buff[addr & MEM_MAX_ADDR] = val;
   }
 
   readf(addr){

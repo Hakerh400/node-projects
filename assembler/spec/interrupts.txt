@@ -1,3 +1,0 @@
-00 - Trap
-01 - Timer
-02 - I/O interface
