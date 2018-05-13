@@ -1,3 +1,3 @@
-void *NULL;
+/*void *NULL;
 
-void *malloc(int size);
+void *malloc(int size);*/

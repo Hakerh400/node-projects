@@ -3,7 +3,6 @@
 var fs = require('fs');
 var path = require('path');
 var O = require('../framework');
-var Interface = require('../assembler/interface.js');
 var compiler = require('.');
 
 var srcDir = './src';
@@ -17,8 +16,13 @@ function main(){
   fs.writeFileSync(compiledAsmFile, compiled.asm);
 
   var machine = compiled.machine;
-  var intface = new Interface(machine);
+
+  machine.addPers([
+    'mboard',
+    'timer',
+    'input',
+    'output',
+  ]);
 
   machine.start();
-  intface.start();
 }

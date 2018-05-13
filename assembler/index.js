@@ -74,8 +74,8 @@ var instructions = {
   eq:       [0x2B, (m, a, b) => m.push(a === b ? 1 : 0)],
   neq:      [0x2C, (m, a, b) => m.push(a !== b ? 1 : 0)],
 
-  //inf:      [0x2D, (m, a) => m.pushf(m.inf(a & 255)), [0]],
-  //outf:     [0x2E, (m, a, b) => m.outf(a, b & 255), [1, 0]],
+  land:     [0x2D, (m, a, b) => m.push(((a !== 0) & (b !== 0)) & MEM_MAX_ADDR)],
+  lor:      [0x2E, (m, a, b) => m.push(((a !== 0) | (b !== 0)) & MEM_MAX_ADDR)],
 
   pushf:    [0x2F, (m, a) => {m.pushf(a); m.pushf(a);}, [1]],
   popf:     [0x30, (m, a) => {}, [1]],
@@ -202,8 +202,7 @@ var instructions = {
   shl:      [0x8C, (m, a, b) => m.push(a << b)],
   shr:      [0x8D, (m, a, b) => m.push(a >> b)],
 
-  land:     [0x8E, (m, a, b) => m.push(((a !== 0) & (b !== 0)) & MEM_MAX_ADDR)],
-  lor:      [0x8F, (m, a, b) => m.push(((a !== 0) | (b !== 0)) & MEM_MAX_ADDR)],
+  dispatch: [0x8E, (m) => m.dispatch()],
 };
 
 optimizeInstructions();
@@ -215,10 +214,11 @@ class Machine{
     this.createRegs();
     this.createMem();
 
+    this.dispatched = true;
     this.halted = true;
-    this.intReqs = [];
 
     this.pers = [];
+    this.intReqs = [];
   }
 
   createRegs(){
@@ -235,6 +235,11 @@ class Machine{
 
   addPers(pers){
     pers.forEach(per => {
+      if(typeof per === 'string'){
+        var perCtor = require(`./pers/${per}.js`);
+        per = new perCtor();
+      }
+
       this.pers.push(per);
       per.machine = this;
     });
@@ -259,6 +264,11 @@ class Machine{
         this.mem.buff[index++] = 0;
         this.mem.write(inst, index);
         index += 4;
+        return;
+      }
+
+      if(/^\[[\+\-]?(?:\d+|0x[a-f0-9]+)\]$/i.test(inst)){
+        index += inst.substring(1, inst.length - 1)  & MEM_MAX_ADDR;
         return;
       }
 
@@ -302,7 +312,10 @@ class Machine{
   start(){
     var m = this;
 
-    this.pers.forEach(per => {
+    if(m.pers.length === 0)
+      throw new TypeError('Cannot start machine without periferal devices');
+
+    m.pers.forEach(per => {
       per.start();
     });
     
@@ -312,6 +325,11 @@ class Machine{
     function exec(){
       for(var i = 0; i < SPEED; i++){
         m.tick();
+
+        if(m.dispatched){
+          m.dispatched = false;
+          break;
+        }
 
         if(m.halted)
           return;
@@ -403,6 +421,10 @@ class Machine{
           this.int(0x00);
       }
     }
+  }
+
+  dispatch(){
+    this.dispatched = true;
   }
 
   halt(){
@@ -617,9 +639,9 @@ class Machine{
     log(inst);
     log(str);
 
-    var buff = Buffer.alloc(1);
-    fs.readSync(process.stdin.fd, buff, 0, 1);
-    if(buff.toString() !== '\r') process.exit(1);
+    var buff = Buffer.alloc(2);
+    fs.readSync(process.stdin.fd, buff, 0, 2);
+    if(buff.toString() !== '\r\n') process.exit(1);
 
     function log(a){
       fs.writeSync(process.stdout.fd, `${a}\n`);

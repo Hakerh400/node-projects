@@ -1,27 +1,13 @@
 :init jmp
 
-ivt:
-  _0 _0 _0 _0
-  _0 _0 _0 _0
-  _0 _0 _0 _0
-  _0 _0 _0 _0
-
-str:
-  _0x31 _0x32 _0x33 _0x0A
+data:
+  ivt: [1024]
+  str: [1024]
 
 init:
   :initIvt call
-
-  :str 0x26 out
-  4 0x24 out
-  5 0x20 out
-
-  :str 0x35 out
-  4 0x34 out
-  4 0x30 out
-
-  inte
-  :loop call
+  :enableInts call
+  :main call
 
 initIvt:
   0 enter
@@ -36,10 +22,9 @@ initIvt:
   3 0x33 out
   0 leavev
 
-loop:
+enableInts:
   0 enter
-  loop1:
-    :loop1 jmp
+  inte
   0 leavev
 
 mboard:
@@ -49,25 +34,18 @@ timer:
   rti
 
 input:
-  0x20 in
-  1 neg and
-  0x20 out
-  0x30 in
-  1 or
-  0x30 out
   rti
 
 output:
-  0x30 in
-  1 neg and
-  0x30 out
-  0x20 in
-  1 or
-  0x20 out
   rti
 
 shutDown:
   0 enter
   1 0 out
   halt
+  0 leavev
+
+main:
+  0 enter
+  :shutDown call
   0 leavev

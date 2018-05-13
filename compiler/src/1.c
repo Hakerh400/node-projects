@@ -1,8 +1,20 @@
-#include "main.h"
+//#include "main.h"
 
-int b1 = 8;
+int main();
+//int b1 = 0;
 
 int main(){
-  b1 = (5, 7, 11, (b1 + 4));
-  return b1;
+  char a = 1;
+  char b = 2;
+
+  return 0;
+
+  /*int a = 0;
+
+  while(1){
+    printf(b1 + a);
+    b1 = (b1 * (b1 + 14) >> 8) ^ 0x7392;
+  }
+
+  return 0;*/
 }

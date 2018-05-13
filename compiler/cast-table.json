@@ -1,0 +1,8 @@
+[
+  ["char", "short"],
+  ["char", "int"],
+  ["short", "char"],
+  ["short", "int"],
+  ["int", "char"],
+  ["int", "short"]
+]

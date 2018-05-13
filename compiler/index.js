@@ -6,6 +6,7 @@ var O = require('../framework');
 var assembler = require('../assembler');
 var dataTypes = require('./data-types.json');
 var keywords = require('./keywords.json');
+var castTable = require('./cast-table.json');
 
 const TAB_SIZE = 2;
 
@@ -13,6 +14,7 @@ const CWD = __dirname;
 const NATIVE_LIBS_DIR = joinNormalize(CWD, 'native-libs');
 const ASM_BASE = joinNormalize(NATIVE_LIBS_DIR, 'asm.txt');
 const MAIN_HEADER = 'main.h';
+const MAIN_FILE = 'main.c';
 
 const WHITE_SPACE_CHARS = ' \r\n\t';
 const SUPPORTED_CHARS = getSupportedChars();
@@ -31,8 +33,8 @@ var operators = [
   [['(', '['], 20, 0, null],
   [[')', ']'], 1, null, null],
 
-  [['(\0)', '[\0]', '->', '.', '\0++', '\0--'], 19, 19, -1],
-  [['plus\0', 'minus\0', '!', '~', '++\0', '--\0', 'cast\0', 'deref\0', 'addr\0', 'sizeof\0'], 18, 17, 0],
+  [['\x00(\x00)', '\x00[\x00]', '->', '.', '\x00++', '\x00--'], 19, 19, -1],
+  [['plus\x00', 'minus\x00', '!', '~', '++\x00', '--\x00', 'cast\x00', 'deref\x00', 'addr\x00', 'sizeof\x00'], 18, 17, 0],
   [['*', '/', '%'], 16, 16, -1],
   [['+', '-'], 15, 15, -1],
   [['<<', '>>'], 14, 14, -1],
@@ -43,7 +45,7 @@ var operators = [
   [['|'], 9, 9, -1],
   [['&&'], 8, 8, -1],
   [['||'], 7, 7, -1],
-  [['?\0:\0'], 6, 5, -1],
+  [['\x00?\x00:\x00'], 6, 5, -1],
   [['=', '+=', '-=', '*=', '/=', '%=', '>>=', '<<=', '&=', '^=', '|='], 4, 3, -1],
   [[','], 2, 2, -1],
 ];
@@ -60,6 +62,11 @@ module.exports = {
 function compile(srcs){
   if(!(srcs instanceof Array))
     srcs = [srcs];
+
+  nativeLibs.forEach(lib => {
+    var src = new Source(null, lib)
+    srcs.push(src);
+  });
 
   srcs = srcs.map(src => new Source(src));
 
@@ -216,11 +223,11 @@ class Source{
     if(line[0] === '<'){
       line = line.substring(1, line.length - 1);
       if(!line.endsWith('.h'))
-        throw error();
+        throw error('Header file must end with ".h"');
 
       line = line.substring(0, line.length - 2);
       if(!(line in nativeLibs))
-        throw error();
+        throw error(`Unrecognized header file "${line}"`);
 
       return nativeLibs[line];
     }
@@ -523,6 +530,8 @@ class Source{
           this.parseVarDecl(scope);
         }else if(keywords.includes(ident)){
           switch(ident){
+            case 'asm': this.parseAsmDirective(scope); break;
+
             case 'return': this.parseReturnStatement(scope); break;
             case 'if': this.parseIfStatement(scope); break;
             case 'while': this.parseWhileStatement(scope); break;
@@ -547,6 +556,46 @@ class Source{
           this.restore('Missing semicolon `;` after expression');
       }
     }
+
+    parser.discard();
+  }
+
+  parseAsmDirective(scope){
+    var {parser} = this;
+    var stat = new Statement(scope, 'asm');
+    scope.addStatement(stat);
+
+    parser.trim();
+    parser.save();
+
+    var asm = parser.ident(1);
+    if(asm !== 'asm')
+      this.restore('Expected `asm` keyword');
+
+    parser.update();
+    if(parser.char(1) !== '{')
+      this.restore('Expected `{` at the beginning of assembly block');
+
+    parser.update();
+
+    var str = '';
+
+    while(1){
+      if(parser.eof)
+        this.restore('Unexpected end of input while parsing assmebly directive');
+
+      var char = parser.char(1);
+      if(char === '}') break;
+      str += char;
+    }
+
+    var arr = O.sanl(str.trim()).map(line => {
+      return line.trim();
+    });
+
+    var vari = new Variable();
+    vari.value = arr;
+    stat.addVar(vari);
 
     parser.discard();
   }
@@ -579,9 +628,13 @@ class Source{
 
     if(char === '='){
       expr = this.parseExpr(scope, 0);
-      if(!expr.sameType(vari))
-        this.restore(`Variable "${vari.name}" is of type "${vari.type}", ` +
-                     `but the expression on the right hand side resolved to a value of type "${expr.type}"`);
+      if(!expr.sameType(vari)){
+        if(!expr.canImplicitlyCast(vari))
+          this.restore(`Variable "${vari.name}" is of type "${vari.type}", ` +
+                       `but the expression on the right hand side resolved to a value of type "${expr.type}"`);
+
+        expr = expr.implicitCast(vari);
+      }
 
     }else{
       expr = new Expression(scope);
@@ -589,6 +642,9 @@ class Source{
 
       expr.add(zero);
     }
+
+    var errMsg = expr.finalize();
+    if(errMsg !== null) this.restore(errMsg);
 
     vari.assign(expr);
 
@@ -696,7 +752,7 @@ class Source{
               this.restore('Expected function call');
 
             var func = op;
-            var opCall = new Operator('(\0)');
+            var opCall = new Operator('\x00(\x00)');
 
             parser.update();
             var args = this.parseArgs(scope);
@@ -875,6 +931,8 @@ class Source{
     parser.update();
     var expr = this.parseExpr(scope, 1, 1);
     stat.addVar(expr);
+    var errMsg = expr.finalize();
+    if(errMsg !== null) this.restore(errMsg);
 
     parser.update();
     if(parser.char(1) !== ';')
@@ -883,6 +941,8 @@ class Source{
     parser.update();
     expr = this.parseExpr(scope);
     stat.addVar(expr);
+    errMsg = expr.finalize();
+    if(errMsg !== null) this.restore(errMsg);
 
     parser.update();
     if(parser.char(1) !== ';')
@@ -891,6 +951,8 @@ class Source{
     parser.update();
     expr = this.parseExpr(scope, 1, 1);
     stat.addVar(expr);
+    errMsg = expr.finalize();
+    if(errMsg !== null) this.restore(errMsg);
 
     parser.update();
     if(parser.char(1) !== ')')
@@ -1425,9 +1487,9 @@ class Type extends Unique{
       return 4;
 
     switch(this.name){
-      case 'int':
-        return 4;
-        break;
+      case 'char': return 1; break;
+      case 'short': return 2; break;
+      case 'int': return 4; break;
 
       default:
         throw new TypeError('Unrecognized type');
@@ -1490,15 +1552,21 @@ class Variable extends Unique{
   }
 
   sameType(type){
+    type = this.extractType(type);
+    return this.type.sameType(type);
+  }
+
+  extractType(type = this.type){
     if(this.type === null)
       return new Type().sameType(this);
 
     if(type instanceof Variable){
       if(this.isFunc !== type.isFunc) return false;
       if(this.isFunc && !this.sameFormalArgs(type)) return false;
+      type = type.type;
     }
 
-    return this.type.sameType(type);
+    return type;
   }
 
   assign(val){
@@ -1598,6 +1666,7 @@ class Expression extends GlobalVariable{
     this.lvalues = [];
 
     this.isStandAlone = false;
+    this.finalized = false;
   }
 
   clone(){
@@ -1690,6 +1759,8 @@ class Expression extends GlobalVariable{
     if(errMsg !== null)
       return errMsg;
 
+    this.finalized = true;
+
     return null;
   }
 
@@ -1704,13 +1775,21 @@ class Expression extends GlobalVariable{
         stack.push(op.type);
       }else{
         var opsNum = 1 - op.rank;
-        var ops = stack.splice(stack.length - opsNum);
+        var opnds = stack.splice(stack.length - opsNum);
+        var type;
 
-        /*
-          Determine result type
-        */
+        switch(op.name){
+          case '\x00(\x00)':
+            type = opnds[1].clone();
+            break;
 
-        var type = new Type('int');
+          default:
+            if(opnds.some(op => op.isVoid()))
+              return 'Illegal use of `void` type in expression';
+
+            type = new Type('int');
+            break;
+        }
 
         stack.push(type);
       }
@@ -1719,6 +1798,33 @@ class Expression extends GlobalVariable{
     this.type = stack[0];
 
     return null;
+  }
+
+  canImplicitlyCast(type){
+    type = this.extractType(type);
+
+    if(this.sameType(type))
+      return true;
+
+    if(this.type.asts !== type.asts)
+      return false;
+
+    var canCast = castTable.some(([from, to]) => {
+      return this.type.name === from && type.name === to;
+    });
+
+    return canCast;
+  }
+
+  implicitCast(type){
+    type = this.extractType(type);
+
+    if(!this.canImplicitlyCast(type))
+      throw new TypeError(`Cannot perform implicit cast from "${this.type}" to "${type}"`);
+
+    this.add(new CastOperator(this.type.clone(), type.clone()));
+
+    return this;
   }
 };
 
@@ -2037,6 +2143,33 @@ class Operator extends Unique{
     this.spr = op[2];
     this.rank = op[3];
   }
+
+  clone(){
+    return new Operator(this.name);
+  }
+
+  toString(){
+    if(this.name === null)
+      return 'null';
+
+    return this.name.replace(/\x00/g, '');
+  }
+};
+
+class CastOperator extends Operator{
+  constructor(from, to){
+    super('cast\x00');
+
+    if(!(from instanceof Type && to instanceof Type))
+      throw new TypeError('Cast operator needs a type');
+
+    this.from = from;
+    this.to = to;
+  }
+
+  toString(){
+    return `${this.from} ---> ${this.to}`;
+  }
 };
 
 class Linker{
@@ -2202,6 +2335,8 @@ class Linker{
 
     stats.forEach(stat => {
       switch(stat.name){
+        case 'asm': this.procAsmDirective(scope, stat); break;
+
         case 'varDecl': this.procVarDecl(scope, stat); break;
         case 'return': this.procRet(scope, stat); break;
         case 'block': this.procBlock(scope, stat); break;
@@ -2213,9 +2348,20 @@ class Linker{
         case 'continue': this.procContinue(scope, stat); break;
 
         default:
-          this.err('Unrecognized statement type');
+          this.err(`Unrecognized statement type "${stat.name}"`);
           break;
       }
+    });
+  }
+
+  procAsmDirective(scope, stat){
+    var {asm} = this;
+
+    var vari = stat.vars[0];
+    var arr = vari.value;
+
+    arr.forEach(line => {
+      asm.push(line);
     });
   }
 
@@ -2329,6 +2475,9 @@ class Linker{
   procExpr(scope, expr){
     var {asm} = this;
 
+    if(!expr.finalized)
+      throw new TypeError('Expression is not finalized');
+
     expr.ops.forEach(op => {
       if(op instanceof Variable){
         if(op instanceof Constant){
@@ -2359,7 +2508,7 @@ class Linker{
       }
     });
 
-    if(expr.isStandAlone)
+    if(expr.isStandAlone && !expr.isVoid())
       asm.push('pop');
   }
 
@@ -2410,51 +2559,53 @@ class Linker{
     var name = op.name;
 
     switch(name){
-      case '(\0)':     this.opCall(op);  break;
-      case '[\0]':     throw new TypeError('Array indexing is not supported'); break;
-      case '->':       throw new TypeError('Arrow operator is not supported'); break;
-      case '.':        throw new TypeError('Dot operator is not supported'); break;
-      case '\0++':     throw new TypeError('Postincrement operator is not supported'); break;
-      case '\0--':     throw new TypeError('Postdecrement is not supported'); break;
+      case '\x00(\x00)': this.opCall(op); break;
+      case '\x00[\x00]': throw new TypeError('Array indexing is not supported'); break;
+      case '->':         throw new TypeError('Arrow operator is not supported'); break;
+      case '.':          throw new TypeError('Dot operator is not supported'); break;
+      case '\x00++':     throw new TypeError('Postincrement operator is not supported'); break;
+      case '\x00--':     throw new TypeError('Postdecrement is not supported'); break;
 
-      case 'plus\0':   throw new TypeError('Unexpected unary `+` operator'); break;
-      case 'minus\0':  asm.push('minus'); break;
-      case '!':        asm.push('not');   break;
-      case '~':        asm.push('neg');   break;
-      case '++\0':     throw new TypeError('Preincrement operator is not supported'); break;
-      case '--\0':     throw new TypeError('Predecrement operator is not supported'); break;
-      case 'cast\0':   throw new TypeError('Cast is not supported'); break;
-      case 'deref\0':  throw new TypeError('Unary operator `*` is not supported'); break;
-      case 'addr\0':   throw new TypeError('Unary operator `&` is not supported'); break;
-      case 'sizeof\0': throw new TypeError('Unexpected `sizeof` operator'); break;
+      case 'plus\x00':   throw new TypeError('Unexpected unary `+` operator'); break;
+      case 'minus\x00':  asm.push('minus'); break;
+      case '!':          asm.push('not'); break;
+      case '~':          asm.push('neg'); break;
+      case '++\x00':     throw new TypeError('Preincrement operator is not supported'); break;
+      case '--\x00':     throw new TypeError('Predecrement operator is not supported'); break;
 
-      case '*':        asm.push('mul');   break;
-      case '/':        asm.push('div');   break;
-      case '%':        asm.push('mod');   break;
+      case 'cast\x00':   this.castOp(op); break;
 
-      case '+':        asm.push('add');   break;
-      case '-':        asm.push('sub');   break;
+      case 'deref\x00':  throw new TypeError('Unary operator `*` is not supported'); break;
+      case 'addr\x00':   throw new TypeError('Unary operator `&` is not supported'); break;
+      case 'sizeof\x00': throw new TypeError('Unexpected `sizeof` operator'); break;
 
-      case '<<':       asm.push('shl');   break;
-      case '>>':       asm.push('shr');   break;
+      case '*':          asm.push('mul'); break;
+      case '/':          asm.push('div'); break;
+      case '%':          asm.push('mod'); break;
 
-      case '<':        asm.push('lt');    break;
-      case '<=':       asm.push('le');    break;
-      case '>':        asm.push('gt');    break;
-      case '>=':       asm.push('ge');    break;
+      case '+':          asm.push('add'); break;
+      case '-':          asm.push('sub'); break;
 
-      case '==':       asm.push('eq');    break;
-      case '!=':       asm.push('neq');   break;
+      case '<<':         asm.push('shl'); break;
+      case '>>':         asm.push('shr'); break;
 
-      case '&':        asm.push('and');   break;
-      case '^':        asm.push('xor');   break;
-      case '|':        asm.push('or');    break;
+      case '<':          asm.push('lt'); break;
+      case '<=':         asm.push('le'); break;
+      case '>':          asm.push('gt'); break;
+      case '>=':         asm.push('ge'); break;
 
-      case '&&':       asm.push('land');  break;
-      case '||':       asm.push('lor');   break;
+      case '==':         asm.push('eq'); break;
+      case '!=':         asm.push('neq'); break;
 
-      case '?\0:\0':   throw new TypeError('Ternary conditional operator is not supported'); break;
-      case ',':        asm.push('pop');   break;
+      case '&':          asm.push('and'); break;
+      case '^':          asm.push('xor'); break;
+      case '|':          asm.push('or'); break;
+
+      case '&&':         asm.push('land'); break;
+      case '||':         asm.push('lor'); break;
+
+      case '\x00?\x00:\x00':   throw new TypeError('Ternary conditional operator is not supported'); break;
+      case ',':        asm.push('pop'); break;
 
       case '=':
         var offset = asm.pop();
@@ -2471,6 +2622,22 @@ class Linker{
 
         this.err(`Unrecognized operator "${name}"`);
         break;
+    }
+  }
+
+  castOp(op){
+    var {asm} = this;
+
+    if(op.from.asts !== 0)
+      return;
+
+    var from = op.from.name;
+    var to = op.to.name;
+
+    switch(to){
+      case 'char': asm.push(`${2 ** 8 - 1} and`); break;
+      case 'short': asm.push(`${2 ** 16 - 1} and`); break;
+      case 'int': break;
     }
   }
 
@@ -2585,13 +2752,18 @@ function getSupportedChars(){
 
 function getNativeLibs(){
   var files = fs.readdirSync(NATIVE_LIBS_DIR);
-  var libs = Object.create(null);
+  var libs = [];
 
-  files.forEach(file => {
+  files.forEach((file, index) => {
+    if(file.includes('.'))
+      return;
+
     var dir = joinNormalize(NATIVE_LIBS_DIR, file);
     var header = joinNormalize(dir, MAIN_HEADER);
+    var main = joinNormalize(dir, MAIN_FILE);
 
     libs[file] = header;
+    libs.push(main);
   });
 
   return libs;

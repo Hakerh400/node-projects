@@ -1,70 +1,66 @@
-:init jmp
-ivt:
-  _0 _0 _0 _0
-  _0 _0 _0 _0
-  _0 _0 _0 _0
+:init call
+
+data:
+  ivt: [1024]
+  str: [1024]
+
 init:
-  :ivt
-  popIvtp
-  :intIO :ivt 8 add write
+  0 enter
+
+  :initIvt call
+  :enableInts call
+  :main call pop
+  :shutDown call
+
+  0 leavev
+
+initIvt:
+  0 enter
+  :ivt popIvtp
+  :mboard :ivt 0 add write
+  :timer :ivt 4 add write
+  :input :ivt 8 add write
+  :output :ivt 12 add write
+  0 0x03 out
+  1 0x13 out
+  2 0x23 out
+  3 0x33 out
+  0 leavev
+
+enableInts:
+  0 enter
   inte
-  :main call
-  :printf call
-  halt
-intIO:
+  0 leavev
+
+mboard:
   rti
-printf:
-  15 enter
-  pushEbp 5 sub -4 varSet
-  0 -4 varGet writeB
-  printf_1:
-    8 varGet
-    :printf_2 jz
-    8 varGet push
-    10 mod 48 or
-    -4 varGet dec
-    push -4 varSet
-    writeB
-    10 div 8 varSet
-    :printf_1 jmp
-  printf_2:
-    -4 varGet 3 out
-    3 2 out
-  printf_3:
-    2 in 1 and
-    :printf_3 jnz
-  4 leavev
-1:
-  _8 _0 _0 _0
+
+timer:
+  rti
+
+input:
+  rti
+
+output:
+  rti
+
+shutDown:
+  0 enter
+  1 0 out
+  halt
+  0 leavev
 main:
-3:
-  0
+1:
+  2
   enter
-  5
-  pop
-  7
-  pop
-  11
-  pop
-  :1
-  read
-  4
-  add
-  push
-  :1
-  write
-  pop
-  :1
-  read
+  1
+  255 and
+  -4
+  varSet
+  2
+  255 and
+  -5
+  varSet
   0
-  leave
-47:
   0
-  enter
-  8
-  varGet
-  :1
-  read
-  add
-  4
   leave
