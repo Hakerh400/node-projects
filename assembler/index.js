@@ -8,8 +8,9 @@ const DEBUG = 0;
 
 const MEM_SIZE = 1 << 30;
 const MEM_MAX_ADDR = MEM_SIZE - 1 | 0;
-const MEM_MAX_INT_ADDR = MEM_SIZE - 4;
-const MEM_MAX_FLOAT_ADDR = MEM_SIZE - 4;
+const MEM_MAX_SHORT_ADDR = MEM_SIZE - 2 | 0;
+const MEM_MAX_INT_ADDR = MEM_SIZE - 4 | 0;
+const MEM_MAX_FLOAT_ADDR = MEM_SIZE - 4 | 0;
 
 const SPEED = 100e3 | 0;
 
@@ -64,8 +65,8 @@ var instructions = {
   eqp:      [0x23, (m, a, b) => {m.push(a); m.push(b); m.push(a === b ? 1 : 0);}],
   neqp:     [0x24, (m, a, b) => {m.push(a); m.push(b); m.push(a !== b ? 1 : 0);}],
 
-  readB:    [0x25, (m, a) => m.push(m.mem.readb(a))],
-  writeB:   [0x26, (m, a, b) => m.mem.writeb(a, b)],
+  readb:    [0x25, (m, a) => m.push(m.mem.readb(a))],
+  writeb:   [0x26, (m, a, b) => m.mem.writeb(a, b)],
 
   lt:       [0x27, (m, a, b) => m.push(a < b ? 1 : 0)],
   gt:       [0x28, (m, a, b) => m.push(a > b ? 1 : 0)],
@@ -203,6 +204,15 @@ var instructions = {
   shr:      [0x8D, (m, a, b) => m.push(a >> b)],
 
   dispatch: [0x8E, (m) => m.dispatch()],
+
+  varGetb:  [0x8F, (m, a) => m.push(m.varGetb(a))],
+  varSetb:  [0x90, (m, a, b) => m.varSetb(a, b)],
+
+  varGets:  [0x91, (m, a) => m.push(m.varGets(a))],
+  varSets:  [0x92, (m, a, b) => m.varSets(a, b)],
+
+  reads:    [0x93, (m, a) => m.pushf(m.mem.reads(a))],
+  writes:   [0x94, (m, a, b) => m.mem.writes(a, b)],
 };
 
 optimizeInstructions();
@@ -355,12 +365,16 @@ class Machine{
         return `${a}=${formatInt(this.regs[a], 1)}`;
       }).join(', ');
       var arr = [];
-      for(var i = 0; 1; i -= 4){
-        if(i !== 0)
-          arr.push(formatInt(this.mem.read(i)));
-        if((i & MEM_MAX_ADDR) === this.regs.esp)
-          break;
+
+      if(this.regs.esp !== 0){
+        for(var i = -4; 1; i -= 4){
+          if(i !== 0)
+            arr.push(formatInt(this.mem.read(i)));
+          if((i & MEM_MAX_ADDR) <= this.regs.esp)
+            break;
+        }
       }
+
       str += `\n[${arr.join`, `}]`;
     }
 
@@ -617,21 +631,14 @@ class Machine{
   trpe(){ this.regs.psw |= 2; }
   trpd(){ this.regs.psw &= ~2; }
 
-  varGet(index){
-    return this.mem.read(this.regs.ebp + index & MEM_MAX_ADDR) & MEM_MAX_ADDR;
-  }
-
-  varSet(val, index){
-    return this.mem.write(val & MEM_MAX_ADDR, this.regs.ebp + index & MEM_MAX_ADDR);
-  }
-
-  varGetf(index){
-    return this.mem.readf(this.regs.ebp + index & MEM_MAX_ADDR);
-  }
-
-  varSetf(val, index){
-    return this.mem.writef(val, this.regs.ebp + index & MEM_MAX_ADDR);
-  }
+  varGet(index){ return this.mem.read(this.regs.ebp + index & MEM_MAX_ADDR) & MEM_MAX_ADDR; }
+  varSet(val, index){ this.mem.write(val & MEM_MAX_ADDR, this.regs.ebp + index & MEM_MAX_ADDR); }
+  varGetf(index){ return this.mem.readf(this.regs.ebp + index & MEM_MAX_ADDR); }
+  varSetf(val, index){ this.mem.writef(val, this.regs.ebp + index & MEM_MAX_ADDR); }
+  varGetb(index){ return this.mem.readb(this.regs.ebp + index & MEM_MAX_ADDR) & MEM_MAX_ADDR; }
+  varSetb(val, index){ this.mem.writeb(val & MEM_MAX_ADDR, this.regs.ebp + index & MEM_MAX_ADDR); }
+  varGets(index){ return this.mem.reads(this.regs.ebp + index & MEM_MAX_ADDR) & MEM_MAX_ADDR; }
+  varSets(val, index){ this.mem.writes(val & MEM_MAX_ADDR, this.regs.ebp + index & MEM_MAX_ADDR); }
 
   debug(inst, str){
     log('');
@@ -654,6 +661,14 @@ class Memory{
     this.buff = Buffer.alloc(MEM_SIZE);
   }
 
+  readb(addr){
+    return this.buff[addr & MEM_MAX_ADDR];
+  }
+
+  writeb(val, addr){
+    return this.buff[addr & MEM_MAX_ADDR] = val;
+  }
+
   read(addr){
     addr &= MEM_MAX_ADDR;
     if(addr > MEM_MAX_INT_ADDR)
@@ -670,12 +685,20 @@ class Memory{
     this.buff.writeUInt32LE(val & MEM_MAX_ADDR, addr);
   }
 
-  readb(addr){
-    return this.buff[addr & MEM_MAX_ADDR];
+  reads(addr){
+    addr &= MEM_MAX_ADDR;
+    if(addr > MEM_MAX_SHORT_ADDR)
+      return 0;
+
+    return this.buff.readUInt16LE(addr);
   }
 
-  writeb(val, addr){
-    return this.buff[addr & MEM_MAX_ADDR] = val;
+  writes(val, addr){
+    addr &= MEM_MAX_ADDR;
+    if(addr > MEM_MAX_SHORT_ADDR)
+      return;
+
+    this.buff.writeUInt16LE(val & MEM_MAX_ADDR, addr);
   }
 
   readf(addr){

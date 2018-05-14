@@ -2,6 +2,7 @@
 
 var fs = require('fs');
 var path = require('path');
+var util = require('util');
 var O = require('../framework');
 var assembler = require('../assembler');
 var dataTypes = require('./data-types.json');
@@ -348,6 +349,8 @@ class Source{
         break;
     }
 
+    vari.isLvalue = true;
+
     return vari;
   }
 
@@ -633,7 +636,7 @@ class Source{
           this.restore(`Variable "${vari.name}" is of type "${vari.type}", ` +
                        `but the expression on the right hand side resolved to a value of type "${expr.type}"`);
 
-        expr = expr.implicitCast(vari);
+        expr.cast(vari);
       }
 
     }else{
@@ -658,6 +661,7 @@ class Source{
       this.restore('Missing semicolon `;`');
 
     stat.addVar(vari);
+    vari.isLvalue = true;
 
     parser.discard();
   }
@@ -729,7 +733,31 @@ class Source{
       }
 
       if(opName !== null){
-        op = new Operator(opName);
+        var type = null;
+
+        if(opName === '('){
+          parser.update();
+          var type = parser.type(0);
+        }
+
+        if(type === null){
+          // Open parenthese
+
+          op = new Operator(opName);
+        }else{
+          // Cast operator
+
+          parens--;
+          type = this.parseType();
+
+          parser.update();
+          if(parser.char(1) !== ')')
+            this.restore('Expected closed parenthese `)` after cast type');
+
+          parser.update();
+
+          op = new CastOperator(type);
+        }
       }else{
         parser.update();
         var cnst = parser.integer(1);
@@ -1259,33 +1287,16 @@ class Parser{
     return str;
   }
 
-  whiteSpace(modify){
-    return this.chars(modify, WHITE_SPACE_CHARS, 0, 0);
-  }
-
-  nonWhiteSpace(modify){
-    return this.chars(modify, WHITE_SPACE_CHARS, 1, 1);
-  }
-
-  lettersNonCap(modify){
-    return this.chars(modify, LETTERS_NON_CAP);
-  }
-
-  lettersCap(modify){
-    return this.chars(modify, LETTERS_CAP);
-  }
-
-  letters(modify){
-    return this.chars(modify, LETTERS);
-  }
-
-  digits(modify){
-    return this.chars(modify, DIGITS);
-  }
-
-  hexDigits(modify){
-    return this.chars(modify, DIGITS_HEX);
-  }
+  whiteSpace(modify){ return this.chars(modify, WHITE_SPACE_CHARS, 0, 0); }
+  nonWhiteSpace(modify){ return this.chars(modify, WHITE_SPACE_CHARS, 1, 1); }
+  lettersNonCap(modify){ return this.chars(modify, LETTERS_NON_CAP); }
+  lettersCap(modify){ return this.chars(modify, LETTERS_CAP); }
+  letters(modify){ return this.chars(modify, LETTERS); }
+  digits(modify){ return this.chars(modify, DIGITS); }
+  hexDigits(modify){ return this.chars(modify, DIGITS_HEX); }
+  keyword(modify){ return this.ident(modify, keywords); }
+  nonKeyword(modify){ return this.ident(modify, keywords, 1); }
+  type(modify){ return this.ident(modify, dataTypes); }
 
   ident(modify, strArr = null, exclude = 0){
     if(this.eof) return null;
@@ -1317,18 +1328,6 @@ class Parser{
     else this.discard();
 
     return str;
-  }
-
-  keyword(modify){
-    return this.ident(modify, keywords);
-  }
-
-  nonKeyword(modify){
-    return this.ident(modify, keywords, 1);
-  }
-
-  type(modify){
-    return this.ident(modify, dataTypes);
   }
 
   countAsterisks(modify){
@@ -1489,7 +1488,7 @@ class Type extends Unique{
     switch(this.name){
       case 'char': return 1; break;
       case 'short': return 2; break;
-      case 'int': return 4; break;
+      case 'int': case 'float': return 4; break;
 
       default:
         throw new TypeError('Unrecognized type');
@@ -1502,6 +1501,25 @@ class Type extends Unique{
       throw new TypeError('Cannot void-check type without a name');
 
     return this.name === 'void' && this.asts === 0;
+  }
+
+  toAsm(str){
+    var s = '';
+
+    if(this.asts === 0){
+      switch(this.name){
+        case 'char': s = 'b'; break;
+        case 'short': s = 's'; break;
+        case 'int': break;
+        case 'float': s = 'f'; break;
+
+        default:
+          throw new TypeError('Unsupported assembly type');
+          break;
+      }
+    }
+
+    return `${str}${s}`;
   }
 
   toString(){
@@ -1544,6 +1562,11 @@ class Variable extends Unique{
     vari.type = type;
     vari.name = name;
     vari.val = val;
+
+    vari.isGlobal = this.isGlobal;
+    vari.isArg = this.isArg;
+    vari.isFunc = this.isFunc;
+    vari.isLvalue = this.isLvalue;
 
     for(var offset in offsets)
       vari.offsets[offset] = offsets[offset];
@@ -1621,6 +1644,13 @@ class Variable extends Unique{
     return lvalue;
   }
 
+  toAsm(str){
+    if(this.type === null)
+      throw new TypeError('Cannot convert a variable without a type to assembly code');
+
+    return this.type.toAsm(str);
+  }
+
   toString(){
     var str = `${this.type} ${this.name}`;
     if(this.val !== null) str += ` = ${this.val}`;
@@ -1647,6 +1677,7 @@ class Argument extends Variable{
     super(scope, type, name, val);
 
     this.isArg = true;
+    this.isLvalue = true;
   }
 };
 
@@ -1663,8 +1694,8 @@ class Expression extends GlobalVariable{
     this.rank = 0;
     this.stack = [];
     this.ops = [];
-    this.lvalues = [];
 
+    this.nextOpnd = true;
     this.isStandAlone = false;
     this.finalized = false;
   }
@@ -1675,7 +1706,6 @@ class Expression extends GlobalVariable{
     vari.rank = this.rank;
     vari.stack = this.stack.map(vari => vari.clone());
     vari.ops = this.ops.map(vari => vari.clone());
-    vari.lvalues = this.lvalues.map(vari => vari.clone());
 
     return vari;
   }
@@ -1683,21 +1713,33 @@ class Expression extends GlobalVariable{
   add(op){
     var {stack, ops} = this;
 
-    if(op instanceof Operator && op.name === '='){
-      if(ops.length === 0)
-        return 'Missing lhs of the assignment operator';
+    if(op instanceof Variable || op instanceof Type){
+      if(!this.nextOpnd)
+        return 'Expected operator, but found operand';
 
-      var vari = ops.pop();
-      if(!(vari instanceof Variable))
-        return 'Expected lvalue on the lhs of the assignment operator';
-
-      this.lvalues.push(vari.toLvalue());
-    }
-
-    if(op instanceof Variable){
       ops.push(op);
       this.rank++;
-    }else{
+
+      this.nextOpnd = false;
+    }else if(op instanceof Operator){
+      var isOpenParen = op.name === '(' || op.name === '[';
+      var isCloseParen = op.name === ')' || op.name === ']';
+      var isUnary = op.rank === 0;
+
+      if(this.nextOpnd && !isOpenParen && !isUnary){
+        if(op.name === '+') op = new Operator('plus\x00');
+        else if(op.name === '-') op = new Operator('minus\x00');
+        else if(op.name === '*') op = new Operator('deref\x00');
+        else if(op.name === '&') op = new Operator('addr\x00');
+        else return 'Expected operand, but found operator';
+      }
+
+      if(!isCloseParen && !isUnary)
+        this.nextOpnd = true;
+
+      if(op.name === 'addr\x00')
+        return 'Taking address of a variable is not supported';
+
       while(stack.length !== 0 && op.ipr <= stack[stack.length - 1].spr){
         var errMsg = this.pop();
         if(errMsg !== null)
@@ -1705,6 +1747,9 @@ class Expression extends GlobalVariable{
       }
 
       if(op.name === ')' || op.name === ']'){
+        if(stack.length === 0)
+          return 'Operators stack is empty';
+
         var name = op.name;
         op = stack.pop();
 
@@ -1714,28 +1759,78 @@ class Expression extends GlobalVariable{
         if(name === ']' && op.name !== '[')
           return 'Missing open bracket';
       }else if(op.name === ','){
+        op.type = new Type('void');
         ops.push(op);
         this.rank--;
       }else{
         stack.push(op);
       }
+    }else{
+      throw new TypeError(`Expected \`Variable\`, \`Type\` or \`Operator\`, but got \`${op.constructor.name}\` (${op})`);
     }
 
     return null;
   }
 
   pop(){
-    var {stack, ops, lvalues} = this;
+    var {stack, ops} = this;
     var op = stack.pop();
 
-    if(op instanceof Operator && op.name === '='){
-      if(this.lvalues.length === 0)
-        return 'Missing left operand of assignment operator';
+    if(!(op instanceof Operator))
+      return `Expected operator, but got \`${op.constructor.name}\` (${op})`;
 
-      var lvalue = lvalues.pop();
-      ops.push(lvalue);
+    var opsNum = 1 - op.rank;
+    if(ops.length < opsNum)
+      return `Missing operands for operator "${op}"`;
+
+    var opnds = ops.splice(ops.length - opsNum);
+    var type;
+
+    if(op.name === '='){
+      var lvalue = opnds[0];
+      if(!lvalue.isLvalue)
+        return 'Expected lvalue on the LHS of the assignment operator';
     }
 
+    opnds = opnds.map(opnd => {
+      if(opnd.isLvalue) return opnd;
+      opnd = opnd.clone();
+      opnd.isLvalue = false;
+      return opnd;
+    });
+
+    if(op.name === '='){
+      opnds[0].lvalue = true;
+    }
+
+    if(op instanceof CastOperator){
+      type = opnds[0].type.clone();;
+      if(type.isVoid())
+        return `Cannot cast from "void" to "${op.type}"`;
+
+      op.from = type;
+    }else{
+      switch(op.name){
+        case '\x00(\x00)':
+          type = opnds[1].type.clone();
+          break;
+
+        default:
+          if(opnds.some(opnd => opnd.isVoid()))
+            return 'Illegal use of `void` type in expression';
+
+          if(opnds.some(opnd => opnd.type.asts !== 0)){
+            return 'Operations on pointer types are not supported';
+          }
+
+          type = new Type('int');
+          break;
+      }
+
+      op.type = type;
+    }
+
+    ops.push(...opnds);
     ops.push(op);
     this.rank += op.rank;
 
@@ -1753,11 +1848,26 @@ class Expression extends GlobalVariable{
     }
 
     if(this.rank !== 1)
-      return 'Expression rank is not 1';
+      return `Expression rank is ${this.rank} (expected 1)`;
+
+    var nonResolved = null;
+    var resolved = this.ops.every(op => {
+      nonResolved = op;
+
+      if(!(op instanceof Operator))
+        return true;
+
+      if(op instanceof CastOperator)
+        return op.from instanceof Type;
+
+      return op.type instanceof Type;
+    });
+
+    if(!resolved)
+      return `Some operator types are not resolved (${nonResolved})`;
 
     var errMsg = this.resolveType();
-    if(errMsg !== null)
-      return errMsg;
+    if(errMsg !== null) return errMsg;
 
     this.finalized = true;
 
@@ -1765,37 +1875,12 @@ class Expression extends GlobalVariable{
   }
 
   resolveType(){
-    var ops = this.ops.slice();
-    var stack = [];
+    var {ops} = this;
 
-    for(var i = 0; i < ops.length; i++){
-      var op = ops[i];
+    if(ops.length === 0)
+      return 'Expected at least one operand';
 
-      if(op instanceof Variable){
-        stack.push(op.type);
-      }else{
-        var opsNum = 1 - op.rank;
-        var opnds = stack.splice(stack.length - opsNum);
-        var type;
-
-        switch(op.name){
-          case '\x00(\x00)':
-            type = opnds[1].clone();
-            break;
-
-          default:
-            if(opnds.some(op => op.isVoid()))
-              return 'Illegal use of `void` type in expression';
-
-            type = new Type('int');
-            break;
-        }
-
-        stack.push(type);
-      }
-    }
-
-    this.type = stack[0];
+    this.type = ops[ops.length - 1].type.clone();
 
     return null;
   }
@@ -1816,15 +1901,9 @@ class Expression extends GlobalVariable{
     return canCast;
   }
 
-  implicitCast(type){
+  cast(type){
     type = this.extractType(type);
-
-    if(!this.canImplicitlyCast(type))
-      throw new TypeError(`Cannot perform implicit cast from "${this.type}" to "${type}"`);
-
-    this.add(new CastOperator(this.type.clone(), type.clone()));
-
-    return this;
+    this.add(new CastOperator(type.clone(), this.type.clone()));
   }
 };
 
@@ -2009,7 +2088,7 @@ class Scope extends Unique{
       vari.offsets[this.id] = this.argsSize + 8;
       this.argsSize += vari.sizeof();
     }else if(!vari.isGlobal){
-      vari.offsets[this.id] = -this.varsSize - 4;
+      vari.offsets[this.id] = -this.varsSize - vari.sizeof();
       this.varsSize += vari.sizeof();
     }
 
@@ -2126,9 +2205,10 @@ class Statement extends Unique{
 };
 
 class Operator extends Unique{
-  constructor(name){
+  constructor(name, type = null){
     super();
 
+    this.type = type;
     this.name = name;
 
     this.optimize();
@@ -2148,27 +2228,30 @@ class Operator extends Unique{
     return new Operator(this.name);
   }
 
-  toString(){
-    if(this.name === null)
-      return 'null';
+  isVoid(){
+    if(!(this.type instanceof Type))
+      throw new TypeError('Cannot void-check an operator without a type');
 
-    return this.name.replace(/\x00/g, '');
+    return this.type.isVoid();
+  }
+
+  toString(){
+    var type = this.type;
+    var name = this.name.replace(/\x00/g, '');
+
+    return `${type} ${name}`;
   }
 };
 
 class CastOperator extends Operator{
-  constructor(from, to){
-    super('cast\x00');
-
-    if(!(from instanceof Type && to instanceof Type))
-      throw new TypeError('Cast operator needs a type');
+  constructor(type = null, from = null){
+    super('cast\x00', type);
 
     this.from = from;
-    this.to = to;
   }
 
   toString(){
-    return `${this.from} ---> ${this.to}`;
+    return `${this.from} ---> ${this.type}`;
   }
 };
 
@@ -2276,13 +2359,13 @@ class Linker{
       decl.id = def.id;
     });
 
-    this.processVars();
+    this.processGlobalVars();
     this.processFuncs();
 
     return this.compile();
   }
 
-  processVars(){
+  processGlobalVars(){
     var {asm} = this;
 
     this.defs.forEach(vari => {
@@ -2378,7 +2461,7 @@ class Linker{
       this.err('Missing offset while parsing variable declaration');
 
     asm.int(offset);
-    asm.push('varSet');
+    asm.push(vari.toAsm('varSet'));
   }
 
   procRet(scope, stat){
@@ -2500,7 +2583,8 @@ class Linker{
               this.err('Missing offset while parsing expression');
 
             asm.int(offset);
-            if(!vari.isLvalue) asm.push('varGet');
+            if(!vari.isLvalue)
+              asm.push(vari.toAsm('varGet'));
           }
         }
       }else{
@@ -2566,7 +2650,7 @@ class Linker{
       case '\x00++':     throw new TypeError('Postincrement operator is not supported'); break;
       case '\x00--':     throw new TypeError('Postdecrement is not supported'); break;
 
-      case 'plus\x00':   throw new TypeError('Unexpected unary `+` operator'); break;
+      case 'plus\x00':   break;
       case 'minus\x00':  asm.push('minus'); break;
       case '!':          asm.push('not'); break;
       case '~':          asm.push('neg'); break;
@@ -2628,15 +2712,24 @@ class Linker{
   castOp(op){
     var {asm} = this;
 
-    if(op.from.asts !== 0)
+    if(!(op.type instanceof Type && op.from instanceof Type))
+      throw new TypeError('Cast operator needs a type');
+
+    if(op.type.asts !== 0)
+      return;
+
+    if(op.type.sameType(op.from))
       return;
 
     var from = op.from.name;
-    var to = op.to.name;
+    var type = op.type.name;
 
-    switch(to){
-      case 'char': asm.push(`${2 ** 8 - 1} and`); break;
-      case 'short': asm.push(`${2 ** 16 - 1} and`); break;
+    switch(type){
+      case 'char': case 'short':
+        var size = op.type.sizeof();
+        asm.push(`${(1 << (size << 3)) - 1} and`);
+        break;
+
       case 'int': break;
     }
   }

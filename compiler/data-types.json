@@ -1,6 +1,7 @@
 [
+  "void",
   "char",
-  "float",
+  "short",
   "int",
-  "void"
+  "float"
 ]

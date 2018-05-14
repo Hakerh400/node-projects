@@ -1,4 +1,4 @@
-/*#include "main.h"
+#include "main.h"
 
 void printf(int val){
   int n = 0x0A;
@@ -28,4 +28,4 @@ void printf(int val){
   }
 
   return;
-}*/
+}

@@ -50,17 +50,129 @@ shutDown:
   halt
   0 leavev
 main:
-1:
-  2
+5:
+  4
   enter
-  1
-  255 and
+  5
   -4
   varSet
-  2
-  255 and
-  -5
-  varSet
+  -4
+  :37
+  call
   0
   0
   leave
+37:
+  16
+  enter
+  10
+  -4
+  varSet
+  808464432
+  -8
+  varSet
+  0
+  -12
+  varSet
+  1
+  -16
+  varSet
+  -12
+  push
+  0
+  varSet
+  pop
+  79:
+  -12
+  4
+  lt
+  :80
+  jz
+  -16
+  -16
+  10
+  push
+  mul
+  varSet
+  pop
+  97:
+  -12
+  -12
+  1
+  push
+  add
+  varSet
+  pop
+  :79
+  jmp
+  80:
+  -12
+  push
+  0
+  varSet
+  pop
+  -12
+  -12
+  1
+  push
+  add
+  varSet
+  pop
+  8
+  8
+  -16
+  push
+  mod
+  varSet
+  pop
+  -12
+  push
+  0
+  varSet
+  pop
+  135:
+  8
+  :136
+  jz
+  -8
+  -8
+  8
+  10
+  mod
+  3
+  -12
+  sub
+  3
+  shl
+  shl
+  push
+  or
+  varSet
+  pop
+  8
+  8
+  10
+  push
+  div
+  varSet
+  pop
+  -12
+  -12
+  1
+  push
+  add
+  varSet
+  pop
+  :135
+  jmp
+  136:
+  pushEbp 8 sub 0x35 out
+  5 0x34 out
+  1 0x30 out
+  printf1:
+  dispatch
+  0x31 in 1 and
+  :printf1 jz
+  0 0x30 out
+  4
+  leavev
