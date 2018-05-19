@@ -4,8 +4,11 @@ var fs = require('fs');
 var O = require('../framework');
 
 const DEBUG = 0;
-const SHUFFLE = 0;
+const SHUFFLE = 1;
+const ONLOAD = 0;
+
 const MAX_LINE_LEN = 80;
+const NEW_LINE = '\r\n'
 
 var reg1 = /[a-zA-Z]/;
 var reg2 = /[a-zA-Z0-9]/;
@@ -16,18 +19,18 @@ var varMap = null;
 var opCodes = [
   /* a */ [0x00, 'call', (a, b) => r(a, b)],
   /* b */ [0x01, 'method', (a, b, c) => r(a, p(a, b), c)],
-  /* c */ [0x02, 'read', (m, a) => m.a[a]],
-  /* d */ [0x03, 'write', (m, a, b) => m.a[b] = a, true],
+  /* c */ [0x02, 'read', a => m.a[a]],
+  /* d */ [0x03, 'write', (a, b) => m.a[b] = a, true],
   /* e */ [0x04, 'clone', () => C(m.b)],
   /* f */ [0x05, 'prop', (a, b) => a[p(a, b)]],
   /* g */ [0x06, 'update', (a, b, c) => a[p(a, b)] = c, true],
   /* h */ [0x07, 'array', () => []],
   /* i */ [0x08, 'push', (a, b) => (a[s(14)](b),a)],
   /* j */ [0x09, 'pop', a => a, true],
-  /* k */ [0x0A, 'swap', (m, a, b) => [m[b], m[a]] = [(m = m.b)[a = C(m,s) - a], m[b = C(m,C) - b]], true],
+  /* k */ [0x0A, 'swap', (a, b) => [m[b], m[a]] = [(m = m.b)[a = C(m,s) - a], m[b = C(m,C) - b]], true],
   /* l */ [0x0B, 'typeof', a => typeof(a)],
-  /* m */ [0x0C, 'get', (m, a) => C(m.L)[a]],
-  /* n */ [0x0D, 'set', (m, a, b) => C(m.L)[b] = a, true],
+  /* m */ [0x0C, 'get', a => C(m.L)[a]],
+  /* n */ [0x0D, 'set', (a, b) => C(m.L)[b] = a, true],
   /* o */ [0x0E, 'if', (a, b, c) => a && r(b, c)],
   /* p */ [0x0F, 'else', (a, b, c, d, e) => a ? r(b, c) : r(d, e)],
   /* q */ [0x10, 'tern', (a, b, c) => a ? b : c],
@@ -36,6 +39,8 @@ var opCodes = [
   /* t */ [0x13, 'neg', a => ~a],
   /* u */ [0x14, 'while', (a, b) => {while(O.j = r(a, b)); return(O.j)}],
   /* v */ [0x15, 'func', a => (...b) => r(s.t[a], b)],
+  /* w */ [0x16, 'hash', a => h(a)],
+  /* x */ [0x17, 'machine', () => m.d],
 ];
 
 var strings = [
@@ -84,6 +89,19 @@ function obfuscate(src){
     return a[a.length - 1];
   };
 
+  global.format = (a, b=0) => {
+    var str = 'CIRCULAR';
+
+    try{
+      str = a&&a.map?'['+a.map(a=>format(a, b + 1))+']':a&&a.includes?'"'+a+'"':a+'';
+    }catch(e){
+      if(b >= 2)
+        throw e;
+    }
+
+    return str;
+  };
+
   global.wait = () => {
     var buff = Buffer.alloc(2);
     fs.readSync(process.stdin.fd, buff, 0, 2);
@@ -92,12 +110,12 @@ function obfuscate(src){
 
   var out = ``;
   out += `var[h,p,O,M,R,C]=(Z=>Z(Z))((Z,\n`;
-  out += `e=0x${Buffer.from(O.ca(4, () => O.rand(256))).toString('hex')},`;
+  out += `e=[0x${Buffer.from(O.ca(4, () => O.rand(256))).toString('hex')}],`;
   out += `s=a=>${arr2str(strings, 1)}[a|0],\n`;
   out += `f=a=>s[s(9)](s(23)+\`\${({}+f)[7]}r=\${1/a?s(a):a};\${s()}r)\`)(f),\n`;
   out += `m={a:[f(1)],b:N=N[s(17)](1),c:[],L:[]},\n`;
   out += `r=f((((a,b,c,{m,M,k,v}=r)=>c||1/c?a[b](l(c)):b||1/b?1/a?r(v.t[a],b):M[v(21)](a)?(`;
-    out += `m[v(14)](r(b)),k(a),[v.f(m)[0],m[v(22)]()][0]`;
+    out += `m[v(14)](r(b)),M=v.f(m.u,k)+1,k(a),m.u[v(2)]=M,[v.f(m)[0],m[v(22)]()][0]`;
     out += `):a(l(b)):[l(a)])+[])[s(10)]\`l\`[s(11)](s(7)+\`r.j\`)),\n`;
   out += `I=(a,b)=>r([b][s(9)](a))[s(12)]((a,c)=>b(c)),`;
   out += `S=(S=>I(1<<8,i=>f(\`'\\\\x\${S(i>>4)}\${S(i&15)}'\`)))(a=>a>9?s(3)[a-10]:a,r.j=a=>a[s(21)]?a:[a]),\n`;
@@ -106,7 +124,7 @@ function obfuscate(src){
   out += `B=a=>r(a==Z?a+B:a+(B.a||(B.a=B(Z))))[s(6)]((a,b)=>b[s(18)](s(7)[0])?A(b)+(a<<6)+(a<<16)-a|0:a,0)\n`;
   out += `)=>[`;
   out += `a=>I(4,(i,j=(a>>(i<<3))&255)=>F(i&&(j&64)?j%10+48:j%26+(j&128?65:97)),a=B(\`\${C(a,h)+1?a:''}\`))[s(11)]\`\`,\n`;
-  out += `(a,b=a,c=m.a[0])=>m.c[b]||c[s(4)][s(5)](a=a!=p.m?a:N)[s(15)](a=>h(a)==b&&(m.c[b]=a,1))||(a!=N?p(c[s(4)][s(8)](a),b):b)`;
+  out += `(a,b=a,c=m.a[0])=>m.c[b]||c[s(4)][s(5)](a=a!=p.m?a:e)[s(15)](a=>h(a)==b&&(m.c[b]=a,1))||(a!=e?p(c[s(4)][s(8)](a),b):b)`;
 
   out += `,\n`;
   out += `[${opCodes.map(op => {
@@ -123,9 +141,9 @@ function obfuscate(src){
       if(str[0] === '(') char = str[1];
       else char = str[0];
 
-      str = str.replace(/[a-zA-Z0-9]+/g, match => {
-        if(match !== char) return match;
-        return char.toUpperCase();
+      str = str.replace(/(?:^|[^\.])([a-zA-Z0-9]+)/g, (match, c) => {
+        if(c !== char) return match;
+        return match.toUpperCase();
       });
     }
 
@@ -138,10 +156,10 @@ function obfuscate(src){
   out += `)=>r(a+[N.a])[s(12)]((c,i)=>i>2&(i=A(c))>32&&(`;
   if(DEBUG){
     out += `(`;
-    out += `log.p=a=>a&&a.map?'['+a.map(a=>log.p(a))+']':a&&a.includes?'"'+a+'"':a+'',`;
-    out += `log('GLOBAL: '+log.p(m.a)+''),`;
-    out += `log('LOCAL:  '+log.p(m.L)+''),`;
-    out += `log('STACK:  '+log.p(m.b)+' '+c+' \\x76:'+v),`;
+    out += `log('SLICE:  '+h('slice')),`;
+    out += `log('GLOBAL: '+format(m.a)+''),`;
+    out += `log('LOCAL:  '+format(m.L)+''),`;
+    out += `log('STACK:  '+format(m.b)+' '+c+' \\x76:'+v),`;
     out += `wait()`;
     out += `),`;
   }
@@ -154,7 +172,7 @@ function obfuscate(src){
   out += `:0)).a)(a=>m.b[s(14)](a),(a,b)=>a+b)`;
 
   out += `,\n`;
-  out += `a=>(s.f=C,s.t=a,r.M=a)[r.m=m.L,s(2)]&&r(a[r.k=M,r.v=s,0],m.a)`;
+  out += `a=>(s.f=C,s.t=a,(m.L.u=m.b,r).M=a)[r.m=(m.d=[m.a, m.L, m.b],m).L,s(2)]&&r(a[r.k=M,r.v=s,0],m.a)`;
   
   out += `,\n`;
   out += `(a,b)=>[b,b=a[s(2)]-1][0]?b:a[b]`;
@@ -184,7 +202,7 @@ function obfuscate(src){
   out = out.replace(/\x00/g, '\\x');
   checkCode();
 
-  out = out.replace(/.{5}(\[[^\]]*\])[^\=].{4}/, (match, origArr) => {
+  out = out.replace(/.{3}\=\>(\[[^\]]*\])[^\=].{4}/, (match, origArr) => {
     var origFunc = match[0];
     var origArg = match[2];
 
@@ -303,7 +321,11 @@ function obfuscate(src){
   var getHash = new Function(getVar('N'), `${out};\nreturn ${getVar('h')};`)([]);
   var strs = [];
 
-  src.split(/\r\n\r\n|\r\r|\n\n/).forEach(src => {
+  src = O.sanl(src).filter(line => {
+    return !line.trim().startsWith('//');
+  }).join('\n');
+
+  src.split(/\n{2}/).forEach(src => {
     src = src.replace(/"(?:\\(?:[\\\"]|x.{2}|u.{4})|[^\"])*"/g, match => {
       var str = JSON.parse(match);
       var hash = getHash(str);
@@ -316,8 +338,10 @@ function obfuscate(src){
     var first = true;
 
     (src.match(/\S+/g) || []).forEach(op => {
-      if(!first)
-        str += O.randElem(jsOps);
+      if(!first){
+        if(parens.length !== 0 && O.rand(4) === 0) str += ',';
+        else str += O.randElem(jsOps);
+      }
 
       first = false;
 
@@ -366,6 +390,12 @@ function obfuscate(src){
 
   out += `;${getVar('R')}([${strs.join(',')}])`;
   out = `(${getVar('N')}=>{${out}})\`\``;
+  checkCode();
+
+  if(ONLOAD){
+    out = `onload=a=>${out}`;
+    checkCode();
+  }
 
   var out2 = '';
   while(out.length !== 0){
@@ -397,6 +427,11 @@ function obfuscate(src){
   }
   out = out2;
   checkCode();
+
+  if(NEW_LINE !== '\n'){
+    out = out.replace(/\n/g, NEW_LINE);
+    checkCode();
+  }
 
   return out;
 
