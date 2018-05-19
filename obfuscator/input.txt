@@ -1,0 +1,29 @@
+0 read "alert" prop 0 read "console" prop "log" prop || array
+  array
+    array 0 + 8 + 0 + push
+    array 1 + 2 + 2 + push
+    array 1 + 3 + 0 + push
+    array 1 + 3 + 0 + push
+    array 1 + 3 + 3 + push
+    array 0 + 4 + 8 + push
+    array 0 + 3 + 5 + push
+    array 1 + 0 + 6 + push
+    array 1 + 3 + 3 + push
+    array 1 + 3 + 6 + push
+    array 1 + 3 + 0 + push
+    array 1 + 2 + 1 + push
+    array 0 + 3 + 6 + push
+  "map"
+    1 func method
+  "join" array
+    array array +
+    push method
+  push call
+
+0 read "String" prop "fromCharCode" prop
+  0 read "parseInt" prop array
+    0 get push
+    9 push
+    call
+  call
+0 set
