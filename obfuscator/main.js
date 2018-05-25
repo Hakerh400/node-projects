@@ -5,8 +5,8 @@ var path = require('path');
 var O = require('../framework');
 var obfuscator = require('.');
 
-const EXECUTE = 0;
-const ALIGN = 1;
+const EXECUTE = 1;
+const ALIGN = 0;
 
 var cwd = __dirname;
 var inputFile = path.join(cwd, 'input.txt');

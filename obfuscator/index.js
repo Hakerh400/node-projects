@@ -156,7 +156,6 @@ function obfuscate(src){
   out += `)=>r(a+[N.a])[s(12)]((c,i)=>i>2&(i=A(c))>32&&(`;
   if(DEBUG){
     out += `(`;
-    out += `log('SLICE:  '+h('slice')),`;
     out += `log('GLOBAL: '+format(m.a)+''),`;
     out += `log('LOCAL:  '+format(m.L)+''),`;
     out += `log('STACK:  '+format(m.b)+' '+c+' \\x76:'+v),`;

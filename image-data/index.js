@@ -49,20 +49,31 @@ class ImageData{
       for(var y = 0, i = 0; y < h; y++){
         for(var x = 0; x < w; x++, i += 4){
           var col = func(x | 0, y | 0, d[i | 0] | 0, d[(i | 0) + 1 | 0] | 0, d[(i | 0) + 2 | 0] | 0, d[(i | 0) + 3 | 0] | 0);
-          if(col) [d[i | 0], d[(i | 0) + 1 | 0], d[(i | 0) + 2 | 0], d[(i | 0) + 3 | 0]] = col;
+
+          if(col){
+            d[i | 0] = col[0] | 0;
+            d[(i | 0) + 1 | 0] = col[1] | 0;
+            d[(i | 0) + 2 | 0] = col[2] | 0;
+            d[(i | 0) + 3 | 0] = col[3] | 0;
+          }
         }
       }
     }else{
       for(var y = 0, i = 0; y < h; y++){
         for(var x = 0; x < w; x++, i += 4){
           var col = func(x | 0, y | 0, d[i | 0] | 0, d[(i | 0) + 1 | 0] | 0, d[(i | 0) + 2 | 0] | 0);
-          if(col) [d[i | 0], d[(i | 0) + 1 | 0], d[(i | 0) + 2 | 0]] = col;
+          
+          if(col){
+            d[i | 0] = col[0] | 0;
+            d[(i | 0) + 1 | 0] = col[1] | 0;
+            d[(i | 0) + 2 | 0] = col[2] | 0;
+          }
         }
       }
     }
   }
 
-  get(x, y, includeAlpha){
+  get(x, y, col, includeAlpha){
     if(x < 0) x = 0;
     else if(x >= this.w) x = (this.w | 0) - 1 | 0
     if(y < 0) y = 0;
@@ -71,20 +82,36 @@ class ImageData{
     var d = this.data;
     var i = (x | 0) + (y | 0) * (this.w | 0) << 2;
 
-    if(includeAlpha) return [d[i | 0] | 0, d[(i | 0) + 1 | 0] | 0, d[(i | 0) + 2 | 0] | 0, d[(i | 0) + 3 | 0] | 0];
-    else return [d[i | 0] | 0, d[(i | 0) + 1 | 0] | 0, d[(i | 0) + 2 | 0] | 0];
+    if(includeAlpha){
+      col[0] = d[i | 0] | 0;
+      col[1] = d[(i | 0) + 1 | 0] | 0;
+      col[2] = d[(i | 0) + 2 | 0] | 0;
+      col[3] = d[(i | 0) + 3 | 0] | 0;
+    }else{
+      col[0] = d[i | 0] | 0;
+      col[1] = d[(i | 0) + 1 | 0] | 0;
+      col[2] = d[(i | 0) + 2 | 0] | 0;
+    }
+
+    return col;
   }
 
-  set(x, y, r, g, b, a){
+  set(x, y, col, includeAlpha){
     if(x < 0 || x >= this.w || y < 0 || y >= this.h) return;
 
     var d = this.data;
     var i = (x | 0) + (y | 0) * (this.w | 0) << 2;
 
-    d[i | 0] = r | 0;
-    d[(i | 0) + 1 | 0] = g | 0;
-    d[(i | 0) + 2 | 0] = b | 0;
-    if(a !== undefined) d[(i | 0) + 3 | 0] = a | 0;
+    if(includeAlpha){
+      d[i | 0] = col[0] | 0;
+      d[(i | 0) + 1 | 0] = col[1] | 0;
+      d[(i | 0) + 2 | 0] = col[2] | 0;
+      d[(i | 0) + 3 | 0] = col[3] | 0;
+    }else{
+      d[i | 0] = col[0] | 0;
+      d[(i | 0) + 1 | 0] = col[1] | 0;
+      d[(i | 0) + 2 | 0] = col[2] | 0;
+    }
   }
 };
 
