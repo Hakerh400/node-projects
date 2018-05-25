@@ -5,6 +5,7 @@ var media = require('../media');
 var ImageData = require('../image-data');
 
 const HD = 1;
+const DEBUG = 0;
 
 var w = HD ? 1920 : 640;
 var h = HD ? 1080 : 480;
@@ -14,17 +15,18 @@ var [wh, hh] = [w, h].map(a => a >> 1);
 var [w1, h1] = [w, h].map(a => a - 1 | 0);
 var [w2, h2] = [w, h].map(a => a - 1 << 1);
 
-var grav = new O.Vector(0, .1);
+var grav = new O.Vector(0, .0005);
 var fric = .9;
-var velDec = .5;
-var velMin = .01;
-var velMinH = velMin / 2;
+var velDec = .025;
+var velMin = .0025;
 
 setTimeout(main);
 
 function main(){
   var nn = w * h;
   var n = nn;
+  var nPrev = n;
+
   var col = Buffer.alloc(3);
   var d;
 
@@ -42,18 +44,49 @@ function main(){
 
     if(f === 1){
       d = new ImageData(g);
-      return true;
+
+      if(!DEBUG)
+        return true;
     }
 
-    for(var i = 0; i < n; i++){
-      var ent = ents[i];
-      ent.tick();
+    if(DEBUG){
+      col.fill(0);
+      d.iterate(() => {
+        return col;
+      });
 
-      if(ent.k !== null){
-        n--;
-        ents.splice(i--, 1);
-        d.set(ent.xStart, ent.yStart, O.hsv(ent.k, col));
+      var base = (h >> 2) * w;
+      base = 0;
+
+      for(var i = 0; i < n; i++){
+        var ent = ents[base + i];
+
+        d.set(ent.x | 0, ent.y | 0, O.hsv(i % w / w1, col));
+        for(var sp = 0; sp < 10; sp++)
+          ent.tick();
       }
+    }else{
+      do{
+        for(var i = 0, j = 0; i < n; i++){
+          var ent = ents[i];
+          ent.tick();
+
+          if(j !== 0)
+            ents[i - j] = ent;
+
+          if(ent.k !== null){
+            j++;
+            d.set(ent.xStart, ent.yStart, O.hsv(ent.k, col));
+          }
+        }
+
+        if(j !== 0){
+          n -= j;
+          ents.length = n;
+        }
+      }while(n === nPrev);
+
+      nPrev = n;
     }
 
     d.put();
@@ -69,8 +102,10 @@ class Entity extends O.Vector{
     this.xStart = x;
     this.yStart = y;
 
-    this.vel = new O.Vector(y - x, x - y);
-    this.vel.setLen(20);
+    var vel = new O.Vector(wh - x, hh - y);
+    this.vel = vel;
+    vel.setAngle(vel.angle() - O.pih);
+    vel.setLen(1);
 
     this.k = null;
   }
@@ -81,17 +116,17 @@ class Entity extends O.Vector{
     this.add(vel);
     vel.add(grav);
 
-    if(this.x < 0) this.x = 0, vel.dec(velDec, 0).mul(fric);
-    else if(this.x > w1) this.x = w1, vel.dec(velDec, 0).mul(fric);
-    if(this.y < 0) this.y = 0, vel.dec(0, velDec).mul(fric);
-    else if(this.y > h1) this.y = h1, vel.dec(0, velDec).mul(fric);
+    if(this.x < 0) this.x = -this.x, vel.dec(velDec, 0).mul(fric);
+    else if(this.x > w1) this.x = w2 - this.x, vel.dec(velDec, 0).mul(fric);
+    if(this.y < 0) this.y = -this.y, vel.dec(0, velDec).mul(fric);
+    else if(this.y > h1) this.y = h2 - this.y, vel.dec(0, velDec).mul(fric);
 
-    if(this.dist(wh, hh) < 50){
-      var angle = vel.angle();
-      vel.setAngle(angle + O.pih);
+    var len = vel.len();
+
+    if(len < velMin){
+      this.k = this.x / w1;
+    }else if(len > 1){
+      vel.setLen(1);
     }
-
-    if(vel.len() < velMin)
-      this.k = this.x / w;
   }
 };
