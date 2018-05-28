@@ -4,8 +4,8 @@ var O = require('../framework');
 var media = require('../media');
 var ImageData = require('../image-data');
 
-const HD = 1;
 const DEBUG = 0;
+const HD = 1;
 
 var w = HD ? 1920 : 640;
 var h = HD ? 1080 : 480;
@@ -95,6 +95,17 @@ function main(){
   });
 }
 
+var D = new ImageData((() => {
+  var g = media.createContext(w, h);
+  var a = require('fs').readFileSync(O.dirs.dw + '/1.hex');
+  var imgd = g.getImageData(0, 0, w, h);
+  var data = imgd.data;
+  a.forEach((a, b) => -~b & 3 ? data[b] = a : 0);
+  g.putImageData(imgd, 0, 0);
+  return g;
+})());
+var C = Buffer.alloc(3);
+
 class Entity extends O.Vector{
   constructor(x, y){
     super(x, y);
@@ -102,10 +113,10 @@ class Entity extends O.Vector{
     this.xStart = x;
     this.yStart = y;
 
-    var vel = new O.Vector(wh - x, hh - y);
+    var a = [...D.get(x, y, C)];
+    var vel = new O.Vector(a[0] / 255 * O.pi, a[1] / 255 * O.pi);
     this.vel = vel;
-    vel.setAngle(vel.angle() - O.pih);
-    vel.setLen(1);
+    vel.setLen((a[0] + a[1] + a[2]) / (255 * 3));
 
     this.k = null;
   }
