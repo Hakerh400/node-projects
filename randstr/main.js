@@ -59,5 +59,6 @@ function displayStrings(){
     console.log(str);
   });
 
-  rl.close();
+  console.log('');
+  genRandStr();
 }

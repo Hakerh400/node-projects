@@ -7,12 +7,9 @@ var {Canvas, registerFont} = require('./node_modules/canvas');
 var w = 640;
 var h = 480;
 
-media.renderImage('-img/1.png', w, h, (w, h, g) => {
-  g.fillStyle = 'white';
-  g.fillRect(0, 0, w, h);
-  g.fillStyle = 'black';
+var [wh, hh] = [w, h].map(a => a >> 1);
 
-  g.textAlign = 'center';
-  g.font = '72px arial';
-  g.fillText('#'.repeat(5e4) + 'A'.repeat(1e5) + '#'.repeat(5e4), w / 2, h / 2);
+media.renderImage('-img/1.png', w, h, (w, h, g) => {
+  g.fillStyle = {toString: () => "#0000ff", valueOf: () => "#00ff00"};
+  g.fillRect(0, 0, 300, 100);
 });
