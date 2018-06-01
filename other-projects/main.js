@@ -34,11 +34,8 @@ function render(window){
   media.renderVideo('-vid/1.mp4', w, h, fps, (w, h, g, f) => {
     media.logStatus(f, framesNum);
 
-    if(f !== 1){
-      window.emit('_raf');
-    }
-
     g.drawImage(canvas, 0, 0);
+    window.emit('_raf');
 
     return f !== framesNum;
   });

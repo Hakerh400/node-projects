@@ -1,59 +1,34 @@
 'use strict';
 
-var fs = require('fs');
-var cp = require('child_process');
 var O = require('../framework');
-var fsRec = require('../fs-recursive');
-var tempDir = require('../temp-dir')(__filename);
 
 module.exports = {
   bisect,
 };
 
-function bisect(repo, firstCommit, nextCommit, checkFunc, cb = O.nop){
-  var repoPath = `https://github.com/${repo}.git`;
+function bisect(func){
+  if(!func(0))
+    return -1;
 
-  resetTempDir();
+  var stage = 0;
+  var index = 1;
+  var min, max;
 
-  spawnGit('init');
-  spawnGit(`remote add origin ${repoPath}`);
-  spawnGit('fetch');
-  spawnGit('checkout -t origin/master');
+  while(func(index))
+    index <<= 1;
 
-  var commits = spawnGit('log --pretty=oneline --no-decorate');
-  commits = commits.stdout.toString().split(/\r\n|\r|\n/);
-  commits = commits.map(a => a.trim()).filter(a => a);
-  commits = commits.map(a => a.substring(0, 40)).reverse();
+  min = index >> 1;
+  max = index - 1;
 
-  var n = commits.length;
-  var i = firstCommit(n);
+  while(min !== max){
+    index = (min + max) >> 1;
 
-  var checkedCommits = O.ca(n, () => false);
-
-  setTimeout(checkCommit);
-
-  function checkCommit(){
-    var commit = commits[i];
-    spawnGit(`reset --hard ${commit}`);
-
-    checkFunc(tempDir, result => {
-      checkedCommits[i] = true;
-      if(result) return cb(null, commit);
-
-      i = nextCommit(i, n);
-      if(i < 0 || i >= n || checkedCommits[i]) return cb(null, null);
-
-      setTimeout(checkCommit);
-    });
+    if(func(index)){
+      min = index + 1;
+    }else{
+      max = index - 1;
+    }
   }
-}
 
-function spawnGit(args){
-  args = args.split` `;
-  return cp.spawnSync('git', args, {cwd: tempDir});
-}
-
-function resetTempDir(){
-  if(fs.existsSync(tempDir)) fsRec.deleteFilesSync(tempDir);
-  fs.mkdirSync(tempDir);
+  return min - 1;
 }
