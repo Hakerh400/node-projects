@@ -1,0 +1,8 @@
+[
+  {
+    "name": "implication",
+    "args": 2,
+    "notation": "infix",
+    "symbol": "→"
+  }
+]

@@ -1,0 +1,15 @@
+[
+  {
+    "name": "Axiom 1",
+    "premises": [],
+    "infers": "(a → (b → a))"
+  }, {
+    "name": "Axiom 2",
+    "premises": [],
+    "infers": "((a → (b → c)) → ((a → b) → (a → c)))"
+  }, {
+    "name": "Modus Ponens",
+    "premises": ["a", "(a → b)"],
+    "infers": "b"
+  }
+]
