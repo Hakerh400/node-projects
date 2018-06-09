@@ -20,7 +20,11 @@ class Atp{
         premises[index] = Statement.parse(this, premise);
       });
 
+      premises.vars = Variable.union(premises);
       rule.infers = Statement.parse(this, rule.infers);
+
+      rule.pvars = Variable.diff(premises.vars, rule.infers.vars);
+      rule.ivars = Variable.diff(rule.infers.vars, premises.vars);
     });
 
     return rules;
@@ -77,9 +81,27 @@ class Atp{
     var {rules} = this;
     var rulesNum = rules.length;
 
-    var ids = Object.create(null);
-    var queue = target.parts(1);
+    var listIds = Object.create(null);
+    var queue = target.parts(true);
     var part, stat;
+
+    //////////////////////////////////////////////////////////////////////////////////////////
+    var parts = target.parts(true);
+    var stat = rules[2].infers;
+    var comb = new Combination(stat.vars, parts[0]);
+    var i = 0;
+
+    while(1){
+      comb.next();
+      add(stat.subst(comb.subst), [2]);
+
+      if(comb.transit){
+        if(++i === parts.length) break;
+        comb.add(parts[i]);
+      }
+    }
+    return;
+    //////////////////////////////////////////////////////////////////////////////////////////
 
     while(queue.length !== 0){
       part = queue.shift();
@@ -99,10 +121,10 @@ class Atp{
     return stat;
 
     function add(stat, rule){
-      if(stat.id in ids) return;
+      if(stat.id in listIds) return;
 
       list.push([stat, rule]);
-      ids[stat.id] = 1;
+      listIds[stat.id] = 1;
     }
   }
 };
@@ -190,22 +212,6 @@ class Statement{
 
   same(stat){
     return this.id === stat.id;
-
-    /*var isVar = this.isVar();
-
-    if(isVar !== stat.isVar()) return false;
-    if(isVar) return this.index === stat.index;
-    if(this.func !== stat.func) return false;
-
-    var args1 = this.args;
-    var args2 = stat.args;
-
-    if(args1.length !== args2.length)
-      return false;
-
-    return args1.every((arg, index) => {
-      return arg.same(args2[index]);
-    });*/
   }
 
   parts(sort=false, parts=null){
@@ -294,6 +300,33 @@ class Variable extends Statement{
     this.index = index;
   }
 
+  static union(arr){
+    var vars = [];
+
+    arr.forEach(vs => {
+      if(vs instanceof Statement)
+        vs = vs.vars;
+
+      vs.forEach(vari => {
+        if(!vars.includes(vari))
+          vars.push(vari);
+      });
+    });
+
+    return O.sortAsc(vars);
+  }
+
+  static diff(v1, v2){
+    var vars = [];
+
+    v1.forEach(v => {
+      if(!v2.includes(v))
+        vars.push(v);
+    });
+
+    return O.sortAsc(vars);
+  }
+
   isVar(){
     return true;
   }
@@ -304,46 +337,64 @@ class Variable extends Statement{
 };
 
 class Substitution{
-  constructor(arr){
+  constructor(arr=[]){
     var obj = this.obj = Object.create(null);
 
-    arr.forEach(([stat1, stat2]) => {
-      var id = stat1 instanceof Statement ? stat1.id : stat1;
-      obj[id] = stat2.clone();
+    arr.forEach(([stat, subst]) => {
+      this.set(stat, subst);
     });
+  }
+
+  set(stat, subst){
+    var id = stat instanceof Statement ? stat.id : stat;
+    this.obj[id] = subst.clone();
   }
 
   get(stat){
     var {obj} = this;
-    if(stat.id in obj) return obj[stat.id].clone();
+    var id = stat instanceof Statement ? stat.id : stat;
+    if(id in obj) return obj[id].clone();
     return null;
   }
 };
 
 class Combination{
-  constructor(len){
-    this.arr = O.ca(len, () => 0);
+  constructor(stats, init, includesSubst=true){
+    this.includesSubst = includesSubst;
 
-    this.index = 0;
+    this.len = stats.length;
+    this.stats = stats.slice();
+    this.substs = [init.clone()];
+    
+    this.arr = O.ca(this.len, () => 0);
+    this.subst = includesSubst ? new Substitution() : null;
+
     this.max = 0;
-    this.last = true;
+    this.first = true;
+    this.transit = true;
+  }
+
+  add(subst){
+    this.substs.push(subst.clone());
   }
 
   next(){
-    var {arr} = this;
+    if(this.first){
+      this.first = false;
+      return this.update();
+    }
 
-    if(this.last){
-      this.last = false;
+    var {len, arr, max} = this;
+
+    if(this.transit){
+      this.transit = len !== 0;
       this.max++;
-      this.index = 0;
 
       arr.fill(0);
-      arr[0] = max;
+      arr[0] = this.max;
     }else{
-      var len = arr.length;
-
-      for(var i = 0; i < len; i++){
-        if(arr[i] !== max){
+      for(var i = 0; i !== len; i++){
+        if(arr[i] !== this.max){
           arr[i]++;
           break;
         }
@@ -351,11 +402,36 @@ class Combination{
         arr[i] = 0;
       }
 
-      if(i === len - 1 && arr[i] === this.max)
-        this.last = true;
+      checkMax: {
+        for(var i = 0; i !== len; i++){
+          if(arr[i] === max)
+            break checkMax;
+        }
+
+        arr[0] = max;
+      }
+
+      checktransit: if(i === 0 && arr[0] === max){
+        for(var i = 1; i !== len; i++){
+          if(arr[i] !== max)
+            break checktransit;
+        }
+
+        this.transit = true;
+      }
     }
 
-    return arrPrev;
+    return this.update();
+  }
+
+  update(){
+    if(!this.includesSubst) return this;
+    var {len, stats, substs, arr, subst} = this;
+
+    for(var i = 0; i !== len; i++)
+      subst.set(stats[i], substs[arr[i]]);
+
+    return this;
   }
 };
 
