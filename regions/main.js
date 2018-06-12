@@ -95,17 +95,6 @@ function main(){
   });
 }
 
-var D = new ImageData((() => {
-  var g = media.createContext(w, h);
-  var a = require('fs').readFileSync(O.dirs.dw + '/1.hex');
-  var imgd = g.getImageData(0, 0, w, h);
-  var data = imgd.data;
-  a.forEach((a, b) => -~b & 3 ? data[b] = a : 0);
-  g.putImageData(imgd, 0, 0);
-  return g;
-})());
-var C = Buffer.alloc(3);
-
 class Entity extends O.Vector{
   constructor(x, y){
     super(x, y);
@@ -113,10 +102,12 @@ class Entity extends O.Vector{
     this.xStart = x;
     this.yStart = y;
 
-    var a = [...D.get(x, y, C)];
-    var vel = new O.Vector(a[0] / 255 * O.pi, a[1] / 255 * O.pi);
-    this.vel = vel;
-    vel.setLen((a[0] + a[1] + a[2]) / (255 * 3));
+    var x1 = ((x - wh) / 192) ** 2;
+    var y1 = ((y - hh) / 192) ** 2;
+
+    var len = y1 - x1 * Math.sin(x1 + y1);
+    var angle = 0;
+    this.vel = O.Vector.fromAngle(len, angle);
 
     this.k = null;
   }

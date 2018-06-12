@@ -12,7 +12,10 @@ const FFMPEG_DIR = 'C:/Program Files/Ffmpeg/bin/original';
 const BGRA = '-f rawvideo -pix_fmt bgra';
 const RGBA = '-f rawvideo -pix_fmt rgba';
 const TRUNC = '-vf "scale=trunc(iw/2)*2:trunc(ih/2)*2"';
-const HD_PRESET = '-c:v libx264 -preset slow -profile:v high -crf 18 -coder 1 -pix_fmt yuv420p -movflags +faststart -bf 2 -c:a aac -b:a 384k -profile:a aac_low';
+
+const VIDEO_PRESET = '-preset slow -profile:v high -crf 18 -coder 1 -pix_fmt yuv420p -movflags +faststart -bf 2 -c:a aac -b:a 384k -profile:a aac_low';
+const FAST_PRESET = `-c:v ${'h264_nvenc'} ${VIDEO_PRESET}`;
+const HD_PRESET = `-c:v ${'libx264'} ${VIDEO_PRESET}`;
 
 var procs = [];
 
@@ -24,6 +27,7 @@ module.exports = {
   renderVideo,
   editVideo,
   renderAudio,
+  presentation,
   custom,
   spawnFfmpeg,
   blurRegion,
@@ -33,7 +37,7 @@ module.exports = {
   Canvas,
 };
 
-function renderImage(output, w, h, frameFunc, exitCb = O.nop){
+function renderImage(output, w, h, frameFunc, exitCb=O.nop){
   output = formatFileName(output);
 
   var canvas = createCanvas(w, h);
@@ -46,7 +50,7 @@ function renderImage(output, w, h, frameFunc, exitCb = O.nop){
   proc.stdin.end(canvas.toBuffer('raw'));
 }
 
-function editImage(input, output, frameFunc, exitCb = O.nop){
+function editImage(input, output, frameFunc, exitCb=O.nop){
   input = formatFileName(input);
   output = formatFileName(output);
 
@@ -72,7 +76,7 @@ function editImage(input, output, frameFunc, exitCb = O.nop){
   });
 }
 
-function renderVideo(output, w, h, fps, frameFunc, exitCb = O.nop){
+function renderVideo(output, w, h, fps, fast, frameFunc, exitCb=O.nop){
   output = formatFileName(output);
 
   var canvas = createCanvas(w, h);
@@ -80,7 +84,7 @@ function renderVideo(output, w, h, fps, frameFunc, exitCb = O.nop){
   var f = 0;
 
   var proc = spawnFfmpeg(`${BGRA} -s ${w}x${h} -framerate ${fps} -i - -y -framerate ${fps} ${
-    HD_PRESET
+    fast ? FAST_PRESET : HD_PRESET
   } ${TRUNC} "${output}"`, exitCb);
 
   frame();
@@ -104,7 +108,7 @@ function renderVideo(output, w, h, fps, frameFunc, exitCb = O.nop){
   }
 }
 
-function editVideo(input, output, w2, h2, fps, frameFunc, exitCb = O.nop){
+function editVideo(input, output, w2, h2, fps, fast, frameFunc, exitCb=O.nop){
   input = formatFileName(input);
   output = formatFileName(output);
 
@@ -117,7 +121,7 @@ function editVideo(input, output, w2, h2, fps, frameFunc, exitCb = O.nop){
 
     var proc1 = spawnFfmpeg(`-i "${input}" ${RGBA} -r ${fps} -`);
     var proc2 = spawnFfmpeg(`${BGRA} -s ${w2}x${h2} -framerate ${fps} -i - -y -pix_fmt yuv420p -framerate ${fps} ${
-      HD_PRESET
+      fast ? FAST_PRESET : HD_PRESET
     } ${TRUNC} "${output}"`, exitCb);
 
     proc1.stdout.on('data', data => {
@@ -149,7 +153,7 @@ function editVideo(input, output, w2, h2, fps, frameFunc, exitCb = O.nop){
   });
 }
 
-function renderAudio(output, w, func, exitCb = O.nop){
+function renderAudio(output, w, func, exitCb=O.nop){
   output = formatFileName(output);
 
   var buffLen = w << 2;
@@ -174,7 +178,47 @@ function renderAudio(output, w, func, exitCb = O.nop){
   }
 }
 
-function custom(inputArgs, outputArgs, output, func, exitCb = O.nop){
+function presentation(output, w, h, fps, fast, exitCb=O.nop){
+  output = formatFileName(output);
+
+  var canvas = createCanvas(w, h);
+  var g = canvas.getContext('2d');
+  var f = 0;
+
+  var proc = spawnFfmpeg(`${BGRA} -s ${w}x${h} -framerate ${fps} -i - -y -framerate ${fps} ${
+    fast ? FAST_PRESET : HD_PRESET
+  } ${TRUNC} "${output}"`, exitCb);
+
+  frame.g = g;
+  frame.f = 1;
+
+  return frame;
+
+  async function frame(value){
+    var buff;
+
+    if(value instanceof Buffer){
+      buff = value;
+    }else if(value === true){
+      buff = canvas.toBuffer('raw');
+    }
+
+    await new Promise(res => {
+      var r = () => {
+        frame.f++;
+        res();
+      };
+
+      if(value){
+        proc.stdin.write(buff, r);
+      }else{
+        proc.stdin.end(buff, r);
+      }
+    });
+  }
+}
+
+function custom(inputArgs, outputArgs, output, func, exitCb=O.nop){
   output = formatFileName(output);
 
   var f = 0;
@@ -254,7 +298,7 @@ function putBuffer(g, buff){
   g.putImageData(imgd, 0, 0);
 }
 
-function spawnFfmpeg(args, exitCb = O.nop){
+function spawnFfmpeg(args, exitCb=O.nop){
   return spawnProc('ffmpeg', args, exitCb);
 }
 
@@ -272,7 +316,7 @@ function getMediaParams(mediaFile, cb){
   });
 }
 
-function spawnProc(name, args, exitCb = O.nop){
+function spawnProc(name, args, exitCb=O.nop){
   name = path.join(FFMPEG_DIR, name);
 
   var proc = cp.spawn(name, [
@@ -288,7 +332,7 @@ function spawnProc(name, args, exitCb = O.nop){
   return proc;
 }
 
-function onProcExit(proc, exitCb = O.nop){
+function onProcExit(proc, exitCb=O.nop){
   var index = procs.indexOf(proc);
   procs.splice(index, 1);
 

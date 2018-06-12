@@ -11,8 +11,10 @@ function formatTime(t){
   var m = `${t / 60 % 60 | 0}`.padStart(2, '0');
   var s = `${t % 60 | 0}`.padStart(2, '0');
 
-  if((t / (60 * 60 * 24) | 0) === 0)
-    return `${h}:${m}:${s}`;
+  var str = `${h}:${m}:${s}`;
 
-  return `${years}y ${months}m ${days}d ${h}:${m}:${s}`;
+  if((t / (60 * 60 * 24) | 0) === 0)
+    return str;
+
+  return `${years}y ${months}m ${days}d ${str}`;
 };

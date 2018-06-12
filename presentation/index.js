@@ -4,64 +4,43 @@ var O = require('../framework');
 var media = require('../media');
 
 class Presentation{
-  constructor(w, h, fps){
+  constructor(w, h, fps, fast){
     this.w = w;
     this.h = h;
     this.fps = fps;
+    this.fast = fast;
 
     this.wh = w / 2;
     this.hh = h / 2;
 
     this.transTime = 2e3;
+    this.timeK = 1e3 / fps;
+
+    this.g1 = media.createContext(w, h);
+    this.g2 = media.createContext(w, h);
 
     this.file = null;
     this.func = null;
+    this.cb = null;
+
+    this.mFrame = null;
     this.g = null;
-    this.g1 = null;
-    this.g2 = null;
-    this.f = null;
-    this.time = null;
 
-    this.started = false;
-    this.finished = false;
-
-    this.state = 0;
+    this.time = 0;
   }
 
-  render(file, func){
-    var {w, h, fps} = this;
+  render(file, func, cb=O.nop){
+    var {w, h, fps, fast} = this;
 
     this.file = file;
     this.func = func;
+    this.cb = cb;
 
-    media.renderVideo(file, w, h, fps, (w, h, g, f) => {
-      if(!this.started){
-        this.g = g;
-        this.g1 = media.createContext(w, h);
-        this.g2 = media.createContext(w, h);
-        this.start();
+    var mFrame = media.presentation(file, w, h, fps, fast);
+    this.mFrame = mFrame;
+    this.g = mFrame.g;
 
-        return null;
-      }
-
-      if(this.finished)
-        return false;
-
-      if(this.state === 2)
-        this.state = 0;
-
-      if(this.state === 0)
-        return null;
-
-      this.state = 2;
-
-      media.logStatus(f);
-
-      this.f = f;
-      this.time = (f - 1) / fps * 1e3;
-
-      return true;
-    });
+    this.start();
   }
 
   start(){
@@ -72,42 +51,39 @@ class Presentation{
   }
 
   finish(){
-    this.finished = true;
-  }
-
-  async frame(){
-    this.state = 1;
-
-    await new Promise(res => {
-      var f = () => {
-        if(this.state !== 0)
-          return setTimeout(f);
-        res();
-      };
-
-      f();
+    this.mFrame(false).then(() => {
+      this.cb();
     });
   }
 
-  async wait(time = this.transTime){
+  async frame(){
+    var {mFrame} = this;
+
+    media.logStatus(mFrame.f);
+    await mFrame(true);
+    this.time += this.timeK;
+  }
+
+  async wait(time=this.transTime){
     time += this.time;
 
     while(this.time < time)
       await this.frame();
   }
 
-  async fade(time = this.transTime){
+  async fade(time=this.transTime){
     var {g, g1, g2} = this;
 
-    var ttime = this.time + time;
     var alpha = g.globalAlpha;
+    var ttime = time;
 
     g2.drawImage(g.canvas, 0, 0);
+    time += this.time;
 
-    while(this.time < ttime){
+    while(this.time < time){
       g.globalAlpha = 1;
       g.drawImage(g2.canvas, 0, 0);
-      g.globalAlpha = 1 - (ttime - this.time) / time;
+      g.globalAlpha = 1 - (time - this.time) / ttime;
       g.drawImage(g1.canvas, 0, 0);
 
       await this.frame();
@@ -119,7 +95,7 @@ class Presentation{
     g.globalAlpha = alpha;
   }
 
-  async fadeOut(time = this.transTime){
+  async fadeOut(time=this.transTime){
     var {w, h, g1} = this;
 
     g1.fillStyle = 'black';
