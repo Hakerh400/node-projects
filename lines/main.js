@@ -3,7 +3,7 @@
 var O = require('../framework');
 var media = require('../media');
 
-const ENTS_NUM = 100;
+const ENTS_NUM = 10e6;
 const OFFSET = 200;
 const FACTOR = .01;
 
@@ -12,10 +12,9 @@ const BG_COLOR = new O.Color(0, 0, 0);
 var w = 1920;
 var h = 1080;
 var fps = 60;
-var fast = 1;
+var fast = 0;
 
 var [wh, hh] = [w, h].map(a => a / 2);
-var [w1, h1] = [w, h].map(a => a - 1);
 
 setTimeout(main);
 
@@ -92,6 +91,8 @@ class Entity extends O.Vector{
   }
 
   isAlive(){
-    return this.isIn(0, 0, w1, h1);
+    if(this.x < 0) return false;
+    if(this.vel.y === 0) return this.x < w;
+    return true;
   }
 };
