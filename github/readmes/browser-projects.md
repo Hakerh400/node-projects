@@ -1,1 +1,1 @@
-This is collection of my JavaScript projects for browsers. If you want to use any of my scripts or functions, feel free to copy-paste it wherever you want without giving any credits (you may give credits if you want, but you are not forced to). More projects can be found [here](https://github.com/Hakerh400/browser-projects/releases).
+This is collection of my JavaScript projects for browsers. More projects can be found [here](https://github.com/Hakerh400/browser-projects/releases).

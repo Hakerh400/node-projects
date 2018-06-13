@@ -17,6 +17,8 @@ var supportedExtensions = require('./supported-extensions.json');
 var cwd = __dirname;
 var readmesDir = path.join(cwd, 'readmes');
 var readmeFileName = 'readme.md';
+var licenseFile = path.join(cwd, 'license.md');
+var licenseFileName = 'readme.md';
 
 var tabSize = 2;
 
@@ -72,6 +74,12 @@ function push(repoName, cb = O.nop){
   var readmeData = fs.readFileSync(readmeFile, 'utf8');
   var readmeFileDest = path.join(dest, readmeFileName);
   fs.writeFileSync(readmeFileDest, readmeData);
+
+  // Copy license file
+
+  var licenseData = fs.readFileSync(licenseFile, 'utf8');
+  var licenseFileDest = path.join(dest, licenseFileName);
+  fs.writeFileSync(licenseFileDest, licenseData);
 
   if(encrypt){
     // Encrypt
