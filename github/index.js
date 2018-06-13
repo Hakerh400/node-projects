@@ -18,7 +18,7 @@ var cwd = __dirname;
 var readmesDir = path.join(cwd, 'readmes');
 var readmeFileName = 'readme.md';
 var licenseFile = path.join(cwd, 'license.md');
-var licenseFileName = 'readme.md';
+var licenseFileName = 'license.md';
 
 var tabSize = 2;
 
