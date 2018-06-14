@@ -1,11 +1,14 @@
 'use strict';
 
+var fs = require('fs');
 var path = require('path');
 var cp = require('child_process');
 var {Canvas} = require('../canvas');
 var O = require('../framework');
 var logStatus = require('../log-status');
 var formatFileName = require('../format-file-name');
+
+const DEBUG = 0;
 
 const FFMPEG_DIR = 'C:/Program Files/Ffmpeg/bin/original';
 
@@ -17,7 +20,10 @@ const VIDEO_PRESET = '-preset slow -profile:v high -crf 18 -coder 1 -pix_fmt yuv
 const FAST_PRESET = `-c:v ${'h264_nvenc'} ${VIDEO_PRESET}`;
 const HD_PRESET = `-c:v ${'libx264'} ${VIDEO_PRESET}`;
 
+var fd = process.stdout.fd;
+
 var procs = [];
+var tempDir = null;
 
 addEventListeners();
 
@@ -29,6 +35,7 @@ module.exports = {
   renderAudio,
   presentation,
   custom,
+  buff2canvas,
   spawnFfmpeg,
   blurRegion,
   createCanvas,
@@ -37,7 +44,7 @@ module.exports = {
   Canvas,
 };
 
-function renderImage(output, w, h, frameFunc, exitCb=O.nop){
+function renderImage(output, w, h, frameFunc=O.nop, exitCb=O.nop){
   output = formatFileName(output);
 
   var canvas = createCanvas(w, h);
@@ -50,7 +57,7 @@ function renderImage(output, w, h, frameFunc, exitCb=O.nop){
   proc.stdin.end(canvas.toBuffer('raw'));
 }
 
-function editImage(input, output, frameFunc, exitCb=O.nop){
+function editImage(input, output, frameFunc=O.nop, exitCb=O.nop){
   input = formatFileName(input);
   output = formatFileName(output);
 
@@ -76,7 +83,7 @@ function editImage(input, output, frameFunc, exitCb=O.nop){
   });
 }
 
-function renderVideo(output, w, h, fps, fast, frameFunc, exitCb=O.nop){
+function renderVideo(output, w, h, fps, fast, frameFunc=O.nop, exitCb=O.nop){
   output = formatFileName(output);
 
   var canvas = createCanvas(w, h);
@@ -108,7 +115,7 @@ function renderVideo(output, w, h, fps, fast, frameFunc, exitCb=O.nop){
   }
 }
 
-function editVideo(input, output, w2, h2, fps, fast, frameFunc, exitCb=O.nop){
+function editVideo(input, output, w2, h2, fps, fast, frameFunc=O.nop, exitCb=O.nop){
   input = formatFileName(input);
   output = formatFileName(output);
 
@@ -147,7 +154,7 @@ function editVideo(input, output, w2, h2, fps, fast, frameFunc, exitCb=O.nop){
       if(b !== null) buff = b;
     });
 
-    proc1.stdout.on('end', () => {
+    proc1.on('exit', status => {
       proc2.stdin.end();
     });
   });
@@ -218,11 +225,11 @@ function presentation(output, w, h, fps, fast, exitCb=O.nop){
   }
 }
 
-function custom(inputArgs, outputArgs, output, func, exitCb=O.nop){
+function custom(inputArgs, input, outputArgs, output, func=O.nop, exitCb=O.nop){
   output = formatFileName(output);
 
   var f = 0;
-  var proc = spawnFfmpeg(`${inputArgs} -i - -y ${outputArgs} "${output}"`, exitCb);
+  var proc = spawnFfmpeg(`${inputArgs} -i "${input}" -y ${outputArgs} "${output}"`, exitCb);
 
   frame();
 
@@ -231,6 +238,50 @@ function custom(inputArgs, outputArgs, output, func, exitCb=O.nop){
 
     if(buff) proc.stdin.write(buff, frame);
     else proc.stdin.end();
+  }
+}
+
+function buff2canvas(buff, cb=O.nop){
+  var tempDir = getTempDir();
+  var tempFile = path.join(tempDir, '1');
+
+  fs.writeFileSync(tempFile, buff);
+
+  var ffprobe = getMediaParams(tempFile, (w, h) => {
+    if(w === null)
+      return err(h);
+
+    var proc = spawnFfmpeg(`-i "${tempFile}" -f rawvideo -pix_fmt rgba -vframes 1 -`);
+    var g = createContext(w, h);
+    var imgd = g.createImageData(w, h);
+    var data = imgd.data;
+    var i = 0;
+
+    proc.stdout.on('data', chunk => {
+      var len = chunk.length;
+
+      for(var j = 0; j !== len; j++)
+        data[i++ | 0] = chunk[j | 0] | 0;
+    });
+
+    proc.on('exit', status => {
+      if(status !== 0)
+        return err(status);
+
+      g.putImageData(imgd, 0, 0);
+      
+      cb(g.canvas);
+    });
+
+    proc.stdin.on('error', O.nop);
+    proc.stdin.end(buff);
+  });
+
+  ffprobe.stdin.on('error', O.nop);
+  ffprobe.stdin.end(buff);
+
+  function err(status){
+    cb(null, new Error(`The process exited with code ${status}`));
   }
 }
 
@@ -304,29 +355,53 @@ function spawnFfmpeg(args, exitCb=O.nop){
 
 function getMediaParams(mediaFile, cb){
   var proc = spawnProc('ffprobe', `-v quiet -print_format json -show_format -show_streams -i "${mediaFile}"`);
-  var json = '';
+  var data = Buffer.alloc(0);
 
-  proc.stdout.on('data', a => json += a);
-
-  proc.stdout.on('end', () => {
-    var obj = JSON.parse(json);
-    var s = obj.streams[0];
-
-    cb(s.width, s.height, s.nb_frames);
+  proc.stdout.on('data', chunk => {
+    data = Buffer.concat([data, chunk]);
   });
+
+  proc.on('exit', status => {
+    if(status !== 0)
+      return cb(null, status);
+
+    var str = data.toString('utf8');
+
+    try{
+      var obj = JSON.parse(str);
+      var s = obj.streams[0];
+
+      cb(s.width, s.height, s.nb_frames);
+    }catch(e){
+      cb(null);
+    }
+  });
+
+  return proc;
 }
 
 function spawnProc(name, args, exitCb=O.nop){
   name = path.join(FFMPEG_DIR, name);
 
-  var proc = cp.spawn(name, [
+  var args = [
     '-hide_banner',
     ...args.match(/"[^"]*"|\S+/g).map(a => a[0] == '"' ? a.substring(1, a.length - 1) : a)
-  ]);
+  ];
+
+  if(DEBUG){
+    var border = '='.repeat(70);
+    var argsStr = args.slice(1).map(arg => arg.includes(' ') ? `"${arg}"` : arg).join(' ');
+    var strName = name.match(/([a-z]+)$/)[1];
+    var str = `\n${border}\n${strName} ${argsStr}\n${border}\n`;
+
+    log(str);
+  }
+
+  var proc = cp.spawn(name, args);
 
   procs.push(proc);
 
-  proc.stderr.on('data', O.nop);
+  proc.stderr.on('data', DEBUG ? onStderrData : O.nop);
   proc.on('exit', () => onProcExit(proc, exitCb));
 
   return proc;
@@ -347,6 +422,10 @@ function onProcExit(proc, exitCb=O.nop){
 
     exitCb();
   }
+}
+
+function onStderrData(data){
+  process.stdout.write(data);
 }
 
 function createCanvas(w, h){
@@ -389,4 +468,15 @@ function closeProcs(){
     if(procs.length === 0)
       process.exit();
   });
+}
+
+function getTempDir(){
+  if(tempDir === null)
+    tempDir = require('../temp-dir')(__filename);
+
+  return tempDir;
+}
+
+function log(str){
+  fs.writeFileSync(fd, `${str}\n`);
 }

@@ -13,7 +13,7 @@ module.exports = {
   createDirSync,
 };
 
-function processFiles(filePath, func, cb = O.nop){
+function processFiles(filePath, func, cb=O.nop){
   processElem(false, [new FileQueueElem(formatPath(filePath))], func, cb);
 }
 
@@ -21,7 +21,7 @@ function processFilesSync(filePath, func){
   processElem(true, [new FileQueueElem(formatPath(filePath))], func);
 }
 
-function processElem(sync, queue, func, cb = O.nop){
+function processElem(sync, queue, func, cb=O.nop){
   while(1){
     var elem = queue.pop();
 
@@ -51,7 +51,7 @@ function processElem(sync, queue, func, cb = O.nop){
   }
 }
 
-function deleteFiles(filePath, cb = O.nop){
+function deleteFiles(filePath, cb=O.nop){
   processFiles(filePath, deleteFile, cb);
 }
 
@@ -67,7 +67,7 @@ function deleteFile(obj){
   }
 }
 
-function createDir(dirPath, cb = O.nop){
+function createDir(dirPath, cb=O.nop){
   var err = null;
 
   try{
@@ -90,8 +90,10 @@ function createDirSync(dirPath){
   while(dirs.length !== 0){
     dirPath = path.join(dirPath, dirs.shift());
 
-    if(!fs.existsSync(dirPath)){
-      fs.mkdirSync(dirPath);
+    while(!fs.existsSync(dirPath)){
+      try{
+        fs.mkdirSync(dirPath);
+      }catch(err){}
     }
   }
 }
