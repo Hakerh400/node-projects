@@ -12,5 +12,5 @@ function formatNumber(num){
 }
 
 function reverseStr(str){
-  return [...str].reverse().join('');
+  return str.split('').reverse().join('');
 }

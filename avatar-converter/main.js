@@ -67,13 +67,13 @@ function onReq(req, res){
     console.log(`Received command: ${command}`);
 
     switch(command){
-      case 'reset':
+      case 'avatars/reset':
         resetAvatarsDir();
         avatarsNum = 0;
         succ();
         break;
 
-      case 'upload':
+      case 'avatars/upload':
         converter.convert(buff).then(canvas => {
           var index = ++avatarsNum;
           var name = `${index}.png`;
