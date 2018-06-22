@@ -1,5 +1,6 @@
 'use strict';
 
+var O = require('../framework');
 var media = require('../media');
 
 var g = new media.Canvas(1, 1).getContext('2d');
@@ -8,6 +9,7 @@ module.exports = {
   col2rgb,
   rgb2col,
   normalize,
+  color,
 };
 
 function col2rgb(col){
@@ -17,7 +19,7 @@ function col2rgb(col){
   col = g.fillStyle.match(/[0-9a-z]{2}/g);
   col = col.map(byte => parseInt(byte, 16));
 
-  return [...col];
+  return col;
 }
 
 function rgb2col(rgb){
@@ -31,4 +33,8 @@ function rgb2col(rgb){
 
 function normalize(col){
   return rgb2col(col2rgb(col));
+}
+
+function color(col){
+  return O.Color.from(col2rgb(col));
 }

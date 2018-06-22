@@ -43,7 +43,7 @@ function checkFunc(dir, cb){
     if(found || d.processed)
       return;
 
-    if(d.name === 'music')
+    if(d.name === 'background')
       found = true;
   });
 
