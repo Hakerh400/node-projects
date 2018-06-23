@@ -26,7 +26,6 @@ var [ws1, hs1] = [ws, hs].map(a => a - 1);
 var cols = {
   bg: conv.color('darkgray'),
   wall: conv.color('#808080'),
-  ent: conv.color('white'),
 };
 
 setTimeout(main);
@@ -128,7 +127,7 @@ class Grid{
   }
 
   set(x, y, val){
-    if(!this.includes(x, y)) return null;
+    if(!this.includes(x, y)) return;
     this.d[y][x] = val;
   }
 
