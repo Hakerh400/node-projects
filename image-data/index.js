@@ -1,14 +1,14 @@
 'use strict';
 
 class ImageData{
-  constructor(g = null, clear = false){
+  constructor(g=null, clear=false){
     this.g = null;
 
     this.w = null;
     this.h = null;
 
     this.imgd = null;
-    this.data = null;
+    this.d = null;
 
     if(g !== null) this.fetch(g, clear);
   }
@@ -25,25 +25,26 @@ class ImageData{
     if(g !== this.g) this.setG(g);
 
     this.imgd = g.getImageData(0, 0, this.w, this.h);
-    this.data = this.imgd.data;
+    this.d = this.imgd.data;
 
     if(clear){
-      for(var i = 0; i < this.data.length; i++){
-        this.data[i] = (i & 3) < 3 ? 0 : 255;
+      var d = this.d;
+      var len = d.length;
+
+      for(var i = 0; i < len; i++){
+        d[i] = (i & 3) < 3 ? 0 : 255;
       }
     }
   }
 
-  put(g = this.g){
+  put(g=this.g){
     if(g !== this.g) this.setG(g);
 
     this.g.putImageData(this.imgd, 0, 0);
   }
 
   iterate(func, includeAlpha = false){
-    var w = this.w;
-    var h = this.h;
-    var d = this.data;
+    var {w, h, d} = this;
 
     if(includeAlpha){
       for(var y = 0, i = 0; y < h; y++){
@@ -74,13 +75,14 @@ class ImageData{
   }
 
   get(x, y, col, includeAlpha){
-    if(x < 0) x = 0;
-    else if(x >= this.w) x = (this.w | 0) - 1 | 0
-    if(y < 0) y = 0;
-    else if(y >= this.h) y = (this.h | 0) - 1 | 0;
+    var {w, h, d} = this;
 
-    var d = this.data;
-    var i = (x | 0) + (y | 0) * (this.w | 0) << 2;
+    if(x < 0) x = 0;
+    else if(x >= w) x = (w | 0) - 1 | 0
+    if(y < 0) y = 0;
+    else if(y >= h) y = (h | 0) - 1 | 0;
+
+    var i = (x | 0) + (y | 0) * (w | 0) << 2;
 
     if(includeAlpha){
       col[0] = d[i | 0] | 0;
@@ -97,10 +99,12 @@ class ImageData{
   }
 
   set(x, y, col, includeAlpha){
-    if(x < 0 || x >= this.w || y < 0 || y >= this.h) return;
+    var {w, h, d} = this;
 
-    var d = this.data;
-    var i = (x | 0) + (y | 0) * (this.w | 0) << 2;
+    if(x < 0 || x >= w || y < 0 || y >= h)
+      return;
+
+    var i = (x | 0) + (y | 0) * (w | 0) << 2;
 
     if(includeAlpha){
       d[i | 0] = col[0] | 0;
