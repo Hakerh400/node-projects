@@ -40,7 +40,3 @@ function logArr(arr){
   if(arr.length === 0) log('[]');
   else log(`[\n${arr.map(a => `${TAB}${a}`).join('\n')}\n]`);
 }
-
-function log(str){
-  console.log(`${str}`);
-}

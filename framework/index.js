@@ -20,6 +20,8 @@ function getFramework(){
   var document = window.document;
 
   var O = func(window, document);
+  O.init();
+
   O.dirs = dirs;
   O.passwords = passwords;
   O.password = passwords[0];

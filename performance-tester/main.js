@@ -12,7 +12,7 @@ function main(){
   tester.addFunc(func2);
 
   var result = tester.test(100);
-  console.log(result);
+  log(result);
 }
 
 function func1(){

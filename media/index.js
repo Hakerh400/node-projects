@@ -452,7 +452,7 @@ function addEventListeners(){
   });
 
   process.on('uncaughtException', err => {
-    console.log(err);
+    log(err);
     closeProcs();
   });
 }

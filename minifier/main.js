@@ -9,7 +9,7 @@ setTimeout(main);
 
 function main(){
   minifier.minify(input, output, err => {
-    if(err) return console.log(err);
-    console.log('Finished.');
+    if(err) return log(err);
+    log('Finished.');
   });
 }

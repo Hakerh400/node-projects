@@ -20,6 +20,6 @@ function main(){
     var output = parsed.toString();
     fs.writeFileSync(outputFile, output);
   }).catch(err => {
-    console.log(err);
+    log(err);
   });
 }

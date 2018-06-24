@@ -24,9 +24,9 @@ function main(){
   resetDir(mode);
 
   if(mode == 'e'){
-    encryptor.encrypt(decryptedDir, encryptedDir, password, a => console.log(a || 'Finished'));
+    encryptor.encrypt(decryptedDir, encryptedDir, password, a => log(a || 'Finished'));
   }else{
-    encryptor.decrypt(encryptedDir, decryptedDir, password, a => console.log(a || 'Finished'));
+    encryptor.decrypt(encryptedDir, decryptedDir, password, a => log(a || 'Finished'));
   }
 }
 

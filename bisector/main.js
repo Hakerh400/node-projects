@@ -19,5 +19,5 @@ function main(){
 
   var str = `'\\u{${charCode.toString(16).toUpperCase()}}'`;
 
-  console.log(str);
+  log(str);
 }

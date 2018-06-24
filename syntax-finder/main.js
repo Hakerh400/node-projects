@@ -28,15 +28,10 @@ function main(){
 
 function func(src){
   var lines = O.sanl(src);
-  var found = 0;
 
-  lines.forEach((line, i) => {
-    if(found !== 0)
-      return;
-
-    if(line.includes('w, h, fps, hd'))
-      found = i;
+  var index = lines.findIndex(line => {
+    return line.includes(`console.log`);
   });
 
-  return found;
+  return index + 1;
 }

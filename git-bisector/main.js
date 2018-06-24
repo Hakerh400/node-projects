@@ -17,12 +17,12 @@ setTimeout(main);
 function main(){
   bisector.bisect(repo, firstCommit, nextCommit, checkFunc, (err, commit) => {
     if(err)
-      return console.log(err);
+      return log(err);
 
     if(commit === null)
-      return console.log('Not found.');
+      return log('Not found.');
 
-    console.log(commit);
+    log(commit);
   });
 }
 

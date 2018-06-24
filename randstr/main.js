@@ -50,15 +50,15 @@ function processStrNum(num){
 }
 
 function displayStrings(){
-  console.log('');
+  log('');
 
   O.repeat(strNum, () => {
     var len = lens[0] + O.rand(lens[1] - lens[0] + 1);
     var str = O.ca(len, () => chars[O.rand(chars.length)]).join('');
 
-    console.log(str);
+    log(str);
   });
 
-  console.log('');
+  log('');
   genRandStr();
 }

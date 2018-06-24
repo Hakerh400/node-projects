@@ -45,9 +45,9 @@ function onInput(str){
       return;
     }
 
-    console.log('Unknown command');
+    log('Unknown command');
 
-    console.log('\n');
+    log('\n');
   }
 }
 
@@ -64,7 +64,7 @@ function onReq(req, res){
     var parsedUrl = urlModule.parse(req.url);
     var command = parsedUrl.pathname.substring(1);
 
-    console.log(`Received command: ${command}`);
+    log(`Received command: ${command}`);
 
     switch(command){
       case 'avatars/reset':
