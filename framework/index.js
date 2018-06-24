@@ -5,9 +5,25 @@ var browser = require('../browser');
 var dirs = require('./dirs.json');
 var passwords = require('./passwords.json');
 
-var O = getFramework();
+setGlobalVars();
 
-module.exports = O;
+module.exports = getFramework();
+
+function setGlobalVars(){
+  global.require = (...args) => {
+    if(args.length !== 1)
+      throw new TypeError('Expected 1 argument');
+    
+    var arg = args[0];
+    if(typeof args[0] !== 'string')
+      throw new TypeError('Expected a string');
+
+    if(/[\.\/\\]/.test(arg))
+      throw new TypeError('Expected a native module name');
+
+    return require(arg);
+  };
+}
 
 function getFramework(){
   var str = fs.readFileSync(dirs.O).toString();
