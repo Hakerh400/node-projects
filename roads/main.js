@@ -6,10 +6,10 @@ var O = require('../framework');
 var media = require('../media');
 var conv = require('../color-converter');
 
-const ENTS_NUM = 1e3;
+const ENTS_NUM = 100;
 const DIAMETER = .75;
-const SPEED_MIN = .48;
-const SPEED_MAX = .49;
+const SPEED_MIN = .05;
+const SPEED_MAX = .1;
 
 const RADIUS = DIAMETER / 2;
 
@@ -19,7 +19,7 @@ var gridFile = path.join(cwd, 'grid.txt');
 var w = 1920;
 var h = 1080;
 var fps = 60;
-var fast = 1;
+var fast = 0;
 
 var duration = 60 * 60;
 var framesNum = fps * duration;
@@ -73,7 +73,7 @@ function createGrid(){
 
   var grid = new Grid(ws, hs, (x, y) => {
     var wall = gridData[y][x];
-    var visited = x === 0 && y === 0;
+    var visited = x === 1 && y === 1;
 
     return new Tile(wall, visited);
   });
@@ -109,10 +109,7 @@ class World{
     var {grid, ents} = this;
 
     grid.tick();
-    ents.forEach(ent => {
-      for(var i = 0; i !== 1e4; i++)
-        ent.tick()
-    });
+    ents.forEach(ent => ent.tick());
   }
 
   draw(){
