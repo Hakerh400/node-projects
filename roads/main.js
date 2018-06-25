@@ -1,15 +1,20 @@
 'use strict';
 
+var fs = require('fs');
+var path = require('path');
 var O = require('../framework');
 var media = require('../media');
 var conv = require('../color-converter');
 
-const ENTS_NUM = 1e4;
+const ENTS_NUM = 100//1e4;
 const DIAMETER = .75;
 const SPEED_MIN = .05;
 const SPEED_MAX = .1;
 
 const RADIUS = DIAMETER / 2;
+
+var cwd = __dirname;
+var gridFile = path.join(cwd, 'grid.txt');
 
 var w = 1920;
 var h = 1080;
@@ -50,16 +55,31 @@ function main(){
 function createWorld(g){
   g = new O.EnhancedRenderingContext(g);
 
-  var grid = new Grid(ws, hs, (x, y) => {
-    var wall = 0;
+  var grid = createGrid();
+  var ents = createEnts();
 
-    if(x === 0 || y === 0 || x === ws1 || y === hs1) wall = 1;
-    else if(x <= 2 && y <= 2) wall = 0;
-    else wall = O.rand(20) === 0;
+  return new World(grid, ents, g);
+}
+
+function createGrid(){
+  var gridStr = fs.readFileSync(gridFile, 'utf8');
+
+  var gridData = gridStr.split(/\r\n|\r|\n/).map(row => {
+    return row.split('').map(d => {
+      return d === '#' ? 1 : 0;
+    });
+  });
+
+  var grid = new Grid(ws, hs, (x, y) => {
+    var wall = gridData[y][x];
 
     return new Block(wall);
   });
 
+  return grid;
+}
+
+function createEnts(){
   var ents = O.ca(ENTS_NUM, i => {
     var x = 1.5;
     var y = 1.5;
@@ -70,7 +90,7 @@ function createWorld(g){
     return new Entity(x, y, speed, dir, col);
   });
 
-  return new World(grid, ents, g);
+  return ents;
 }
 
 class World{
