@@ -9,16 +9,16 @@ module.exports = {
   detect,
 };
 
-function detect(baseImg, blockImg, similarity=DEFAULT_SIMILARITY){
+function detect(baseImg, tileImg, similarity=DEFAULT_SIMILARITY){
   var [w, h] = getWH(baseImg);
-  var [ws, hs] = getWH(blockImg);
+  var [ws, hs] = getWH(tileImg);
   var [wg, hg] = calcGridSize(w, h, ws, hs);
 
   var diffMax = ws * hs;
   var diffTh = 1 - similarity;
 
   var d1 = new ImageData(getContext(baseImg));
-  var d2 = new ImageData(getContext(blockImg));
+  var d2 = new ImageData(getContext(tileImg));
 
   var c1 = Buffer.alloc(3);
   var c2 = Buffer.alloc(3);

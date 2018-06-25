@@ -11,27 +11,27 @@ var detector = require('.');
 
 var cwd = __dirname;
 
-var url = 'https://user-images.githubusercontent.com/13399152/41824187-9989dc8c-780c-11e8-8656-55e3645e00ff.png';
+var url = 'https://user-images.githubusercontent.com/13399152/41868657-0a58860c-78b7-11e8-9102-4ce35e1ba85a.png';
 var inputFile = path.join(tempDir, 'input.png');
 var outputFile = path.join(cwd, 'output.txt');
 
 var s = 40;
 
 var cols = {
-  wall: conv.color('#808080'),
+  wall: conv.color('#00ff00'),
 };
 
 setTimeout(main);
 
 async function main(){
   var baseImg = await getBaseImg();
-  var blockImg = await getBlockImg();
+  var tileImg = await getTileImg();
 
-  var grid = await detect(baseImg, blockImg);
+  var grid = await detect(baseImg, tileImg);
   await save(grid);
 }
 
-async function getBlockImg(){
+async function getTileImg(){
   var [w, h] = [s, s];
   var g = media.createContext(w, h);
   g = new O.EnhancedRenderingContext(g);
@@ -40,13 +40,12 @@ async function getBlockImg(){
   g.beginPath();
   g.rect(0, 0, w, h);
   g.fill();
-  g.stroke();
 
   return g.canvas;
 }
 
-async function detect(baseImg, blockImg){
-  var grid = detector.detect(baseImg, blockImg);
+async function detect(baseImg, tileImg){
+  var grid = detector.detect(baseImg, tileImg);
   return grid;
 }
 

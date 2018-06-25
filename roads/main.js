@@ -6,10 +6,10 @@ var O = require('../framework');
 var media = require('../media');
 var conv = require('../color-converter');
 
-const ENTS_NUM = 1e4;
+const ENTS_NUM = 1e3;
 const DIAMETER = .75;
-const SPEED_MIN = .05;
-const SPEED_MAX = .1;
+const SPEED_MIN = .48;
+const SPEED_MAX = .49;
 
 const RADIUS = DIAMETER / 2;
 
@@ -19,7 +19,7 @@ var gridFile = path.join(cwd, 'grid.txt');
 var w = 1920;
 var h = 1080;
 var fps = 60;
-var fast = 0;
+var fast = 1;
 
 var duration = 60 * 60;
 var framesNum = fps * duration;
@@ -31,6 +31,7 @@ var [ws1, hs1] = [ws, hs].map(a => a - 1);
 var cols = {
   bg: conv.color('darkgray'),
   wall: conv.color('#808080'),
+  visited: conv.color('#ffff80'),
 };
 
 setTimeout(main);
@@ -38,7 +39,7 @@ setTimeout(main);
 function main(){
   var world;
 
-  media.renderVideo('-vid/1.mp4', w, h, fps, fast, (w, h, g, f) => {
+  media.renderVideo('-vid/2.mp4', w, h, fps, fast, (w, h, g, f) => {
     media.logStatus(f, framesNum);
 
     if(f === 1){
@@ -72,8 +73,9 @@ function createGrid(){
 
   var grid = new Grid(ws, hs, (x, y) => {
     var wall = gridData[y][x];
+    var visited = x === 0 && y === 0;
 
-    return new Block(wall);
+    return new Tile(wall, visited);
   });
 
   return grid;
@@ -107,7 +109,10 @@ class World{
     var {grid, ents} = this;
 
     grid.tick();
-    ents.forEach(ent => ent.tick());
+    ents.forEach(ent => {
+      for(var i = 0; i !== 1e4; i++)
+        ent.tick()
+    });
   }
 
   draw(){
@@ -164,21 +169,35 @@ class Grid{
   tick(){}
 
   draw(g){
+    this.drawTiles(g);
+    this.drawFrames(g);
+  }
+
+  drawTiles(g){
+    this.iterate((x, y, d) => {
+      if(d.wall) g.fillStyle = cols.wall;
+      else if(d.visited) g.fillStyle = cols.visited;
+      else g.fillStyle = cols.bg;
+
+      g.fillRect(x, y, 1, 1);
+    });
+  }
+
+  drawFrames(g){
     this.iterate((x, y, d) => {
       if(d.wall){
-        g.fillStyle = cols.wall;
         g.beginPath();
         g.rect(x, y, 1, 1);
-        g.fill();
         g.stroke();
       }
     });
   }
 };
 
-class Block{
-  constructor(wall){
-    this.wall = wall;
+class Tile{
+  constructor(wall, visited){
+    this.wall = wall | 0;
+    this.visited = visited | 0;
   }
 };
 
@@ -229,6 +248,9 @@ class Entity extends O.Vector{
         this.pathDist -= 1;
       }
     }
+
+    var d = grid.get(Math.floor(this.x), Math.floor(this.y));
+    d.visited = 1;
   }
 
   draw(g){
