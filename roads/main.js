@@ -6,7 +6,7 @@ var O = require('../framework');
 var media = require('../media');
 var conv = require('../color-converter');
 
-const ENTS_NUM = 100//1e4;
+const ENTS_NUM = 1e4;
 const DIAMETER = .75;
 const SPEED_MIN = .05;
 const SPEED_MAX = .1;
