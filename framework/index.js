@@ -36,7 +36,7 @@ function getFramework(){
   var document = window.document;
 
   var O = func(window, document);
-  O.init('node');
+  O.init(false);
 
   O.dirs = dirs;
   O.passwords = passwords;
