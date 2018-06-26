@@ -3,10 +3,11 @@
 var EventEmitter = require('events');
 var http = require('http');
 var urlModule = require('url');
-var O = require('../framework');
 var {Canvas} = require('../canvas');
 
 var server = 'http://localhost/';
+
+var O;
 
 class EventTarget extends EventEmitter{
   constructor(){
@@ -36,9 +37,8 @@ class Window extends EventTarget{
     this._canvases = [];
     this._ready = true;
 
-    if(!O){
+    if(!O)
       O = require('../framework');
-    }
 
     if(url !== null){
       loadPage(this, url, err => {
@@ -191,6 +191,8 @@ class WindowEvent{
 module.exports = {
   Window
 };
+
+O = require('../framework');
 
 function loadPage(window, url, cb = O.nop){
   window._ready = false;
