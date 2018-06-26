@@ -87,6 +87,10 @@ class Window extends EventTarget{
   unescape(str){
     return str;
   }
+
+  toString(){
+    return '[object Window]';
+  }
 };
 
 class Document{
@@ -249,7 +253,7 @@ function createFunctionContrustor(window){
 
     var proxy = new Proxy(func, {
       apply(f, t, args){
-        return f.call(t, window, window.document, window.Function, ...args);
+        return f.apply(t, [window, window.document, window.Function, ...args]);
       }
     });
 

@@ -6,7 +6,7 @@ var O = require('../framework');
 var browser = require('../browser');
 var consoleColors = require('../console-colors');
 
-var url = '/?project=grid-projects&sub-project=grid';
+var url = '/?project=other-projects&sub-project=grid';
 
 var cwd = __dirname;
 var testsDir = path.join(cwd, 'tests');
