@@ -1,1 +1,0 @@
-void printf(int val);

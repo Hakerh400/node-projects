@@ -1,5 +1,0 @@
-0000 - Air
-0001 - Grass
-0002 - Dirt
-0003 - Sand
-0004 - Water

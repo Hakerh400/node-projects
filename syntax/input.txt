@@ -1,5 +1,0 @@
-int abc;
-float dd;
-
-abc = 57;
-dd = 123f;
