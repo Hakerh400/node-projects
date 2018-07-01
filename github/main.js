@@ -14,10 +14,10 @@ function main(){
 }
 
 function getRepo(){
-  var args = process.argv;
+  var args = process.argv.slice(2);
 
-  if(args.length !== 3)
+  if(args.length !== 1)
     throw new TypeError('Expected exactly 1 command line argument');
 
-  return args[2];
+  return args[0];
 }
