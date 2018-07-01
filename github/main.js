@@ -2,7 +2,7 @@
 
 var github = require('.');
 
-var repo = process.argv[2] || 'node';
+var repo = getRepo();
 
 setTimeout(main);
 
@@ -11,4 +11,13 @@ function main(){
     if(err) return log(err);
     log('Finished.');
   });
+}
+
+function getRepo(){
+  var args = process.argv;
+
+  if(args.length !== 3)
+    throw new TypeError('Expected exactly 1 command line argument');
+
+  return args[2];
 }
