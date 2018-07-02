@@ -18,30 +18,31 @@ function main(){
 }
 
 function getOutput(){
-  var a = new exprs.Identifier(0);
-  var b = new exprs.Identifier(1);
-  var c = new exprs.Identifier(2);
+  var {Expression, Constant, Variable} = exprs;
+
+  var ctors = [
+    Constant,
+    Variable,
+
+    Negation,
+    Addition,
+    Subtraction,
+    Multiplication,
+    Exponentiation,
+  ];
+
+  var a = new Constant(0);
+  var b = new Constant(1);
+  var c = new Constant(2);
 
   var op;
 
-  op = new Addition(a, b);
-  var op1 = new Addition(op, c);
-
-  op = new Addition(b, c);
-  var op2 = new Addition(a, op);
-
-  op = new Exponentiation(a, b);
-  var op3 = new Exponentiation(op, c);
-
-  op = new Exponentiation(b, c);
-  var op4 = new Exponentiation(a, op);
+  op = '(((A*b)+(c*D)*e))';
+  var op1 = Expression.parse(ctors, op);
 
   return [
     op1,
-    op2,
-    op3,
-    op4,
-  ].join('\n');
+  ].map(a => String(a)).join('\n');
 }
 
 class Negation extends exprs.UnaryExpression{
@@ -51,6 +52,7 @@ class Negation extends exprs.UnaryExpression{
 
   op(){ return '-'; }
   priority(){ return 3; }
+  group(){ return 1; }
 };
 
 class Addition extends exprs.BinaryExpression{

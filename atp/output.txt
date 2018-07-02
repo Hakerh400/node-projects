@@ -1,4 +1,1 @@
-A + B + C
-A + (B + C)
-(A ** B) ** C
-A ** B ** C
+A * b + c * D * e
