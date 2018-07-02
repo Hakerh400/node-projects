@@ -35,17 +35,18 @@ function getOutput(){
   var b = new Constant(1);
   var c = new Constant(2);
 
-  var op;
+  var op1 = Expression.parse(ctors, 'a * b');
+  var op2 = Expression.parse(ctors, '(P + -b) * -Q * c ** d');
+  var op3 = Expression.parse(ctors, 'e * -r * ((F)) ** c');
 
-  op = '(((A*b)+(c*D)*e))';
-  var op1 = Expression.parse(ctors, op);
+  var op4 = Expression.combine([[op1, op2], [op1, op3]]);
 
   return [
-    op1,
+    op4,
   ].map(a => String(a)).join('\n');
 }
 
-class Negation extends exprs.UnaryExpression{
+class Negation extends exprs.UnaryOperation{
   constructor(opnd){
     super(opnd);
   }
@@ -55,7 +56,7 @@ class Negation extends exprs.UnaryExpression{
   group(){ return 1; }
 };
 
-class Addition extends exprs.BinaryExpression{
+class Addition extends exprs.BinaryOperation{
   constructor(opnd1, opnd2){
     super(opnd1, opnd2);
   }
@@ -65,7 +66,7 @@ class Addition extends exprs.BinaryExpression{
   group(){ return 0; }
 };
 
-class Subtraction extends exprs.BinaryExpression{
+class Subtraction extends exprs.BinaryOperation{
   constructor(opnd1, opnd2){
     super(opnd1, opnd2);
   }
@@ -75,7 +76,7 @@ class Subtraction extends exprs.BinaryExpression{
   group(){ return 0; }
 };
 
-class Multiplication extends exprs.BinaryExpression{
+class Multiplication extends exprs.BinaryOperation{
   constructor(opnd1, opnd2){
     super(opnd1, opnd2);
   }
@@ -85,7 +86,7 @@ class Multiplication extends exprs.BinaryExpression{
   group(){ return 0; }
 };
 
-class Exponentiation extends exprs.BinaryExpression{
+class Exponentiation extends exprs.BinaryOperation{
   constructor(opnd1, opnd2){
     super(opnd1, opnd2);
   }
