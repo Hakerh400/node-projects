@@ -1,7 +1,7 @@
 'use strict';
 
-var O = require('../framework');
-var expressions = require('./expressions.js');
+const O = require('../framework');
+const expressions = require('./expressions.js');
 
 module.exports = {
   expressions,

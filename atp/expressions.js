@@ -1,13 +1,24 @@
 'use strict';
 
-var O = require('../framework');
+const O = require('../framework');
 
 const CHAR_CODE_BASE = 'A'.charCodeAt(0);
-const SPACE = 1;
 
 class Expression{
   constructor(opnds){
     this.opnds = opnds;
+  }
+
+  static sortAsc(arr){
+    return arr.sort((expr1, expr2) => {
+      return expr1.sortAsc(expr2);
+    });
+  }
+
+  static sortDesc(arr){
+    return arr.sort((expr1, expr2) => {
+      return expr1.sortDesc(expr2);
+    });
   }
 
   clone(){
@@ -17,20 +28,124 @@ class Expression{
 
     return expr;
   }
+
+  iter(func){
+    func(this);
+
+    this.opnds.forEach(expr => {
+      expr.iter(func);
+    });
+
+    return this;
+  }
+
+  replace(func){
+    var {opnds} = this;
+    
+    opnds.forEach((expr, index) => {
+      var newExpr = func(expr);
+
+      if(newExpr) opnds[index] = newExpr;
+      else expr.replace(func);
+    });
+
+    return this;
+  }
+
+  parts(sort, func){
+    var parts = O.obj();
+
+    this.iter(expr => {
+      if(!func || func(expr))
+        parts[expr.str()] = expr;
+    });
+
+    parts = O.keys(parts).map(str => parts[str]);
+
+    if(sort === 1) Expression.sortAsc(parts);
+    else if(sort === 2) Expression.sortDesc(parts);
+
+    return parts;
+  }
+
+  freeIdents(sort){
+    return this.parts(sort, expr => {
+      return expr.isIdent();
+    });
+  }
+
+  eq(expr){
+    return this.str() === expr.str();
+  }
+
+  gt(expr){
+    var s1 = this.str();
+    var s2 = expr.str();
+
+    if(s1.length > s2.length) return true;
+    if(s1.length < s2.length) return false;
+    return s1 > s2;
+  }
+
+  lt(expr){
+    var s1 = this.str();
+    var s2 = expr.str();
+    
+    if(s1.length < s2.length) return true;
+    if(s1.length > s2.length) return false;
+    return s1 < s2;
+  }
+
+  sortAsc(expr){
+    var s1 = this.str();
+    var s2 = expr.str();
+
+    if(s1.length < s2.length) return -1;
+    if(s1.length > s2.length) return 1;
+    if(s1 < s2) return -1;
+    if(s1 > s2) return 1;
+    return 0;
+  }
+
+  sortDesc(expr){
+    var s1 = this.str();
+    var s2 = expr.str();
+
+    if(s1.length > s2.length) return -1;
+    if(s1.length < s2.length) return 1;
+    if(s1 > s2) return -1;
+    if(s1 < s2) return 1;
+    return 0;
+  }
+
+  op(){ return null; }
+  priority(){ return 0; }
+  group(){ return 0; }
+  isIdent(){ return false; }
+
+  toString(){
+    return this.str(1);
+  }
 };
 
 class Identifier extends Expression{
-  constructor(id){
+  constructor(index){
     super([]);
-    this.id = id;
+
+    this.index = index;
+    this.char = String.fromCharCode(CHAR_CODE_BASE + index);
   }
 
   clone(){
-    return new Identifier(this.id);
+    return new Identifier(this.index);
   }
 
-  toString(){
-    return String.fromCharCode(CHAR_CODE_BASE + this.id);
+  isIdent(){
+    return true;
+  }
+
+  str(){
+    return this.char;
   }
 };
 
@@ -39,8 +154,8 @@ class UnaryExpression extends Expression{
     super([opnd]);
   }
 
-  toString(){
-    return this.op() + this.opnds[0].toString(1);
+  str(space){
+    return this.op() + this.opnds[0].str(space, this, 0);
   }
 };
 
@@ -49,17 +164,34 @@ class BinaryExpression extends Expression{
     super([opnd1, opnd2]);
   }
 
-  toString(parens){
+  str(space, parent, index){
     var {opnds} = this;
 
-    var s1 = opnds[0].toString(1);
-    var s2 = opnds[1].toString(1);
+    var s1 = opnds[0].str(space, this, 0);
+    var s2 = opnds[1].str(space, this, 1);
     var op = this.op();
     var str;
 
-    if(SPACE) str = `${s1} ${op} ${s2}`;
+    if(space) str = `${s1} ${op} ${s2}`;
     else str = `${s1}${op}${s2}`;
-    if(parens) str = `(${str})`;
+
+    if(parent){
+      var parens = false;
+
+      var pr1 = parent.priority();
+      var pr2 = this.priority();
+
+      if(pr2 < pr1){
+        parens = true;
+      }else if(pr2 === pr1){
+        var left = parent.group() === 0;
+        var first = index === 0;
+
+        if(left !== first) parens = true;
+      }
+
+      if(parens) str = `(${str})`;
+    }
 
     return str;
   }
