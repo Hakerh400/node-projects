@@ -5,6 +5,8 @@ const debug = require('../debug');
 
 const DEBUG = 0;
 
+const PRIORITY_MAX = (1 << 15) - 1;
+
 class Expression{
   constructor(){}
 
@@ -153,20 +155,20 @@ class Expression{
     }
 
     function getIpr(op, un){
-      if(op === '(') return Infinity;
-      if(op === ')') return -1;
+      if(op === '(') return PRIORITY_MAX;
+      if(op === ')') return 1;
 
       var proto = getProto(op, un);
       var priority = proto.priority();
 
       if(proto.group() === 1)
-        priority += .5;
+        priority++;
 
       return priority;
     }
 
     function getSpr(op, un){
-      if(op === '(') return -2;
+      if(op === '(') return 0;
 
       if(op === ')')
         throw new SyntaxError('Token ")" is unexpected at this time');

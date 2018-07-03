@@ -13,10 +13,15 @@ setTimeout(main);
 
 function main(){
   var output = getOutput();
-  fs.writeFileSync(outputFile, output);
+  fs.writeFileSync(outputFile, String(output));
 }
 
 function getOutput(){
   var logicalSystemStr = fs.readFileSync(logicalSystemFile, 'utf8');
   var prover = Prover.from(logicalSystemStr);
+
+  var {system} = prover;
+  var {rules} = system;
+
+  return rules;
 }

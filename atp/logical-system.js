@@ -190,6 +190,16 @@ class LogicalSystem{
       return [premisses, conclusions];
     });
 
+    rules.toString = () => {
+      return rules.map(rule => {
+        return rule.map(arr => {
+          return arr.map(expr => {
+            return `[${expr}]`;
+          }).join(' , ');
+        }).join(' ---> ');
+      }).join('\n');
+    };
+
     var ctors = [
       data.const,
       data.var,
@@ -242,7 +252,7 @@ class Axiom extends expressions.UnaryOperation{
   }
 
   op(){ return INFERENCE_SYMBOL; }
-  priority(){ return -.2; }
+  priority(){ return 10; }
   group(){ return 1; }
 
   isMeta(){ return true; }
@@ -256,7 +266,7 @@ class Inference extends expressions.BinaryOperation{
   }
 
   op(){ return INFERENCE_SYMBOL; }
-  priority(){ return -.2; }
+  priority(){ return 10; }
   group(){ return 0; }
   forceParens(){ return true; }
 
@@ -271,7 +281,7 @@ class Comma extends expressions.BinaryOperation{
   }
 
   op(){ return ','; }
-  priority(){ return -.1; }
+  priority(){ return 12; }
   group(){ return 0; }
 
   isMeta(){ return true; }
@@ -305,6 +315,8 @@ function createLiteral(baseCtor, ctr, from, is){
 function createOperation(name, op, type, priority, group, forceParens, space){
   var es = expressions;
   var baseCtor = type === 1 ? es.UnaryOperation : es.BinaryOperation;
+
+  priority = priority + 10 << 1;
 
   var ctor = {
     [name]: class extends baseCtor{
