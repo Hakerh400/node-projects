@@ -3,10 +3,7 @@
 const O = require('../framework');
 const debug = require('../debug');
 
-const DEBUG = 1;
-
-const CHAR_CODE_BASE_CONST = 'A'.charCodeAt(0);
-const CHAR_CODE_BASE_VAR = 'a'.charCodeAt(0);
+const DEBUG = 0;
 
 class Expression{
   constructor(){}
@@ -40,7 +37,7 @@ class Expression{
       ops.push(op);
     });
 
-    if(literals.length === null)
+    if(literals.length === 0)
       throw new TypeError('Expected at least 1 literal constructor');
 
     ops.sort((op1, op2) => {
@@ -127,6 +124,7 @@ class Expression{
 
         var opnd2 = opndsStack.pop();
         var opnd1 = opndsStack.pop();
+
         opndsStack.push(new ctor(opnd1, opnd2));
       }
     }
@@ -247,10 +245,10 @@ class Expression{
               splice(i, 1);
               continue;
             }else{
-              return new Error(1);
+              return null;
             }
           }else if(rhs.isOp()){
-            return new Error(2);
+            return null;
           }
         }
 
@@ -267,10 +265,10 @@ class Expression{
               splice(i, 1);
               continue;
             }else{
-              return new Error(3);
+              return null;
             }
           }else if(rhsVars.some(vari => vari.eq(lhs))){
-            return new Error(4);
+            return null;
           }else if(rhs.eq(lhs)){
             splice(i, 1);
             continue;
@@ -296,7 +294,7 @@ class Expression{
             splice(i, 1, ...newEqs);
             continue;
           }else{
-            return new Error(5);
+            return null;
           }
         }
       }
@@ -385,10 +383,9 @@ class Expression{
     if(eqs.length === 0) return null;
 
     var substs = Expression.findSubsts(eqs);
-    if(substs instanceof Error) throw substs;
-    var expr = eqs[0][0].clone().substM(substs, 1);
+    if(substs === null) return null;
 
-    return expr;
+    return eqs[0][0].clone().substM(substs, 1);
   }
 
   static sortAsc(arr){
@@ -525,6 +522,10 @@ class Expression{
     return this.findDupe() !== null;
   }
 
+  sameCtor(expr){
+    return this.constructor === expr.constructor;
+  }
+
   eq(expr){
     return this.str() === expr.str();
   }
@@ -585,6 +586,8 @@ class Expression{
   isUnary(){ return false; }
   isBinary(){ return false; }
 
+  isMeta(){ return false; }
+
   str(){ return ''; }
   toString(){ return this.str(1); }
 };
@@ -597,9 +600,6 @@ class Literal extends Expression{
     this.s = s;
   }
 
-  static is(){ return false; }
-  static from(){ return new Literal(0, ''); }
-
   clone(){
     var ctor = this.constructor;
     return new ctor(this.index);
@@ -610,34 +610,16 @@ class Literal extends Expression{
 };
 
 class Constant extends Literal{
-  constructor(index){
-    super(index, O.sfcc(CHAR_CODE_BASE_CONST + index));
-  }
-
-  static is(s){
-    return /^[A-Z]$/.test(s);
-  }
-
-  static from(s){
-    var index = O.cc(s) - CHAR_CODE_BASE_CONST;
-    return new Constant(index);
+  constructor(index, s){
+    super(index, s);
   }
 
   isConst(){ return true; }
 };
 
 class Variable extends Literal{
-  constructor(index){
-    super(index, O.sfcc(CHAR_CODE_BASE_VAR + index));
-  }
-
-  static is(s){
-    return /^[a-z]$/.test(s);
-  }
-
-  static from(s){
-    var index = O.cc(s) - CHAR_CODE_BASE_VAR;
-    return new Variable(index);
+  constructor(index, s){
+    super(index, s);
   }
 
   isVar(){ return true; }
@@ -662,6 +644,9 @@ class Operation extends Expression{
   op(){ return null; }
   priority(){ return 0; }
   group(){ return 0; }
+
+  forceParens(){ return false; }
+  isMeta(){ return false; }
 };
 
 class UnaryOperation extends Operation{
@@ -669,12 +654,17 @@ class UnaryOperation extends Operation{
     super([opnd]);
   }
 
-  isUnary(){
-    return true;
-  }
+  isUnary(){ return true; }
 
-  str(space){
-    return this.op() + this.opnds[0].str(space, this, 0);
+  str(space, parent){
+    var str = `${this.op()}${this.opnds[0].str(space, this, 0)}`;
+
+    if(parent){
+      if(this.forceParens() && this.sameCtor(parent))
+        str = `(${str})`;
+    }
+
+    return str;
   }
 };
 
@@ -683,9 +673,8 @@ class BinaryOperation extends Operation{
     super([opnd1, opnd2]);
   }
 
-  isBinary(){
-    return true;
-  }
+  isBinary(){ return true; }
+  space(){ return ' '; }
 
   str(space, parent, index){
     var {opnds} = this;
@@ -693,9 +682,10 @@ class BinaryOperation extends Operation{
     var s1 = opnds[0].str(space, this, 0);
     var s2 = opnds[1].str(space, this, 1);
     var op = this.op();
+    var sp = this.space();
     var str;
 
-    if(space) str = `${s1} ${op} ${s2}`;
+    if(space) str = `${s1}${sp}${op}${sp}${s2}`;
     else str = `${s1}${op}${s2}`;
 
     if(parent){
@@ -707,10 +697,14 @@ class BinaryOperation extends Operation{
       if(pr2 < pr1){
         parens = true;
       }else if(pr2 === pr1){
-        var left = parent.group() === 0;
-        var first = index === 0;
+        if(this.forceParens() && this.sameCtor(parent)){
+          parens = true;
+        }else{
+          var left = parent.group() === 0;
+          var first = index === 0;
 
-        if(left !== first) parens = true;
+          if(left !== first) parens = true;
+        }
       }
 
       if(parens) str = `(${str})`;

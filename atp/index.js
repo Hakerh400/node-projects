@@ -1,8 +1,17 @@
 'use strict';
 
 const O = require('../framework');
-const expressions = require('./expressions.js');
+const LogicalSystem = require('./logical-system.js');
 
-module.exports = {
-  expressions,
+class Prover{
+  constructor(system){
+    this.system = system;
+  }
+
+  static from(str){
+    var system = LogicalSystem.from(str);
+    return new Prover(system);
+  }
 };
+
+module.exports = Prover;
