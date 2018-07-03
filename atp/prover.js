@@ -37,9 +37,10 @@ class Prover{
 
     lines.forEach((line, index) => {
       var indent = line.match(/^\s*/)[0].length;
+      var closeAsmp = false;
 
       if(indent === lastIndent){
-        asrt(!nextIndent, 'Expected indented expression');
+        closeAsmp = nextIndent;
       }else if(indent > lastIndent){
         asrt(nextIndent, 'Indented expression is not allowed at this place');
 
@@ -51,6 +52,10 @@ class Prover{
         lastIndent = indents[indents.length - 1];
         asrt(indent === lastIndent, 'Unexpected indentation level');
 
+        closeAsmp = true;
+      }
+
+      if(closeAsmp){
         var i = asmpIndices.pop();
         var asmp = new Assumption(stats.splice(i));
 
@@ -76,7 +81,7 @@ class Prover{
       var vari = expr.find(expr => expr.isVar());
       asrt(vari === null, 'Variables are not allowed');
 
-      var appliedRule = !nextIndent ? findAppliedRule(expr) : new AppliedRule(1);
+      var appliedRule = !nextIndent ? findAppliedRule(stats, rules, expr) : new AppliedRule(1);
       appliedRules.push(appliedRule);
 
       stats.push(expr);
@@ -95,114 +100,6 @@ class Prover{
     });
 
     return new Proof(lines, appliedRules);
-
-    function findAppliedRule(expr){
-      var sts = [];
-
-      stats.forEach(stat => {
-        if(stat instanceof Assumption){
-          stat.stats.forEach(stat => sts.push(stat));
-        }else{
-          sts.push(stat);
-        }
-      });
-
-      var maxVal = sts.length - 1;
-
-      if(DEBUG){
-        logStats(sts);
-        debug(`STATEMENT: ${expr.clone()}`);
-        log.inc();
-      }
-
-      var match = null;
-
-      rules.some(rule => {
-        if(DEBUG){
-          debug(`ATTEMPTING RULE: ${rule2str(rule)}`);
-          log.inc();
-        }
-
-        var premises = rule[0];
-        var len = premises.length;
-
-        var found = rule[1].some(conclusion => {
-          if(DEBUG){
-            debug(`ATTEMPTING CONCLUSION: ${conclusion}`);
-            log.inc();
-          }
-
-          var substs = conclusion.findSubsts(expr);
-
-          if(substs === null){
-            if(DEBUG) log.dec();
-            return false;
-          }
-
-          if(len === 0){
-            match = [rule, [], substs];
-            log.dec();
-            return true;
-          }
-
-          var perms = O.ca(len, () => 0);
-
-          do{
-            if(DEBUG){
-              debug(`STATS: ${perms.map(index => stat2str(sts[index], 0)).join(',')}`);
-              log.inc();
-            }
-
-            var eqs = premises.map((premise, index) => {
-              return [premise, sts[perms[index]]];
-            });
-
-            eqs.push([conclusion, expr]);
-
-            var substs = Expression.findSubsts(eqs);
-
-            if(substs !== null){
-              if(DEBUG){
-                log.dec();
-                debug('FOUND!');
-                log.dec();
-              }
-
-              var stsPremises = perms.map(index => {
-                return sts[index][INDEX_SYMBOL];
-              });
-
-              match = [rule, stsPremises, substs];
-
-              return true;
-            }
-
-            if(DEBUG) log.dec();
-          }while(nextPerm(perms, maxVal));
-
-          if(DEBUG) log.dec();
-        });
-
-        if(DEBUG){
-          debug(`FOUND: ${found}`);
-          log.dec();
-        }
-
-        return found;
-      });
-
-      var appliedRule;
-
-      if(match === null) appliedRule = new AppliedRule(0);
-      else appliedRule = new AppliedRule(2, ...match);
-
-      if(DEBUG){
-        debug(`APPLIED RULE: ${appliedRule}`);
-        log.dec();
-      }
-
-      return appliedRule;
-    }
 
     function logStats(sts=stats){
       var str = sts.map(stat => {
@@ -255,8 +152,9 @@ class AppliedRule{
 
     if(type === 0) return 'Invalid step';
     if(type === 1) return 'Assumption';
+    if(type === 2) return `Step ${rule}`;
 
-    if(type === 2){
+    if(type === 3){
       var aliasStr = rule.alias;
 
       var premisesStr = premises.map(premise => {
@@ -304,6 +202,121 @@ Prover.AppliedRule = AppliedRule;
 Prover.Proof = Proof;
 
 module.exports = Prover;
+
+function findAppliedRule(stats, rules, expr){
+  var sts = [];
+
+  stats.forEach(stat => {
+    if(stat instanceof Assumption){
+      stat.stats.forEach(stat => sts.push(stat));
+    }else{
+      sts.push(stat);
+    }
+  });
+
+  var indexPrev = sts.findIndex(stat => {
+    return stat.eq(expr);
+  });
+
+  if(indexPrev !== -1)
+    return new AppliedRule(2, indexPrev);
+
+  var maxVal = sts.length - 1;
+
+  if(DEBUG){
+    logStats(sts);
+    debug(`STATEMENT: ${expr.clone()}`);
+    log.inc();
+  }
+
+  var match = null;
+
+  rules.some(rule => {
+    if(DEBUG){
+      debug(`ATTEMPTING RULE: ${rule2str(rule)}`);
+      log.inc();
+    }
+
+    var premises = rule[0];
+    var len = premises.length;
+
+    var found = rule[1].some(conclusion => {
+      if(DEBUG){
+        debug(`ATTEMPTING CONCLUSION: ${conclusion}`);
+        log.inc();
+      }
+
+      var substs = conclusion.findSubsts(expr);
+
+      if(substs === null){
+        if(DEBUG) log.dec();
+        return false;
+      }
+
+      if(len === 0){
+        match = [rule, [], substs];
+        log.dec();
+        return true;
+      }
+
+      var perms = O.ca(len, () => 0);
+
+      do{
+        if(DEBUG){
+          debug(`STATS: ${perms.map(index => stat2str(sts[index], 0)).join(',')}`);
+          log.inc();
+        }
+
+        var eqs = premises.map((premise, index) => {
+          return [premise, sts[perms[index]]];
+        });
+
+        eqs.push([conclusion, expr]);
+
+        var substs = Expression.findSubsts(eqs);
+
+        if(substs !== null){
+          if(DEBUG){
+            log.dec();
+            debug('FOUND!');
+            log.dec();
+          }
+
+          var stsPremises = perms.map(index => {
+            return sts[index][INDEX_SYMBOL];
+          });
+
+          match = [rule, stsPremises, substs];
+
+          return true;
+        }
+
+        if(DEBUG) log.dec();
+      }while(nextPerm(perms, maxVal));
+
+      if(DEBUG) log.dec();
+    });
+
+    if(DEBUG){
+      debug(`FOUND: ${found}`);
+      log.dec();
+    }
+
+    return found;
+  });
+
+  var appliedRule;
+
+  if(match === null) appliedRule = new AppliedRule(0);
+  else appliedRule = new AppliedRule(3, ...match);
+
+  if(DEBUG){
+    debug(`APPLIED RULE: ${appliedRule}`);
+    log.dec();
+  }
+
+  return appliedRule;
+}
 
 function nextPerm(arr, max){
   var len = arr.length;

@@ -1,9 +1,15 @@
-? A -> (B -> C)
-  ? A -> B
-    ? A
-      B
-      B -> C
+? -((((B -> B) ^ -(A v B)) -> C) v -A)
+  ? A
+    ? (B -> B) ^ -(A v B)
+      -(A v B)
+      A v B
+      O
       C
-    A -> C
-  (A -> B) -> (A -> C)
-(A -> (B -> C)) -> ((A -> B) -> (A -> C))
+    ((B -> B) ^ -(A v B)) -> C
+    (((B -> B) ^ -(A v B)) -> C) v -A
+    O
+  -A
+  (((B -> B) ^ -(A v B)) -> C) v -A
+  O
+--((((B -> B) ^ -(A v B)) -> C) v -A)
+(((B -> B) ^ -(A v B)) -> C) v -A
