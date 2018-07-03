@@ -4,16 +4,23 @@ const vm = require('vm');
 const O = require('../framework');
 const debug = require('../debug');
 const expressions = require('./expressions.js');
+const {assert, err} = require('./assert.js');
 
 const DEBUG = 0;
 
-const INFERENCE_SYMBOL = '⊢';
+const INFERENCE_SYMBOL = '--->';
+const RESERVED_SYMBOLS = [INFERENCE_SYMBOL, ',', '?'];
 
 const TIMEOUT = 3e3;
 
 class LogicalSystem{
   constructor(ctors, rules){
     this.ctors = ctors;
+
+    this.vars = ctors.filter(({prototype: proto}) => proto.isVar());
+    this.consts = ctors.filter(({prototype: proto}) => proto.isConst());
+    this.ops = ctors.filter(({prototype: proto}) => proto.isOp());
+
     this.rules = rules;
   }
 
@@ -28,18 +35,22 @@ class LogicalSystem{
       var name = lines.shift();
       var len = lines.length;
 
-      assert(len !== 0, 'Missing content', name);
-      assert(!(name in data), 'Duplicate section', name);
+      asrt(len !== 0, 'Missing content')
+      asrt(!(name in data), 'Duplicate section')
 
       switch(name){
         case 'space':
-          assert(len === 1, 'Expected exactly 1 string', name);
-          data.space = evalJs(lines[0], name, 0);
+          asrt(len === 1, 'Expected exactly 1 string')
+
+          var space = evalJs(lines[0], name, 0);
+          asrt(typeof space === 'string', 'Space must be a string')
+
+          data.space = space;
           break;
 
         case 'const':
-          assert('space' in data, 'Section "space" must be defined before section "const"', name);
-          assert(len === 3, 'Expected exactly 3 functions', name);
+          asrt('space' in data, 'Section "space" must be defined before section "const"')
+          asrt(len === 3, 'Expected exactly 3 functions')
 
           var [ctr, from, is] = lines.map((line, index) => {
             return evalJs(line, name, index);
@@ -49,8 +60,8 @@ class LogicalSystem{
           break;
 
         case 'var':
-          assert('space' in data, 'Section "space" must be defined before section "var"', name);
-          assert(len === 3, 'Expected exactly 3 functions', name);
+          asrt('space' in data, 'Section "space" must be defined before section "var"')
+          asrt(len === 3, 'Expected exactly 3 functions')
 
           var [ctr, from, is] = lines.map((line, index) => {
             return evalJs(line, name, index);
@@ -60,7 +71,7 @@ class LogicalSystem{
           break;
 
         case 'operations':
-          assert('space' in data);
+          asrt('space' in data, 'Section "space" must be defined before section "operations"')
 
           var space = data.space;
           var ctors = [];
@@ -79,7 +90,7 @@ class LogicalSystem{
               return O.capitalize(word);
             }).join('');
 
-            assert(!(op === INFERENCE_SYMBOL || op === ','), `Operator "${op}" is reserved`);
+            asrt(!RESERVED_SYMBOLS.includes(op), `Operator "${op}" is reserved`);
 
             switch(type){
               case 'unary': type = 1; break;
@@ -117,7 +128,7 @@ class LogicalSystem{
             ctors.push(ctor);
 
             function check(bool, msg){
-              assert(bool, msg, name, index);
+              asrt(bool, msg, index);
             }
 
             function e(msg){
@@ -129,17 +140,13 @@ class LogicalSystem{
           break;
 
         case 'rules':
-          var requiredSections = [
+          [
             'const',
             'var',
             'operations',
-          ];
-
-          var missingSection = requiredSections.find(sect => {
-            return !(sect in data);
+          ].forEach(sect => {
+            asrt(sect in data, `Section "${sect}" must be defined before section "rules"`);
           });
-
-          assert(!missingSection, `Section "${missingSection}" must be defined before section "rules"`, name);
 
           var ctors = [
             Axiom,
@@ -152,8 +159,23 @@ class LogicalSystem{
             ...data.operations,
           ];
 
-          var rules = lines.map(line => {
-            return expressions.Expression.parse(ctors, line);
+          var rules = lines.map((line, index) => {
+            var spMatch = line.match(/\s/);
+            assert(spMatch !== null, 'Expected exactly 2 parameters: "alias" and "expression"', name, index);
+
+            var spIndex = spMatch.index;
+            var alias = line.substring(0, spIndex);
+            var exprStr = line.substring(spIndex);
+
+            try{
+              var expr = expressions.Expression.parse(ctors, exprStr);
+            }catch(e){
+              err(e.message, name, index);
+            }
+
+            expr.alias = alias;
+
+            return expr;
           });
 
           data.rules = rules;
@@ -162,6 +184,10 @@ class LogicalSystem{
         default:
           err('Unknown section name', name);
           break;
+      }
+
+      function asrt(bool, msg, line){
+        assert(bool, msg, name, line);
       }
     });
 
@@ -184,26 +210,23 @@ class LogicalSystem{
 
       checkOpnd(rhs);
 
-      var premisses = isBinary ? flatten(opnds[0]) : [];
+      var premises = isBinary ? flatten(opnds[0]) : [];
       var conclusions = flatten(rhs);
 
-      return [premisses, conclusions];
+      var ruleNew = [premises, conclusions];
+      ruleNew.alias = rule.alias;
+
+      return ruleNew;
     });
 
     rules.toString = () => {
-      return rules.map(rule => {
-        return rule.map(arr => {
-          return arr.map(expr => {
-            return `[${expr}]`;
-          }).join(' , ');
-        }).join(' ---> ');
-      }).join('\n');
+      return LogicalSystem.stringifyRules(rules);
     };
 
     var ctors = [
       data.const,
       data.var,
-      data.operations,
+      ...data.operations,
     ];
 
     return new LogicalSystem(ctors, rules);
@@ -243,6 +266,16 @@ class LogicalSystem{
         assert(!expr.isMeta(), `Nested meta-operation in "${opnd}" is not allowed`);
       });
     }
+  }
+
+  static stringifyRules(rules){
+    return rules.map(rule => {
+      return rule.map(arr => {
+        return arr.map(expr => {
+          return `[${expr}]`;
+        }).join(' , ');
+      }).join(' ---> ');
+    }).join('\n');
   }
 };
 
@@ -289,6 +322,10 @@ class Comma extends expressions.BinaryOperation{
   isComma(){ return true; }
 };
 
+LogicalSystem.Axiom = Axiom;
+LogicalSystem.Inference = Inference;
+LogicalSystem.Comma = Comma;
+
 module.exports = LogicalSystem;
 
 function createConstant(ctr, from, is){
@@ -316,7 +353,7 @@ function createOperation(name, op, type, priority, group, forceParens, space){
   var es = expressions;
   var baseCtor = type === 1 ? es.UnaryOperation : es.BinaryOperation;
 
-  priority = priority + 10 << 1;
+  priority = (priority << 1) + 20;
 
   var ctor = {
     [name]: class extends baseCtor{
@@ -347,17 +384,4 @@ function evalJs(code, section, line){
   }catch(e){
     err(e.message, section, line);
   }
-}
-
-function assert(bool, msg, section, line){
-  if(!bool) err(msg, section, line);
-}
-
-function err(msg, section=null, line=null){
-  if(section !== null){
-    var lineStr = line !== null ? ` line ${line + 1}` : '';
-    msg = `${msg} (section "${section}"${lineStr})`;
-  }
-
-  throw new SyntaxError(msg);
 }

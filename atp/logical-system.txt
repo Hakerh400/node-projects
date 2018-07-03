@@ -2,32 +2,32 @@ space
   ' '
 
 const
-  i => i < 26 ? String.fromCharCode(i + 65) : `A${i - 25}`
-  s => s.length === 1 ? s.charCodeAt(0) - 65 : +s.substring(1) + 25
-  s => /^(?:[A-Z]|A[1-9]\d*)$/.test(s)
+  i => i < 21 ? String.fromCharCode(i + 65) : `A${i - 20}`
+  s => s.length === 1 ? s.charCodeAt(0) - 65 : +s.substring(1) + 20
+  s => /^(?:[A-U]|A[1-9]\d*)$/.test(s)
 
 var
-  i => i < 26 ? String.fromCharCode(i + 97) : `A${i - 25}`
-  s => s.length === 1 ? s.charCodeAt(0) - 97 : +s.substring(1) + 25
-  s => /^(?:[a-z]|a[1-9]\d*)$/.test(s)
+  i => i < 21 ? String.fromCharCode(i + 97) : `A${i - 20}`
+  s => s.length === 1 ? s.charCodeAt(0) - 97 : +s.substring(1) + 20
+  s => /^(?:[a-u]|a[1-9]\d*)$/.test(s)
 
 operations
-  implication → binary 0 right parens
-  equivalence ↔ binary 0 left
-  disjunction ∨ binary 1 left
-  conjunction ∧ binary 2 left
-  negation    ¬ unary  3 right
+  implication ->  binary 0 right parens
+  equivalence <-> binary 0 left
+  disjunction v   binary 1 left
+  conjunction ^   binary 2 left
+  negation    -   unary  3 right
 
 rules
-  (a ⊢ b) ⊢ a → b
-  a , a → b ⊢ b
-  a → b , b → a ⊢ a ↔ b
-  a ↔ b ⊢ a → b , b → a
-  a ⊢ a ∨ b , b ∨ a
-  a ∨ b , (a ⊢ c) , (b ⊢ c) ⊢ c
-  a , b ⊢ a ∧ b
-  a ∧ b ⊢ a , b
-  (a ⊢ O) ⊢ ¬a
-  ¬¬a ⊢ a
-  a , ¬a ⊢ O
-  O ⊢ a
+  ->+    (a ---> b)                        --->   a -> b
+  ->-    a , a -> b                        --->   b
+  <->+   a -> b , b -> a                   --->   a <-> b
+  <->-   a <-> b                           --->   a -> b , b -> a
+  v+     a                                 --->   a v b , b v a
+  v-     a v b , (a ---> c) , (b ---> c)   --->   c
+  ^+     a , b                             --->   a ^ b
+  ^-     a ^ b                             --->   a , b
+  -+     (a ---> O)                        --->   -a
+  --     --a                               --->   a
+  O+     a , -a                            --->   O
+  O-     O                                 --->   a

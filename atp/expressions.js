@@ -3,7 +3,7 @@
 const O = require('../framework');
 const debug = require('../debug');
 
-const DEBUG = 0;
+const DEBUG = 1;
 
 const PRIORITY_MAX = (1 << 15) - 1;
 
@@ -212,7 +212,7 @@ class Expression{
 
     while(eqs.length !== 0 && upd){
       for(var i = 0; i !== eqs.length && upd !== 0; i++, upd--){
-        if(DEBUG) logEqs(i);
+        if(DEBUG) debugEqs(i);
 
         var eq = eqs[i];
         var [lhs, rhs] = eq;
@@ -313,7 +313,7 @@ class Expression{
       var n = eqs.length;
 
       for(var i = 0; i !== n; i++){
-        if(DEBUG) logEqs(i);
+        if(DEBUG) debugEqs(i);
 
         var eq = eqs[i];
         var [vari, rhs] = eq;
@@ -332,7 +332,7 @@ class Expression{
         }
       }
 
-      if(DEBUG) logEqs();
+      if(DEBUG) debugEqs();
 
       eqs.forEach(([vari, rhs]) => {
         varsObj[vari.index] = rhs;
@@ -371,7 +371,7 @@ class Expression{
       });
     }
 
-    function logEqs(i=null){
+    function debugEqs(i=null){
       var str = eqs.map((eq, j) => {
         var curr = i === j ? ' <---' : '';
         return eq.join(' = ') + curr;
@@ -390,6 +390,11 @@ class Expression{
     return eqs[0][0].clone().substM(substs, 1);
   }
 
+  static match(eqs){
+    var substs = Expression.findSubsts(eqs);
+    return substs !== null;
+  }
+
   static sortAsc(arr){
     return arr.sort((expr1, expr2) => {
       return expr1.sortAsc(expr2);
@@ -401,6 +406,10 @@ class Expression{
       return expr1.sortDesc(expr2);
     });
   }
+
+  findSubsts(expr){ return Expression.findSubsts([[this, expr]]); }
+  combine(expr){ return Expression.combine([[this, expr]]); }
+  match(expr){ return Expression.match([[this, expr]]); }
 
   iterate(func){
     func(this);
