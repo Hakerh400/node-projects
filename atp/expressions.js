@@ -3,7 +3,7 @@
 const O = require('../framework');
 const debug = require('../debug');
 
-const DEBUG = 1;
+const DEBUG = 0;
 
 const PRIORITY_MAX = (1 << 15) - 1;
 

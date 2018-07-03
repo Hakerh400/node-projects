@@ -6,7 +6,7 @@ const {Expression} = require('./expressions.js');
 const LogicalSystem = require('./logical-system.js');
 const {assert, err} = require('./assert.js');
 
-const DEBUG = 1;
+const DEBUG = 0;
 
 const INDEX_SYMBOL = Symbol('index');
 
@@ -33,7 +33,9 @@ class Prover{
     var lastIndent = 0;
     var nextIndent = false;
 
-    O.sanl(str).forEach((line, index) => {
+    var lines = O.sanl(str);
+
+    lines.forEach((line, index) => {
       var indent = line.match(/^\s*/)[0].length;
 
       if(indent === lastIndent){
@@ -91,6 +93,8 @@ class Prover{
         return `${msg} (line ${index + 1})`;
       }
     });
+
+    return new Proof(lines, appliedRules);
 
     function findAppliedRule(expr){
       var sts = [];
@@ -266,8 +270,38 @@ class AppliedRule{
   }
 };
 
+class Proof{
+  constructor(stats, rules){
+    this.stats = stats;
+    this.rules = rules;
+  }
+
+  toString(){
+    var {stats, rules} = this;
+
+    var spaceSize = 2;
+    var space = ' '.repeat(spaceSize);
+
+    var maxLen = stats.reduce((maxLen, stat) => {
+      return Math.max(String(stat).length, maxLen);
+    }, 0);
+
+    var str = stats.map((stat, index) => {
+      var rule = rules[index];
+
+      var statStr = String(stat).padEnd(maxLen);
+      var ruleStr = String(rule);
+
+      return `${statStr}${space}${ruleStr}`;
+    }).join('\n');
+
+    return str;
+  }
+};
+
 Prover.Assumption = Assumption;
 Prover.AppliedRule = AppliedRule;
+Prover.Proof = Proof;
 
 module.exports = Prover;
 

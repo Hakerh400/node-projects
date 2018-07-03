@@ -8,7 +8,7 @@ const formatFileName = require('../format-file-name');
 const VisualConsole = require('.');
 
 const imgFile = formatFileName('-dw/1.png');
-const textFile = formatFileName('-dw/1.js');
+const textFile = formatFileName('-dw/1.txt');
 
 const w = 1920;
 const h = 1080;
@@ -55,11 +55,7 @@ function render(img, str){
 
 function getText(){
   var str = fs.readFileSync(textFile, 'utf8');
-
-  str = O.sanl(str).map(line => {
-    return line.trimRight()
-  }).join('\n');
-
+  str = O.sanl(str).join('\n');
   return str;
 }
 
