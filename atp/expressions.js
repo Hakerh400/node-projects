@@ -719,6 +719,7 @@ module.exports = {
   Literal,
   Constant,
   Variable,
+  Operation,
   UnaryOperation,
   BinaryOperation,
 };
