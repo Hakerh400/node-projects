@@ -77,7 +77,7 @@ class VisualConsole{
     g.globalCompositeOperation = 'source-over';
     g.drawImage(img, charIndex * sx, 0, sx, sy, xx, yy, sx, sy);
 
-    g.globalCompositeOperation = 'darken';
+    g.globalCompositeOperation = 'darker';
     g.fillStyle = this.textCol;
     g.fillRect(xx, yy, sx, sy);
 
@@ -94,7 +94,7 @@ class VisualConsole{
   }
 
   scroll(){
-    var {g, canvas, w, sy} = this;
+    var {g, canvas, w, h, sy} = this;
 
     g.globalCompositeOperation = 'source-over';
 
@@ -102,7 +102,7 @@ class VisualConsole{
     g.drawImage(canvas, 0, -sy);
 
     g.fillStyle = this.bgCol;
-    g.fillRect(0, w - sy, w, sy);
+    g.fillRect(0, h - sy, h, sy);
   }
 };
 

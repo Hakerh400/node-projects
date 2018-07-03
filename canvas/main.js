@@ -22,7 +22,7 @@ media.renderImage('-img/1.png', w, h, (w, h, g) => {
   g.fillStyle = 'white';
   g.fillRect(shh, shh, sh, sh);
 
-  g.globalCompositeOperation = 'darken';
+  g.globalCompositeOperation = 'darker';
   g.fillStyle = 'red';
   g.fillRect(0, 0, w, h);
 });
