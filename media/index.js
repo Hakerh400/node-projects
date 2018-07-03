@@ -1,12 +1,12 @@
 'use strict';
 
-var fs = require('fs');
-var path = require('path');
-var cp = require('child_process');
-var {Canvas} = require('../canvas');
-var O = require('../framework');
-var logStatus = require('../log-status');
-var formatFileName = require('../format-file-name');
+const fs = require('fs');
+const path = require('path');
+const cp = require('child_process');
+const {Canvas} = require('../canvas');
+const O = require('../framework');
+const logStatus = require('../log-status');
+const formatFileName = require('../format-file-name');
 
 const DEBUG = 0;
 
@@ -20,7 +20,7 @@ const VIDEO_PRESET = '-preset slow -profile:v high -crf 18 -coder 1 -pix_fmt yuv
 const FAST_PRESET = `-c:v ${'h264_nvenc'} ${VIDEO_PRESET}`;
 const HD_PRESET = `-c:v ${'libx264'} ${VIDEO_PRESET}`;
 
-var fd = process.stdout.fd;
+const fd = process.stdout.fd;
 
 var procs = [];
 var tempDir = null;

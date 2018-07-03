@@ -4,7 +4,7 @@ var fs = require('fs');
 var formatNumber = require('../format-number');
 var formatTime = require('../format-time');
 
-const MAX_STR_LEN = 80;
+const MAX_STR_LEN = 160;
 
 var startTime = null;
 var fd = process.stdout.fd;

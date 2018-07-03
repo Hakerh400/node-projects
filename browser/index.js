@@ -1,11 +1,11 @@
 'use strict';
 
-var EventEmitter = require('events');
-var http = require('http');
-var urlModule = require('url');
-var {Canvas} = require('../canvas');
+const EventEmitter = require('events');
+const http = require('http');
+const urlModule = require('url');
+const canvas = require('../canvas');
 
-var server = 'http://localhost/';
+const server = 'http://localhost/';
 
 var O;
 
@@ -37,8 +37,7 @@ class Window extends EventTarget{
     this._canvases = [];
     this._ready = true;
 
-    if(!O)
-      O = require('../framework');
+    if(!O) O = require('../framework');
 
     if(url !== null){
       loadPage(this, url, err => {
@@ -240,7 +239,7 @@ function createCanvas(window){
   var h = window.innerHeight;
   var cs = window._canvases;
 
-  var canvas = new Canvas(w, h);
+  var canvas = new canvas.Canvas(w, h);
   cs.push(canvas);
 
   canvas.style = new CSSStyleDeclaration();

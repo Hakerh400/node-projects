@@ -4,7 +4,7 @@ cls
 del "./package-lock.json"
 rd /s /q "./node_modules"
 
-call npm install --save-dev --build-from-source --GTK_Root="C:\Program Files\GTK" --jpeg_root="C:\Program Files\libjpeg-turbo64" canvas@next
+call npm install --save-dev --build-from-source --GTK_Root="C:\Program Files\GTK" --jpeg_root="C:\Program Files\libjpeg-turbo64" "canvas@next"
 
 cd node_modules
 rd /s /q canvas
@@ -18,8 +18,8 @@ call git checkout -t origin/test
 
 call npm install --save assert-rejects
 
-cd ..\..
+cd ../..
 
-call ./config-tests.bat
-call ./c.bat
-call ./test.bat
+call config-tests.bat
+call c.bat
+call t.bat
