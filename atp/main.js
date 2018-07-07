@@ -21,7 +21,10 @@ function main(){
 
 function getOutput(input){
   var prover = getProver();
+
+  var t = Date.now();
   var proof = prover.checkProof(input);
+  log(((Date.now() - t) / 1e3).toFixed(3));
 
   return proof;
 }

@@ -1,12 +1,9 @@
 'use strict';
 
 const O = require('../framework');
-const debug = require('../debug');
 const {Expression} = require('./expressions.js');
 const LogicalSystem = require('./logical-system.js');
 const {assert, err} = require('./assert.js');
-
-const DEBUG = 0;
 
 const INDEX_SYMBOL = Symbol('index');
 
@@ -57,6 +54,8 @@ class Prover{
 
       if(closeAsmp){
         var i = asmpIndices.pop();
+
+        
         var asmp = new Assumption(stats.splice(i));
 
         stats.push(asmp);
@@ -100,42 +99,6 @@ class Prover{
     });
 
     return new Proof(lines, appliedRules);
-
-    function logStats(sts=stats){
-      var str = sts.map(stat => {
-        if(stat instanceof Assumption)
-          return stat.toString();
-
-        return stat2str(stat);
-      }).join('\n');
-
-      log(`${str}\n`);
-    }
-  }
-};
-
-class Assumption{
-  constructor(stats){
-    var asmpStat = stats[0];
-
-    stats = stats.filter(stat => {
-      return !(stat instanceof Assumption);
-    });
-
-    this.stats = stats.map(stat => {
-      var infer = new LogicalSystem.Inference(asmpStat, stat);
-      infer[INDEX_SYMBOL] = [asmpStat[INDEX_SYMBOL], stat[INDEX_SYMBOL]];
-
-      return infer;
-    });
-  }
-
-  toString(){
-    var str = this.stats.map(expr => {
-      return `  ${stat2str(expr)}`;
-    }).join('\n');
-
-    return `[\n${str}\n]`;
   }
 };
 
@@ -197,7 +160,6 @@ class Proof{
   }
 };
 
-Prover.Assumption = Assumption;
 Prover.AppliedRule = AppliedRule;
 Prover.Proof = Proof;
 
@@ -214,106 +176,27 @@ function findAppliedRule(stats, rules, expr){
     }
   });
 
-  var indexPrev = sts.findIndex(stat => {
-    return stat.eq(expr);
-  });
-
-  if(indexPrev !== -1)
-    return new AppliedRule(2, indexPrev);
-
-  var maxVal = sts.length - 1;
-
-  if(DEBUG){
-    logStats(sts);
-    debug(`STATEMENT: ${expr.clone()}`);
-    log.inc();
-  }
+  var statPrev = sts.find(stat => stat.eq(expr));
+  if(statPrev) return new AppliedRule(2, statPrev[INDEX_SYMBOL]);
 
   var match = null;
 
-  rules.some(rule => {
-    if(DEBUG){
-      debug(`ATTEMPTING RULE: ${rule2str(rule)}`);
-      log.inc();
-    }
+  rules.some((rule, ruleIndex) => {
+    var [premises, concls] = rule;
 
-    var premises = rule[0];
-    var len = premises.length;
+    return concls.some((concls, conclIndex) => {
+      var substs = expr.findSubsts(concl);
+      if(substs === null) return false;
 
-    var found = rule[1].some(conclusion => {
-      if(DEBUG){
-        debug(`ATTEMPTING CONCLUSION: ${conclusion}`);
-        log.inc();
-      }
-
-      var substs = conclusion.findSubsts(expr);
-
-      if(substs === null){
-        if(DEBUG) log.dec();
-        return false;
-      }
-
-      if(len === 0){
-        match = [rule, [], substs];
-        log.dec();
-        return true;
-      }
-
-      var perms = O.ca(len, () => 0);
-
-      do{
-        if(DEBUG){
-          debug(`STATS: ${perms.map(index => stat2str(sts[index], 0)).join(',')}`);
-          log.inc();
-        }
-
-        var eqs = premises.map((premise, index) => {
-          return [premise, sts[perms[index]]];
-        });
-
-        eqs.push([conclusion, expr]);
-
-        var substs = Expression.findSubsts(eqs);
-
-        if(substs !== null){
-          if(DEBUG){
-            log.dec();
-            debug('FOUND!');
-            log.dec();
-          }
-
-          var stsPremises = perms.map(index => {
-            return sts[index][INDEX_SYMBOL];
-          });
-
-          match = [rule, stsPremises, substs];
-
-          return true;
-        }
-
-        if(DEBUG) log.dec();
-      }while(nextPerm(perms, maxVal));
-
-      if(DEBUG) log.dec();
+      return premises.every(premise => {
+      });
     });
-
-    if(DEBUG){
-      debug(`FOUND: ${found}`);
-      log.dec();
-    }
-
-    return found;
   });
 
   var appliedRule;
 
   if(match === null) appliedRule = new AppliedRule(0);
   else appliedRule = new AppliedRule(3, ...match);
-
-  if(DEBUG){
-    debug(`APPLIED RULE: ${appliedRule}`);
-    log.dec();
-  }
 
   return appliedRule;
 }

@@ -564,25 +564,21 @@ class Expression{
   }
 
   sortAsc(expr){
-    var s1 = this.str();
-    var s2 = expr.str();
+    var len1 = this.str().length;
+    var len2 = expr.str().length;
 
-    if(s1.length < s2.length) return -1;
-    if(s1.length > s2.length) return 1;
-    if(s1 < s2) return -1;
-    if(s1 > s2) return 1;
-    return 0;
+    if(len1 === len2) return 0;
+    if(len1 < len2) return -1;
+    return 1;
   }
 
   sortDesc(expr){
-    var s1 = this.str();
-    var s2 = expr.str();
+    var len1 = this.str().length;
+    var len2 = expr.str().length;
 
-    if(s1.length > s2.length) return -1;
-    if(s1.length < s2.length) return 1;
-    if(s1 > s2) return -1;
-    if(s1 < s2) return 1;
-    return 0;
+    if(len1 === len2) return 0;
+    if(len1 > len2) return -1;
+    return 1;
   }
 
   clone(){

@@ -19,15 +19,15 @@ operations
   negation    -   unary  3 right
 
 rules
-  ->+    (a ---> b)                        --->   a -> b
-  ->-    a , a -> b                        --->   b
-  <->+   a -> b , b -> a                   --->   a <-> b
-  <->-   a <-> b                           --->   a -> b , b -> a
-  v+     a                                 --->   a v b , b v a
-  v-     a v b , (a ---> c) , (b ---> c)   --->   c
-  ^+     a , b                             --->   a ^ b
-  ^-     a ^ b                             --->   a , b
-  -+     (a ---> O)                        --->   -a
-  --     --a                               --->   a
-  O+     a , -a                            --->   O
-  O-     O                                 --->   a
+  ->+   (a |- b) |- a -> b
+  ->-   a , a -> b |- b
+  <->+  a -> b , b -> a |- a <-> b
+  <->-  a <-> b |- a -> b , b -> a
+  v+    a |- a v b , b v a
+  v-    a v b , (a |- c) , (b |- c) |- c
+  ^+    a , b |- a ^ b
+  ^-    a ^ b |- a , b
+  -+    (a |- O) |- -a
+  --    --a |- a
+  O+    a , -a |- O
+  O-    O |- a

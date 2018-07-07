@@ -2,13 +2,10 @@
 
 const vm = require('vm');
 const O = require('../framework');
-const debug = require('../debug');
 const expressions = require('./expressions.js');
 const {assert, err} = require('./assert.js');
 
-const DEBUG = 0;
-
-const INFERENCE_SYMBOL = '--->';
+const INFERENCE_SYMBOL = '|-';
 const RESERVED_SYMBOLS = [INFERENCE_SYMBOL, ',', '?'];
 
 const TIMEOUT = 3e3;
@@ -35,21 +32,21 @@ class LogicalSystem{
       var name = lines.shift();
       var len = lines.length;
 
-      asrt(len !== 0, 'Missing content')
-      asrt(!(name in data), 'Duplicate section')
+      asrt(len !== 0, 'Missing content');
+      asrt(!(name in data), 'Duplicate section');
 
       switch(name){
         case 'space':
-          asrt(len === 1, 'Expected exactly 1 string')
+          asrt(len === 1, 'Expected exactly 1 string');
 
           var space = evalJs(lines[0], name, 0);
-          asrt(typeof space === 'string', 'Space must be a string')
+          asrt(typeof space === 'string', 'Space must be a string');
 
           data.space = space;
           break;
 
         case 'const':
-          asrt('space' in data, 'Section "space" must be defined before section "const"')
+          asrt('space' in data, 'Section "space" must be defined before section "const"');
           asrt(len === 3, 'Expected exactly 3 functions')
 
           var [ctr, from, is] = lines.map((line, index) => {
@@ -60,7 +57,7 @@ class LogicalSystem{
           break;
 
         case 'var':
-          asrt('space' in data, 'Section "space" must be defined before section "var"')
+          asrt('space' in data, 'Section "space" must be defined before section "var"');
           asrt(len === 3, 'Expected exactly 3 functions')
 
           var [ctr, from, is] = lines.map((line, index) => {
@@ -71,7 +68,7 @@ class LogicalSystem{
           break;
 
         case 'operations':
-          asrt('space' in data, 'Section "space" must be defined before section "operations"')
+          asrt('space' in data, 'Section "space" must be defined before section "operations"');
 
           var space = data.space;
           var ctors = [];
@@ -276,6 +273,10 @@ class LogicalSystem{
         }).join(' , ');
       }).join(' ---> ');
     }).join('\n');
+  }
+
+  stringifyRules(){
+    return LogicalSystem.stringifyRules(this.rules);
   }
 };
 
