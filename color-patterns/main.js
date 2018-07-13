@@ -7,48 +7,64 @@ const ImageData = require('../image-data');
 const w = 1000;
 const h = 1000;
 
+const scale = 10;
+
 const [wh, hh] = [w, h].map(a => a / 2);
+const s = w / scale;
 
 setTimeout(main);
 
 function main(){
-  var col1 = Buffer.alloc(3);
-  var col2 = Buffer.alloc(3);
+  var col = Buffer.alloc(3);
 
   media.renderImage('-img/1.png', w, h, (w, h, g) => {
     var d = new ImageData(g);
 
+    var hsArr = O.ca(w, () => Infinity);
+
     d.iterate((x, y) => {
-      x -= wh;
-      y -= hh;
+      var i = x;
+      var hPrev = hsArr[i];
 
-      var m = w / 5;
-      var k = Math.hypot(x, y) / m;
+      x = (x - wh) / s;
+      y = (y - hh) / s;
 
-      var angle = Math.atan2(y, x) - O.pih;
+      var angle = Math.atan2(y, x);
+      var sin = Math.sin(angle);
+      var cos = Math.cos(angle);
 
-      var k1 = Math.sin(angle * (~~k + 5)) + 1;
-      var k2 = Math.sin(angle * (-~k + 5)) + 1;
+      var h = hypot(x, y);
 
-      var kp = k % 1;
-      k += k1 * (1 - kp) + k2 * kp;
+      [x, y] = [
+        x * cos - y * sin,
+        x * sin + y * cos,
+      ];
 
-      k **= 2.1;
+      h *= (Math.cos(x * 3) + 2) + (Math.sin(y * 3) + 2);
 
-      O.hsv(k % 1, col1);
+      var k = Math.cos(x * h) * Math.sin(y * h);
 
-      k = Math.hypot(x, y) / m;
-      k += Math.cos(angle * 5) + 1;
+      k = ((k % 1) + 1) % 1;
+      O.hsv(k, col);
 
-      O.hsv(k % 1, col2);
+      if(h < hPrev){
+        hsArr[i] = h;
+      }else{
+        var p = hPrev / h;
+        p **= 2.1;
 
-      col1[0] ^= col2[0];
-      col1[1] ^= col2[1];
-      col1[2] ^= col2[2];
+        col[0] *= p;
+        col[1] *= p;
+        col[2] *= p;
+      }
 
-      return col1;
+      return col;
     });
 
     d.put();
   });
+}
+
+function hypot(x, y){
+  return Math.sqrt(x * x + y * y);
 }
