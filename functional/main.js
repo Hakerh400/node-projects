@@ -9,11 +9,11 @@ const Machine = require('./machine.js');
 const IO = require('./io.js');
 
 const cwd = __dirname;
-const testDir = path.join(cwd, 'test');
-const headerFile = path.join(testDir, 'header.txt');
-const srcFile = path.join(testDir, 'src.txt');
-const inputFile = path.join(testDir, 'input.txt');
-const outputFile = path.join(testDir, 'output.txt');
+const programDir = path.join(cwd, 'program');
+const headerFile = path.join(programDir, 'header.txt');
+const srcFile = path.join(programDir, 'src.txt');
+const inputFile = path.join(programDir, 'input.txt');
+const outputFile = path.join(programDir, 'output.txt');
 
 setTimeout(main);
 
