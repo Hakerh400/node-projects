@@ -2,9 +2,24 @@
 
 const O = require('../framework');
 
-module.exports = {
-  compile,
+function compile(parsed){
+  var buff = Buffer.alloc(0);
+  var bc = new Bytecode(parsed, buff);
+
+  return bc;
+}
+
+class Bytecode{
+  constructor(parsed, buff){
+    this.parsed = parsed;
+    this.buff = buff;
+  }
+
+  getParsed(){ return this.parsed; }
+  getBuff(){ return this.buff; }
 };
 
-function compile(parsed){
-}
+module.exports = {
+  compile,
+  Bytecode,
+};

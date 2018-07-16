@@ -6,8 +6,8 @@ function parse(src){
   if(Array.isArray(src)) src = src.join('\n\n');
   src = src.replace(/\s+/g, '');
 
-  var source = new Source();
-  var m;
+  var parsed = new Source();
+  var m = null;
 
   while(src.length){
     if(match(/(\w+)\:/) !== null){
@@ -18,14 +18,14 @@ function parse(src){
       var def = new Definition(ident, func);
 
       match(/\;/);
-      source.push(def);
+      parsed.push(def);
     }else{
       var elem = parseExpr();
-      source.push(elem);
+      parsed.push(elem);
     }
   }
 
-  log(source+'');
+  return parsed;
 
   function parseElem(){
     if(/^\w/.test(src)) return parseIdent();
@@ -94,10 +94,12 @@ function parse(src){
     if(match(/\[((?:\w+(?:\,\w+)*\,?)?)\]/) === null)
       err('function declaration');
 
-    var names = m[1].replace(/[\,\;]/g, ' ').trim().split(' ');
-    var idents = names.map(name => new Ident(name));
+    var names = m[1].replace(/[\,\;]/g, ' ').trim();
 
-    var args = new ArgsList(idents);
+    if(names.length === 0) names = [];
+    else names = names.split(' ');
+
+    var args = new ArgsList(names);
     var body = parseFuncBody();
     var func = new Function(args, body);
 
@@ -264,4 +266,12 @@ class Source extends ElemsList{
 
 module.exports = {
   parse,
+  Elem,
+  Ident,
+  Definition,
+  Function,
+  Call,
+  ElemsList,
+  ArgsList,
+  Source,
 };

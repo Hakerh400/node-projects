@@ -7,6 +7,10 @@ class IO{
     this.buff = Buffer.from(buff);
   }
 
+  getIntface(){
+    return () => {};
+  }
+
   getOutput(){
     return Buffer.from(this.buff);
   }
