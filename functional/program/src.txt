@@ -1,5 +1,5 @@
-while([]{
-  not(eof());
-}, []{
-  io(1, io(0));
-});
+while([]()(
+  not(eof())
+), []()(
+  write(read())
+))

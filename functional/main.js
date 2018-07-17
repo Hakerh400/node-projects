@@ -3,6 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 const O = require('../framework');
+const tokenizer = require('./tokenizer.js');
 const parser = require('./parser.js');
 const compiler = require('./compiler.js');
 const Machine = require('./machine.js');
@@ -12,6 +13,7 @@ const cwd = __dirname;
 const programDir = path.join(cwd, 'program');
 const headerFile = path.join(programDir, 'header.txt');
 const srcFile = path.join(programDir, 'src.txt');
+const tokenizedFile = path.join(programDir, 'tokenized.txt');
 const parsedFile = path.join(programDir, 'parsed.txt');
 const compiledFile = path.join(programDir, 'compiled.hex');
 const inputFile = path.join(programDir, 'input.txt');
@@ -24,7 +26,14 @@ function main(){
   var src = fs.readFileSync(srcFile, 'utf8');
   var input = fs.readFileSync(inputFile);
 
-  var parsed = parser.parse([header, src]);
+  var tokenized = tokenizer.tokenize([header, src]);
+  fs.writeFileSync(tokenizedFile, tokenized.toString());
+
+  log(String(tokenized));
+
+  return;
+
+  var parsed = parser.parse(tokenized);
   fs.writeFileSync(parsedFile, parsed.toString());
 
   var compiled = compiler.compile(parsed);
