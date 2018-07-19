@@ -9,7 +9,7 @@ const Encryptor = require('./encryptor.js');
 const MAX_LINE_LEN = 128;
 const LINE_REGEX = new RegExp(`.{${MAX_LINE_LEN}}|.+`, 'g');
 
-const password = O.passwords.data;
+const password = '';O.passwords.data;
 
 const decryptedDir = path.join(O.dirs.projects, 'Data');
 const encryptedDir = path.join(O.dirs.wamp, 'projects/test/data');
