@@ -112,6 +112,6 @@ class Tokenized{
 };
 
 module.exports = {
-  tokenize,
   Tokenized,
+  tokenize,
 };

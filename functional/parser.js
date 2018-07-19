@@ -118,10 +118,10 @@ class Parsed{
 };
 
 module.exports = {
-  parse,
   Element,
   Identifier,
   List,
   CallChain,
   Parsed,
+  parse,
 };

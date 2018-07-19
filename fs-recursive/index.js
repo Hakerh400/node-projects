@@ -1,10 +1,32 @@
 'use strict';
 
-var fs = require('fs');
-var path = require('path');
-var O = require('../framework');
+const fs = require('fs');
+const path = require('path');
+const O = require('../framework');
+
+class FileQueueElem{
+  constructor(fullPath, relativePath=null, depth=null, name=null, isDir=null, processed=false){
+    if(isDir === null) isDir = fs.statSync(fullPath).isDirectory();
+    if(name === null) name = path.parse(fullPath).base;
+    if(relativePath === null) relativePath = name;
+    if(depth === null) depth = (relativePath.match(/[\/\\]/g) || []).length;
+
+    this.fullPath = fullPath;
+    this.relativePath = relativePath;
+    this.depth = depth;
+    this.name = name;
+    this.isDir = isDir;
+    this.processed = processed;
+  }
+
+  static copy(elem){
+    var {fullPath, relativePath, depth, name, isDir, processed} = elem;
+    return new FileQueueElem(fullPath, relativePath, depth, name, isDir, processed);
+  }
+};
 
 module.exports = {
+  FileQueueElem,
   processFiles,
   processFilesSync,
   deleteFiles,
@@ -97,27 +119,6 @@ function createDirSync(dirPath){
     }
   }
 }
-
-class FileQueueElem{
-  constructor(fullPath, relativePath = null, depth = null, name = null, isDir = null, processed = false){
-    if(isDir === null) isDir = fs.statSync(fullPath).isDirectory();
-    if(name === null) name = path.parse(fullPath).base;
-    if(relativePath === null) relativePath = name;
-    if(depth === null) depth = (relativePath.match(/[\/\\]/g) || []).length;
-
-    this.fullPath = fullPath;
-    this.relativePath = relativePath;
-    this.depth = depth;
-    this.name = name;
-    this.isDir = isDir;
-    this.processed = processed;
-  }
-
-  static copy(elem){
-    var {fullPath, relativePath, depth, name, isDir, processed} = elem;
-    return new FileQueueElem(fullPath, relativePath, depth, name, isDir, processed);
-  }
-};
 
 function formatPath(filePath){
   return filePath.replace(/\//g, '\\');

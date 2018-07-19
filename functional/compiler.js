@@ -20,6 +20,6 @@ class Bytecode{
 };
 
 module.exports = {
-  compile,
   Bytecode,
+  compile,
 };
