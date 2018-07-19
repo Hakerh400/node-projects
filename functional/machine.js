@@ -7,10 +7,33 @@ class Machine extends EventEmitter{
   constructor(compiled){
     super();
 
-    this.parsed = compiled.parsed;
     this.compiled = compiled;
+    this.list = compiled.parsed.list;
 
-    this.global = O.obj();
+    this.global = {
+      eq(args){
+        args.eval();
+        return args.get(0).eq(args.get(1));
+      },
+
+      assign(args){
+        var ident = agrs.get(0);
+        if(!ident.isLvalue()) return;
+        return ident.assign(args.eval(1));
+      },
+
+      func(args){
+        if(!args.areLvalues()) return;
+
+        return args1 => {
+          args1.idents = idents;
+
+          return args2 => {
+            args2.eval();
+          };
+        };
+      },
+    };
   }
 
   start(){

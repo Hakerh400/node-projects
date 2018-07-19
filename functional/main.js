@@ -26,12 +26,8 @@ function main(){
   var src = fs.readFileSync(srcFile, 'utf8');
   var input = fs.readFileSync(inputFile);
 
-  var tokenized = tokenizer.tokenize([header, src]);
+  var tokenized = tokenizer.tokenize([src]);
   fs.writeFileSync(tokenizedFile, tokenized.toString());
-
-  log(String(tokenized));
-
-  return;
 
   var parsed = parser.parse(tokenized);
   fs.writeFileSync(parsedFile, parsed.toString());
@@ -40,10 +36,7 @@ function main(){
   fs.writeFileSync(compiledFile, compiled.getBuff());
 
   var machine = new Machine(compiled);
-  var io = new IO(input);
-  var intface = io.getIntface();
-
-  machine.setProp('io', intface);
+  var io = new IO(machine, input);
 
   machine.on('exit', () => {
     var output = io.getOutput();

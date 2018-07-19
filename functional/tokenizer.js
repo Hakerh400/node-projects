@@ -4,7 +4,7 @@ const O = require('../framework');
 
 function tokenize(src){
   if(Array.isArray(src))
-    src = src.join('\n\n');
+    src = src.join(',\n\n');
 
   var len = src.length;
 
