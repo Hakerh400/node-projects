@@ -2,7 +2,7 @@
 
 module.exports = formatNumber;
 
-function formatNumber(num){
+function formatNumber(num, forceSign=0){
   var sign = Math.sign(num);
   num = Math.abs(num);
 
@@ -11,8 +11,8 @@ function formatNumber(num){
   num = reverseStr(num).trim();
   num = num.replace(/ /g, ',');
 
-  if(sign === -1)
-    num = `-${num}`;
+  if(sign === -1) num = `-${num}`;
+  else if(forceSign) num = `+${num}`;
 
   return num;
 }
