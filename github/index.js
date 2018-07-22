@@ -26,7 +26,7 @@ module.exports = {
   push
 };
 
-function push(repoName, cb = O.nop){
+function push(repoName, cb=O.nop){
   var cwd = process.cwd();
 
   var gitInit = path.join(cwd, 'git-init.bat');
@@ -35,7 +35,9 @@ function push(repoName, cb = O.nop){
 
   var user = repos.user;
   var repo = repos.repos[repoName];
-  var {name, src, dest, encrypt, minify} = repo;
+
+  Object.setPrototypeOf(repo, null);
+  var {name, src, dest, encrypt, minify, script} = repo;
 
   name = normalizeString(name);
   dest = normalizeString(dest);
@@ -81,6 +83,12 @@ function push(repoName, cb = O.nop){
   var licenseFileDest = path.join(dest, licenseFileName);
   fs.writeFileSync(licenseFileDest, licenseData);
 
+  if(script){
+    // Call script
+
+    cp.spawnSync('node', [script]);
+  }
+
   if(encrypt){
     // Encrypt
 
@@ -114,8 +122,11 @@ function push(repoName, cb = O.nop){
       var fp = e.fullPath;
 
       if(e.processed) return;
-      if(skipList.some(a => fp === a || fp.endsWith(`\\${a}`) || fp.includes(`\\${a}\\`))) return;
-      if(noCopyList.some(a => e.name == a)) return;
+
+      if(!script){
+        if(skipList.some(a => fp === a || fp.endsWith(`\\${a}`) || fp.includes(`\\${a}\\`))) return;
+        if(noCopyList.some(a => e.name == a)) return;
+      }
 
       var srcPath = e.relativePath.split(/[\/\\]/).slice(1).join('//');
       var destPath = path.join(dest, srcPath);
@@ -142,9 +153,8 @@ function push(repoName, cb = O.nop){
 
     // Remove temp dir
 
-    if(fs.existsSync(tempDir)){
+    if(fs.existsSync(tempDir))
       fsRec.deleteFilesSync(tempDir);
-    }
 
     // Call callback
 

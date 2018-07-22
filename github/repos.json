@@ -32,6 +32,13 @@
       "name": "land",
       "src": "C:/Users/Thomas/eclipse-workspace/land/src/land",
       "dest": "C:/Github/land"
+    },
+
+    "data": {
+      "name": "data",
+      "src": "C:/wamp/www/projects/test/data",
+      "dest": "C:/Github/data",
+      "script": "C:/Projects/JavaScript/data/main.js"
     }
   }
 }
