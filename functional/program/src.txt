@@ -1,5 +1,11 @@
-while([]()(
-  not(eof())
-), []()(
-  write(read())
-))
+0, 1,
+read, write, eof,
+
+write(1),
+write(0),
+write(0),
+write(0),
+write(0),
+write(0),
+write(1),
+write(0)

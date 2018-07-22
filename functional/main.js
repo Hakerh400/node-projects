@@ -3,15 +3,14 @@
 const fs = require('fs');
 const path = require('path');
 const O = require('../framework');
-const tokenizer = require('./tokenizer.js');
-const parser = require('./parser.js');
-const compiler = require('./compiler.js');
-const Machine = require('./machine.js');
-const IO = require('./io.js');
+const tokenizer = require('./tokenizer');
+const parser = require('./parser');
+const compiler = require('./compiler');
+const Machine = require('./machine');
+const IO = require('./io');
 
 const cwd = __dirname;
 const programDir = path.join(cwd, 'program');
-const headerFile = path.join(programDir, 'header.txt');
 const srcFile = path.join(programDir, 'src.txt');
 const tokenizedFile = path.join(programDir, 'tokenized.txt');
 const parsedFile = path.join(programDir, 'parsed.txt');
@@ -22,18 +21,17 @@ const outputFile = path.join(programDir, 'output.txt');
 setTimeout(main);
 
 function main(){
-  var header = fs.readFileSync(headerFile, 'utf8');
-  var src = fs.readFileSync(srcFile, 'utf8');
+  var src = fs.readFileSync(srcFile, 'ascii');
   var input = fs.readFileSync(inputFile);
 
-  var tokenized = tokenizer.tokenize([src]);
+  var tokenized = tokenizer.tokenize(src);
   fs.writeFileSync(tokenizedFile, tokenized.toString());
 
   var parsed = parser.parse(tokenized);
   fs.writeFileSync(parsedFile, parsed.toString());
 
   var compiled = compiler.compile(parsed);
-  fs.writeFileSync(compiledFile, compiled.getBuff());
+  fs.writeFileSync(compiledFile, compiled);
 
   var machine = new Machine(compiled);
   var io = new IO(machine, input);

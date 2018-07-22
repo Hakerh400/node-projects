@@ -83,6 +83,9 @@ function encryptFile(filePath){
 }
 
 function encrypt(data){
+  if(data.length === 0)
+    return '';
+
   var buff = encryptor.encrypt(data);
   var str = buff.toString('hex');
 

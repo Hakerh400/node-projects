@@ -3,31 +3,70 @@
 const O = require('../framework');
 
 class IO{
-  constructor(mchine, input){
+  constructor(machine, input){
     this.machine = machine;
     this.input = Buffer.from(input);
-    this.output = [];
+    this.output = Buffer.alloc(0);
 
     this.inputIndex = 0;
     this.outputIndex = 0;
-    this.eof = false;
 
-    machine.setProperty('test', args => {
-      args.eval();
+    machine.addFunc(this.read.bind(this));
+    machine.addFunc(this.write.bind(this));
+    machine.addFunc(this.isEof.bind(this));
+  }
 
-      var arg = args.get(0);
-      var bit = machine.isTruthy(arg) | 0;
+  *read(cbInfo){
+    yield cbInfo.evalArgs();
 
-      log(bit);
-    })
+    if(this.eof())
+      return;
 
-    /*machine.setproperty('read', this.read.bind(this));
-    machine.setproperty('write', this.write.bind(this));
-    machine.setproperty('eof', () => this.eof | 0);*/
+    var {inputIndex} = this;
+    this.inputIndex++;
+
+    var byteIndex = inputIndex >> 3;
+    var bitIndex = inputIndex & 7;
+
+    var bit = (this.input[byteIndex] >> bitIndex) & 1;
+    cbInfo.ret(cbInfo.getIdent(bit));
+  }
+
+  *write(cbInfo){
+    yield cbInfo.evalArgs();
+
+    var bit = cbInfo.getArg(0) !== cbInfo.getIdent(0);
+
+    var {output, outputIndex} = this;
+    this.outputIndex++;
+
+    var byteIndex = outputIndex >> 3;
+    var bitIndex = outputIndex & 7;
+
+    if(byteIndex === output.length){
+      var buff = Buffer.alloc(output.length);
+      output = Buffer.concat([output, buff]);
+    }
+
+    this.output[byteIndex] |= 1 << bitIndex;
+  }
+
+  *isEof(cbInfo){
+    yield cbInfo.evalArgs();
+    
+    var eof = this.eof() | 0;
+    cbInfo.ret(cbInfo.getIdent(eof));
+  }
+
+  eof(){
+    return (this.inputIndex >> 3) === this.input.length;
   }
 
   getOutput(){
-    return Buffer.from('');
+    var len = Math.ceil(this.outputIndex / 8);
+    var buff = this.output.slice(0, len);
+
+    return Buffer.from(buff);
   }
 };
 
