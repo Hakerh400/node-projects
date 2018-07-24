@@ -4,7 +4,8 @@ const fs = require('fs');
 const path = require('path');
 const O = require('../framework');
 const fsRec = require('../fs-recursive');
-const Encryptor = require('./encryptor.js');
+const Encryptor = require('./encryptor');
+const nonBinaryExts = require('./non-binary-exts.json');
 
 const MAX_LINE_LEN = 128;
 const LINE_REGEX = new RegExp(`.{${MAX_LINE_LEN}}|.+`, 'g');
@@ -69,9 +70,12 @@ function encryptFile(filePath){
   var {ext} = path.parse(filePath);
   ext = ext.substring(1);
 
+  if(nonBinaryExts.includes(ext))
+    data = O.sanl(data.toString()).join('\n');
+
   switch(ext){
     case 'js':
-      data = O.sanl(data.toString()).map(line => {
+      data = O.sanl(data).map(line => {
         return line.trim();
       }).join('\n');
       break;
