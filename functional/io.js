@@ -6,7 +6,7 @@ class IO{
   constructor(machine, input){
     this.machine = machine;
     this.input = Buffer.from(input);
-    this.output = Buffer.alloc(0);
+    this.output = Buffer.alloc(1);
 
     this.inputIndex = 0;
     this.outputIndex = 0;
@@ -16,8 +16,8 @@ class IO{
     machine.addFunc(this.isEof.bind(this));
   }
 
-  *read(cbInfo){
-    yield cbInfo.evalArgs();
+  read(cbInfo){
+    if(!cbInfo.isEvald()) return cbInfo.eval();
 
     if(this.eof())
       return;
@@ -29,11 +29,12 @@ class IO{
     var bitIndex = inputIndex & 7;
 
     var bit = (this.input[byteIndex] >> bitIndex) & 1;
-    cbInfo.ret(cbInfo.getIdent(bit));
+
+    return cbInfo.getIdent(bit);
   }
 
-  *write(cbInfo){
-    yield cbInfo.evalArgs();
+  write(cbInfo){
+    if(!cbInfo.isEvald()) return cbInfo.eval();
 
     var bit = cbInfo.getArg(0) !== cbInfo.getIdent(0);
 
@@ -45,17 +46,18 @@ class IO{
 
     if(byteIndex === output.length){
       var buff = Buffer.alloc(output.length);
-      output = Buffer.concat([output, buff]);
+      this.output = Buffer.concat([output, buff]);
     }
 
-    this.output[byteIndex] |= 1 << bitIndex;
+    this.output[byteIndex] |= bit << bitIndex;
   }
 
-  *isEof(cbInfo){
-    yield cbInfo.evalArgs();
+  isEof(cbInfo){
+    if(!cbInfo.isEvald()) return cbInfo.eval();
     
     var eof = this.eof() | 0;
-    cbInfo.ret(cbInfo.getIdent(eof));
+
+    return cbInfo.getIdent(eof);
   }
 
   eof(){

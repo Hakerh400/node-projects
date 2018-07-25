@@ -7,100 +7,103 @@ const parser = require('./parser');
 
 const {Identifier, List, CallChain} = parser;
 
-const GeneratorFunction = function*(){}.constructor;
-const Generator = function*(){}().constructor;
-
 class Machine extends EventEmitter{
   constructor(compiled){
     super();
 
+    this.compiled = compiled;
+    this.stack = createStack(compiled);
+
     var m = this;
-    GeneratorFunction.prototype.toString = function(){
-      return `func*[${m.funcs.indexOf(this)}]`;
+    Function.prototype.toString = function(){
+      return `func[${m.funcs.indexOf(this)}]`;
     };
 
-    this.compiled = compiled;
-
     this.funcs = [
-      function*(cbInfo){
-        yield cbInfo.evalArgs();
-        cbInfo.ret(cbInfo.getArg(1));
+      cbInfo => {
+        if(!cbInfo.isEvald()) return cbInfo.eval();
+        return cbInfo.getArg(1);
       },
 
-      function*(cbInfo){
-        yield cbInfo.evalArgs();
-        cbInfo.ret(cbInfo.getArg(0));
+      cbInfo => {
+        if(!cbInfo.isEvald()) return cbInfo.eval();
+        return cbInfo.getArg(0);
       },
     ];
-
-    this.stack = createStack(compiled);
   }
 
   start(){
+    var {funcs, stack} = this;
+
     var idents = O.obj();
-    this.funcs.forEach((func, index) => idents[index] = func);
-    var cbInfo = new CallbackInfo(this, idents, new List());
 
-    var {stack} = this;
-    var cbInfos = [cbInfo];
+    this.funcs.forEach((func, index) => {
+      idents[index] = func;
+    });
 
-    while(stack.length !== 0){
-      debug(stack.join('\n'));
+    mainLoop: while(stack.length !== 0){
+      var elem = stack[stack.length - 1];
 
-      var len1 = stack.length - 1;
-      var cbInfo = cbInfos[cbInfos.length - 1];
+      if(elem instanceof EvalList){
+        while(!elem.evald){
+          var e = elem.get();
+          var func = funcs[e.ident.name];
 
-      var elem = stack[len1];
+          if(e.arr.length === 0){
+            elem.set(func);
+            continue;
+          }
 
-      log(elem.constructor === GeneratorFunction);
-      log(elem.constructor === Generator);
-
-      if(elem instanceof List){
-        if(elem.arr.length === 0){
-          stack[len1] = this.funcs[0];
-          continue;
+          stack.push(new EvalCallChain(func, e.arr.slice()));
+          continue mainLoop;
         }
 
-        stack[len1] = new ValuesList(elem.arr.slice());
-      }else if(elem instanceof CallChain){
-        var func = cbInfo.getIdent(elem.ident.name);
+        stack.pop();
 
-        if(elem.arr.length === 0){
-          stack[len1] = func;
-          continue;
-        }
+        if(!elem.reduce)
+          stack[stack.length - 1].set(elem);
 
-        stack[len1] = new CallsList(func, elem.arr.slice());
-      }else if(elem instanceof CallsList){
+        continue;
+      }
+
+      if(elem instanceof EvalCallChain){
         if(elem.evald){
-          stack[len1 - 1].setEvald(stack.pop().func);
+          stack.pop();
+          stack[stack.length - 1].set(elem.func);
           continue;
         }
 
-        var args = elem.nextNonEvald();
-        var cbInfoNew = new CallbackInfo(this, idents, args);
+        var func = elem.func;
+        var args = new EvalList(elem.get().arr.slice());
+        var cbInfo = new CallbackInfo(func, idents, args);
 
-        var gen = elem.func(cbInfoNew);
-        stack.push(gen);
-      }else if(elem instanceof ValuesList){
-        if(!elem.evald){
-          stack.push(elem.nextNonEvald());
+        stack.push(cbInfo);
+        
+        continue;
+      }
+
+      if(elem instanceof CallbackInfo){
+        var result = elem.call();
+        if(result === null) continue;
+
+        if(result instanceof Function){
+          stack[stack.length - 1] = result;
           continue;
         }
 
-        throw 1;
-      }else if(elem instanceof GeneratorFunction){
-        stack[len1 - 1].setEvald(stack.pop());
-      }else if(elem instanceof Generator){
-        throw 2;
-      }else{
-        throw 0;
+        stack.push(result);
+
+        continue;
+      }
+
+      if(elem instanceof Function){
+        stack.pop();
+        stack[stack.length - 1].set(elem);
+        continue;
       }
     }
 
-    setTimeout(() => {
-      this.emit('exit');
-    });
+    this.emit('exit');
   }
 
   addFunc(func){
@@ -108,85 +111,99 @@ class Machine extends EventEmitter{
   }
 };
 
+class EvalList{
+  constructor(arr, reduce=0){
+    this.arr = arr;
+    this.reduce = reduce;
+    this.index = 0;
+    this.evald = arr.length === 0;
+  }
+
+  get(){
+    return this.arr[this.index];
+  }
+
+  set(val){
+    var {arr} = this;
+
+    if(this.reduce){
+      arr.shift();
+      this.evald = arr.length === 0;
+    }else{
+      arr[this.index++] = val;
+      this.evald = this.index === arr.length;
+    }
+  }
+
+  toString(){
+    return this.arr.join(',');
+  }
+};
+
+class EvalCallChain{
+  constructor(func, arr){
+    this.func = func;
+    this.arr = arr;
+    this.evald = arr.length === 0;
+  }
+
+  get(){
+    return this.arr[0];
+  }
+
+  set(val){
+    this.func = val;
+    this.arr.shift();
+    this.evald = this.arr.length === 0;
+  }
+
+  toString(){
+    return `${this.func}${this.arr.join('')}`;
+  }
+};
+
 class CallbackInfo{
-  constructor(machine, idents, args){
-    this.machine = machine;
+  constructor(func, idents, args){
+    this.func = func;
     this.idents = idents;
     this.args = args;
-    this.retVal = machine.funcs[0];
+  }
+
+  call(){
+    var result = this.func(this);
+    if(result == null) return this.idents[0];
+    return result;
+  }
+
+  isEvald(){
+    return this.args.evald;
+  }
+
+  eval(){
+    return this.args;
+  }
+
+  set(evaldList){
+    this.args = evaldList;
+  }
+
+  getArg(index){
+    var {arr} = this.args;
+
+    if(index < 0 || index >= arr.length)
+      return this.idents[0];
+
+    return arr[index];
   }
 
   getIdent(id){
     var {idents} = this;
-    if(!(id in idents)) return this.machine.funcs[0];
+    if(!(id in idents)) return idents[0];
     return idents[id];
   }
 
-  evalArgs(){
-    this.machine.eval(this.idents, this.args);
-  }
-
-  getArg(index){
-    var {args} = this;
-    var valid = index >= 0 && index < args.length;
-
-    if(!(args instanceof ValuesList)){
-      if(!valid) return null;
-
-      var callChain = args[index];
-
-      if(callChain.arr.length !== 0) return null;
-      return callChain.ident.name;
-    }
-
-    if(!valid) return this.machine.funcs[0];
-    return args[index];
-  }
-
-  ret(val){
-    this.retVal = val;
-  }
-};
-
-class ValuesList{
-  constructor(arr=[]){
-    this.arr = arr;
-    this.evaldIndex = 0;
-    this.evald = arr.length === 0;
-  }
-
-  static from(list){
-    var arr = list.arr.slice();
-    return new ValuesList(arr);
-  }
-
-  nextNonEvald(){
-    return this.arr[this.evaldIndex];
-  }
-
-  setEvald(func){
-    var {arr} = this;
-
-    arr[this.evaldIndex++] = func;
-
-    if(this.evaldIndex === arr.length)
-      this.evald = 1;
-  }
-
   toString(){
-    return `ValuesList: ${this.arr.join(',')}`;
-  }
-};
-
-class CallsList extends ValuesList{
-  constructor(func, arr=[]){
-    super(arr);
-
-    this.func = func;
-  }
-
-  toString(){
-    return `CallsList: ${this.func}${this.arr.join('')}`;
+    return `CBINFO: ${this.func}(${this.args})`;
   }
 };
 
@@ -235,7 +252,7 @@ function createStack(compiled){
     }
   }
 
-  return stack;
+  return [new EvalList(stack[0].arr, 1)];
 
   function top(){
     return stack[stack.length - 1];
