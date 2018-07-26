@@ -9,6 +9,10 @@ const compiler = require('./compiler');
 const Machine = require('./machine');
 const IO = require('./io');
 
+const GENERATE_TEMP_FILES = 0;
+const GENERATE_COMPILED_BINARY = 1;
+const DISPLAY_TIME = 1;
+
 const cwd = __dirname;
 const programDir = path.join(cwd, 'program');
 const srcFile = path.join(programDir, 'src.txt');
@@ -25,21 +29,30 @@ function main(){
   var input = fs.readFileSync(inputFile);
 
   var tokenized = tokenizer.tokenize(src);
-  fs.writeFileSync(tokenizedFile, tokenized.toString());
+  save(tokenizedFile, tokenized.toString());
 
   var parsed = parser.parse(tokenized);
-  fs.writeFileSync(parsedFile, parsed.toString());
+  save(parsedFile, parsed.toString());
 
   var compiled = compiler.compile(parsed);
-  fs.writeFileSync(compiledFile, compiled);
+  
+  if(GENERATE_COMPILED_BINARY)
+    fs.writeFileSync(compiledFile, compiled);
 
   var machine = new Machine(compiled);
   var io = new IO(machine, input);
 
   var t = Date.now();
   machine.start();
-  log(((Date.now() - t) / 1e3).toFixed(3));
+
+  if(DISPLAY_TIME)
+    log(((Date.now() - t) / 1e3).toFixed(3));
 
   var output = io.getOutput();
   fs.writeFileSync(outputFile, output);
+}
+
+function save(file, data){
+  if(!GENERATE_TEMP_FILES) return;
+  fs.writeFileSync(file, data);
 }
