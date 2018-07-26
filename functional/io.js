@@ -17,7 +17,7 @@ class IO{
   }
 
   read(cbInfo){
-    if(!cbInfo.isEvald()) return cbInfo.eval();
+    if(!cbInfo.evald) return cbInfo.args;
 
     if(this.eof())
       return;
@@ -30,13 +30,13 @@ class IO{
 
     var bit = (this.input[byteIndex] >> bitIndex) & 1;
 
-    return cbInfo.getIdent(bit);
+    return cbInfo.getIdent(0, bit);
   }
 
   write(cbInfo){
-    if(!cbInfo.isEvald()) return cbInfo.eval();
+    if(!cbInfo.evald) return cbInfo.args;
 
-    var bit = cbInfo.getArg(0) !== cbInfo.getIdent(0);
+    var bit = cbInfo.getArg(0) !== cbInfo.getIdent(0, 0);
 
     var {output, outputIndex} = this;
     this.outputIndex++;
@@ -53,11 +53,11 @@ class IO{
   }
 
   isEof(cbInfo){
-    if(!cbInfo.isEvald()) return cbInfo.eval();
+    if(!cbInfo.evald) return cbInfo.args;
     
     var eof = this.eof() | 0;
 
-    return cbInfo.getIdent(eof);
+    return cbInfo.getIdent(0, eof);
   }
 
   eof(){

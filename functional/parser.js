@@ -60,13 +60,20 @@ class Element{
 };
 
 class Identifier extends Element{
-  constructor(name){
+  constructor(id){
     super();
-    this.name = name;
+    this.id = id;
+  }
+
+  clone(deep){
+    if(!deep) return this;
+    return new Identifier(this.id);
   }
 
   toString(){
-    return this.name;
+    var {id} = this;
+    if(typeof id !== 'string') return `${id}`;
+    return id.replace(/[\(\)\,]/g, a => `\\${a}`);
   }
 
   isIdent(){ return true; }
@@ -78,12 +85,25 @@ class List extends Element{
     this.arr = [];
   }
 
+  clone(deep){
+    var {arr} = this;
+
+    if(deep) arr = arr.map(a => a.clone(1));
+    else arr = arr.slice();
+
+    return new List(arr);
+  }
+
   push(callChain){
     this.arr.push(callChain);
   }
 
   toString(){
-    return `(${this.arr.join(',')})`;
+    try{
+      return `(${this.arr.join(',')})`;
+    }catch{
+      return '(...)';
+    }
   }
 
   isList(){ return true; }
@@ -94,6 +114,17 @@ class CallChain extends Element{
     super();
     this.ident = ident;
     this.arr = arr;
+  }
+
+  clone(deep){
+    var {ident, arr} = this;
+
+    ident = ident.clone(deep);
+
+    if(deep) arr = arr.map(a => a.clone(1));
+    else arr = arr.slice();
+
+    return new CallChain(ident, arr);
   }
 
   push(list){

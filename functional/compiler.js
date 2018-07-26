@@ -27,22 +27,19 @@ function compile(parsed){
     else wb(1);
 
     if(elem.isCall()){
+      var len = identsArr.length;
+
       var {ident, arr} = elem;
-      var name = ident.name;
+      var id = ident.id;
 
-      if(!(name in identsObj)){
+      if(!(id in identsObj)){
         if(identsArr.length !== 0)
-          wb(1);
+          bs.write(len, len);
 
-        identsArr.push(name);
-        identsObj[name] = identsArr.length - 1;
+        identsObj[id] = len;
+        identsArr.push(id);
       }else{
-        wb(0);
-
-        var index = identsObj[name];
-
-        if(identsArr.length !== 1)
-          bs.write(index, identsArr.length - 1);
+        bs.write(identsObj[id], len);
       }
     }
 

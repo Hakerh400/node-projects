@@ -1,5 +1,7 @@
 'use strict';
 
+const DEBUG = 0;
+
 const EventEmitter = require('events');
 const O = require('../framework');
 const debug = require('../debug');
@@ -12,42 +14,129 @@ class Machine extends EventEmitter{
     super();
 
     this.compiled = compiled;
-    this.stack = createStack(compiled);
+    this.parsed = parse(compiled);
 
     var m = this;
     Function.prototype.toString = function(){
       return `func[${m.funcs.indexOf(this)}]`;
     };
 
+    var idents = O.obj();
+    this.idents = idents;
+
     this.funcs = [
+      // 0
       cbInfo => {
-        if(!cbInfo.isEvald()) return cbInfo.eval();
+        if(!cbInfo.evald) return cbInfo.args;
         return cbInfo.getArg(1);
       },
 
+      // 1
       cbInfo => {
-        if(!cbInfo.isEvald()) return cbInfo.eval();
+        if(!cbInfo.evald) return cbInfo.args;
         return cbInfo.getArg(0);
       },
+
+      // ==
+      cbInfo => {
+        if(!cbInfo.evald) return cbInfo.args;
+        var same = cbInfo.getArg(0) === cbInfo.getArg(1);
+        return cbInfo.getIdent(0, same | 0);
+      },
+
+      // =
+      cbInfo => {
+        if(!cbInfo.evald){
+          cbInfo.data = cbInfo.getId(0);
+          return cbInfo.args;
+        }
+
+        var id = cbInfo.data;
+        if(id === null) return;
+
+        var func = cbInfo.getArg(1);
+        cbInfo.setIdent(1, id, func);
+
+        return func;
+      },
+
+      // []
+      cbInfo => {
+        if(!cbInfo.evald){
+          var valid = 1;
+
+          var formalArgs = O.ca(cbInfo.argsNum, i => {
+            var id = cbInfo.getId(i);
+            if(id === null) valid = 0;
+            return id;
+          });
+
+          cbInfo.data = valid ? formalArgs : null;
+
+          return cbInfo.args;
+        }
+
+        var formalArgs = cbInfo.data;
+        if(formalArgs === null) return;
+
+        return cbInfo => {
+          var identsArr = cbInfo.identsArr.slice();
+          var body = cbInfo.args.clone(0);
+
+          body.reduce = 1;
+
+          return cbInfo => {
+            if(!cbInfo.evald) return cbInfo.args;
+
+            var newIdents = O.obj();
+
+            formalArgs.forEach((id, index) => {
+              newIdents[id] = cbInfo.getArg(index);
+            });
+
+            var newIdentsArr = identsArr.slice();
+            newIdentsArr.push(newIdents);
+
+            var newBody = body.clone(0);
+
+            return new UserlandFunctionCall(newIdentsArr, newBody);
+          };
+        };
+      },
     ];
-  }
-
-  start(){
-    var {funcs, stack} = this;
-
-    var idents = O.obj();
 
     this.funcs.forEach((func, index) => {
       idents[index] = func;
+      func.identsArr = [idents];
     });
+  }
+
+  addFunc(func){
+    var {funcs, idents} = this;
+
+    idents[funcs.length] = func;
+    funcs.push(func);
+
+    func.identsArr = [idents];
+  }
+
+  start(){
+    var {funcs, idents} = this;
+
+    var stack = [new EvalList(this.parsed.arr.slice(), 1)];
+
+    var baseCbInfo = new CallbackInfo([idents], O.nop, new EvalList([]));
+    var mainCbInfo = new CallbackInfo([idents], O.nop, new EvalList([]));
 
     mainLoop: while(stack.length !== 0){
+      if(DEBUG) debug(stack.join('\n'));
+
       var elem = stack[stack.length - 1];
 
       if(elem instanceof EvalList){
         while(!elem.evald){
           var e = elem.get();
-          var func = funcs[e.ident.name];
+          var func = mainCbInfo.getIdent(1, e.ident.id);
 
           if(e.arr.length === 0){
             elem.set(func);
@@ -60,8 +149,22 @@ class Machine extends EventEmitter{
 
         stack.pop();
 
-        if(!elem.reduce)
+        if(!elem.reduce){
           stack[stack.length - 1].set(elem);
+          continue;
+        }
+
+        if(stack.length !== 0){
+          var result = elem.result;
+          if(result === null) result = baseCbInfo.getIdent(1, 0);
+
+          var userFunc = stack[stack.length - 1];
+          mainCbInfo.identsArr = userFunc.identsArrPrev;
+
+          stack[stack.length - 1] = elem.result;
+
+          continue;
+        }
 
         continue;
       }
@@ -75,7 +178,7 @@ class Machine extends EventEmitter{
 
         var func = elem.func;
         var args = new EvalList(elem.get().arr.slice());
-        var cbInfo = new CallbackInfo(func, idents, args);
+        var cbInfo = new CallbackInfo(mainCbInfo.identsArr.slice(), func, args);
 
         stack.push(cbInfo);
         
@@ -86,7 +189,7 @@ class Machine extends EventEmitter{
         var result = elem.call();
         if(result === null) continue;
 
-        if(result instanceof Function){
+        if(result instanceof Function || result instanceof UserlandFunctionCall){
           stack[stack.length - 1] = result;
           continue;
         }
@@ -96,18 +199,18 @@ class Machine extends EventEmitter{
         continue;
       }
 
+      if(elem instanceof UserlandFunctionCall){
+        elem.identsArrPrev = mainCbInfo.identsArr;
+        mainCbInfo.identsArr = elem.identsArr;
+        stack.push(elem.body);
+      }
+
       if(elem instanceof Function){
         stack.pop();
         stack[stack.length - 1].set(elem);
         continue;
       }
     }
-
-    this.emit('exit');
-  }
-
-  addFunc(func){
-    this.funcs.push(func);
   }
 };
 
@@ -116,7 +219,18 @@ class EvalList{
     this.arr = arr;
     this.reduce = reduce;
     this.index = 0;
+
     this.evald = arr.length === 0;
+    this.result = null;
+  }
+
+  clone(deep){
+    var {arr} = this;
+
+    if(deep) arr = arr.map(a => a.clone(1));
+    else arr = arr.slice();
+
+    return new EvalList(arr, this.reduce);
   }
 
   get(){
@@ -133,6 +247,9 @@ class EvalList{
       arr[this.index++] = val;
       this.evald = this.index === arr.length;
     }
+
+    if(this.evald)
+      this.result = val;
   }
 
   toString(){
@@ -144,7 +261,17 @@ class EvalCallChain{
   constructor(func, arr){
     this.func = func;
     this.arr = arr;
+
     this.evald = arr.length === 0;
+  }
+
+  clone(deep){
+    var {arr} = this;
+
+    if(deep) arr = arr.map(a => a.clone(1));
+    else arr = arr.slice();
+
+    return new EvalList(this.func, arr);
   }
 
   get(){
@@ -163,43 +290,65 @@ class EvalCallChain{
 };
 
 class CallbackInfo{
-  constructor(func, idents, args){
+  constructor(identsArr, func, args){
+    this.identsArr = identsArr;
     this.func = func;
-    this.idents = idents;
     this.args = args;
+
+    this.argsNum = args.arr.length;
+    this.evald = 0;
+    this.data = null;
   }
 
   call(){
     var result = this.func(this);
-    if(result == null) return this.idents[0];
+    if(result == null) return this.getIdent(0, 0);
     return result;
   }
 
-  isEvald(){
-    return this.args.evald;
-  }
-
-  eval(){
+  get(){
     return this.args;
   }
 
   set(evaldList){
     this.args = evaldList;
+    this.evald = 1;
+  }
+
+  getId(index){
+    var {arr} = this.args;
+    if(index < 0 || index >= arr.length) return null;
+    if(arr[index].arr.length !== 0) return null;
+    return arr[index].ident.id;
   }
 
   getArg(index){
     var {arr} = this.args;
-
-    if(index < 0 || index >= arr.length)
-      return this.idents[0];
-
+    if(index < 0 || index >= arr.length) return this.getIdent(0, 0);
     return arr[index];
   }
 
-  getIdent(id){
-    var {idents} = this;
-    if(!(id in idents)) return idents[0];
-    return idents[id];
+  getIdent(type, id){
+    var identsArr = type === 0 ? this.func.identsArr : this.identsArr;
+    if(!identsArr) identsArr = [this.identsArr[0]];
+
+    for(var i = identsArr.length - 1; i !== -1; i--){
+      var idents = identsArr[i];
+      if(id in idents) return idents[id];
+    }
+
+    return identsArr[0][0];
+  }
+
+  setIdent(type, id, val){
+    var identsArr = type === 0 ? this.func.identsArr : this.identsArr;
+
+    for(var i = identsArr.length - 1; i !== -1; i--){
+      var idents = identsArr[i];
+      if(id in idents) return idents[id] = val;
+    }
+
+    return identsArr[0][id] = val;
   }
 
   toString(){
@@ -207,11 +356,22 @@ class CallbackInfo{
   }
 };
 
+class UserlandFunctionCall{
+  constructor(identsArr, body){
+    this.identsArrPrev = null;
+
+    this.identsArr = identsArr;
+    this.body = body;
+  }
+
+  toString(){
+    return `USERFUNC: ${this.body}`;
+  }
+};
+
 module.exports = Machine;
 
-function createStack(compiled){
-  var {Identifier, List, CallChain} = parser;
-
+function parse(compiled){
   var bs = new O.BitStream(compiled);
   var identsNum = 0;
 
@@ -240,8 +400,11 @@ function createStack(compiled){
     if(elem.isList()){
       var id;
 
-      if(identsNum === 0 || rb()) id = identsNum++;
-      else id = bs.read(identsNum - 1);
+      if(identsNum === 0) id = 0;
+      else id = bs.read(identsNum);
+
+      if(id === identsNum)
+        identsNum++;
 
       var ident = new Identifier(id);
       var call = new CallChain(ident);
@@ -252,7 +415,7 @@ function createStack(compiled){
     }
   }
 
-  return [new EvalList(stack[0].arr, 1)];
+  return stack[0];
 
   function top(){
     return stack[stack.length - 1];

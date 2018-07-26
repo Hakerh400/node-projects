@@ -36,10 +36,10 @@ function main(){
   var machine = new Machine(compiled);
   var io = new IO(machine, input);
 
-  machine.on('exit', () => {
-    var output = io.getOutput();
-    fs.writeFileSync(outputFile, output);
-  });
-
+  var t = Date.now();
   machine.start();
+  log(((Date.now() - t) / 1e3).toFixed(3));
+
+  var output = io.getOutput();
+  fs.writeFileSync(outputFile, output);
 }
