@@ -1,69 +1,19 @@
 0, 1,
 ==, =, var, [],
-read, write, eof,
+isFree, collect, put, move,
+
+var(init, []()(
+  =(dir, Byte())
+)),
 
 var(main, []()(
-  var(space, Byte(0, 0, 0, 0, 0, 1, 0, 0)),
-  var('0', Byte(0, 0, 0, 0, 1, 1, 0, 0)),
+  collect(),
 
-  var(9, Byte(1, 0, 0, 1)),
-  var(10, Byte(0, 1, 0, 1)),
+  not(move(dir(0, 0), dir(0, 1)))([]()(
+    =(dir, -(dir, Byte(1))),
 
-  var(num1, List()),
-  var(num2, List()),
-
-  var(mode, 0),
-
-  while([]()(
-    not(eof())
-  ), []()(
-    var(byte, readByte()),
-
-    eq(byte, space)([]()(
-      =(mode, 1)
-    ), []()(
-      mode(num2, num1).push(byte)
-    ))()
-  )),
-
-  var(num3, List()),
-  var(carry, Byte()),
-
-  while([]()(
-    ||(bool(num1 .head), bool(num2 .head))
-  ), []()(
-    var(b1, not(=(b1, num1 .pop()))([]()(
-      Byte()
-    ), []()(
-      -(b1, '0')
-    ))()),
-
-    var(b2, not(=(b2, num2 .pop()))([]()(
-      Byte()
-    ), []()(
-      -(b2, '0')
-    ))()),
-
-    var(byte, +(carry, +(b1, b2))),
-
-    =(carry, gt(byte, 9))([]()(
-      =(byte, -(byte, 10))
-    ))(),
-
-    =(carry, Byte(carry)),
-    num3 .push(byte)
-  )),
-
-  gt(carry, Byte())([]()(
-    num3 .push(Byte(1))
-  ))(),
-
-  while([]()(
-    num3 .head
-  ), []()(
-    var(byte, num3 .pop()),
-    writeByte(+(byte, '0'))
-  ))
+    while(put)
+  ))()
 )),
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////,
@@ -285,4 +235,5 @@ var(writeByte, [](byte)(
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////,
 
+init(),
 main()

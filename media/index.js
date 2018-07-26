@@ -452,7 +452,8 @@ function addEventListeners(){
   });
 
   process.on('uncaughtException', err => {
-    log(err.stack);
+    if(err instanceof Error) err = err.stack;
+    log(err);
     closeProcs();
   });
 }

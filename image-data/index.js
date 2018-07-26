@@ -28,8 +28,8 @@ class ImageData{
     this.d = this.imgd.data;
 
     if(clear){
-      var d = this.d;
-      var len = d.length;
+      const d = this.d;
+      const len = d.length;
 
       for(var i = 0; i < len; i++){
         d[i] = (i & 3) < 3 ? 0 : 255;
@@ -44,7 +44,7 @@ class ImageData{
   }
 
   iterate(func, includeAlpha = false){
-    var {w, h, d} = this;
+    const {w, h, d} = this;
 
     if(includeAlpha){
       for(var y = 0, i = 0; y < h; y++){
@@ -75,14 +75,14 @@ class ImageData{
   }
 
   get(x, y, col, includeAlpha){
-    var {w, h, d} = this;
+    const {w, h, d} = this;
 
     if(x < 0) x = 0;
     else if(x >= w) x = (w | 0) - 1 | 0
     if(y < 0) y = 0;
     else if(y >= h) y = (h | 0) - 1 | 0;
 
-    var i = (x | 0) + (y | 0) * (w | 0) << 2;
+    const i = (x | 0) + (y | 0) * (w | 0) << 2;
 
     if(includeAlpha){
       col[0] = d[i | 0] | 0;
@@ -99,12 +99,12 @@ class ImageData{
   }
 
   set(x, y, col, includeAlpha){
-    var {w, h, d} = this;
+    const {w, h, d} = this;
 
     if(x < 0 || x >= w || y < 0 || y >= h)
       return;
 
-    var i = (x | 0) + (y | 0) * (w | 0) << 2;
+    const i = (x | 0) + (y | 0) * (w | 0) << 2;
 
     if(includeAlpha){
       d[i | 0] = col[0] | 0;
@@ -116,6 +116,19 @@ class ImageData{
       d[(i | 0) + 1 | 0] = col[1] | 0;
       d[(i | 0) + 2 | 0] = col[2] | 0;
     }
+  }
+
+  setRgb(x, y, r, g, b){
+    const {w, h, d} = this;
+
+    if(x < 0 || x >= w || y < 0 || y >= h)
+      return;
+
+    const i = (x | 0) + (y | 0) * (w | 0) << 2;
+
+    d[i | 0] = r | 0;
+    d[(i | 0) + 1 | 0] = g | 0;
+    d[(i | 0) + 2 | 0] = b | 0;
   }
 };
 

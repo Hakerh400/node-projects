@@ -1,5 +1,8 @@
 'use strict';
 
+const GENERATE_TEMP_FILES = 0;
+const GENERATE_COMPILED_BINARY = 1;
+
 const fs = require('fs');
 const path = require('path');
 const O = require('../framework');
@@ -8,10 +11,6 @@ const parser = require('./parser');
 const compiler = require('./compiler');
 const Machine = require('./machine');
 const IO = require('./io');
-
-const GENERATE_TEMP_FILES = 0;
-const GENERATE_COMPILED_BINARY = 1;
-const DISPLAY_TIME = 1;
 
 const cwd = __dirname;
 const programDir = path.join(cwd, 'program');
@@ -42,11 +41,9 @@ function main(){
   var machine = new Machine(compiled);
   var io = new IO(machine, input);
 
-  var t = Date.now();
-  machine.start();
+  var tick = machine.start(1e4);
 
-  if(DISPLAY_TIME)
-    log(((Date.now() - t) / 1e3).toFixed(3));
+  while(!tick.next().done);
 
   var output = io.getOutput();
   fs.writeFileSync(outputFile, output);

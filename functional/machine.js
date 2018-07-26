@@ -1,25 +1,26 @@
 'use strict';
 
-const DEBUG = 0;
-
-const EventEmitter = require('events');
 const O = require('../framework');
-const debug = require('../debug');
+const tokenizer = require('./tokenizer');
 const parser = require('./parser');
+const compiler = require('./compiler');
 
 const {Identifier, List, CallChain} = parser;
 
-class Machine extends EventEmitter{
+class Machine{
   constructor(compiled){
-    super();
+    if(!(compiled instanceof Buffer)){
+      var src = compiled;
+      var tokenized = tokenizer.tokenize(src);
+      var parsed = parser.parse(tokenized);
+
+      compiled = compiler.compile(parsed);
+    }
 
     this.compiled = compiled;
-    this.parsed = parse(compiled);
+    this.parsed = Machine.parse(compiled);
 
-    var m = this;
-    Function.prototype.toString = function(){
-      return `func[${m.funcs.indexOf(this)}]`;
-    };
+    this.paused = 0;
 
     var idents = O.obj();
     this.idents = idents;
@@ -125,6 +126,64 @@ class Machine extends EventEmitter{
       idents[index] = func;
       func.identsArr = [idents];
     });
+
+    this.stack = [];
+    this.error = 0;
+  }
+
+  static parse(compiled){
+    var bs = new O.BitStream(compiled);
+    var identsNum = 0;
+
+    var stack = [new List()];
+    var first = 0;
+
+    while(1){
+      var elem = top();
+
+      if(first){
+        first = 0;
+      }else{
+        var bit = rb();
+
+        if(bit === 0){
+          if(stack.length === 1)
+            break;
+
+          var elem = stack.pop();
+          top().push(elem);
+
+          continue;
+        }
+      }
+
+      if(elem.isList()){
+        var id;
+
+        if(identsNum === 0) id = 0;
+        else id = bs.read(identsNum);
+
+        if(id === identsNum)
+          identsNum++;
+
+        var ident = new Identifier(id);
+        var call = new CallChain(ident);
+
+        stack.push(call);
+      }else{
+        stack.push(new List());
+      }
+    }
+
+    return stack[0];
+
+    function top(){
+      return stack[stack.length - 1];
+    }
+
+    function rb(){
+      return bs.readBit();
+    }
   }
 
   addFunc(func){
@@ -136,16 +195,44 @@ class Machine extends EventEmitter{
     func.identsArr = [idents];
   }
 
-  start(){
+  *start(maxStackSize, ticksNum=0){
     var {funcs, idents} = this;
 
-    var stack = [new EvalList(this.parsed.arr.slice(), 1)];
+    var arr = this.parsed.arr.slice();
+    var stack = this.stack = [new EvalList(arr, 1)];
+    var lastFunc = new EvalList(arr.slice(-1), 1);
 
     var baseCbInfo = new CallbackInfo([idents], O.nop, new EvalList([]));
     var mainCbInfo = new CallbackInfo([idents], O.nop, new EvalList([]));
 
-    mainLoop: while(stack.length !== 0){
-      if(DEBUG) debug(stack.join('\n'));
+    var loop = ticksNum !== 0;
+    var tickIndex = 0;
+
+    mainLoop: while(1){
+      if(stack.length > maxStackSize){
+        this.error = 1;
+        return;
+      }
+
+      if(loop){
+        if(this.paused){
+          this.paused = 0;
+          yield;
+        }
+
+        if(tickIndex++ === ticksNum){
+          tickIndex = 0;
+          yield;
+        }
+
+        if(stack.length === 0){
+          stack.push(lastFunc.clone(0));
+          yield;
+        }
+      }else{
+        if(stack.length === 0)
+          break;
+      }
 
       var elem = stack[stack.length - 1];
 
@@ -227,6 +314,14 @@ class Machine extends EventEmitter{
         continue;
       }
     }
+  }
+
+  pause(){
+    this.paused = 1;
+  }
+
+  resume(){
+    this.paused = 0;
   }
 };
 
@@ -392,58 +487,3 @@ class UserlandFunctionCall{
 };
 
 module.exports = Machine;
-
-function parse(compiled){
-  var bs = new O.BitStream(compiled);
-  var identsNum = 0;
-
-  var stack = [new List()];
-  var first = 0;
-
-  while(1){
-    var elem = top();
-
-    if(first){
-      first = 0;
-    }else{
-      var bit = rb();
-
-      if(bit === 0){
-        if(stack.length === 1)
-          break;
-
-        var elem = stack.pop();
-        top().push(elem);
-
-        continue;
-      }
-    }
-
-    if(elem.isList()){
-      var id;
-
-      if(identsNum === 0) id = 0;
-      else id = bs.read(identsNum);
-
-      if(id === identsNum)
-        identsNum++;
-
-      var ident = new Identifier(id);
-      var call = new CallChain(ident);
-
-      stack.push(call);
-    }else{
-      stack.push(new List());
-    }
-  }
-
-  return stack[0];
-
-  function top(){
-    return stack[stack.length - 1];
-  }
-
-  function rb(){
-    return bs.readBit();
-  }
-}
