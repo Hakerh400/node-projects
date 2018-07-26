@@ -1,20 +1,23 @@
 0, 1,
-==, =, [],
+==, =, var, [],
 read, write, eof,
 
-=(main, [](space, num1, num2, num3, byte, b1, b2, mode)(
-  =(space, Byte(0, 0, 0, 0, 0, 1, 0, 0)),
+=(main, []()(
+  var(space, Byte(0, 0, 0, 0, 0, 1, 0, 0)),
+  var('0', Byte(0, 0, 0, 0, 1, 1, 0, 0)),
 
-  =(num1, List()),
-  =(num2, List()),
-  =(num3, List()),
+  var(9, Byte(1, 0, 0, 1)),
+  var(10, Byte(0, 1, 0, 1)),
 
-  =(mode, 0),
+  var(num1, List()),
+  var(num2, List()),
+
+  var(mode, 0),
 
   while([]()(
     not(eof())
   ), []()(
-    =(byte, readByte()),
+    var(byte, readByte()),
 
     eq(byte, space)([]()(
       =(mode, 1)
@@ -23,52 +26,74 @@ read, write, eof,
     ))()
   )),
 
+  var(num3, List()),
+  var(carry, Byte()),
+
   while([]()(
     ||(bool(num1 .head), bool(num2 .head))
   ), []()(
-    =(b1, not(=(b1, num1 .pop()))([]()(
+    var(b1, not(=(b1, num1 .pop()))([]()(
       Byte()
     ), []()(
-      +(b1, Byte(0, 0, 0, 0, 1, 0, 1, 1))
+      -(b1, '0')
     ))()),
 
-    =(b2, not(=(b2, num2 .pop()))([]()(
+    var(b2, not(=(b2, num2 .pop()))([]()(
       Byte()
     ), []()(
-      +(b2, Byte(0, 0, 0, 0, 1, 0, 1, 1))
+      -(b2, '0')
     ))()),
 
-    =(byte, +(b1, b2)),
+    var(byte, +(carry, +(b1, b2))),
+
+    =(carry, gt(byte, 9))([]()(
+      =(byte, -(byte, 10))
+    ))(),
+
+    =(carry, Byte(carry)),
     num3 .push(byte)
   )),
+
+  gt(carry, Byte())([]()(
+    num3 .push(Byte(1))
+  ))(),
 
   while([]()(
     num3 .head
   ), []()(
-    =(byte, num3 .pop()),
-    writeByte(+(byte, Byte(0, 0, 0, 0, 1, 1, 0, 0)))
+    var(byte, num3 .pop()),
+    writeByte(+(byte, '0'))
   ))
 )),
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////,
 
-=(nop, []()(nop)),
-=(not, [](a)(==(a, 0))),
-=(bool, [](a)(not(not(a)))),
-
-=(&&, [](a, b)(a(b))),
-=(||, [](a, b)(a(1, b))),
-=(^^, [](a, b)(a(not(b), b))),
+var(.head, []()()),
+var(.tail, []()()),
+var(.push, []()()),
+var(.pop, []()()),
+var(.unshift, []()()),
+var(.shift, []()()),
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////,
 
-=(while, [](cond, func, temp)(
-  =(temp, bool(cond()))(while)(cond, func, temp(func)())
+var(nop, []()(nop)),
+var(not, [](a)(==(a, 0))),
+var(bool, [](a)(not(not(a)))),
+
+var(&&, [](a, b)(a(b))),
+var(||, [](a, b)(a(1, b))),
+var(^^, [](a, b)(a(not(b), b))),
+
+////////////////////////////////////////////////////////////////////////////////////////////////////,
+
+var(while, [](cond, func)(
+  var(temp, bool(cond()))(while)(cond, func, temp(func)())
 )),
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////,
 
-=(Pair, [](a, b)(
+var(Pair, [](a, b)(
   [](mode, index, val)(
     =(index, not(index)),
     not(mode)([]()(
@@ -85,14 +110,14 @@ read, write, eof,
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////,
 
-=(Byte, [](a, b, c, d, e, f, g, h, pair)(
-  =(pair, Pair(Pair(Pair(a, b), Pair(c, d)), Pair(Pair(e, f), Pair(g, h)))),
+var(Byte, [](a, b, c, d, e, f, g, h)(
+  var(pair, Pair(Pair(Pair(a, b), Pair(c, d)), Pair(Pair(e, f), Pair(g, h)))),
   [](mode, i0, i1, i2, val)(
     pair(0, i2)(0, i1)(mode, i0, val)
   )
 )),
 
-=(clone, [](byte)(
+var(clone, [](byte)(
   Byte(
     byte(0, 0, 0, 0), byte(0, 1, 0, 0),
     byte(0, 0, 1, 0), byte(0, 1, 1, 0),
@@ -101,7 +126,7 @@ read, write, eof,
   )
 )),
 
-=(forEach, [](byte, func)(
+var(forEach, [](byte, func)(
   func(byte(0, 0, 0, 0), 0, 0, 0), func(byte(0, 1, 0, 0), 1, 0, 0),
   func(byte(0, 0, 1, 0), 0, 1, 0), func(byte(0, 1, 1, 0), 1, 1, 0),
   func(byte(0, 0, 0, 1), 0, 0, 1), func(byte(0, 1, 0, 1), 1, 0, 1),
@@ -109,62 +134,84 @@ read, write, eof,
   byte
 )),
 
-=(map, [](byte, func)(
+var(map, [](byte, func)(
   =(byte, clone(byte)),
   forEach(byte, [](bit, i0, i1, i2)(
     byte(1, i0, i1, i2, func(bit, i0, i1, i2))
   ))
 )),
 
-=(eq, [](b1, b2, temp)(
-  =(temp, 1),
-  forEach(b1, [](bit, i0, i1, i2)(
-    =(temp, &&(temp, ==(bit, b2(0, i0, i1, i2))))
+var(cmp, [](b1, b2)(
+  var(eq),
+  var(gt),
+  var(lt),
+
+  forEach(b1, [](bit1, i0, i1, i2)(
+    var(bit2, b2(0, i0, i1, i2)),
+    var(eq1, ==(bit1, bit2)),
+
+    =(gt, ||(&&(gt, eq1), &&(bit1, not(bit2)))),
+    =(lt, ||(&&(lt, eq1), &&(not(bit1), bit2))),
+    =(eq, &&(eq, eq1))
   )),
-  temp
+
+  Pair(gt, lt)
 )),
 
-=(&, [](b1, b2)(
+var(eq, [](b1, b2)(
+  var(temp, cmp(b1, b2)),
+  not(||(temp(0, 0), temp(0, 1)))
+)),
+
+var(gt, [](b1, b2)(
+  cmp(b1, b2)(0, 0)
+)),
+
+var(lt, [](b1, b2)(
+  cmp(b1, b2)(0, 1)
+)),
+
+var(&, [](b1, b2)(
   map(a, [](bit, i0, i1, i2)(&&(bit, b2(0, i0, i1, i2))))
 )),
 
-=(|, [](b1, b2)(
+var(|, [](b1, b2)(
   map(a, [](bit, i0, i1, i2)(||(bit, b2(0, i0, i1, i2))))
 )),
 
-=(^, [](b1, b2)(
+var(^, [](b1, b2)(
   map(a, [](bit, i0, i1, i2)(^^(bit, b2(0, i0, i1, i2))))
 )),
 
-=(+c, [](b1, b2, carry)(
-  =(carry, 0),
-  Pair(map(b1, [](bit1, i0, i1, i2, bit2, temp)(
-    =(bit2, b2(0, i0, i1, i2)),
-    =(temp, ^^(carry, ^^(bit1, bit2))),
+var(+c, [](b1, b2)(
+  var(carry, 0),
+  Pair(map(b1, [](bit1, i0, i1, i2)(
+    var(bit2, b2(0, i0, i1, i2)),
+    var(temp, ^^(carry, ^^(bit1, bit2))),
     =(carry, ||(&&(bit1, bit2), ||(&&(bit1, carry), &&(bit2, carry)))),
     temp
   )), carry)
 )),
 
-=(+, [](b1, b2)(
+var(+, [](b1, b2)(
   +c(b1, b2)(0, 0)
+)),
+
+var(neg, [](byte)(
+  +(map(byte, [](bit)(not(bit))), Byte(1))
+)),
+
+var(-, [](b1, b2)(
+  +(b1, neg(b2))
 )),
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////,
 
-=(.head, []()()),
-=(.tail, []()()),
+=(List, []()(
+  var(head, 0),
+  var(tail, 0),
 
-=(.push, []()()),
-=(.pop, []()()),
-=(.unshift, []()()),
-=(.shift, []()()),
-
-=(List, [](head, tail, _push, _pop, _unshift, _shift)(
-  =(head, 0),
-  =(tail, 0),
-
-  =(_push, [](val, elem)(
+  var(push, [](val, elem)(
     =(elem, Pair(val, Pair(tail))),
 
     not(head)([]()(
@@ -175,7 +222,7 @@ read, write, eof,
     ))()
   )),
 
-  =(_pop, [](val)(
+  var(pop, [](val)(
     =(val, tail(0, 0)),
     =(tail, tail(0, 1)(0, 0)),
 
@@ -188,7 +235,7 @@ read, write, eof,
     val
   )),
 
-  =(_unshift, [](val, elem)(
+  var(unshift, [](val, elem)(
     =(elem, Pair(val, Pair(0, head))),
 
     not(head)([]()(
@@ -199,7 +246,7 @@ read, write, eof,
     ))()
   )),
 
-  =(_shift, [](val)(
+  var(shift, [](val)(
     =(val, head(0, 0)),
     =(head, head(0, 1)(0, 1)),
 
@@ -212,27 +259,27 @@ read, write, eof,
     val
   )),
 
-  [](method)(
-    ==(method, .head)(head,
-    ==(method, .tail)(tail,
-    ==(method, .push)(_push,
-    ==(method, .pop)(_pop,
-    ==(method, .unshift)(_unshift,
-    ==(method, .shift)(_shift
+  [](prop)(
+    ==(prop, .head)(head,
+    ==(prop, .tail)(tail,
+    ==(prop, .push)(push,
+    ==(prop, .pop)(pop,
+    ==(prop, .unshift)(unshift,
+    ==(prop, .shift)(shift
     ))))))
   )
 )),
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////,
 
-=(readByte, []()(
+var(readByte, []()(
   Byte(
     read(), read(), read(), read(),
     read(), read(), read(), read()
   )
 )),
 
-=(writeByte, [](byte)(
+var(writeByte, [](byte)(
   forEach(byte, write)
 )),
 

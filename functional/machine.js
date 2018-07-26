@@ -60,6 +60,22 @@ class Machine extends EventEmitter{
         return func;
       },
 
+      // var
+      cbInfo => {
+        if(!cbInfo.evald){
+          cbInfo.data = cbInfo.getId(0);
+          return cbInfo.args;
+        }
+
+        var id = cbInfo.data;
+        if(id === null) return;
+
+        var func = cbInfo.getArg(1);
+        cbInfo.setIdent(1, id, func, 1);
+
+        return func;
+      },
+
       // []
       cbInfo => {
         if(!cbInfo.evald){
@@ -334,21 +350,27 @@ class CallbackInfo{
 
     for(var i = identsArr.length - 1; i !== -1; i--){
       var idents = identsArr[i];
-      if(id in idents) return idents[id];
+
+      if(id in idents)
+        return idents[id];
     }
 
     return identsArr[0][0];
   }
 
-  setIdent(type, id, val){
+  setIdent(type, id, val, force){
     var identsArr = type === 0 ? this.func.identsArr : this.identsArr;
 
     for(var i = identsArr.length - 1; i !== -1; i--){
       var idents = identsArr[i];
-      if(id in idents) return idents[id] = val;
+
+      if(force || id in idents){
+        idents[id] = val;
+        return;
+      }
     }
 
-    return identsArr[0][id] = val;
+    identsArr[0][id] = val;
   }
 
   toString(){
