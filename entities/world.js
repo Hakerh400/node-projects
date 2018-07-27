@@ -3,18 +3,9 @@
 const O = require('../framework');
 
 const FOOD_PER_FRAME = 0;
-
 const TICKS_PER_FRAME = 1e4;
+const MAX_MOVES_PER_FRAME = 20;
 const MAX_STACK_SIZE = 1e4;
-
-const teamCols = [
-  [255, 255, 255],
-  [169, 169, 169]
-  /*[255, 0, 0],
-  [255, 255, 0],
-  [0, 255, 0],
-  [0, 255, 255],*/
-];
 
 class World{
   constructor(w, h){
@@ -27,12 +18,20 @@ class World{
 
   tick(){
     this.grid.tick();
-    this.ents.forEach(ent => ent.tick());
+
+    const {ents} = this;
+    const len = ents.length;
+    for(var i = 0; i !== len; i++)
+      ents[i].tick();
   }
 
   draw(imgd){
     this.grid.draw(imgd);
-    this.ents.forEach(ent => ent.draw(imgd));
+    
+    const {ents} = this;
+    const len = ents.length;
+    for(var i = 0; i !== len; i++)
+      ents[i].draw(imgd);
   }
 
   addEnt(team, machine, x, y){
@@ -68,10 +67,7 @@ class Grid{
 
   draw(imgd){
     this.iterate((x, y, d) => {
-      var col = teamCols[d.team][0];
-      var val = d.val / 255;
-
-      imgd.setRgb(x, y, col[0] * val | 0, col[1] * val | 0, col[2] * val | 0);
+      imgd.setRgb(x, y, 0, 0, 0);
     });
   }
 
@@ -116,17 +112,22 @@ class Entity{
     this.y = y;
 
     this.val = 0;
+    this.moves = 0;
 
     this.prepareMachine();
   }
 
   tick(){
+    this.moves = 0;
     this.machineTick.next();
   }
 
   draw(imgd){
     var {x, y} = this;
-    var [r, g, b] = teamCols[this.team][1];
+    
+    var r = 169;
+    var g = 169;
+    var b = 169;
 
     imgd.setRgb(x, y, r, g, b);
     imgd.setRgb(x, y - 1, r, g, b);
@@ -162,7 +163,7 @@ class Entity{
     this.world.grid.get(this.x, this.y).val--;
     this.val++;
 
-    this.machine.pause();
+    this.afterMove();
     return cbInfo.getIdent(0, 1);
   }
 
@@ -188,7 +189,7 @@ class Entity{
       return;
     }
 
-    this.machine.pause();
+    this.afterMove();
     return cbInfo.getIdent(0, 1);
   }
 
@@ -202,7 +203,7 @@ class Entity{
     this.x = x;
     this.y = y;
 
-    this.machine.pause();
+    this.afterMove();
     return cbInfo.getIdent(0, 1);
   }
 
@@ -232,21 +233,15 @@ class Entity{
 
     return [x, y];
   }
-};
 
-optimizeTeamCols();
+  afterMove(){
+    if(++this.moves === MAX_MOVES_PER_FRAME)
+      this.machine.pause();
+  }
+};
 
 World.Grid = Grid;
 World.Tile = Tile;
 World.Entity = Entity;
 
 module.exports = World;
-
-function optimizeTeamCols(){
-  teamCols.forEach((col, index) => {
-    var col1 = Buffer.from(col);
-    var col2 = col1.map(a => a * 3 + 255 >> 2);
-
-    teamCols[index] = [col1, col2];
-  });
-}

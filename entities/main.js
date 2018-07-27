@@ -1,6 +1,6 @@
 'use strict';
 
-const HD = 1;
+const HD = 0;
 const SAVE_ENTS = 1;
 
 const fs = require('fs');
@@ -17,7 +17,7 @@ const programDir = path.join(cwd, 'program');
 const srcFile = path.join(programDir, 'src.txt');
 const entsFile = formatFileName('-dw/ents.txt');
 
-const ENTS_NUM = 1e4;
+const ENTS_NUM = 1e3;
 
 const w = HD ? 1920 : 640;
 const h = HD ? 1080 : 480;
@@ -60,7 +60,7 @@ function main(){
     if(f === 1)
       init(g);
 
-    if(f % (fps * 5) === 0)
+    if(f % (fps * 1) === 0)
       refreshEnts();
 
     world.draw(imgd);
@@ -78,9 +78,10 @@ function main(){
     world.ents.forEach((ent, index, arr) => {
       var {x, y} = ent;
 
-      var b = x === 0 || y === 0 || x === w1 || y === h1;
-      b = b || O.dist(x, y, wh, hh) < 30;
-      b = b || ent.machine.error;
+      var b = x === 0 || y === 0 || x === w1 || y === h1 ||
+        O.dist(x, y, wh, hh) < 30 ||
+        ent.machine.error ||
+        ent.moves === 0;
 
       if(b){
         var m = createMachine();
@@ -92,8 +93,10 @@ function main(){
 }
 
 function createMachine(){
-  var len = 10 + O.rand(300);
+  var len = randLen(32);
   var buff = Buffer.from(O.ca(len, () => O.rand(256)));
+
+  buff[0] |= 0x80;
 
   return new Machine(buff);
 }
@@ -114,4 +117,10 @@ function saveEnts(ents){
   }).join('\n\n');
 
   fs.writeFileSync(entsFile, str);
+}
+
+function randLen(base){
+  var num = base;
+  while(O.rand(2)) num <<= 1;
+  return base + O.rand(num);
 }

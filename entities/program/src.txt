@@ -1,18 +1,20 @@
 0, 1,
 ==, =, var, [],
-isFree, collect, put, move,
+move,
 
 var(init, []()(
-  =(dir, Byte())
+  =(dir, Byte()),
+  =(count, Byte())
 )),
 
 var(main, []()(
-  collect(),
+  move(dir(0, 0), dir(0, 1)),
 
-  not(move(dir(0, 0), dir(0, 1)))([]()(
+  =(count, +(count, Byte(1))),
+
+  eq(count, Byte(0, 0, 0, 0, 0, 1))([]()(
     =(dir, -(dir, Byte(1))),
-
-    while(put)
+    =(count, Byte())
   ))()
 )),
 
