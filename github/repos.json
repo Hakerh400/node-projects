@@ -21,11 +21,17 @@
       "minify": false
     },
 
-    "extensions": {
-      "name": "extensions",
-      "src": "C:/Extensions",
-      "dest": "C:/Github/extensions",
-      "encrypt": true
+    "func": {
+      "name": "functional",
+      "src": "C:/Projects/Esolang/functional",
+      "dest": "C:/Github/functional"
+    },
+
+    "data": {
+      "name": "data",
+      "src": "C:/wamp/www/projects/test/data",
+      "dest": "C:/Github/data",
+      "script": "C:/Projects/JavaScript/data/main.js"
     },
 
     "land": {
@@ -34,11 +40,11 @@
       "dest": "C:/Github/land"
     },
 
-    "data": {
-      "name": "data",
-      "src": "C:/wamp/www/projects/test/data",
-      "dest": "C:/Github/data",
-      "script": "C:/Projects/JavaScript/data/main.js"
+    "extensions": {
+      "name": "extensions",
+      "src": "C:/Extensions",
+      "dest": "C:/Github/extensions",
+      "encrypt": true
     }
   }
 }
