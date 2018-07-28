@@ -75,7 +75,7 @@ The native functions are:
 
 *UserlandFunction* takes zero or more arguments and evaluates them. Then each evaluated argument is assigned to the corresponding internal formal argument and the function body is evaluated in the new scope based on the formal and actual arguments.
 
-## IO Interface
+## IO interface
 
 *Functional()* provides a way of adding native functions before running a program. This implementation provides 3 new functions for IO interface:
 
@@ -102,7 +102,7 @@ If the program is terminated, but the output has no enough bits to form a byte, 
 
 We assume the standard IO interface implementation is used. The first 9 identifiers that appear in the source code will be native functions. Accessing undefined identifier returns 0 (actually the 0th global identifier, which may be overriden though).
 
-In these examples we will use identifiers `0`, `1`, `==`, `=`, `var`, `[]`, `read`, `write`, `eof` respectively. Note that there are nothing special about `==`, `=`, `[]`, they are valid identifiers.
+In these examples we will use identifiers `0`, `1`, `==`, `=`, `var`, `[]`, `read`, `write`, `eof` respectively. Note that there is nothing special about `==`, `=`, `[]`, they are valid identifiers.
 
 ### Example 1: Printing letter "A"
 
@@ -134,9 +134,9 @@ while([]()(not(eof())), []()(
 ))
 ```
 
-There are several things demontrated in this example.
+There are several things demonstrated in this example.
 
-Code `[](a)(==(a, 0))` creates a *UserlandFunction* which takes argument `a` and returns the result of comparison `a` with `0`. In other words, it returns `1` iff `a` is `0`, and `0` otherwise.
+Code `[](a)(==(a, 0))` creates a *UserlandFunction* which takes argument `a` and returns the result of comparison `a` with `0`. In other words, it returns `1` if `a` is `0`, and `0` otherwise.
 
 Code `var(not, [](a)(==(a, 0)))` assigns the newly created *UserlandFunction* to the global identifier `not`.
 
@@ -208,7 +208,7 @@ We used two tricks here. The first one is the fact that every *UserlandFunction*
 
 The second trick is syntactical: if two identifiers appear one after another (here `.get` and `.set` appear after `obj`) they are interpreted like a *CallChain*. Note that `.get` and `.set` are just identifiers, so if you remove the space from `obj .get()` it wont work as expected. For example, `a .b .c` is equivalent to `a(.b)(.c)`, but not `a.b.c`.
 
-This code prints "01".
+The above code prints "01".
 
 # How to run
 

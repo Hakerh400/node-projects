@@ -18,32 +18,38 @@ const cols = [
   [0, 255, 255],
 ];
 
-const [w, h] = [1920, 1080];
+const w = HD ? 1920 : 640;
+const h = HD ? 1080 : 480;
+var z = 0;
 
 class Grid{
   constructor(){
     this.d = O.obj();
 
-    this.coords = O.ca(w * h, i => {
+    this.coords = new Coordinates(O.ca(w * h, i => {
       var x = i % w;
       var y = i / w | 0;
 
       return [x, y];
-    });
+    }));
 
-    this.active = [O.randElem(this.coords, 1)];
+    this.active = new Coordinates([this.coords.splice(this.coords.indexOf(w>>1,h>>1))]);
   }
 
   tick(){
     var {coords, active} = this;
-    if(active.length === 0) return;
+    if(active.len() === 0) return;
+    z++;
 
-    for(var i = 0; i !== 50; i++){
-      if(active.length === 0) break;
+    var land, stability, type, stract, tex;
 
-      var [x, y] = O.randElem(active, 1);
+    for(var i = 0; i !== 1e3; i++){
+      if(active.len() === 0) break;
+
+      var [x, y] = active.splice();
 
       if(this.get(x, y) !== null){
+        throw 0;
         i--;
         continue;
       }
@@ -51,26 +57,28 @@ class Grid{
       var adj = [];
       var d;
 
-      if((d = this.get(x, y - 1)) !== null) adj.push(d);
-      if((d = this.get(x - 1, y)) !== null) adj.push(d);
-      if((d = this.get(x, y + 1)) !== null) adj.push(d);
-      if((d = this.get(x + 1, y)) !== null) adj.push(d);
+      if(d = this.get(x, y - 1)) adj.push(d);
+      if(d = this.get(x - 1, y)) adj.push(d);
+      if(d = this.get(x, y + 1)) adj.push(d);
+      if(d = this.get(x + 1, y)) adj.push(d);
 
-      var land, stability, type, stract, tex;
+      land = stability = type = stract = tex = void 0;
 
       if(adj.length === 0){
         land = 1;
       }
+
+      land = (z / 3 | 0) % cols.length;
 
       d = new Tile(land, stability, type, stract, tex);
       this.set(x, y, d);
 
       var index;
 
-      if((index = coords.findIndex(([xx, yy]) => xx === x && yy === y - 1)) !== -1) active.push(coords.splice(index, 1)[0]);
-      if((index = coords.findIndex(([xx, yy]) => xx === x - 1 && yy === y)) !== -1) active.push(coords.splice(index, 1)[0]);
-      if((index = coords.findIndex(([xx, yy]) => xx === x && yy === y + 1)) !== -1) active.push(coords.splice(index, 1)[0]);
-      if((index = coords.findIndex(([xx, yy]) => xx === x + 1 && yy === y)) !== -1) active.push(coords.splice(index, 1)[0]);
+      if((index = coords.indexOf(x, y - 1)) !== -1) active.add(coords.splice(index));
+      if((index = coords.indexOf(x - 1, y)) !== -1) active.add(coords.splice(index));
+      if((index = coords.indexOf(x, y + 1)) !== -1) active.add(coords.splice(index));
+      if((index = coords.indexOf(x + 1, y)) !== -1) active.add(coords.splice(index));
     }
   }
 
@@ -117,6 +125,63 @@ class Tile{
   }
 };
 
+class Coordinates{
+  constructor(arr){
+    this.arr = arr;
+    this.obj = Coordinates.arr2obj(arr);
+  }
+
+  static arr2obj(arr){
+    var obj = O.obj();
+
+    arr.forEach(coords => {
+      var [x, y] = coords;
+      if(!(y in obj)) obj[y] = O.obj();
+      obj[y][x] = coords;
+    });
+
+    return obj;
+  }
+
+  add(coords){
+    var {arr, obj} = this;
+    var [x, y] = coords;
+    if(this.includes(x, y)) return;
+
+    arr.push(coords);
+    if(!(y in obj)) obj[y] = O.obj();
+    obj[y][x] = coords;
+  }
+
+  splice(index=null){
+    var {arr, obj} = this;
+    if(index === null) index = O.rand(arr.length);
+
+    var coords = arr.splice(index, 1)[0];
+    var [x, y] = coords;
+
+    obj[y][x] = null;
+
+    return coords;
+  }
+
+  indexOf(x, y){
+    if(!this.includes(x, y)) return -1;
+    return this.arr.indexOf(this.obj[y][x]);
+  }
+
+  includes(x, y){
+    var {obj} = this;
+    if(!(y in obj)) return 0;
+    return obj[y][x];
+  }
+
+  len(){
+    return this.arr.length;
+  }
+};
+
 Grid.Tile = Tile;
+Grid.Coordinates = Coordinates;
 
 module.exports = Grid;

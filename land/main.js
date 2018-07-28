@@ -1,6 +1,7 @@
 'use strict';
 
-const HD = 1;
+const HD = 0;
+global.HD = HD;
 
 const O = require('../framework');
 const media = require('../media');
@@ -13,7 +14,7 @@ const fps = 60;
 const fast = !HD;
 
 const duration = 10;
-const framesNum = w * h / 50 + 10 | 0;//duration * fps;
+const framesNum = w * h / 1e3 + 10 | 0;//duration * fps;
 
 const [wh, hh] = [w, h].map(a => a >> 1);
 const [w1, h1] = [w, h].map(a => a - 1);
