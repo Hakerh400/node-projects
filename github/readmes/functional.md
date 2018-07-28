@@ -9,7 +9,7 @@ abc(d(e, e1), f, g()),
 h(&&(^), $(@, ~))(abc)
 ```
 
-Everything that is not `(`, `)`, `,` or whitespace (that matches regular expression `\s+`) is considered as an identifier. Thus, the identifiers in the above example are `abc`, `d`, `e`, `e1`, `f`, `g`, `h`, `&&`, `^`, `$`, `@`, `~`.
+Everything that is not `(`, `)`, `,` or whitespace is considered as an identifier. Thus, the identifiers in the above example are `abc`, `d`, `e`, `e1`, `f`, `g`, `h`, `&&`, `^`, `$`, `@`, `~`.
 
 Each program represents a *List* of zero or more *CallChains*. A *CallChain* is an identifier followed by zero or more *Lists* surrounded by a pair of parentheses. Elements of a *List* are separated by `,`.
 
@@ -21,7 +21,7 @@ Each identifier has a function associated with it. When program starts, the main
 
 *List* evaluates in the following way:
 
-1. If the *List* is empty, return the function associated with the 0-th global identifier
+1. If the *List* is empty, return the function associated with the 0th global identifier
 2. Otherwise evaluate all *List*'s *CallChains*
 
 *CallChain* evaluates in the following way:
@@ -142,7 +142,7 @@ Code `var(not, [](a)(==(a, 0)))` assigns the newly created *UserlandFunction* to
 
 The second line does a similar thing: creates a function which takes argument `a` and returns `not(not(a))` (converts it to boolean).
 
-Now, the interesting part: *while* loop. The *while* loop is just a function which takes two arguments: `cond` and `func`. While the result of calling `cond` returns a truthy value, call `func`. It is achieved by recursively calling `while` function. We will not describe here in details how and why it works.
+Now, the interesting part: *while* loop. The *while* loop is just a function which takes two arguments: `cond` and `func`. While the result of calling `cond` returns a truthy value, call `func`. It is achieved by recursively calling `while` function. We wont explain here in details how and why it works.
 
 It is possible to spin in a *while* loop forever, without causing a stack overflow. That is done by replacing caller's stack frame with the stack frame of the callee's last *CallChain*.
 
@@ -200,13 +200,13 @@ write(0), write(0), write(0),
 write(1), write(1)
 ```
 
-Here we have class `Class` which a constructor and two methods. The constructor takes one argument and stores it as a private member `a`.
+Here we have class `Class` which has a constructor and two methods. The constructor takes one argument and stores it as a private member `a`.
 
 The first method is `get`. It takes no arguments and returns the value of `a`. Method `set` takes an argument (here `b`) and assigns the value of `b` to `a`.
 
 We used two tricks here. The first one is the fact that every *UserlandFunction* which is created by a separate call to the 6th native function is different, so we can use it like an enum.
 
-The second trick is syntactical: if two identifiers appear one after another (here `.get` and `.set` appear after `.obj`) they are interpreted like a *CallChain*. Note that `.get` and `.set` are just identifiers, so if you remove the space from `obj .get()` it wont work as expected. For example, `a .b .c` is equivalent to `a(.b)(.c)`, but not `a.b.c`.
+The second trick is syntactical: if two identifiers appear one after another (here `.get` and `.set` appear after `obj`) they are interpreted like a *CallChain*. Note that `.get` and `.set` are just identifiers, so if you remove the space from `obj .get()` it wont work as expected. For example, `a .b .c` is equivalent to `a(.b)(.c)`, but not `a.b.c`.
 
 This code prints "01".
 
@@ -218,4 +218,4 @@ Navigate to the `example` directory and run the following command:
 node example.js -src src.txt -i input.txt -o output.txt
 ```
 
-The `src.txt` file contains a simple *function()* program that implements BigInt addition. It reads two integers from the `input.txt` separated by a space, adds them together and saves the resulting number to `output.txt`.
+The `src.txt` file contains a *functional()* program that implements BigInt addition. It reads two integers from the `input.txt` separated by a space, adds them together and saves the resulting number to `output.txt`.
