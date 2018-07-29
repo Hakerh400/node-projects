@@ -21,7 +21,7 @@ class ImageData{
     this.h = g.canvas.height;
   }
 
-  fetch(g = this.g, clear = false){
+  fetch(g=this.g, clear=false){
     if(g !== this.g) this.setG(g);
 
     this.imgd = g.getImageData(0, 0, this.w, this.h);
@@ -43,7 +43,7 @@ class ImageData{
     this.g.putImageData(this.imgd, 0, 0);
   }
 
-  iterate(func, includeAlpha = false){
+  iterate(func, includeAlpha=false){
     const {w, h, d} = this;
 
     if(includeAlpha){

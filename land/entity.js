@@ -9,7 +9,8 @@ class Entity{
   tick(){
   }
 
-  draw(imgd){
+  draw(){
+    var {w, h, g} = this.world;
   }
 };
 

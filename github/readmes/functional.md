@@ -215,7 +215,9 @@ The above code prints "01".
 Navigate to the `example` directory and run the following command:
 
 ```
-node example.js -src src.txt -i input.txt -o output.txt
+node main.js -src <source file name>
 ```
 
-The `src.txt` file contains a *functional()* program that implements BigInt addition. It reads two integers from the `input.txt` separated by a space, adds them together and saves the resulting number to `output.txt`.
+where `<source file name>` is the name of the file from `examples` subdirectory you want to run. For example: `node main.js -src addition`.
+
+The program reads from `input.txt` file and writes to `output.txt` file.

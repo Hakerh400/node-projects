@@ -1,14 +1,7 @@
 'use strict';
 
 const O = require('../framework');
-
-const types = O.enum([
-  'CHASM',
-  'FREE',
-  'WALL',
-  'LIQUID',
-  'FIRE',
-]);
+const biomes = require('./biomes');
 
 const cols = [
   [169, 169, 169],
@@ -18,32 +11,29 @@ const cols = [
   [0, 255, 255],
 ];
 
-const w = HD ? 1920 : 640;
-const h = HD ? 1080 : 480;
-var z = 0;
-
 class Grid{
-  constructor(){
+  constructor(world){
+    this.world = world;
+
     this.d = O.obj();
 
+    var {ws:w, hs:h} = this.world;
     this.coords = new Coordinates(O.ca(w * h, i => {
       var x = i % w;
       var y = i / w | 0;
 
       return [x, y];
-    }));
-
-    this.active = new Coordinates([this.coords.splice(this.coords.indexOf(w>>1,h>>1))]);
+    }).filter(([x, y]) => O.dist(x, y,w/2,h/2) > 2));
+    this.active = new Coordinates([this.coords.splice()]);
   }
 
   tick(){
     var {coords, active} = this;
     if(active.len() === 0) return;
-    z++;
 
-    var land, stability, type, stract, tex;
+    var land, stability, type, struct, tex;
 
-    for(var i = 0; i !== 1e3; i++){
+    for(var i = 0; i !== 1; i++){
       if(active.len() === 0) break;
 
       var [x, y] = active.splice();
@@ -62,15 +52,13 @@ class Grid{
       if(d = this.get(x, y + 1)) adj.push(d);
       if(d = this.get(x + 1, y)) adj.push(d);
 
-      land = stability = type = stract = tex = void 0;
+      land = stability = struct = tex = void 0;
 
       if(adj.length === 0){
         land = 1;
       }
 
-      land = (z / 3 | 0) % cols.length;
-
-      d = new Tile(land, stability, type, stract, tex);
+      d = new Tile(land, stability, struct, tex);
       this.set(x, y, d);
 
       var index;
@@ -82,20 +70,27 @@ class Grid{
     }
   }
 
-  draw(imgd){
+  draw(){
+    var {s, ws: w, hs: h, g} = this.world;
+
+    g.scale(s);
+
     for(var y = 0; y !== h; y++){
       for(var x = 0; x !== w; x++){
         var d = this.get(x, y);
 
         if(d === null){
-          imgd.setRgb(x, y, 0, 0, 0);
+          g.fillStyle = 'black';
+          g.fillRect(x, y, 1, 1);
           continue;
         }
 
-        imgd.set(x, y, cols[d.land]);
+        g.fillStyle = ['red','orange', 'yellow', '#ff00ff'][(x^y)&3];
+        g.fillRect(x, y, 1, 1);
       }
     }
 
+    g.resetTransform();
   }
 
   get(x, y){
@@ -116,11 +111,10 @@ class Grid{
 };
 
 class Tile{
-  constructor(land=0, stability=0, type=types.CHASM, stract=null, tex=null){
+  constructor(land=0, stability=0, struct=null, tex=null){
     this.land = land;
     this.stability = stability;
-    this.type = type;
-    this.stract = stract;
+    this.struct = struct;
     this.tex = tex;
   }
 };
