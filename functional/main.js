@@ -1,14 +1,18 @@
 'use strict';
 
-const GENERATE = 0;
-const SAVE_COMPILED = 1;
+const GENERATE = 1;
+const REPEAT = 1;
+const SAVE_COMPILED = 0;
 
 const fs = require('fs');
 const O = require('../framework');
-const functional = require('.');
+const debug = require('../debug');
+const {Machine} = require('.');
 const IO = require('./io');
 
-const {Machine} = functional;
+const PROB = .8;
+const PROB_LINES = PROB;
+const PROB_PARENS = PROB;
 
 setTimeout(main);
 
@@ -32,7 +36,7 @@ function main(){
       if(found) break;
     }
 
-    log(src);
+    log(O.sanl(src).slice(2).join('\n'));
   }else{
     var src = fs.readFileSync('src.txt', 'ascii');
 
@@ -50,6 +54,11 @@ function main(){
 
   if(SAVE_COMPILED){
     fs.writeFileSync('compiled.hex', compiled);
+  }
+
+  if(REPEAT){
+    debug('');
+    setTimeout(main, 1e3);
   }
 }
 
@@ -78,7 +87,7 @@ function generate(){
   while(1){
     if(mode === 0){
       if(parens === 0){
-        if(hasWrite && O.rand(5) === 0) break;
+        if(hasWrite && O.randf(1) < 1 - PROB_LINES) break;
 
         if(!ffirst) comma();
         ffirst = 0;
@@ -134,7 +143,7 @@ function generate(){
   }
 
   function bit(){
-    return O.rand(2 + parens * .2) === 0 | 0;
+    return O.rand(2 + parens * (1 - PROB_PARENS)) === 0 | 0;
   }
 }
 
