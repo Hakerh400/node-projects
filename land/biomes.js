@@ -3,7 +3,9 @@
 const O = require('../framework');
 
 class Biome{
-  constructor(id){}
+  constructor(id){
+    this.id = id;
+  }
 };
 
 const biomes = [
