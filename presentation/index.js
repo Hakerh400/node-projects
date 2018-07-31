@@ -4,7 +4,7 @@ var O = require('../framework');
 var media = require('../media');
 
 class Presentation{
-  constructor(w, h, fps, fast){
+  constructor(w, h, fps, fast=0){
     this.w = w;
     this.h = h;
     this.fps = fps;

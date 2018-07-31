@@ -2,7 +2,6 @@
 
 const O = require('../framework');
 const functional = require('../../Esolang/functional/src');
-const IO = require('./io');
 
 const {Machine} = functional;
 
@@ -20,10 +19,10 @@ module.exports = {
   normalize,
 };
 
-function run(src, input){
+function run(src, input, IO=functional.io.IO){
   var machine = new Machine(src);
   var io = new IO(machine, input);
-  var tick = machine.start(1e9);
+  var tick = machine.start(Infinity);
 
   while(!tick.next().done);
   if(machine.error) return 'err';

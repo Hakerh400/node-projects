@@ -1,7 +1,7 @@
 'use strict';
 
-const GENERATE = 1;
-const REPEAT = 1;
+const GENERATE = 0;
+const REPEAT = 0;
 const SAVE_COMPILED = 0;
 
 const fs = require('fs');
@@ -17,6 +17,8 @@ const {
   normalize,
 } = functional;
 
+const IO = functional.io.IOBit;
+
 setTimeout(main);
 
 function main(){
@@ -30,10 +32,10 @@ function main(){
     while(1){
       var src = generate();
       var compiled = compile(src);
-      var output = run(compiled, inputs[0]);
+      var output = run(compiled, inputs[0], IO);
 
       var found = inputs.some(input => {
-        return run(compiled, input) !== output;
+        return run(compiled, input, IO) !== output;
       });
 
       if(found) break;
@@ -49,7 +51,7 @@ function main(){
   var compiled = compile(src);
 
   var outputs = inputs.map(input => {
-    return run(compiled, input);
+    return run(compiled, input, IO);
   });
 
   log('');

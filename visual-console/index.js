@@ -7,7 +7,7 @@ const CHAR_CODE_FIRST = O.cc(' ');
 const CHAR_CODE_LAST = O.cc('~');
 
 class VisualConsole{
-  constructor(g, img, sx, sy){
+  constructor(g, img, sx, sy, bgCol='#000000', textCol='#ffffff'){
     var canvas = g.canvas;
 
     this.canvas = canvas;
@@ -24,8 +24,8 @@ class VisualConsole{
     this.ws = this.w / sx | 0;
     this.hs = this.h / sy | 0;
 
-    this.bgCol = '#000000';
-    this.textCol = '#ffffff';
+    this.bgCol = bgCol;
+    this.textCol = textCol;
 
     this.x = 0;
     this.y = 0;
@@ -47,7 +47,7 @@ class VisualConsole{
   }
 
   print(str){
-    str.split('').forEach(char => {
+    String(str).split('').forEach(char => {
       this.printChar(char);
     });
   }

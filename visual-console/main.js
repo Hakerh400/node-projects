@@ -4,11 +4,15 @@ const fs = require('fs');
 const path = require('path');
 const O = require('../framework');
 const media = require('../media');
+const Presentation = require('../presentation');
+const functional = require('../functional');
 const formatFileName = require('../format-file-name');
 const VisualConsole = require('.');
 
-const imgFile = formatFileName('-dw/1.png');
-const textFile = formatFileName('-dw/1.txt');
+const imgFile = formatFileName('-dw/ascii.png');
+
+const srcFile = formatFileName('-dw/src.txt');
+const input = '0';
 
 const w = 1920;
 const h = 1080;
@@ -27,36 +31,46 @@ setTimeout(main);
 
 async function main(){
   var img = await getImg(imgFile);
-  var text = getText();
 
-  render(img, text);
+  render(img);
 }
 
-function render(img, str){
-  var strLen = str.length;
-  var framesNum = strLen + 1;
-  var vcon;
+function render(img){
+  var pr = new Presentation(w, h, fps, fast);
 
-  media.renderVideo('-vid/1.mp4', w, h, fps, fast, (w, h, g, f) => {
-    media.logStatus(f, framesNum);
+  pr.render('-vid/1.mp4', async (w, h, g, g1) => {
+    await pr.frame();
 
-    if(f === 1){
-      vcon = new VisualConsole(g, img, sx, sy);
+    var vcon = new VisualConsole(g, img, sx, sy, cols.bg, cols.text);
 
-      vcon.setBgCol(cols.bg);
-      vcon.setTextCol(cols.text);
-    }else{
-      vcon.print(str[f - 2]);
+    var src = fs.readFileSync(srcFile, 'ascii');
+    src = functional.normalize(src);
+
+    await print('Source:\n\n');
+    await print(src);
+    await print('\n\n');
+
+    await print('Input:\n\n');
+    await print(input);
+    await print('\n\n');
+
+    var output = functional.run(src, input);
+
+    await print('Output:\n\n');
+    await print(output);
+
+    await pr.wait(10e3);
+    await pr.fadeOut();
+
+    async function print(str){
+      str = String(str);
+
+      for(var i = 0; i !== str.length; i++){
+        vcon.print(str[i]);
+        await pr.frame();
+      }
     }
-
-    return f !== framesNum;
   });
-}
-
-function getText(){
-  var str = fs.readFileSync(textFile, 'utf8');
-  str = O.sanl(str).join('\n');
-  return str;
 }
 
 async function getImg(){
