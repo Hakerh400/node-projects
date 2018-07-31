@@ -1,6 +1,6 @@
 'use strict';
 
-const HD = 0;
+const HD = 1;
 
 const O = require('../framework');
 const media = require('../media');

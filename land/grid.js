@@ -23,7 +23,7 @@ class Grid{
       var y = i / w | 0;
 
       return [x, y];
-    }).filter(([x, y]) => O.dist(x, y,w/2,h/2) > 2));
+    }).filter(([x, y]) => O.dist(x, y,w/2,h/2) > 5));
     this.active = new Coordinates([this.coords.splice()]);
   }
 
