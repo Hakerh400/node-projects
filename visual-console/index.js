@@ -1,10 +1,15 @@
 'use strict';
 
+const fs = require('fs');
+const path = require('path');
 const O = require('../framework');
 const media = require('../media');
 
 const CHAR_CODE_FIRST = O.cc(' ');
 const CHAR_CODE_LAST = O.cc('~');
+
+const cwd = __dirname;
+const imgFile = path.join(cwd, 'ascii.png');
 
 class VisualConsole{
   constructor(g, img, sx, sy, bgCol='#000000', textCol='#ffffff'){
@@ -31,11 +36,16 @@ class VisualConsole{
     this.y = 0;
   }
 
-  static async getCharsImg(img){
-    if(typeof img === 'string')
-      img = await getImg(img);
-
-    return img;
+  static getCharsImg(){
+    return new Promise(res => {
+      var img;
+      
+      media.editImage(imgFile, '-', (w, h, g) => {
+        img = g.canvas;
+      }, () => {
+        res(img);
+      });
+    });
   }
 
   setBgCol(col){
@@ -102,20 +112,8 @@ class VisualConsole{
     g.drawImage(canvas, 0, -sy);
 
     g.fillStyle = this.bgCol;
-    g.fillRect(0, h - sy, h, sy);
+    g.fillRect(0, h - sy, w, sy);
   }
 };
 
 module.exports = VisualConsole;
-
-function getImg(imgPath){
-  return new Promise(res => {
-    var img;
-
-    media.editImage(imgPath, '-', (w, h, g) => {
-      img = g.canvas;
-    }, () => {
-      res(img);
-    });
-  });
-}

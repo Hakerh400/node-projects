@@ -22,7 +22,7 @@ module.exports = {
 function run(src, input, IO=functional.io.IO){
   var machine = new Machine(src);
   var io = new IO(machine, input);
-  var tick = machine.start(Infinity);
+  var tick = machine.start();
 
   while(!tick.next().done);
   if(machine.error) return 'err';
