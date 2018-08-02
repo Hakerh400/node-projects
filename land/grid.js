@@ -3,13 +3,22 @@
 const O = require('../framework');
 const biomes = require('./biomes');
 
+const stabilityMin = 20;
+const stabilityMax = 25;
+const stabilityDropMin = -1;
+const stabilityDropMax = .1;
+
 const cols = [
-  [169, 169, 169],
-  [255, 0, 0],
-  [255, 255, 0],
-  [0, 255, 0],
-  [0, 255, 255],
+  new O.Color(0, 0, 255),
+  new O.Color(255, 0, 0),
+  new O.Color(255, 255, 0),
+  new O.Color(0, 255, 0),
+  new O.Color(0, 255, 255),
+  new O.Color(255, 128, 255),
+  new O.Color(255, 128, 0),
 ];
+
+const landsNum = cols.length;
 
 class Grid{
   constructor(world){
@@ -23,8 +32,11 @@ class Grid{
       var y = i / w | 0;
 
       return [x, y];
-    }).filter(([x, y]) => O.dist(x, y,w/2,h/2) > 5));
-    this.active = new Coordinates([this.coords.splice()]);
+    }));
+    this.active = new Coordinates([
+      this.coords.splice(this.coords.indexOf(0, 0)),
+      this.coords.splice(this.coords.indexOf(w - 1, h - 1)),
+    ]);
   }
 
   tick(){
@@ -54,9 +66,37 @@ class Grid{
 
       land = stability = struct = tex = void 0;
 
-      if(adj.length === 0){
-        land = 1;
+      switch(adj.length){
+        case 0:
+          land = O.rand(landsNum);
+          stability = O.randf(O.randf(stabilityMin, stabilityMax));
+          break;
+
+        case 1:
+          if(adj[0].stability !== 0){
+            land = adj[0].land;
+            stability = adj[0].stability + O.randf(stabilityDropMin, stabilityDropMax);
+          }else{
+            do{
+              land = O.rand(landsNum);
+            }while(land === adj[0].land);
+            stability = O.randf(stabilityMin, stabilityMax);
+          }
+          break;
+
+        case 2: case 3: case 4:
+          var dd = adj.reduce((d1, d2) =>{
+            return d1.stability > d2.stability ? d1 : d2;
+          });
+
+          land = dd.land;
+          stability = dd.stability + O.randf(stabilityDropMin, stabilityDropMax);
+
+          break;
       }
+
+      if(stability < 0)
+        stability = 0;
 
       d = new Tile(land, stability, struct, tex);
       this.set(x, y, d);
@@ -71,26 +111,6 @@ class Grid{
   }
 
   draw(){
-    var {s, ws: w, hs: h, g} = this.world;
-
-    g.scale(s);
-
-    for(var y = 0; y !== h; y++){
-      for(var x = 0; x !== w; x++){
-        var d = this.get(x, y);
-
-        if(d === null){
-          g.fillStyle = 'black';
-          g.fillRect(x, y, 1, 1);
-          continue;
-        }
-
-        g.fillStyle = ['red','orange', 'yellow', '#ff00ff'][(x^y)&3];
-        g.fillRect(x, y, 1, 1);
-      }
-    }
-
-    g.resetTransform();
   }
 
   get(x, y){
@@ -103,10 +123,15 @@ class Grid{
     return d[x];
   }
 
-  set(x, y, tile){
-    var {d} = this;
-    if(!(y in d)) d[y] = O.obj();
-    d[y][x] = tile;
+  set(x, y, d){
+    var {d: tiles} = this;
+    if(!(y in tiles)) tiles[y] = O.obj();
+    tiles[y][x] = d;
+
+    var {s, ws: w, hs: h, g} = this.world;
+
+    g.fillStyle = cols[d.land];
+    g.fillRect(x * s, y * s, s, s);
   }
 };
 

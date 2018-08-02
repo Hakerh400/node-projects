@@ -26,8 +26,8 @@ class World{
   draw(){
     var {w, h, g} = this;
 
-    g.fillStyle = '#000000';
-    g.fillRect(0, 0, w, h);
+    /*g.fillStyle = '#000000';
+    g.fillRect(0, 0, w, h);*/
 
     this.grid.draw();
     this.ents.forEach(ent => ent.draw());

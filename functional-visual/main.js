@@ -59,7 +59,6 @@ function render(img){
     await sect('Output', output);
 
     await pr.wait(60e3);
-    await pr.fadeOut();
 
     async function sect(title, body, col=null){
       await print(title, 1);
