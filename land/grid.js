@@ -32,11 +32,35 @@ class Grid{
       var y = i / w | 0;
 
       return [x, y];
-    }));
-    this.active = new Coordinates([
-      this.coords.splice(this.coords.indexOf(0, 0)),
-      this.coords.splice(this.coords.indexOf(w - 1, h - 1)),
-    ]);
+    }).filter(([x, y]) => x&&y&&x<w-1&&y<h-1));
+
+    var arr = [];
+
+    O.repeat(w, x => {
+      O.repeat(2, y => {
+        var land = O.rand(landsNum);
+        var stability = O.randf(O.randf(stabilityMin, stabilityMax));
+
+        this.set(x, y *= h - 1, new Tile(land, stability));
+        arr.push([x, y ? y - 1 : y + 1]);
+      });
+    });
+
+    O.repeat(h, y => {
+      O.repeat(2, x => {
+        var land = O.rand(landsNum);
+        var stability = O.randf(O.randf(stabilityMin, stabilityMax));
+
+        this.set(x *= w - 1, y, new Tile(land, stability));
+        arr.push([x ? x - 1 : x + 1, y]);
+      });
+    });
+
+    this.active = new Coordinates(arr.map(([x, y]) => {
+      var index = this.coords.indexOf(x, y);
+      if(index === -1) return null;
+      return this.coords.splice(index);
+    }).filter(a => a !== null));
   }
 
   tick(){

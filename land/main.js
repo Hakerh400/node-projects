@@ -26,10 +26,11 @@ function main(){
 
   function init(g){
     g = new O.EnhancedRenderingContext(g);
-    world = new World(w, h, scale, g);
-
+    
     g.fillStyle = '#000000';
     g.fillRect(0, 0, w, h);
+
+    world = new World(w, h, scale, g);
   }
 
   media.renderVideo('-vid/1.mp4', w, h, fps, fast, (w, h, g, f) => {
@@ -37,10 +38,11 @@ function main(){
 
     if(f === 1){
       init(g);
-    }else{
-      world.draw();
-      world.tick();
+      return 1;
     }
+
+    world.draw();
+    world.tick();
 
     return f !== framesNum;
   });
