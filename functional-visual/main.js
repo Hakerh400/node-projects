@@ -22,7 +22,7 @@ const fast = 0;
 const sx = 8;
 const sy = 12;
 
-const IO = functional.io.IO;
+const IO = functional.io.IOBit;
 
 const cols = {
   bg: new O.Color(0, 0, 0),
