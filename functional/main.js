@@ -1,8 +1,8 @@
 'use strict';
 
 const GENERATE = 0;
+const SAVE_TEMP_FILES = 0;
 const REPEAT = 0;
-const SAVE_COMPILED = 0;
 
 const fs = require('fs');
 const O = require('../framework');
@@ -22,47 +22,65 @@ const IO = functional.io.IOBit;
 setTimeout(main);
 
 function main(){
-  var inputs = O.ca(256, i =>{
-    var str = (i + 1).toString(2).substring(1);
-    str = str.split('').reverse().join('');
-    return str;
-  });
+  while(1){
+    var src, inputs;
 
-  if(GENERATE){
-    while(1){
-      var src = generate();
-      var compiled = compile(src);
-      var output = run(compiled, inputs[0], IO);
-
-      var found = inputs.some(input => {
-        return run(compiled, input, IO) !== output;
+    if(GENERATE){
+      inputs = O.ca(256, i =>{
+        var str = (i + 1).toString(2).substring(1);
+        str = str.split('').reverse().join('');
+        return str;
       });
 
-      if(found) break;
+      while(1){
+        src = generate();
+
+        var compiled = compile(src);
+        var output = run(compiled, inputs[0], IO);
+
+        var found = inputs.some(input => {
+          return run(compiled, input, IO) !== output;
+        });
+
+        if(found) break;
+      }
+
+      log(O.sanl(src).slice(2).join('\n'));
+    }else{
+      src = O.buff2ascii(fs.readFileSync('src.txt'));
+      
+      var input = fs.readFileSync('input.txt');
+      if(IO === functional.io.IOBit)
+        input = O.buff2ascii(input);
+
+      inputs = [input];
+
+      log(normalize(src));
     }
 
-    log(O.sanl(src).slice(2).join('\n'));
-  }else{
-    var src = fs.readFileSync('src.txt', 'ascii');
+    var compiled = compile(src);
 
-    log(normalize(src));
-  }
+    var outputs = inputs.map(input => {
+      return run(compiled, input, IO);
+    });
 
-  var compiled = compile(src);
+    log('');
+    log(outputs.join(','));
 
-  var outputs = inputs.map(input => {
-    return run(compiled, input, IO);
-  });
+    if(SAVE_TEMP_FILES){
+      var temp = functional.tokenizer.tokenize(src);
+      fs.writeFileSync('tokenized.txt', temp);
 
-  log('');
-  log(outputs.join(','));
+      temp = functional.parser.parse(temp);
+      fs.writeFileSync('parsed.txt', temp);
 
-  if(SAVE_COMPILED){
-    fs.writeFileSync('compiled.hex', compiled);
-  }
+      temp = functional.compiler.compile(temp);
+      fs.writeFileSync('compiled.hex', temp);
+    }
 
-  if(REPEAT){
+    if(!REPEAT)
+      break;
+
     debug('');
-    setTimeout(main, 1e3);
   }
 }

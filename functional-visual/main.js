@@ -38,12 +38,12 @@ async function main(){
 }
 
 function render(img){
-  var src = fs.readFileSync(srcFile, 'ascii');
+  var src = O.buff2ascii(fs.readFileSync(srcFile));
   src = functional.normalize(src);
 
   var input = fs.readFileSync(inputFile);
   if(IO === functional.io.IOBit)
-    input = input.toString('ascii');
+    input = O.buff2ascii(input);
 
   var pr = new Presentation(w, h, fps, fast);
 
