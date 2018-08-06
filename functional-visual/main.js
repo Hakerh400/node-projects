@@ -58,7 +58,7 @@ function render(img){
     var output = functional.run(src, input, IO);
     await sect('Output', output);
 
-    await pr.wait(60e3);
+    await pr.wait(10e3);
 
     async function sect(title, body, col=null){
       await print(title, 1);

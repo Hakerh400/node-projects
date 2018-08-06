@@ -38,8 +38,8 @@ class Grid{
 
     O.repeat(w, x => {
       O.repeat(2, y => {
-        var land = O.rand(landsNum);
-        var stability = O.randf(O.randf(stabilityMin, stabilityMax));
+        var land = 1;
+        var stability = stabilityMax;
 
         this.set(x, y *= h - 1, new Tile(land, stability));
         arr.push([x, y ? y - 1 : y + 1]);
@@ -48,8 +48,8 @@ class Grid{
 
     O.repeat(h, y => {
       O.repeat(2, x => {
-        var land = O.rand(landsNum);
-        var stability = O.randf(O.randf(stabilityMin, stabilityMax));
+        var land = 1;
+        var stability = stabilityMax;
 
         this.set(x *= w - 1, y, new Tile(land, stability));
         arr.push([x ? x - 1 : x + 1, y]);
