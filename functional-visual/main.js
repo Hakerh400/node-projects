@@ -1,5 +1,7 @@
 'use strict';
 
+const VERBOSE = 1;
+
 const fs = require('fs');
 const path = require('path');
 const O = require('../framework');
@@ -20,7 +22,7 @@ const fast = 0;
 const sx = 8;
 const sy = 12;
 
-const IO = functional.io.IOBit;
+const IO = functional.io.IO;
 
 const cols = {
   bg: new O.Color(0, 0, 0),
@@ -50,15 +52,17 @@ function render(img){
 
     var vcon = new VisualConsole(g, img, sx, sy, cols.bg, cols.text);
 
-    await sect('IO format', IO.name());
-
-    await sect('Source code', src);
-    await sect('Input', input);
+    if(VERBOSE){
+      await sect('IO format', IO.name());
+      await sect('Source code', src);
+      await sect('Input', input);
+    }
 
     var output = functional.run(src, input, IO);
     await sect('Output', output);
 
-    await pr.wait(10e3);
+    if(VERBOSE)
+      await pr.wait(10e3);
 
     async function sect(title, body, col=null){
       await print(title, 1);
