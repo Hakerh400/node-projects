@@ -80,12 +80,11 @@ function render(img){
 
     while(1){
       if(VERBOSE){
-        if(MULTIPLE_PROGRAMS){
+        if(MULTIPLE_PROGRAMS)
           await programHeader();
 
-          var src = srcs[index];
-          var input = inputs[index];
-        }
+        var src = srcs[index];
+        var input = inputs[index];
 
         await sect('IO format', ioCtor.name());
         await sect('Source code', src);
