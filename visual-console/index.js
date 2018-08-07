@@ -22,6 +22,7 @@ class VisualConsole{
     this.h = canvas.height;
 
     this.img = img;
+    this.aux = media.createContext(sx, sy);
 
     this.sx = sx;
     this.sy = sy;
@@ -79,23 +80,34 @@ class VisualConsole{
   }
 
   putChar(charIndex){
-    var {g, img, sx, sy, x, y} = this;
+    var {g, img, aux, sx, sy, x, y} = this;
 
     var xx = x * sx;
     var yy = y * sy;
 
-    g.globalCompositeOperation = 'source-over';
-    g.drawImage(img, charIndex * sx, 0, sx, sy, xx, yy, sx, sy);
-
-    g.globalCompositeOperation = 'darker';
-    g.fillStyle = this.textCol;
+    g.fillStyle = this.bgCol;
     g.fillRect(xx, yy, sx, sy);
+
+    aux.clearRect(0, 0, sx, sy);
+    aux.drawImage(img, charIndex * sx, 0, sx, sy, 0, 0, sx, sy);
+
+    aux.globalCompositeOperation = 'source-in';
+    aux.fillStyle = this.textCol;
+    aux.fillRect(0, 0, sx, sy);
+    aux.globalCompositeOperation = 'source-over';
+
+    g.drawImage(aux.canvas, xx, yy);
 
     if(++this.x === this.ws)
       this.newLine();
   }
 
   newLine(){
+    var {g, w, sx, sy, x, y} = this;
+
+    g.fillStyle = this.bgCol;
+    g.fillRect(x * sx, y * sy, w, sy);
+
     this.x = 0;
     this.y++;
 
@@ -105,8 +117,6 @@ class VisualConsole{
 
   scroll(){
     var {g, canvas, w, h, sy} = this;
-
-    g.globalCompositeOperation = 'source-over';
 
     this.y = this.hs - 1;
     g.drawImage(canvas, 0, -sy);

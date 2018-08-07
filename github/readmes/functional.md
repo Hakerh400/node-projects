@@ -1,4 +1,5 @@
-**Functional()** is a turing-complete programming language based on the functional programming paradigm.
+**Functional()** is an esoteric Turing complete programming language.<br/>
+Online interpreter can be found [here](https://hakerh400.github.io/?project=functional%28%29).
 
 ## Syntax
 
@@ -218,6 +219,7 @@ Navigate to the `example` directory and run the following command:
 node main.js -src <source file name>
 ```
 
-where `<source file name>` is the name of the file from `examples` subdirectory you want to run. For example: `node main.js -src addition`.
+where `<source file name>` is the name of the file from `examples` subdirectory you want to run.<br/>
+For example: `node main.js -src addition`
 
-The program reads from `input.txt` file and writes to `output.txt` file.
+The program reads from the `input.txt` file and writes to the `output.txt` file.
