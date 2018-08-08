@@ -1,6 +1,6 @@
-const {Canvas} = require('canvas');
+'use strict';
 
-while(1){
-  new Canvas(640, 480);
-  global.gc();
-}
+const O = require('../framework');
+const {Canvas} = require('.');
+
+log(Canvas);

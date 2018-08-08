@@ -1,9 +1,13 @@
 'use strict';
 
-const VERBOSE = 1;
-const MULTIPLE_PROGRAMS = 1;
-const INCLUDE_HEADER = 1;
-const NORMALIZE_SOURCE = 1;
+const flags = {  
+  MULTIPLE_SOURCES: 1,
+  INCLUDE_HEADER: 1,
+  TOKENIZED: 1,
+  PARSED: 1,
+  BYTECODE: 1,
+  NORMALIZED: 1,
+};
 
 const fs = require('fs');
 const path = require('path');
@@ -16,9 +20,10 @@ const VisualConsole = require('../visual-console');
 const {IOBit, IO} = functional.io;
 
 const cwd = __dirname;
-const headerFile = path.join(cwd, 'header.txt');
-const srcFile = path.join(cwd, 'src.txt');
-const inputFile = path.join(cwd, 'input.txt');
+const fDir = path.join(cwd, '../../Functional');;
+const headerFile = path.join(fDir, 'header.txt');
+const srcFile = path.join(fDir, 'src.txt');
+const inputFile = path.join(fDir, 'input.txt');
 
 const w = 1920;
 const h = 1080;
@@ -31,13 +36,13 @@ const sy = 12;
 const ws = w / sx | 0;
 const hs = h / sy | 0;
 
-const ioCtor = MULTIPLE_PROGRAMS ? IOBit : IO;
+const ioCtor = flags.MULTIPLE_SOURCES ? IOBit : IO;
 
 const cols = {
   bg: new O.Color(0, 0, 0),
   text: new O.Color(192, 192, 192),
-  programHeading: new O.Color(255, 255, 0),
-  sectionHeading: new O.Color(0, 255, 0),
+  h1: new O.Color(255, 255, 0),
+  h2: new O.Color(0, 255, 0),
 };
 
 setTimeout(main);
@@ -48,7 +53,7 @@ async function main(){
 }
 
 function render(img){
-  if(INCLUDE_HEADER)
+  if(flags.INCLUDE_HEADER)
     var header = O.buff2ascii(fs.readFileSync(headerFile));
 
   var src = O.buff2ascii(fs.readFileSync(srcFile));
@@ -58,17 +63,10 @@ function render(img){
   if(ioCtor === IOBit) input = O.buff2ascii(input);
   var inputs = [input];
 
-  if(MULTIPLE_PROGRAMS){
+  if(flags.MULTIPLE_SOURCES){
     srcs = O.sanll(src);
     inputs = O.sanll(input);
   }
-
-  srcs = srcs.map(src => {
-    if(INCLUDE_HEADER) src = [header, src];
-    if(NORMALIZE_SOURCE) src = functional.normalize(src);
-
-    return src;
-  });
 
   var pr = new Presentation(w, h, fps, fast);
 
@@ -78,73 +76,128 @@ function render(img){
     var vcon = new VisualConsole(g, img, sx, sy, cols.bg, cols.text);
     var index = 0;
 
+    await h1(`
+      Functional() programming language test
+      Details: https://esolangs.org/wiki/Functional()
+      Date: ${new Date().toGMTString()}
+    `);
+
+    var flagsStr = O.keys(flags).map(flag => {
+      var name = flag;
+      var value = flags[flag];
+
+      return `${name}: ${value}`;
+    }).join('\n');
+
+    await h2('Flags', flagsStr);
+    await h2('IO format', ioCtor.name());
+    if(flags.INCLUDE_HEADER) await h2('Header', header);
+
     while(1){
-      if(VERBOSE){
-        if(MULTIPLE_PROGRAMS)
-          await programHeader();
+      if(flags.MULTIPLE_SOURCES) await h1(`Program ${index + 1}`);
+      else await h1(`Program`);
 
-        var src = srcs[index];
-        var input = inputs[index];
+      var src = srcs[index];
+      await h2('Source', src);
+      if(flags.INCLUDE_HEADER) src = [header, src];
 
-        await sect('IO format', ioCtor.name());
-        await sect('Source code', src);
-        await sect('Input', input);
-      }
+      var tokenized = functional.tokenizer.tokenize(src);
+      if(flags.TOKENIZED) await h2('Tokenized', tokenized);
 
-      var output = functional.run(src, input, ioCtor);
-      await sect('Output', output);
+      var parsed = functional.parser.parse(tokenized);
+      var parsedStr = parsed.toString();
+      parsedStr = parsedStr.substring(1, parsedStr.length - 1);
+      if(flags.PARSED) await h2('Parsed', parsedStr);
 
-      if(++index === srcs.length)
-        break;
+      var bytecode = functional.compiler.compile(parsed);
+      if(flags.BYTECODE) await h2('Bytecode', formatBuff(bytecode));
+
+      var normalized = functional.normalize(bytecode);
+      if(flags.NORMALIZED) await h2('Normalized', normalized);
+
+      var input = inputs[index];
+      await h2('Input', input);
+
+      var output = functional.run(normalized, input, ioCtor);
+      await h2('Output', output);
+
+      if(++index === srcs.length) break;
     }
 
-    if(VERBOSE)
-      await pr.wait(10e3);
+    if(flags.VERBOSE) await pr.wait(10e3);
 
-    async function programHeader(){
-      var char = '#';
-      var chars = char.repeat(10);
-      var space = ' '.repeat(2);
+    async function h1(strs){
+      if(Array.isArray(strs)) strs = strs.join('\n');
+      strs = O.sanl(strs.trim());
+      strs = strs.map(str => str.trim());
 
-      var str1 = `${space}Program ${index + 1}${space}`;
-      var str2 = ' '.repeat(str1.length);
+      var maxLen = strs.reduce((len, str) => {
+        return Math.max(str.length, len);
+      }, 0);
 
-      var str3 = `${chars}${str2}${chars}`;
-      var str4 = `${chars}${str1}${chars}`;
-      var str5 = char.repeat(str3.length);
+      var indent = 5;
+      var indentSpace = 2;
+      var spaceSize = indentSpace * 2 + maxLen;
 
-      var str = [str5, str3, str4, str3, str5].join('\n');
+      var str1 = '#'.repeat(indent);
+      var str2 = `${str1}${'#'.repeat(spaceSize)}${str1}`
+      var str3 = `${str1}${' '.repeat(spaceSize)}${str1}`
 
-      vcon.setTextCol(cols.programHeading);
-      await print(str);
-      vcon.setTextCol(cols.text);
+      var str = strs.map(str => {
+        str = `${' '.repeat(spaceSize - str.length >> 1)}${str}`;
+        str = str.padEnd(spaceSize);
+
+        return `${str1}${str}${str1}`;
+      }).join('\n');
+
+      str = [str2, str3, str, str3, str2].join('\n');
+
+      await print(str, 2, cols.h1);
     }
 
-    async function sect(title, body, col=null){
-      await print(title, 1);
+    async function h2(title, body){
+      var str1 = '='.repeat(5);
+      var str = `${str1} ${title} ${str1}`;
 
-      if(col !== null) vcon.setTextCol(col);
-      await print(body);
-      if(col !== null) vcon.setTextCol(cols.text);
+      await print(str, 2, cols.h2);
+      await print(body, 2);
     }
 
-    async function print(str, heading=0){
-      if(heading){
-        vcon.setTextCol(cols.sectionHeading);
+    async function print(str, newLines=0, col=cols.text){
+      vcon.setTextCol(col);
+      str = String(str);
 
-        var hStr = '='.repeat(5);
-        str = `${hStr} ${str} ${hStr}`;
+      var newLinesStr = '\n'.repeat(newLines);
+      str = `${str}${newLinesStr}`;
+
+      for(var i = 0; i !== str.length; i++)
+        await printChar(str[i])
+    }
+
+    async function printChar(char){
+      if(!(O.static in printChar)){
+        var obj = printChar[O.static] = O.obj();
+        obj.spacesNum = 0;
+      }else{
+        var obj = printChar[O.static];
       }
 
-      str = `${str}\n\n`;
-
-      for(var i = 0; i !== str.length; i++){
-        vcon.print(str[i]);
-        await pr.frame();
+      if(char === ' '){
+        obj.spacesNum++;
+        return;
       }
 
-      if(heading)
-        vcon.setTextCol(cols.text);
+      var spacesStr = ' '.repeat(obj.spacesNum);
+      obj.spacesNum = 0;
+
+      var str = `${spacesStr}${char}`;
+      vcon.print(str);
+
+      await pr.frame();
     }
   });
+}
+
+function formatBuff(buff){
+  return buff.toString('hex').toUpperCase();
 }
