@@ -118,7 +118,7 @@ function render(img){
       var input = inputs[index];
       await h2('Input', input);
 
-      var output = functional.run(normalized, input, ioCtor);
+      var output = functional.run(bytecode, input, ioCtor);
       await h2('Output', output);
 
       if(++index === srcs.length) break;
