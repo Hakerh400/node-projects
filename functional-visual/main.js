@@ -1,7 +1,7 @@
 'use strict';
 
 const flags = {  
-  MULTIPLE_SOURCES: 1,
+  MULTIPLE_PROGRAMS: 1,
   INCLUDE_HEADER: 1,
   TOKENIZED: 1,
   PARSED: 1,
@@ -36,7 +36,7 @@ const sy = 12;
 const ws = w / sx | 0;
 const hs = h / sy | 0;
 
-const ioCtor = flags.MULTIPLE_SOURCES ? IOBit : IO;
+const ioCtor = IOBit;
 
 const cols = {
   bg: new O.Color(0, 0, 0),
@@ -63,7 +63,7 @@ function render(img){
   if(ioCtor === IOBit) input = O.buff2ascii(input);
   var inputs = [input];
 
-  if(flags.MULTIPLE_SOURCES){
+  if(flags.MULTIPLE_PROGRAMS){
     srcs = O.sanll(src);
     inputs = O.sanll(input);
   }
@@ -94,7 +94,7 @@ function render(img){
     if(flags.INCLUDE_HEADER) await h2('Header', header);
 
     while(1){
-      if(flags.MULTIPLE_SOURCES) await h1(`Program ${index + 1}`);
+      if(flags.MULTIPLE_PROGRAMS) await h1(`Program ${index + 1}`);
       else await h1(`Program`);
 
       var src = srcs[index];
