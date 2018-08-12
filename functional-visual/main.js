@@ -1,11 +1,11 @@
 'use strict';
 
 const flags = {  
-  MULTIPLE_PROGRAMS: 1,
+  MULTIPLE_PROGRAMS: 0,
   INCLUDE_HEADER: 0,
-  TOKENIZED: 1,
-  PARSED: 1,
-  BYTECODE: 1,
+  TOKENIZED: 0,
+  PARSED: 0,
+  BYTECODE: 0,
   NORMALIZED: 1,
 };
 

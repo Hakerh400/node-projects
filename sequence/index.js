@@ -3,12 +3,14 @@
 const O = require('../framework');
 
 const DEFAULT_TOKEN = Symbol('defaultToken');
+const PROBABILITIES = Symbol('probabilities');
 
 class Sequence{
   constructor(memSize){
     this.memSize = memSize;
     this.mem = O.ca(memSize, () => DEFAULT_TOKEN);
     this.data = O.obj();
+    this.finalized = 0;
   }
 
   add(token){
@@ -24,103 +26,77 @@ class Sequence{
     if(!(token in obj)) obj[token] = 1;
     else obj[token]++;
 
-    mem.shift();
-    mem.push(token);
+    if(PROBABILITIES in obj)
+      delete obj[PROBABILITIES];
+
+    mem.pop();
+    mem.unshift(token);
   }
 
-  sample(){
+  finalize(){
+    this.add(DEFAULT_TOKEN);
+    this.finalized = 1;
+  }
+
+  sample(bin=0){
+    if(!this.finalized)
+      this.finalize();
+
     var sampler = this.createSampler();
-    var str = '';
+    var output = bin ? [] : '';
 
     while(1){
       var next = sampler.next();
       if(next.done) break;
       var token = next.value;
 
-      str += token;
+      if(bin) output.push(token);
+      else output += token;
     }
 
-    return str;
+    if(bin)
+      output = Buffer.from(output);
+
+    return output;
   }
 
   createSampler(activateGenerator=1){
     var {memSize, mem, data} = this;
 
-    var tokensObj = O.obj();
-
-    var queue = O.keys(data).map(token => {
-      return [
-        [token],
-        data[token],
-      ];
-    });
-
-    while(queue.length !== 0){
-      var elem = queue.shift();
-      var [tokens, obj] = elem;
-
-      if(tokens.length !== memSize){
-        O.keys(obj).forEach(token => {
-          queue.push([
-            [...tokens, token],
-            obj[token],
-          ]);
-        });
-      }else{
-        var tokensArr = O.keys(obj);
-        var sum = 0;
-
-        tokensArr.forEach(token => {
-          sum += obj[token];
-        });
-
-        var tempSum = 0;
-
-        tokensArr = tokensArr.map(token => {
-          tempSum += obj[token];
-
-          return [
-            tempSum / sum,
-            token,
-          ];
-        });
-
-        var obj = tokensObj;
-
-        tokens.forEach((token, index) => {
-          if(index === memSize - 1) return;
-
-          if(!(token in obj)) obj[token] = O.obj();
-          obj = obj[token];
-        });
-
-        obj[tokens[memSize - 1]] = tokensArr;
-      }
-    }
-
-    var obj = tokensObj;
-
-    mem.forEach((token, index) => {
-      if(index === memSize - 1) return;
-
-      if(!(token in obj)) obj[token] = O.obj();
-      obj = obj[token];
-    });
-
-    obj[mem[memSize - 1]] = [[1, DEFAULT_TOKEN]];
-
     var generator = function*(){
       var mem = O.ca(memSize, () => DEFAULT_TOKEN);
 
       while(1){
-        var obj = tokensObj;
+        var obj = data;
 
         mem.forEach(token => {
           if(!(token in obj)) obj[token] = O.obj();
           obj = obj[token];
         });
 
-        var samples = obj;
+        if(!(PROBABILITIES in obj)){
+          var probs = O.keys(obj);
+          var sum = 0;
+
+          probs.forEach(token => {
+            sum += obj[token];
+          });
+
+          var tempSum = 0;
+
+          probs = probs.map(token => {
+            tempSum += obj[token];
+
+            return [
+              tempSum / sum,
+              token,
+            ];
+          });
+
+          obj[PROBABILITIES] = probs;
+        }
+
+        var samples = obj[PROBABILITIES];
         var sampleFloat = O.randf(1);
         var index = 0;
 
@@ -130,8 +106,8 @@ class Sequence{
         var token = samples[index][1];
         if(token === DEFAULT_TOKEN) return;
 
-        mem.shift();
-        mem.push(token);
+        mem.pop();
+        mem.unshift(token);
 
         yield token;
       }
