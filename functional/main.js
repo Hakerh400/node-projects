@@ -1,8 +1,8 @@
 'use strict';
 
-const GENERATE = 0;
+const GENERATE = 1;
 const SAVE_TEMP_FILES = 0;
-const REPEAT = 0;
+const REPEAT = 1;
 
 const fs = require('fs');
 const O = require('../framework');
