@@ -2,7 +2,7 @@
 
 const flags = {  
   MULTIPLE_PROGRAMS: 1,
-  INCLUDE_HEADER: 1,
+  INCLUDE_HEADER: 0,
   TOKENIZED: 1,
   PARSED: 1,
   BYTECODE: 1,
@@ -97,7 +97,7 @@ function render(img){
       if(flags.MULTIPLE_PROGRAMS) await h1(`Program ${index + 1}`);
       else await h1(`Program`);
 
-      var src = srcs[index];
+      var src = srcs[index] || '';
       await h2('Source', src);
       if(flags.INCLUDE_HEADER) src = [header, src];
 
@@ -115,7 +115,7 @@ function render(img){
       var normalized = functional.normalize(bytecode);
       if(flags.NORMALIZED) await h2('Normalized', normalized);
 
-      var input = inputs[index];
+      var input = inputs[index] || '';
       await h2('Input', input);
 
       var output = functional.run(bytecode, input, ioCtor);
