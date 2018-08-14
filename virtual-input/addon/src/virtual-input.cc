@@ -6,12 +6,13 @@
 using namespace std;
 namespace vi = VirtualInput;
 
-int sleep = 5;
+int vi::sleep = 5;
 
 void send(INPUT &i);
 
 void vi::move(int x, int y){
   SetCursorPos(x, y);
+  Sleep(vi::sleep);
 }
 
 void vi::mdown(){
@@ -90,5 +91,5 @@ int vi::cy(){
 
 void send(INPUT &i){
   SendInput(1, &i, sizeof(INPUT));
-  Sleep(sleep);
+  Sleep(vi::sleep);
 }
