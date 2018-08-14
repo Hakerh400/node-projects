@@ -1,7 +1,8 @@
 #pragma once
 
-#include <windows.h>
 #include <iostream>
+#include <windows.h>
+#include <node.h>
 
 using namespace std;
 
@@ -21,6 +22,9 @@ namespace VirtualInput{
 
   void click();
   void click(int x, int y);
+
+  void drag(int x, int y);
+  void drag(int x1, int y1, int x2, int y2);
 
   void kdown(int code);
   void kup(int code);

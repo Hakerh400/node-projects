@@ -1,5 +1,6 @@
-#include <windows.h>
 #include <iostream>
+#include <windows.h>
+#include <node.h>
 
 #include "virtual-input.h"
 
@@ -51,6 +52,17 @@ void vi::click(){
 void vi::click(int x, int y){
   vi::move(x, y);
   vi::click();
+}
+
+void vi::drag(int x, int y){
+  vi::mdown();
+  vi::move(x, y);
+  vi::mup();
+}
+
+void vi::drag(int x1, int y1, int x2, int y2){
+  vi::move(x1, y1);
+  vi::drag(x2, y2);
 }
 
 int vi::cx(){

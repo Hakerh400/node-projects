@@ -24,9 +24,6 @@ async function main(){
     var x = wh + Math.cos(angle) * r | 0;
     var y = hh + Math.sin(angle) * r | 0;
 
-    vi.move(x, y);
-    if(i === 0) vi.mdown();
+    vi.drag(x, y);
   });
-
-  vi.mup();
 }

@@ -41,6 +41,16 @@ WRAP_1(kdown);
 WRAP_1(kup);
 WRAP_1(key);
 
+FUNC(drag){
+  if(info.Length() == 2){
+    ARGS(2);
+    vi::drag(args[0], args[1]);
+  }else{
+    ARGS(4);
+    vi::drag(args[0], args[1], args[2], args[3]);
+  }
+}
+
 void init(Local<Object> exports, Local<Object> module){
   NODE_SET_METHOD(exports, "cx", cx);
   NODE_SET_METHOD(exports, "cy", cy);
@@ -49,6 +59,8 @@ void init(Local<Object> exports, Local<Object> module){
   NODE_SET_METHOD(exports, "mdown", mdown);
   NODE_SET_METHOD(exports, "mup", mup);
   NODE_SET_METHOD(exports, "click", click);
+  NODE_SET_METHOD(exports, "drag", drag);
+
   NODE_SET_METHOD(exports, "kdown", kdown);
   NODE_SET_METHOD(exports, "kup", kup);
   NODE_SET_METHOD(exports, "key", key);
