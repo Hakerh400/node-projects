@@ -35,11 +35,11 @@ function main(){
       while(1){
         src = generate();
 
-        src = `
+        src = O.sanl(`
           0, 1, 2, 3, 4, 5, 6, 7, 8,
 
           7(2(6(), 7(6()(0, 2(6(), 7(0)))(7(0), 7(6())))))
-        `;
+        `).map(a => a.trim()).join('\n');
 
         var compiled = compile(src);
         var output = run(compiled, inputs[0], IO);
@@ -51,7 +51,7 @@ function main(){
         if(found) break;
       }
 
-      log(O.sanl(src).slice(2).join('\n').trim());
+      log(O.sanl(src).slice(2).join('\n'));
     }else{
       src = O.buff2ascii(fs.readFileSync('src.txt'));
       
