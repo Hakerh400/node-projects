@@ -1,6 +1,6 @@
 'use strict';
 
-const HD = 1;
+const HD = 0;
 
 const O = require('../framework');
 const media = require('../media');
@@ -12,7 +12,7 @@ const h = HD ? 1080 : 480;
 const fps = 60;
 const fast = !HD;
 
-const duration = 2560;
+const duration = 1 / fps;
 const framesNum = fps * duration;
 
 setTimeout(main);
@@ -45,8 +45,34 @@ function render(img){
   var col1 = Buffer.alloc(3);
   var col2 = Buffer.alloc(3);
 
+  var seq = new Sequence(20);
+
+  dImg.iterate((x, y, r, g, b) => {
+    approxRgb(r, g, b, 30, col);
+    seq.add(col.toString('hex'));
+  });
+
+  seq.finalize();
+
   function init(g){
     d = new ImageData(g);
+
+    var sampler = seq.createSampler();
+
+    d.iterate((x, y) => {
+      var next = sampler.next();
+
+      if(next.done){
+        sampler = seq.createSampler();
+        next = sampler.next();
+      }
+
+      var val = next.value;
+
+      return Buffer.from(val, 'hex');
+    });
+
+    d.put();
   }
 
   media.renderVideo('-vid/1.mp4', w, h, fps, fast, (w, h, g, f) => {
@@ -54,23 +80,6 @@ function render(img){
 
     if(f === 1)
       init(g);
-
-    var k = 2 + f / fps / 10;
-    var k1 = k % 1;
-
-    k |= 0;
-
-    d.iterate((x, y) => {
-      dImg.get(x, y, col);
-      
-      approxCol(col, k, col1);
-      approxCol(col, k + 1, col2);
-      intpCol(col1, col2, k1, col);
-
-      return col;
-    });
-
-    d.put();
 
     return f !== framesNum;
   });
@@ -80,6 +89,14 @@ function approxCol(col1, k, col){
   col[0] = approx(col1[0], 255, k);
   col[1] = approx(col1[1], 255, k);
   col[2] = approx(col1[2], 255, k);
+
+  return col;
+}
+
+function approxRgb(r, g, b, k, col){
+  col[0] = approx(r, 255, k);
+  col[1] = approx(g, 255, k);
+  col[2] = approx(b, 255, k);
 
   return col;
 }

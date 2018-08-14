@@ -13,6 +13,11 @@ class Sequence{
     this.finalized = 0;
   }
 
+  static updateMem(mem, token){
+    mem.pop();
+    mem.unshift(token);
+  }
+
   add(token){
     var {mem, data} = this;
 
@@ -29,8 +34,7 @@ class Sequence{
     if(PROBABILITIES in obj)
       delete obj[PROBABILITIES];
 
-    mem.pop();
-    mem.unshift(token);
+    Sequence.updateMem(mem, token);
   }
 
   finalize(){
@@ -70,7 +74,6 @@ class Sequence{
         var obj = data;
 
         mem.forEach(token => {
-          if(!(token in obj)) obj[token] = O.obj();
           obj = obj[token];
         });
 
@@ -106,8 +109,7 @@ class Sequence{
         var token = samples[index][1];
         if(token === DEFAULT_TOKEN) return;
 
-        mem.pop();
-        mem.unshift(token);
+        Sequence.updateMem(mem, token);
 
         yield token;
       }
