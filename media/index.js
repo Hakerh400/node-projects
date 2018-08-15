@@ -28,21 +28,41 @@ var tempDir = null;
 addEventListeners();
 
 module.exports = {
+  Canvas,
+
+  loadImage,
+
   renderImage,
   editImage,
+
   renderVideo,
   editVideo,
+
   renderAudio,
+
   presentation,
   custom,
+
   buff2canvas,
   spawnFfmpeg,
+
   blurRegion,
   createCanvas,
   createContext,
   logStatus,
-  Canvas,
 };
+
+function loadImage(input){
+  return new Promise(res => {
+    var img;
+
+    editImage(input, '-', (w, h, g) => {
+      img = g;
+    }, () => {
+      res(img);
+    });
+  });
+}
 
 function renderImage(output, w, h, frameFunc=O.nop, exitCb=O.nop){
   output = formatFileName(output);
@@ -476,8 +496,4 @@ function getTempDir(){
     tempDir = require('../temp-dir')(__filename);
 
   return tempDir;
-}
-
-function log(str){
-  fs.writeFileSync(fd, `${str}\n`);
 }
