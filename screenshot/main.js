@@ -25,7 +25,7 @@ async function main(){
   }
 
   media.renderVideo('-vid/1.mp4', w, h, fps, fast, (w, h, g, f) => {
-    media.logStatus(f, framesNum);
+    media.logStatus(f);
 
     if(f === 1)
       init(g);
@@ -35,6 +35,6 @@ async function main(){
 
     g.putImageData(imgd, 0, 0);
 
-    return f !== framesNum;
+    return 1;
   });
 }
