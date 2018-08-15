@@ -38,6 +38,30 @@ async function processInput(str){
 
   var files = getFiles();
 
+  if(str.length === 0 || str.startsWith('-')){
+    if(files.includes(MAIN_SCRIPT)){
+      await clear();
+
+      var args = [];
+
+      if(str.length !== 0 && str !== '-'){
+        str = str.substring(1).trim();
+        args = str.split(/\s+/);
+      }
+
+      proc = cp.spawn('node', [MAIN_SCRIPT, ...args], {
+        cwd: currDir,
+        stdio: 'inherit',
+      });
+
+      proc.on('exit', onprocExit);
+    }else{
+      log(`Missing "${MAIN_SCRIPT}"`);
+    }
+
+    return;
+  }
+
   switch(str){
     case 'cls':
       await clear();
@@ -52,23 +76,6 @@ async function processInput(str){
   if(str.length > 1 || /[\/\\]/.test(str)){
     var found = updatePath(str);
     if(!found) log('Directory not found');
-    return;
-  }
-
-  if(str === ''){
-    if(files.includes(MAIN_SCRIPT)){
-      await clear();
-
-      proc = cp.spawn('node', [MAIN_SCRIPT], {
-        cwd: currDir,
-        stdio: 'inherit',
-      });
-
-      proc.on('exit', onprocExit);
-    }else{
-      log(`Missing "${MAIN_SCRIPT}"`);
-    }
-
     return;
   }
 }
@@ -93,7 +100,7 @@ function updatePath(str){
     }
 
     dir = dir.replace(/\*+|[\s\S]/g, token => {
-      if(token[0] === '*') return '.*';
+      if(token.startsWith('*')) return '.*';
       return `\\u${O.hex(O.cc(token), 2)}`;
     });
 
