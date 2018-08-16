@@ -35,6 +35,6 @@ async function main(){
 
     g.putImageData(imgd, 0, 0);
 
-    return 1;
+    return f;
   });
 }

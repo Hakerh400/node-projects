@@ -49,12 +49,15 @@ async function processInput(str){
         args = str.split(/\s+/);
       }
 
-      proc = cp.spawn('node', [MAIN_SCRIPT, ...args], {
+      proc = cp.spawn('node', [
+        MAIN_SCRIPT,
+        ...args,
+      ], {
         cwd: currDir,
         stdio: 'inherit',
       });
 
-      proc.on('exit', onprocExit);
+      proc.on('exit', onProcExit);
     }else{
       log(`Missing "${MAIN_SCRIPT}"`);
     }
@@ -125,12 +128,15 @@ function updatePath(str){
 async function onInput(str){
   rl.pause();
   await processInput(str);
-  if(!shouldExit && proc === null) onprocExit();
+  if(!shouldExit && proc === null) onProcExit();
 }
 
-function onprocExit(){
-  proc = null;
-  rl.resume();
+function onProcExit(){
+  if(proc !== null){
+    rl.resume();
+    proc = null;
+  }
+  
   askForInput();
 }
 

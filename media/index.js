@@ -24,6 +24,7 @@ const fd = process.stdout.fd;
 
 var procs = [];
 var tempDir = null;
+var shouldExit = 0;
 
 addEventListeners();
 
@@ -52,6 +53,28 @@ module.exports = {
   logStatus,
 };
 
+function addEventListeners(){
+  process.on('SIGINT', O.nop);
+  process.on('uncaughtException', onError);
+}
+
+function onStdinData(data){
+  if(shouldExit) return;
+  
+  if(data.includes(0x03))
+    onSigint();
+}
+
+function onError(err){
+  if(err instanceof Error) err = err.stack;
+  log(err);
+  closeProcs();
+}
+
+function onSigint(){
+  closeProcs();
+}
+
 function loadImage(input){
   return new Promise(res => {
     var img;
@@ -74,7 +97,7 @@ function renderImage(output, w, h, frameFunc=O.nop, exitCb=O.nop){
 
   frameFunc(w, h, g);
 
-  proc.stdin.end(canvas.toBuffer('raw'));
+  end(proc, canvas.toBuffer('raw'));
 }
 
 function editImage(input, output, frameFunc=O.nop, exitCb=O.nop){
@@ -97,7 +120,7 @@ function editImage(input, output, frameFunc=O.nop, exitCb=O.nop){
         putBuffer(g, buff);
         frameFunc(w, h, g, proc2.stdout);
 
-        proc2.stdin.end(canvas.toBuffer('raw'));
+        end(proc2, canvas.toBuffer('raw'));
       }
     });
   });
@@ -130,8 +153,8 @@ function renderVideo(output, w, h, fps, fast, frameFunc=O.nop, exitCb=O.nop){
       buff = canvas.toBuffer('raw');
     }
 
-    if(value) proc.stdin.write(buff, frame);
-    else proc.stdin.end(buff);
+    if(value) write(proc, buff, frame);
+    else end(proc, buff);
   }
 }
 
@@ -168,14 +191,14 @@ function editVideo(input, output, w2, h2, fps, fast, frameFunc=O.nop, exitCb=O.n
         buff = Buffer.alloc(0);
         frameFunc(w1, h1, w2, h2, g1, g2, ++f, framesNum, proc2.stdout);
 
-        proc2.stdin.write(g2.canvas.toBuffer('raw'), () => proc1.stdout.resume());
+        write(proc2, g2.canvas.toBuffer('raw'), () => proc1.stdout.resume());
       }
 
       if(b !== null) buff = b;
     });
 
     proc1.on('exit', status => {
-      proc2.stdin.end();
+      end(proc2);
     });
   });
 }
@@ -200,8 +223,8 @@ function renderAudio(output, w, func, exitCb=O.nop){
       return;
     }
 
-    if(notFinished) proc.stdin.write(buff, frame);
-    else proc.stdin.end(buff);
+    if(notFinished) write(proc, buff, frame);
+    else end(proc, buff);
   }
 }
 
@@ -237,9 +260,9 @@ function presentation(output, w, h, fps, fast, exitCb=O.nop){
       };
 
       if(value){
-        proc.stdin.write(buff, r);
+        write(proc, buff, r);
       }else{
-        proc.stdin.end(buff, r);
+        end(proc, buff, r);
       }
     });
   }
@@ -256,8 +279,8 @@ function custom(inputArgs, input, outputArgs, output, func=O.nop, exitCb=O.nop){
   function frame(){
     var buff = func(++f);
 
-    if(buff) proc.stdin.write(buff, frame);
-    else proc.stdin.end();
+    if(buff) write(proc, buff, frame);
+    else end(proc);
   }
 }
 
@@ -294,11 +317,11 @@ function buff2canvas(buff, cb=O.nop){
     });
 
     proc.stdin.on('error', O.nop);
-    proc.stdin.end(buff);
+    end(proc, buff);
   });
 
   ffprobe.stdin.on('error', O.nop);
-  ffprobe.stdin.end(buff);
+  end(ffprobe, buff);
 
   function err(status){
     cb(null, new Error(`The process exited with code ${status}`));
@@ -424,6 +447,9 @@ function spawnProc(name, args, exitCb=O.nop){
   proc.stderr.on('data', DEBUG ? onStderrData : O.nop);
   proc.on('exit', () => onProcExit(proc, exitCb));
 
+  if(procs.length === 1)
+    process.stdin.on('data', onStdinData);
+
   return proc;
 }
 
@@ -439,6 +465,9 @@ function onProcExit(proc, exitCb=O.nop){
       setTimeout(tryToCallExitCb);
       return;
     }
+
+    process.stdin.removeListener('data', onStdinData);
+    process.stdin.unref();
 
     exitCb();
   }
@@ -457,7 +486,7 @@ function createCanvas(w, h){
 
   g.textBaseline = 'middle';
   g.textAlign = 'center';
-  g.font = '32px arial';
+  g.font = '32px "Arial"';
 
   return g.canvas;
 }
@@ -466,29 +495,24 @@ function createContext(w, h){
   return createCanvas(w, h).getContext('2d');
 }
 
-function addEventListeners(){
-  process.on('SIGINT', () => {
-    closeProcs();
-  });
-
-  process.on('uncaughtException', err => {
-    if(err instanceof Error) err = err.stack;
-    log(err);
-    closeProcs();
-  });
-}
-
 function closeProcs(){
+  shouldExit = 1;
+
   procs.forEach(proc => {
     try{
       proc.stdin.end();
-    }catch(e){}
+    }catch{}
   });
+}
 
-  setInterval(() => {
-    if(procs.length === 0)
-      process.exit();
-  });
+function write(proc, buff, cb){
+  if(shouldExit) return;
+  proc.stdin.write(buff, cb);
+}
+
+function end(proc, buff, cb){
+  if(shouldExit) return;
+  proc.stdin.end(buff, cb);
 }
 
 function getTempDir(){
