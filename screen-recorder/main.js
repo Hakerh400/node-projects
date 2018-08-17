@@ -10,10 +10,10 @@ var Presentation = require('../presentation');
 var scs = require('../screenshot');
 var vi = require('../virtual-input');
 
-const TIMEOUT = 5e3;
+const TIMEOUT = 0;
 
 const cwd = __dirname;
-const curImgPath = path.join(cwd, 'cur.png');
+const curImgPath = path.join(cwd, 'cursor.png');
 
 const w = 1920;
 const h = 1080;
