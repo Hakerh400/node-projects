@@ -1,5 +1,7 @@
 'use strict';
 
+const DISPLAY_EXIT_CODE = 0;
+
 const fs = require('fs');
 const path = require('path');
 const readline = require('readline');
@@ -131,7 +133,10 @@ async function onInput(str){
   if(!shouldExit && proc === null) onProcExit();
 }
 
-function onProcExit(){
+function onProcExit(code=null){
+  if(code !== null && DISPLAY_EXIT_CODE)
+    log(code);
+
   if(proc !== null){
     rl.resume();
     proc = null;

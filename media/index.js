@@ -20,6 +20,10 @@ const VIDEO_PRESET = '-preset slow -profile:v high -crf 18 -coder 1 -pix_fmt yuv
 const FAST_PRESET = `-c:v ${'h264_nvenc'} ${VIDEO_PRESET}`;
 const HD_PRESET = `-c:v ${'libx264'} ${VIDEO_PRESET}`;
 
+const flags = {
+  verbose: 1,
+};
+
 const fd = process.stdout.fd;
 
 var procs = [];
@@ -30,6 +34,7 @@ addEventListeners();
 
 module.exports = {
   Canvas,
+  flags,
 
   loadImage,
 
@@ -469,7 +474,7 @@ function onProcExit(proc, exitCb=O.nop){
     process.stdin.removeListener('data', onStdinData);
     process.stdin.unref();
 
-    log('P0');
+    if(flags.verbose) log('P0');
 
     exitCb();
   }

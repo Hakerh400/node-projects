@@ -27,6 +27,7 @@ class Presentation{
     this.g = null;
 
     this.time = 0;
+    this.verbose = 1;
   }
 
   render(file, func, cb=O.nop){
@@ -59,7 +60,9 @@ class Presentation{
   async frame(){
     var {mFrame} = this;
 
-    media.logStatus(mFrame.f);
+    if(this.verbose)
+      media.logStatus(mFrame.f);
+    
     await mFrame(true);
     this.time += this.timeK;
   }
