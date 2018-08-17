@@ -16,7 +16,7 @@ const [wh, hh] = [w, h].map(a => a >> 1);
 
 setTimeout(main);
 
-async function main(){
+function main(){
   var imgd, data;
 
   function init(g){
@@ -35,6 +35,6 @@ async function main(){
 
     g.putImageData(imgd, 0, 0);
 
-    return f;
+    return 1;
   });
 }

@@ -7,8 +7,8 @@ const media = require('../media');
 const ImageData = require('../image-data');
 const segmentation = require('.');
 
-const EPOCHS = 10;
-const SEGS_NUM = 3;
+const EPOCHS = 100;
+const SEGS_NUM = 10;
 
 const w = HD ? 1920 : 640;
 const h = HD ? 1080 : 480;
@@ -26,19 +26,22 @@ async function main(){
 
   function init(g){
     var d = new ImageData(img);
-
     var seg = new segmentation.Segmentator(SEGS_NUM, 3, 0, 255);
 
     O.repeat(EPOCHS, () => {
       d.iterate((x, y, r, g, b) => {
-        col[0] = r;
-        col[1] = g;
-        col[2] = b;
-
+        col[0] = r, col[1] = g, col[2] = b;
         seg.update(col);
       });
 
       seg.epoch();
+    });
+
+    seg.round();
+
+    d.iterate((x, y, r, g, b) => {
+      col[0] = r, col[1] = g, col[2] = b;
+      return seg.closest(col);
     });
 
     d.put();
@@ -50,6 +53,10 @@ async function main(){
     media.logStatus(f, framesNum);
 
     if(f === 1) init(g);
+
+    media.renderImage('-dw/1.png', w, h, (w, h, g) => {
+      g.drawImage(img.canvas, 0, 0);
+    });
 
     return f !== framesNum;
   });

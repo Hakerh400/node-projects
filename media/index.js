@@ -54,13 +54,13 @@ module.exports = {
 };
 
 function addEventListeners(){
-  process.on('SIGINT', O.nop);
   process.on('uncaughtException', onError);
+  process.on('SIGINT', O.nop);
 }
 
 function onStdinData(data){
   if(shouldExit) return;
-  
+
   if(data.includes(0x03))
     onSigint();
 }
@@ -468,6 +468,8 @@ function onProcExit(proc, exitCb=O.nop){
 
     process.stdin.removeListener('data', onStdinData);
     process.stdin.unref();
+
+    log('P0');
 
     exitCb();
   }

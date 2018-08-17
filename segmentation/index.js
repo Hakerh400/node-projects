@@ -21,9 +21,11 @@ class Segmentator{
   }
 
   epoch(){
-    this.iterate(seg => {
-      seg.epoch();
-    });
+    this.iterate(seg => seg.epoch());
+  }
+
+  round(){
+    this.iterate(seg => seg.round());
   }
 
   closest(arrUpd){
@@ -75,21 +77,25 @@ class Segment{
     var dist = 0;
 
     this.iterate((val, index) => {
-      dist += O.dist(val, arrUpd[index]);
+      var d = arrUpd[index] - val;
+      dist += d * d;
     });
 
-    return dist;
+    return Math.sqrt(dist);
   }
 
   update(arrUpd){
-    this.iterate((val, index) => {
-      return val + arrUpd[index];
+    var {arrNew} = this;
+
+    arrNew.forEach((val, index) => {
+      arrNew[index] += arrUpd[index];
     });
 
     this.num++;
   }
 
   epoch(){
+    if(this.num === 0) return;
     var {arrNew, num} = this;
 
     this.iterate((val, index) => {
@@ -99,6 +105,10 @@ class Segment{
     });
 
     this.num = 0;
+  }
+
+  round(){
+    this.iterate(val => Math.round(val));
   }
 };
 
