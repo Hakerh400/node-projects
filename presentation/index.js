@@ -27,7 +27,9 @@ class Presentation{
     this.g = null;
 
     this.time = 0;
+
     this.verbose = 1;
+    this.keepAlive = 0;
   }
 
   render(file, func, cb=O.nop){
@@ -44,11 +46,14 @@ class Presentation{
     this.start();
   }
 
-  start(){
+  async start(){
     var {w, h, g, g1} = this;
 
     this.started = true;
-    this.func(w, h, g, g1).then(this.finish.bind(this));
+    await this.func(w, h, g, g1);
+
+    if(!this.keepAlive)
+      this.finish.bind(this);
   }
 
   finish(){
@@ -86,7 +91,7 @@ class Presentation{
     while(this.time < time){
       g.globalAlpha = 1;
       g.drawImage(g2.canvas, 0, 0);
-      g.globalAlpha = 1 - (time - this.time) / ttime;
+      g.globalAlpha = O.bound(1 - (time - this.time) / ttime, 0, 1);
       g.drawImage(g1.canvas, 0, 0);
 
       await this.frame();
