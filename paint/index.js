@@ -108,22 +108,23 @@ class Paint{
 
         var [xs, ys] = cs = csArr[0];
 
+        var drawing = visibleBorders.has(xs, ys);
         var dir = borders.get(xs, ys) - 1;
         var ddir = first ? -1 : 1;
 
-        var drawing = visibleBorders.has(xs, ys);
-        if(drawing) await func({type: evts.DRAW_START});
+        if(drawing){
+          await func({type: evts.MOVE_PEN, x: xs, y: ys});
+          await func({type: evts.DRAW_START});
+        }
 
         do{
-          var dirPrev = dir;
           var drawingPrev = drawing;
+          var dirPrev = dir;
 
           [x, y] = cs;
 
           area.remove(x, y);
           borders.remove(x, y);
-
-          await func({type: evts.MOVE_PEN, coords: [x, y]});
 
           dir = dir + ddir & 3;
 
@@ -138,7 +139,18 @@ class Paint{
           if(i === 4) break;
 
           drawing = visibleBorders.has(cs[0], cs[1]);
+
+          if(dir !== dirPrev){
+            if(drawingPrev) await func({type: evts.DRAW_STOP});
+            await func({type: evts.MOVE_PEN, x: cs[0], y: cs[1]});
+            if(drawing) await func({type: evts.DRAW_START});
+          }else if(drawing !== drawingPrev){
+            if(drawing) await func({type: evts.DRAW_START});
+            else await func({type: evts.DRAW_STOP});
+          }
         }while(cs[0] !== xs || cs[1] !== ys);
+
+        if(drawing) await func({type: evts.DRAW_STOP});
 
         first = 0;
       }

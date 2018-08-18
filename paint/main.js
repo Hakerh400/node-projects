@@ -25,6 +25,9 @@ async function main(){
   pr.render('-vid/1.mp4', async (w, h, g, g1) => {
     var paint = new Paint(img);
 
+    var drawing = 0;
+    var x, y;
+
     paint.draw(async evt => {
       switch(evt.type){
         case evts.SET_COLOR:
@@ -32,9 +35,21 @@ async function main(){
           break;
 
         case evts.MOVE_PEN:
-          var [x, y] = evt.coords;
-          g.fillRect(x, y, 1, 1);
-          await pr.frame();
+          if(drawing){
+            g.fillrect(x, y, evt.x - x + 1, evt.y - y + 1);
+            await pr.frame();
+          }
+
+          x = evt.x;
+          y = evt.y;
+          break;
+
+        case evts.DRAW_START:
+          drawing = 1;
+          break;
+
+        case evts.DRAW_STOP:
+          drawing = 0;
           break;
 
         case evts.FINISH:
