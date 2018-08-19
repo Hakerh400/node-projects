@@ -7,6 +7,7 @@ const evts = O.enum([
   'MOVE_PEN',
   'DRAW_START',
   'DRAW_STOP',
+  'FILL',
   'FINISH',
 ]);
 

@@ -57,10 +57,12 @@ class Paint{
       }
     }
 
-    func({type: evts.FINISH});
+    await func({type: evts.FINISH});
 
     async function processArea(x, y, col){
-      var area = new O.Set2D();
+      var xStart = x;
+      var yStart = y;
+
       var borders = new O.Set2D();
       var visibleBorders = new O.Set2D();
 
@@ -69,8 +71,6 @@ class Paint{
 
       grid.iterAdj(x, y, (x, y, d) => {
         if(d.col !== col) return 0;
-
-        area.add(x, y);
 
         var ddir = first ? -1 : 1;
         var borderDir;
@@ -99,7 +99,7 @@ class Paint{
         return 1;
       });
 
-      var areaArr = area.getArr();
+      var visited = new O.Set2D();
       var first = 1;
 
       while(1){
@@ -112,10 +112,7 @@ class Paint{
         var dir = borders.get(xs, ys) - 1;
         var ddir = first ? -1 : 1;
 
-        if(drawing){
-          await func({type: evts.MOVE_PEN, x: xs, y: ys});
-          await func({type: evts.DRAW_START});
-        }
+        if(drawing) await start();
 
         do{
           var drawingPrev = drawing;
@@ -123,8 +120,8 @@ class Paint{
 
           [x, y] = cs;
 
-          area.remove(x, y);
           borders.remove(x, y);
+          visited.add(x, y);
 
           dir = dir + ddir & 3;
 
@@ -141,23 +138,47 @@ class Paint{
           drawing = visibleBorders.has(cs[0], cs[1]);
 
           if(dir !== dirPrev){
-            if(drawingPrev) await func({type: evts.DRAW_STOP});
-            await func({type: evts.MOVE_PEN, x: cs[0], y: cs[1]});
-            if(drawing) await func({type: evts.DRAW_START});
+            if(drawingPrev) await stop();
+            if(drawing) await start();
           }else if(drawing !== drawingPrev){
-            if(drawing) await func({type: evts.DRAW_START});
-            else await func({type: evts.DRAW_STOP});
+            if(drawing) await start();
+            else await stop();
           }
         }while(cs[0] !== xs || cs[1] !== ys);
 
-        if(drawing) await func({type: evts.DRAW_STOP});
+        if(drawing) await stop();
 
         first = 0;
       }
 
-      areaArr.forEach(([x, y]) => {
+      x = xStart, y = yStart;
+
+      if(!visibleBorders.has(x, y)){
+        grid.iterAdj(x, y, (x, y, d) => {
+          if(d.col !== col || visited.has(x, y))
+            return 0;
+
+          d.col = -1;
+          return 1;
+        });
+
+        await func({type: evts.MOVE_PEN, x, y});
+        await func({type: evts.FILL});
+      }
+
+      visited.getArr().forEach(([x, y]) => {
         grid.get(x, y).col = -1;
       });
+
+      async function start(){
+        await func({type: evts.MOVE_PEN, x: cs[0], y: cs[1]});
+        await func({type: evts.DRAW_START});
+      }
+
+      async function stop(){
+        await func({type: evts.MOVE_PEN, x, y});
+        await func({type: evts.DRAW_STOP});
+      }
     }
   }
 };

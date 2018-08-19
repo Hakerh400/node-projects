@@ -24,6 +24,7 @@ async function main(){
 
   pr.render('-vid/1.mp4', async (w, h, g, g1) => {
     var paint = new Paint(img);
+    await pr.frame();
 
     var drawing = 0;
     var x, y;
@@ -36,7 +37,12 @@ async function main(){
 
         case evts.MOVE_PEN:
           if(drawing){
-            g.fillrect(x, y, evt.x - x + 1, evt.y - y + 1);
+            var xx = Math.min(x, evt.x);
+            var yy = Math.min(y, evt.y);
+            var dx = Math.abs(evt.x - x) + 1;
+            var dy = Math.abs(evt.y - y) + 1;
+
+            g.fillRect(xx, yy, dx, dy);
             await pr.frame();
           }
 
@@ -54,6 +60,11 @@ async function main(){
 
         case evts.FINISH:
           pr.finish();
+          break;
+
+        case evts.FILL:
+          media.fill(g, x, y);
+          await pr.frame();
           break;
       }
     });

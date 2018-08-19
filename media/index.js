@@ -36,6 +36,10 @@ module.exports = {
   Canvas,
   flags,
 
+
+  createCanvas,
+  createContext,
+  logStatus,
   loadImage,
 
   renderImage,
@@ -52,11 +56,11 @@ module.exports = {
   buff2canvas,
   spawnFfmpeg,
 
-  blurRegion,
-  createCanvas,
-  createContext,
-  logStatus,
+  blur,
+  fill,
 };
+
+const conv = require('../color-converter');
 
 function addEventListeners(){
   process.on('uncaughtException', onError);
@@ -333,12 +337,12 @@ function buff2canvas(buff, cb=O.nop){
   }
 }
 
-function blurRegion(g, x, y, w, h, r = 5){
-  blur(g, x, y, w, h, r);
-  blur(g, x, y, w, h, r);
+function blur(g, x, y, w, h, r = 5){
+  blurRegion(g, x, y, w, h, r);
+  blurRegion(g, x, y, w, h, r);
 }
 
-function blur(g, xx, yy, w, h, r){
+function blurRegion(g, xx, yy, w, h, r){
   var imgd = g.getImageData(xx, yy, w, h);
   var data = imgd.data;
   var buff = Buffer.alloc(w * h << 2);
@@ -382,6 +386,67 @@ function blur(g, xx, yy, w, h, r){
   }
 
   g.putImageData(imgd, xx, yy);
+}
+
+function fill(g, x, y){
+  var {width: w, height: h} = g.canvas;
+
+  var imgd = g.getImageData(0, 0, w, h);
+  var data = imgd.data;
+
+  var col = Buffer.from(conv.col2rgb(g.fillStyle));
+
+  var i = getI(x, y);
+  var colPrev = Buffer.alloc(3);
+
+  colPrev[0] = data[i];
+  colPrev[1] = data[i + 1];
+  colPrev[2] = data[i + 2];
+
+  if(col.equals(colPrev)) return 0;
+
+  var queue = [x, y];
+
+  while(queue.length !== 0){
+    x = queue.shift(), y = queue.shift();
+    if(!isPrev(x, y)) continue;
+
+    var i = getI(x, y);
+
+    data[i] = col[0];
+    data[i + 1] = col[1];
+    data[i + 2] = col[2];
+
+    add(x, y - 1);
+    add(x + 1, y);
+    add(x, y + 1);
+    add(x - 1, y);
+  }
+
+  g.putImageData(imgd, 0, 0);
+  
+  return 1;
+
+  function add(x, y){
+    if(!(isIn(x, y) && isPrev(x, y))) return;
+    queue.push(x, y);
+  }
+
+  function isPrev(x, y){
+    var i = getI(x, y);
+
+    return data[i] === colPrev[0] &&
+           data[i + 1] === colPrev[1] &&
+           data[i + 2] === colPrev[2];
+  }
+  
+  function isIn(x, y){
+    return x >= 0 && y >= 0 && x < w && y < h;
+  }
+
+  function getI(x, y){
+    return x + y * w << 2;
+  }
 }
 
 function putBuffer(g, buff){
