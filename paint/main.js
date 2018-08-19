@@ -1,6 +1,6 @@
 'use strict';
 
-const HD = 0;
+const HD = 1;
 
 const O = require('../framework');
 const media = require('../media');
@@ -59,6 +59,7 @@ async function main(){
           break;
 
         case evts.FINISH:
+          //await pr.wait(60e3);
           pr.finish();
           break;
 

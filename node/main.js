@@ -91,6 +91,9 @@ function updatePath(str){
   if(dirs[0] === ''){
     currDir = currDir.substring(0, 3);
     dirs.shift();
+  }else if(dirs.length === 1){
+    if(!dirs[0].includes('.'))
+      dirs[0] += '*';
   }
 
   var found = 1;

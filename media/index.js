@@ -388,10 +388,10 @@ function blurRegion(g, xx, yy, w, h, r){
   g.putImageData(imgd, xx, yy);
 }
 
-function fill(g, x, y){
+function fill(g, x, y, imgd=null){
   var {width: w, height: h} = g.canvas;
 
-  var imgd = g.getImageData(0, 0, w, h);
+  if(imgd === null) imgd = g.getImageData(0, 0, w, h);
   var data = imgd.data;
 
   var col = Buffer.from(conv.col2rgb(g.fillStyle));

@@ -100,7 +100,9 @@ class Paint{
       });
 
       var visited = new O.Set2D();
+      var flagDrawing = 0;
       var first = 1;
+      var xc, yc;
 
       while(1){
         var csArr = borders.getArr();
@@ -119,9 +121,7 @@ class Paint{
           var dirPrev = dir;
 
           [x, y] = cs;
-
           borders.remove(x, y);
-          visited.add(x, y);
 
           dir = dir + ddir & 3;
 
@@ -146,38 +146,69 @@ class Paint{
           }
         }while(cs[0] !== xs || cs[1] !== ys);
 
-        if(drawing) await stop();
+        if(drawing){
+          [x, y] = cs;
+          await stop();
+        }
 
         first = 0;
-      }
-
-      x = xStart, y = yStart;
-
-      if(!visibleBorders.has(x, y)){
-        grid.iterAdj(x, y, (x, y, d) => {
-          if(d.col !== col || visited.has(x, y))
-            return 0;
-
-          d.col = -1;
-          return 1;
-        });
-
-        await func({type: evts.MOVE_PEN, x, y});
-        await func({type: evts.FILL});
       }
 
       visited.getArr().forEach(([x, y]) => {
         grid.get(x, y).col = -1;
       });
 
+      x = xStart, y = yStart;
+
+      if(grid.get(x, y).col === col){
+        grid.iterAdj(x, y, (x, y, d) => {
+          if(d.col !== col) return 0;
+
+          d.col = -1;
+          return 1;
+        });
+
+        await move(x, y);
+        await func({type: evts.FILL});
+      }
+
+      async function move(x, y){
+        if(flagDrawing){
+          var xx = Math.min(xc, x);
+          var yy = Math.min(yc, y);
+          var dx = Math.abs(x - xc) + 1;
+          var dy = Math.abs(y - yc) + 1;
+
+          rect(xx, yy, dx, dy);
+        }
+
+        xc = x, yc = y;
+        await func({type: evts.MOVE_PEN, x, y});
+      }
+
       async function start(){
-        await func({type: evts.MOVE_PEN, x: cs[0], y: cs[1]});
+        await move(cs[0], cs[1]);
         await func({type: evts.DRAW_START});
+
+        flagDrawing = 1;
       }
 
       async function stop(){
-        await func({type: evts.MOVE_PEN, x, y});
+        await move(x, y);
         await func({type: evts.DRAW_STOP});
+
+        flagDrawing = 0;
+      }
+
+      function rect(x1, y1, w, h){
+        var x2 = x1 + w;
+        var y2 = y1 + h;
+
+        for(var y = y1; y !== y2; y++){
+          for(var x = x1; x !== x2; x++){
+            visited.add(x, y);
+          }
+        }
       }
     }
   }
