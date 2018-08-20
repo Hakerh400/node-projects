@@ -1,12 +1,40 @@
 'use strict';
 
 const O = require('../framework');
+const ImageData = require('../image-data');
 
 class Segmentator{
   constructor(segsNum, segLen, min, max){
     this.segs = O.ca(segsNum, () => {
       return new Segment(segLen, min, max);
     });
+  }
+
+  static img(img, colsNum, epochsNum){
+    var col = Buffer.alloc(3);
+
+    var d = new ImageData(img);
+    var seg = new Segmentator(colsNum, 3, 0, 255);
+
+    O.repeat(epochsNum, () => {
+      d.iterate((x, y, r, g, b) => {
+        col[0] = r, col[1] = g, col[2] = b;
+        seg.update(col);
+      });
+
+      seg.epoch();
+    });
+
+    seg.round();
+
+    d.iterate((x, y, r, g, b) => {
+      col[0] = r, col[1] = g, col[2] = b;
+      return seg.closest(col);
+    });
+
+    d.put();
+
+    return img;
   }
 
   iterate(func){
@@ -112,7 +140,6 @@ class Segment{
   }
 };
 
-module.exports = {
-  Segmentator,
-  Segment,
-};
+Segmentator.Segment = Segment;
+
+module.exports = Segmentator;

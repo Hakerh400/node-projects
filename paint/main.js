@@ -1,6 +1,7 @@
 'use strict';
 
-const HD = 1;
+const HD = 0;
+const WAIT_AFTER_END = 0;
 
 const O = require('../framework');
 const media = require('../media');
@@ -22,7 +23,7 @@ async function main(){
   var pr = new Presentation(w, h, fps, fast);
   pr.keepAlive = 1;
 
-  pr.render('D:/Test/paint.mp4', async (w, h, g, g1) => {
+  pr.render('-vid/1.mp4', async (w, h, g, g1) => {
     var paint = new Paint(img);
     await pr.frame();
 
@@ -59,7 +60,7 @@ async function main(){
           break;
 
         case evts.FINISH:
-          await pr.wait(60e3);
+          if(WAIT_AFTER_END) await pr.wait(60e3);
           pr.finish();
           break;
 
