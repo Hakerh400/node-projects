@@ -1,5 +1,9 @@
 'use strict';
 
+const STABILIZE_FPS = 0;
+const RECORD_CURSOR = 0;
+const VERBOSE = 0;
+
 var fs = require('fs');
 var path = require('path');
 var cp = require('child_process');
@@ -17,7 +21,7 @@ const curImgPath = path.join(cwd, 'cursor.png');
 
 const w = 1920;
 const h = 1080;
-const fps = 30;
+const fps = STABILIZE_FPS ? 30 : 60;
 const fast = 1;
 
 const [wh, hh] = [w, h].map(a => a >> 1);
@@ -39,10 +43,10 @@ function askForInput(){
 
 async function onInput(str){
   switch(str){
-    case 'start recording': await startRecording(); break;
+    case '': case 'start recording': await startRecording(); break;
     case 'stop recording': await stopRecording(); break;
     case 'launch chrome': await launchChrome(); break;
-    default: log('Unknown command'); break;
+    default: info('Unknown command'); break;
   }
 
   askForInput();
@@ -50,11 +54,11 @@ async function onInput(str){
 
 async function startRecording(){
   if(rec !== 0){
-    log('Screen recording is already started');
+    info('Screen recording is already started');
     return;
   }
 
-  log('Starting screen recording');
+  info('Starting screen recording');
   rec = 2;
 
   var cur = await media.loadImage(curImgPath);
@@ -87,20 +91,26 @@ async function startRecording(){
           data[i] = img[i];
 
         g.putImageData(imgd, 0, 0);
-        g.drawImage(cur.canvas, vi.cx(), vi.cy());
 
-        while(1){
-          var dt = Date.now() - timeStart;
-          var ff = dt / 1e3 * fps;
+        if(RECORD_CURSOR)
+          g.drawImage(cur.canvas, vi.cx(), vi.cy());
 
-          if(ff > f){
-            f++;
-            await pr.frame();
-            continue;
-          }
+        if(STABILIZE_FPS){
+          while(1){
+            var dt = Date.now() - timeStart;
+            var ff = dt / 1e3 * fps;
 
-          break;
-        };
+            if(ff > f){
+              f++;
+              await pr.frame();
+              continue;
+            }
+
+            break;
+          };
+        }else{
+          await pr.frame();
+        }
       }
     });
   });
@@ -108,11 +118,11 @@ async function startRecording(){
 
 async function stopRecording(){
   if(rec !== 2){
-    log('Screen recording is already stopped');
+    info('Screen recording is already stopped');
     return;
   }
 
-  log('Stopping screen recording');
+  info('Stopping screen recording');
   await sleep();
 
   rec = 1;
@@ -120,7 +130,7 @@ async function stopRecording(){
 }
 
 async function launchChrome(){
-  log('Launching chrome 67.0.3396.87');
+  info('Launching chrome 67.0.3396.87');
   await sleep();
 
   cp.spawn('cmd', [
@@ -133,4 +143,9 @@ async function launchChrome(){
 
 async function sleep(){
   await O.sleep(TIMEOUT);
+}
+
+function info(msg){
+  if(!VERBOSE) return;
+  log(msg);
 }
