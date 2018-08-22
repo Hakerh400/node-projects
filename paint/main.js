@@ -1,14 +1,19 @@
 'use strict';
 
 const HD = 0;
+const SEGMENTATE = 1;
 const WAIT_AFTER_END = 0;
 
 const O = require('../framework');
 const media = require('../media');
 const Presentation = require('../presentation');
+const Segmentator = require('../segmentator');
 const Paint = require('.');
 
 const {evts} = Paint;
+
+const COLS_NUM = 10;
+const EPOCHS_NUM = 100;
 
 const w = HD ? 1920 : 640;
 const h = HD ? 1080 : 480;
@@ -18,7 +23,10 @@ const fast = !HD;
 setTimeout(main);
 
 async function main(){
-  var img = await media.loadImage('-dw/1.png');
+  var img = await media.loadImage('-dw/1.jpeg');
+
+  if(SEGMENTATE)
+    img = Segmentator.img(img, COLS_NUM, EPOCHS_NUM);
 
   var pr = new Presentation(w, h, fps, fast);
   pr.keepAlive = 1;
