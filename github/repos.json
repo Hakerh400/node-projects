@@ -27,6 +27,12 @@
       "dest": "C:/Github/functional"
     },
 
+    "todo": {
+      "name": "todo",
+      "src": "C:/Projects/TODO",
+      "dest": "C:/Github/todo"
+    },
+
     "land": {
       "name": "land",
       "src": "C:/Users/Thomas/eclipse-workspace/land/src/land",
