@@ -90,12 +90,12 @@ async function main(){
 }
 
 function saveImg(img, file){
-  img = img.canvas;
-  
-  var w = img.width;
-  var h = img.height;
-
   return new Promise(res => {
+    img = img.canvas;
+    
+    var w = img.width;
+    var h = img.height;
+    
     media.renderImage(file, w, h, (w, h, g) => {
       g.drawImage(img, 0, 0);
     }, () => {
