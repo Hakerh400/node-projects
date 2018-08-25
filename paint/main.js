@@ -1,8 +1,7 @@
 'use strict';
 
-const HD = 0;
+const HD = 1;
 const SEGMENTATE = 1;
-const WAIT_AFTER_END = 0;
 
 const O = require('../framework');
 const media = require('../media');
@@ -15,23 +14,30 @@ const {evts} = Paint;
 const COLS_NUM = 10;
 const EPOCHS_NUM = 100;
 
+const WAIT_AFTER_END = HD;
+const TIME_TO_WAIT = 60e3;
+
 const w = HD ? 1920 : 640;
 const h = HD ? 1080 : 480;
 const fps = 60;
 const fast = !HD;
+
+const outputFile = HD ? 'D:/Test/paint.mp4' : '-vid/1.mp4';
 
 setTimeout(main);
 
 async function main(){
   var img = await media.loadImage('-dw/1.jpeg');
 
-  if(SEGMENTATE)
+  if(SEGMENTATE){
     img = Segmentator.img(img, COLS_NUM, EPOCHS_NUM);
+    await saveImg(img, '-dw/1.png');
+  }
 
   var pr = new Presentation(w, h, fps, fast);
   pr.keepAlive = 1;
 
-  pr.render('-vid/1.mp4', async (w, h, g, g1) => {
+  pr.render(outputFile, async (w, h, g, g1) => {
     var paint = new Paint(img);
     await pr.frame();
 
@@ -68,7 +74,9 @@ async function main(){
           break;
 
         case evts.FINISH:
-          if(WAIT_AFTER_END) await pr.wait(60e3);
+          if(WAIT_AFTER_END)
+            await pr.wait(TIME_TO_WAIT);
+
           pr.finish();
           break;
 
@@ -77,6 +85,21 @@ async function main(){
           await pr.frame();
           break;
       }
+    });
+  });
+}
+
+function saveImg(img, file){
+  img = img.canvas;
+  
+  var w = img.width;
+  var h = img.height;
+
+  return new Promise(res => {
+    media.renderImage(file, w, h, (w, h, g) => {
+      g.drawImage(img, 0, 0);
+    }, () => {
+      res();
     });
   });
 }
