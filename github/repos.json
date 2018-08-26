@@ -27,10 +27,10 @@
       "dest": "C:/Github/functional"
     },
 
-    "todo": {
-      "name": "todo",
-      "src": "C:/Projects/TODO",
-      "dest": "C:/Github/todo"
+    "tasks": {
+      "name": "tasks",
+      "src": "C:/Projects/Tasks",
+      "dest": "C:/Github/tasks"
     },
 
     "land": {
