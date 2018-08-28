@@ -1,7 +1,7 @@
 'use strict';
 
 const HD = 1;
-const SEGMENTATE = 1;
+const SEGMENTATE = 0;
 
 const O = require('../framework');
 const media = require('../media');
@@ -22,16 +22,17 @@ const h = HD ? 1080 : 480;
 const fps = 60;
 const fast = !HD;
 
+const inputFile = SEGMENTATE ? '-dw/1.jpeg' : '-dw/1.png';
 const outputFile = HD ? 'D:/Test/paint.mp4' : '-vid/1.mp4';
 
 setTimeout(main);
 
 async function main(){
-  var img = await media.loadImage('-dw/1.jpeg');
+  var img = await media.loadImage(inputFile);
 
   if(SEGMENTATE){
     img = Segmentator.img(img, COLS_NUM, EPOCHS_NUM);
-    await saveImg(img, '-dw/1.png');
+    await saveImg(img, '-img/1.png');
   }
 
   var pr = new Presentation(w, h, fps, fast);
