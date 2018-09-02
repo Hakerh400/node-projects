@@ -63,8 +63,8 @@ class Paint{
       var xStart = x;
       var yStart = y;
 
-      var borders = new O.Set2D();
-      var visibleBorders = new O.Set2D();
+      var borders = new O.Map2D();
+      var visibleBorders = new O.Map2D();
 
       var cs = [0, 0];
       var first = 1;
@@ -99,7 +99,7 @@ class Paint{
         return 1;
       });
 
-      var visited = new O.Set2D();
+      var visited = new O.Map2D();
       var flagDrawing = 0;
       var first = 1;
       var xc, yc;
