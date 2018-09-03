@@ -5,8 +5,6 @@ const path = require('path');
 const http = require('http');
 const readline = require('readline');
 const O = require('../framework');
-
-const ytDow = require('.');
 const Video = require('./video');
 
 const PORT = 27000;
