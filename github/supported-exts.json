@@ -1,22 +1,26 @@
-[
-  "js",
-  "json",
-  "htm",
-  "html",
-  "css",
-  "php",
+{
+  "text": [
+    "txt",
+    "md",
 
-  "c",
-  "h",
-  "cc",
-  "cpp",
+    "js",
+    "json",
+    "htm",
+    "html",
+    "css",
+    "php",
 
-  "java",
+    "c",
+    "h",
+    "cc",
+    "cpp",
 
-  "txt",
-  "md",
-  "bat",
-  "glsl",
-  
-  "png"
-]
+    "java",
+
+    "bat",
+    "glsl"
+  ],
+  "bin": [
+    "png"
+  ]
+}

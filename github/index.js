@@ -13,7 +13,6 @@ const repos = require('./repos.json');
 const noCopyList = require('./no-copy-list.json');
 const skipList = require('./skip-list.json');
 const supportedExts = require('./supported-exts.json');
-const textExts = require('./text-exts.json');
 
 const KW_EXCL = 'GIT\x5FEXCLUDE';
 const TAB_SIZE = 2;
@@ -144,10 +143,20 @@ function push(repoName, cb=O.nop){
       }
 
       var ext = path.parse(destPath).ext.substring(1);
-      if(!supportedExts.some(a => ext == a)) return;
+
+      var isSupported = O.keys(supportedExts).some(type => {
+        return supportedExts[type].includes(ext);
+      });
+
+      if(!isSupported) return;
 
       var content = fs.readFileSync(e.fullPath);
-      content = processFileContent(e.name, ext, content);
+
+      if(supportedExts.text.includes(ext)){
+        var str = content.toString('utf8');
+        content = processFileContent(e.name, str);
+      }
+
       fs.writeFileSync(destPath, content);
     });
 
@@ -168,44 +177,37 @@ function push(repoName, cb=O.nop){
   }
 }
 
-function processFileContent(file, ext, buff){
-  if(textExts.includes(ext)){
-    var str = buff.toString();
-    var lines = O.sanl(str);
+function processFileContent(file, str){
+  var lines = O.sanl(str);
+  var included = 1;
 
-    var included = 1;
+  lines = lines.filter(line => {
+    var exclude = line.includes(KW_EXCL);
 
-    lines = lines.filter(line => {
-      var exclude = line.includes(KW_EXCL);
+    if(exclude){
+      included ^= 1;
+      return 0;
+    }
 
-      if(exclude){
-        included ^= 1;
-        return 0;
-      }
+    return included;
+  });
 
-      return included;
-    });
+  if(!included)
+    throw new TypeError(`Unmatched ${KW_EXCL} keyword in "${file}"`);
 
-    if(!included)
-      throw new TypeError(`Unmatched ${KW_EXCL} keyword in "${file}"`);
-
-    lines = lines.map(line => {
-      return line.replace(/\t/g, TAB);
-    })
-
-    str = lines.join(LINE_SEP);
-    buff = Buffer.from(str);
-  }
+  lines = lines.map(line => {
+    return line.replace(/\t/g, TAB);
+  })
 
   switch(file){
     case 'projects.txt':
-      return O.sanl(str).filter(a => {
-        return a !== 'blank' && a !== 'test';
-      }).join(LINE_SEP);
+      lines = lines.filter(line => {
+        return !(line === 'blank' || line === 'test');
+      });
       break;
   }
 
-  return buff;
+  return lines.join(LINE_SEP);
 }
 
 function resetDir(dir){
