@@ -15,7 +15,7 @@ const skipList = require('./skip-list.json');
 const supportedExts = require('./supported-exts.json');
 const textExts = require('./text-exts.json');
 
-const KW_EXCL = 'GIT_EXCLUDE';
+const KW_EXCL = 'GIT\x5FEXCLUDE';
 const TAB_SIZE = 2;
 const LINE_SEP = '\r\n';
 
@@ -175,7 +175,7 @@ function processFileContent(file, ext, buff){
 
     var included = 1;
 
-    var filtered = lines.filter(line => {
+    lines = lines.filter(line => {
       var exclude = line.includes(KW_EXCL);
 
       if(exclude){
@@ -187,9 +187,9 @@ function processFileContent(file, ext, buff){
     });
 
     if(!included)
-      filtered = lines;
+      throw new TypeError(`Unmatched ${KW_EXCL} keyword in "${file}"`);
 
-    lines = filtered.map(line => {
+    lines = lines.map(line => {
       return line.replace(/\t/g, TAB);
     })
 
