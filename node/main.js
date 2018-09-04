@@ -93,7 +93,7 @@ function updatePath(str){
     dirs.shift();
   }else if(dirs.length === 1){
     if(!dirs[0].includes('.'))
-      dirs[0] += '*';
+      dirs[0] = `*${dirs[0]}*`;
   }
 
   var found = 1;
