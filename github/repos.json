@@ -44,6 +44,12 @@
       "src": "C:/Extensions",
       "dest": "C:/Github/extensions",
       "encrypt": true
+    },
+
+    "test": {
+      "name": "test",
+      "src": "C:/Projects/Test",
+      "dest": "C:/Github/test"
     }
   }
 }
