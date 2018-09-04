@@ -44,8 +44,8 @@ function push(repoName, cb=O.nop){
   Object.setPrototypeOf(repo, null);
   var {name, src, dest, encrypt, minify, script} = repo;
 
-  name = normalizeString(name);
-  dest = normalizeString(dest);
+  name = normalizeStr(name);
+  dest = normalizeStr(dest);
 
   src = path.normalize(src);
   dest = path.normalize(dest);
@@ -227,7 +227,7 @@ function resetDir(dir){
   });
 }
 
-function normalizeString(str){
+function normalizeStr(str){
   return str.replace(/\%([^\%]*)\%/g, (match, param) => {
     switch(param){
       case 'user': return repos.user.toLowerCase(); break;
