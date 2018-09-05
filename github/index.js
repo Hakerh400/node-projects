@@ -202,7 +202,7 @@ function processFileContent(file, str){
   switch(file){
     case 'projects.txt':
       lines = lines.filter(line => {
-        return !(line === 'blank' || line === 'test');
+        return !skipList.includes(line);
       });
       break;
   }

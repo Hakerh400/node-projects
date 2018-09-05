@@ -8,9 +8,7 @@ const fsRec = require('../fs-recursive');
 
 const PROC_PRIORITY = 'realtime';
 
-const dirs = [
-  'D:/Music/2',
-];
+const dirs = O.sanl(fs.readFileSync('D:/Music/playlist.txt', 'utf8'));
 
 var index = 0;
 var playing = 1;

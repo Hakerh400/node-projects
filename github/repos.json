@@ -39,11 +39,10 @@
       "dest": "C:/Github/land"
     },
 
-    "extensions": {
-      "name": "extensions",
-      "src": "C:/Extensions",
-      "dest": "C:/Github/extensions",
-      "encrypt": true
+    "ublock": {
+      "name": "ultra-block",
+      "src": "C:/Extensions/Ultra Block",
+      "dest": "C:/Github/ultra-block"
     },
 
     "test": {

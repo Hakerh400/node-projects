@@ -1,8 +1,5 @@
 [
   "node_modules",
-  "blank",
   "test",
-  "blank-addon",
-  "test-addon",
-  "video-editor"
+  "test-addon"
 ]

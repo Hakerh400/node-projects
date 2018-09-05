@@ -1,1 +1,0 @@
-This is collection of my extensions for Chrome. These extensions contain private data and they are completelly useless to anyone except me, so I encrypted them into a png image using [this](https://github.com/Hakerh400/node-projects/tree/master/encryptor) tool.
