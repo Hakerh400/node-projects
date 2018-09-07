@@ -6,7 +6,6 @@ const cp = require('child_process');
 const O = require('../framework');
 const fsRec = require('../fs-recursive');
 const encryptor = require('../encryptor');
-const minifier = require('../minifier');
 const tempDir = require('../temp-dir')(__filename);
 
 const repos = require('./repos.json');
@@ -99,17 +98,6 @@ function push(repoName, cb=O.nop){
     fs.mkdirSync(tempDir);
 
     encryptor.encrypt(src, tempDir, O.password, err => {
-      if(err) return cb(err);
-
-      src = tempDir;
-      copyAndPushFiles();
-    });
-  }else if(minify){
-    // Minify
-
-    fs.mkdirSync(tempDir);
-
-    minifier.minify(src, tempDir, err => {
       if(err) return cb(err);
 
       src = tempDir;

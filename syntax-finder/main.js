@@ -33,7 +33,7 @@ function func(src){
   var lines = O.sanl(src);
 
   var index = lines.findIndex(line => {
-    return line.includes(`Set2D`);
+    return line.includes(`minifie${'r'}`);
   });
 
   return index + 1;
