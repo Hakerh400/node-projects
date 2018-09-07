@@ -33,7 +33,7 @@ function func(src){
   var lines = O.sanl(src);
 
   var index = lines.findIndex(line => {
-    return line.includes(`minifie${'r'}`);
+    return line.includes(`capitaliz${'e'}`);
   });
 
   return index + 1;

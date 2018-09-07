@@ -19,7 +19,7 @@ function main(){
     process.exit();
   };
 
-  img.src = 'C:/Users/Thomas/Downloads/image.jpeg';
+  img.src = 'C:/Users/Thomas/Downloads/image.jpg';
 }
 
 function render(img){
