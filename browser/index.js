@@ -3,7 +3,7 @@
 const EventEmitter = require('events');
 const http = require('http');
 const urlModule = require('url');
-const canvas = require('../canvas');
+const {Canvas} = require('../canvas');
 
 const server = 'http://localhost/';
 
@@ -179,11 +179,11 @@ class WindowEvent{
     this.func = func;
     this.type = type;
     this.details = details;
-    this.preventedDefault = false;
+    this.preventedDefault = 0;
   }
 
   preventDefault(){
-    this.preventedDefault = true;
+    this.preventedDefault = 1;
   }
 };
 
@@ -193,8 +193,8 @@ module.exports = {
 
 O = require('../framework');
 
-function loadPage(window, url, cb = O.nop){
-  window._ready = false;
+function loadPage(window, url, cb=O.nop){
+  window._ready = 0;
   url = resolveUrl(url);
 
   getPage(url, (err, data) => {
@@ -210,23 +210,23 @@ function loadPage(window, url, cb = O.nop){
       new window.Function(data)();
 
       setTimeout(() => {
-        window._ready = true;
+        window._ready = 1;
         cb(null);
       });
     });
   });
 }
 
-function getPage(url, cb = O.nop){
-  var errCb = err => cb(err, null);
+function getPage(url, cb=O.nop){
+  var errCb = err => cb(err, null, 0);
 
   url = resolveUrl(url);
 
   var req = http.get(url, res => {
-    var data = Buffer.alloc(0);
+    var buffs = [];
 
-    res.on('data', d => data = Buffer.concat([data, d]));
-    res.on('end', () => cb(null, data));
+    res.on('data', buff => buffs.push(buff));
+    res.on('end', () => cb(null, Buffer.concat(buffs), res.statusCode));
 
     res.on('error', errCb);
   });
@@ -239,7 +239,7 @@ function createCanvas(window){
   var h = window.innerHeight;
   var cs = window._canvases;
 
-  var canvas = new canvas.Canvas(w, h);
+  var canvas = new Canvas(w, h);
   cs.push(canvas);
 
   canvas.style = new CSSStyleDeclaration();
@@ -280,13 +280,13 @@ function createXMLHttpRequestConstructor(window){
     send(){
       this.window._ready = false;
 
-      getPage(this.url, (err, data) => {
+      getPage(this.url, (err, data, status) => {
         if(err){
           this.readyState = 1;
-          this.status = 404;
+          this.status = 0;
         }else{
           this.readyState = 4;
-          this.status = 200;
+          this.status = status;
           this.responseText = data.toString();
         }
 
