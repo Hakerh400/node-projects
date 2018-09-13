@@ -13,7 +13,7 @@ const h = HD ? 1080 : 480;
 const fps = 60;
 const fast = !HD;
 
-const duration = 60 * 60 * 5;
+const duration = 60 * 10;
 const framesNum = fps * duration;
 
 setTimeout(main);
