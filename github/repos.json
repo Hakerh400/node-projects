@@ -29,7 +29,8 @@
     "tasks": {
       "name": "tasks",
       "src": "C:/Projects/Tasks",
-      "dest": "C:/Github/tasks"
+      "dest": "C:/Github/tasks",
+      "newLine": true
     },
 
     "land": {

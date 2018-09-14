@@ -40,7 +40,7 @@ function push(repoName, cb=O.nop){
   var repo = repos.repos[repoName];
 
   Object.setPrototypeOf(repo, null);
-  var {name, src, dest, encrypt, minify, script} = repo;
+  var {name, src, dest, encrypt, minify, script, newLine} = repo;
 
   name = normalizeStr(name);
   dest = normalizeStr(dest);
@@ -143,6 +143,9 @@ function push(repoName, cb=O.nop){
       if(supportedExts.text.includes(ext)){
         var str = content.toString('utf8');
         content = processFileContent(e.name, str);
+
+        if(newLine)
+          content += LINE_SEP;
       }
 
       fs.writeFileSync(destPath, content);
