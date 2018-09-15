@@ -36,11 +36,12 @@ module.exports = {
   Canvas,
   flags,
 
-
   createCanvas,
   createContext,
   logStatus,
+
   loadImage,
+  loadAudio,
 
   renderImage,
   editImage,
@@ -93,6 +94,28 @@ function loadImage(input){
     }, () => {
       res(img);
     });
+  });
+}
+
+function loadAudio(input, convertToArr=0){
+  input = formatFileName(input);
+
+  return new Promise(res => {
+    var buffs = [];
+
+    var proc = spawnFfmpeg(`-i "${input}" -f f32le -ac 1 -`, () => {
+      var buff = Buffer.concat(buffs);
+      if(!convertToArr) return res(buff);
+
+      var arr = [];
+
+      for(var i = 0; i !== buff.length; i += 4)
+        arr.push(buff.readFloatLE(i))
+
+      res(arr);
+    });
+
+    proc.stdout.on('data', buff => buffs.push(buff));
   });
 }
 

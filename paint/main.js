@@ -3,10 +3,13 @@
 const HD = 1;
 const SEGMENTATE = 0;
 
+const fs = require('fs');
+const path = require('path');
 const O = require('../framework');
 const media = require('../media');
 const Presentation = require('../presentation');
 const Segmentator = require('../segmentator');
+const fsRec = require('../fs-recursive');
 const Paint = require('.');
 
 const {evts} = Paint;
@@ -23,14 +26,23 @@ const fps = 60;
 const fast = !HD;
 
 const inputFile = SEGMENTATE ? '-dw/1.jpeg' : '-dw/1.png';
-const outputFile = HD ? 'D:/Test/paint.mp4' : '-vid/1.mp4';
+const outputFile = HD ? 'D:/Render/paint.mp4' : '-vid/1.mp4';
 
 setTimeout(main);
 
 async function main(){
+  var outputDir = path.parse(outputFile).dir;
+
+  if(!fs.existsSync(outputDir)){
+    log('Creating output directory');
+    fsRec.createDirSync(outputDir);
+  }
+
+  log('Loading image');
   var img = await media.loadImage(inputFile);
 
   if(SEGMENTATE){
+    log('Segmentating');
     img = Segmentator.img(img, COLS_NUM, EPOCHS_NUM);
     await saveImg(img, '-img/1.png');
   }
@@ -39,7 +51,10 @@ async function main(){
   pr.keepAlive = 1;
 
   pr.render(outputFile, async (w, h, g, g1) => {
+    log('Analyzing');
     var paint = new Paint(img);
+
+    pr.framesNum = w * h << 1;
     await pr.frame();
 
     var drawing = 0;

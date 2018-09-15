@@ -13,6 +13,8 @@ class Presentation{
     this.wh = w / 2;
     this.hh = h / 2;
 
+    this.framesNum = null;
+
     this.transTime = 2e3;
     this.timeK = 1e3 / fps;
 
@@ -66,7 +68,7 @@ class Presentation{
     var {mFrame} = this;
 
     if(this.verbose)
-      media.logStatus(mFrame.f);
+      media.logStatus(mFrame.f, this.framesNum);
     
     await mFrame(true);
     this.time += this.timeK;

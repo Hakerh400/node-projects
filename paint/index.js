@@ -13,33 +13,24 @@ class Paint{
     this.h = canvas.height;
     this.img = new ImageData(img);
 
-    this.col = Buffer.alloc(3);
-    this.col1 = Buffer.alloc(3);
-
+    this.col = createCol();
     this.cols = [];
 
     this.analyze();
   }
 
   analyze(){
-    var {w, h, img, col, col1, cols} = this;
+    var {w, h, img, col} = this;
+
+    var cols = new ColorsCollection();
 
     this.grid = new O.SimpleGrid(w, h, (x, y) => {
       img.get(x, y, col);
-
-      var index = cols.findIndex(c => {
-        return c.equals(col);
-      });
-
-      if(index === -1){
-        index = cols.length;
-        cols.push(Buffer.from(col));
-      }
-
+      var index = cols.add(col);
       return new Tile(index);
     });
 
-    this.cols = cols;
+    cols.getCols(this.cols);
   }
 
   async draw(func){
@@ -221,7 +212,77 @@ class Tile{
   }
 };
 
+class ColorsCollection{
+  constructor(){
+    this.d = O.obj();
+    this.size = 0;
+  }
+
+  get([r, g, b]){
+    var {d} = this;
+
+    if(!(r in d)) return null;
+    d = d[r];
+
+    if(!(g in d)) return null;
+    d = d[g];
+
+    if(!(b in d)) return null;
+    return d[b];
+  }
+
+  add([r, g, b]){
+    var {d} = this;
+
+    if(!(r in d)) d[r] = O.obj();
+    d = d[r];
+
+    if(!(g in d)) d[g] = O.obj();
+    d = d[g];
+
+    if(!(b in d)) d[b] = ++this.size;
+    return d[b] - 1;
+  }
+
+  len(){
+    return this.size;
+  }
+
+  getCols(cols=[]){
+    var {d} = this;
+
+    cols.length = 0;
+
+    O.keys(d).forEach(r => {
+      var d1 = d[r];
+
+      O.keys(d1).forEach(g => {
+        var d2 = d1[g];
+
+        O.keys(d2).forEach(b => {
+          cols.push(Buffer.from([r, g, b]));
+        });
+      });
+    });
+
+    cols.sort((col1, col2) => {
+      var i1 = this.get(col1);
+      var i2 = this.get(col2);
+
+      if(i1 < i2) return -1;
+      return 1;
+    });
+
+    return cols;
+  }
+};
+
 Paint.evts = evts;
 Paint.Tile = Tile;
+Paint.ColorsCollection = ColorsCollection;
 
 module.exports = Paint;
+
+function createCol(){
+  return Buffer.alloc(3);
+}

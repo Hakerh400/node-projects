@@ -13,6 +13,8 @@ const tasksDir = formatFileName('-projects/tasks/open');
 setTimeout(main);
 
 function main(){
+  O.enhanceRNG();
+
   var projects = fs.readdirSync(tasksDir);
 
   if(projects.length === 0){

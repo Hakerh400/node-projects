@@ -1,8 +1,8 @@
 'use strict';
 
-var fs = require('fs');
-var formatNumber = require('../format-number');
-var formatTime = require('../format-time');
+const fs = require('fs');
+const formatNumber = require('../format-number');
+const formatTime = require('../format-time');
 
 const MAX_STR_LEN = 160;
 
@@ -11,7 +11,7 @@ var fd = process.stdout.fd;
 
 module.exports = logStatus;
 
-function logStatus(f, n = null, type = 'frame'){
+function logStatus(f, n=null, type='frame'){
   if(startTime === null)
     startTime = Date.now();
 
