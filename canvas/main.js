@@ -4,7 +4,7 @@ const O = require('../framework');
 const media = require('../media');
 const {Canvas, Image, loadImage} = require('.');
 
-main();
+setTimeout(main);
 
 function main(){
   var img = new Image();
@@ -19,7 +19,7 @@ function main(){
     process.exit();
   };
 
-  img.src = 'C:/Users/Thomas/Downloads/1.jpeg';
+  img.src = 'C:/Users/Thomas/Downloads/1.jpg';
 }
 
 function render(img){

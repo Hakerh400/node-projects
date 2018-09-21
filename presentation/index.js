@@ -32,6 +32,8 @@ class Presentation{
 
     this.verbose = 1;
     this.keepAlive = 0;
+
+    this.finished = 0;
   }
 
   render(file, func, cb=O.nop){
@@ -41,7 +43,10 @@ class Presentation{
     this.func = func;
     this.cb = cb;
 
-    var mFrame = media.presentation(file, w, h, fps, fast);
+    var mFrame = media.presentation(file, w, h, fps, fast, () => {
+      this.finished = 1;
+    });
+
     this.mFrame = mFrame;
     this.g = mFrame.g;
 
@@ -55,11 +60,12 @@ class Presentation{
     await this.func(w, h, g, g1);
 
     if(!this.keepAlive)
-      this.finish.bind(this);
+      this.finish();
   }
 
   finish(){
-    this.mFrame(false).then(() => {
+    this.mFrame(false).then(async () => {
+      await O.while(() => !this.finished);
       this.cb();
     });
   }
@@ -114,7 +120,7 @@ class Presentation{
     await this.fade(time);
   }
 
-  async caption(text, time=this.transTime, fadeOut=true){
+  async caption(text, time=this.transTime, fadeOut=1){
     var {w, h, wh, hh, g, g1} = this;
 
     g.fillStyle = 'black';
