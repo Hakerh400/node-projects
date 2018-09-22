@@ -13,9 +13,6 @@ const SAMPLES_NUM = 100;
 const WAIT_TIME = 10e3;
 const FADE_TIME = 1e3;
 
-const cc1 = O.cc(' ');
-const cc2 = O.cc('~');
-
 const w = 1920;
 const h = 1080;
 const fps = 60;
@@ -44,7 +41,7 @@ function render(window){
   pr.verbose = 0;
 
   pr.render('-vid/1.mp4', async (w, h, g, g1) => {
-    var len = O.sanl(get()).join('').length;
+    var len = O.sanl(get()).join('').length << 2;
 
     for(var i = 0; i !== SAMPLES_NUM; i++){
       media.logStatus(i + 1, SAMPLES_NUM, 'sample');
@@ -105,6 +102,9 @@ function render(window){
 
 function randStr(){
   var len = O.randInt(2, .75);
-  var str = O.ca(len, () => String.fromCharCode(O.rand(cc1, cc2))).join('');
+  var arr = O.ca(len, () => O.rand(256));
+  var buff = Buffer.from(arr);
+  var str = buff.toString('hex');
+
   return str;
 }

@@ -70,21 +70,23 @@ class Presentation{
     });
   }
 
-  async frame(){
+  async frame(arg=true){
     var {mFrame} = this;
 
     if(this.verbose)
       media.logStatus(mFrame.f, this.framesNum);
     
-    await mFrame(true);
+    await mFrame(arg);
     this.time += this.timeK;
   }
 
   async wait(time=this.transTime){
+    var buff = this.g.canvas.toBuffer('raw');
+
     time += this.time;
 
     while(this.time < time)
-      await this.frame();
+      await this.frame(buff);
   }
 
   async fade(time=this.transTime){

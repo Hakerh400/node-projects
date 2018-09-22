@@ -276,25 +276,19 @@ function presentation(output, w, h, fps, fast, exitCb=O.nop){
 
   return frame;
 
-  async function frame(value){
-    var buff;
+  function frame(value){
+    return new Promise(res => {
+      var buff;
 
-    if(value instanceof Buffer){
-      buff = value;
-    }else if(value === true){
-      buff = canvas.toBuffer('raw');
-    }
+      if(value instanceof Buffer) buff = value;
+      else if(value === true) buff = canvas.toBuffer('raw');
 
-    await new Promise(res => {
-      var r = () => {
+      if(value) write(proc, buff, r);
+      else end(proc, buff, r);
+
+      function r(){
         frame.f++;
         res();
-      };
-
-      if(value){
-        write(proc, buff, r);
-      }else{
-        end(proc, buff, r);
       }
     });
   }
