@@ -54,7 +54,7 @@ async function main(){
     log('Analyzing');
     var paint = new Paint(img);
 
-    pr.framesNum = w * h << 1;
+    pr.framesNum = fps * 60 * 60 * 10;
     await pr.frame();
 
     var drawing = 0;

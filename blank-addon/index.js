@@ -1,6 +1,6 @@
 'use strict';
 
-var O = require('../framework');
-var addon = require('./addon/build/Release/addon.node');
+const O = require('../framework');
+const addon = require('./addon/build/Release/addon.node');
 
 module.exports = addon;

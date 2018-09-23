@@ -1,7 +1,9 @@
 'use strict';
 
-var O = require('../framework');
-var blank = require('.');
+const fs = require('fs');
+const path = require('path');
+const O = require('../framework');
+const blank = require('.');
 
 setTimeout(main);
 
