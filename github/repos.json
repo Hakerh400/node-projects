@@ -51,6 +51,13 @@
       "dest": "C:/Github/e8kkzbh"
     },
 
+    "e8io": {
+      "owner": "e8kkzbh",
+      "name": "e8kkzbh.github.io",
+      "src": "C:/Projects/e8kkzbh.github.io",
+      "dest": "C:/Github/e8kkzbh.github.io"
+    },
+
     "test": {
       "name": "test",
       "src": "C:/Projects/Test",
