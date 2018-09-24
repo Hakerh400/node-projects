@@ -40,7 +40,9 @@ function push(repoName, cb=O.nop){
   var repo = repos.repos[repoName];
 
   Object.setPrototypeOf(repo, null);
-  var {name, src, dest, encrypt, minify, script, newLine} = repo;
+  var {owner, name, src, dest, encrypt, minify, script, newLine} = repo;
+
+  if(owner) user = owner;
 
   name = normalizeStr(name);
   dest = normalizeStr(dest);
@@ -54,7 +56,7 @@ function push(repoName, cb=O.nop){
     fs.mkdirSync(dest);
 
     var replacements = [
-      `https://github.com/${user}/${name}.git`
+      `https://github.com/${user}/${name}.git`,
     ];
 
     var batchContent = fs.readFileSync(gitInit).toString();

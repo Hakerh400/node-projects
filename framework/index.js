@@ -1,9 +1,9 @@
 'use strict';
 
-var fs = require('fs');
-var browser = require('../browser');
-var dirs = require('./dirs.json');
-var passwords = require('./passwords.json');
+const fs = require('fs');
+const browser = require('../browser');
+const dirs = require('./dirs.json');
+const passwords = require('./passwords.json');
 
 setGlobalVars();
 
@@ -36,7 +36,7 @@ function getFramework(){
   var document = window.document;
 
   var O = func(window, document);
-  O.init(false);
+  O.init(0);
 
   O.dirs = dirs;
   O.passwords = passwords;
