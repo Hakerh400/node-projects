@@ -7,11 +7,18 @@ const browser = require('../browser');
 const media = require('../media');
 const Presentation = require('../presentation');
 
-const url = '/?project=other-projects&sub-project=grid';
+const tileSize = 10;
+const tileSizeH = tileSize / 2;
+
+const url = `/?project=other-projects&sub-project=grid&size=${tileSize}`;
 
 const SAMPLES_NUM = 100;
 const WAIT_TIME = 10e3;
 const FADE_TIME = 1e3;
+
+const RAND_START = 2;
+const RAND_FACTOR = .9;
+const RAND_SPACE = .5;
 
 const w = 1920;
 const h = 1080;
@@ -20,9 +27,6 @@ const fast = 0;
 
 const duration = 10;
 const framesNum = fps * duration;
-
-const tileSize = 40;
-const tileSizeH = tileSize / 2;
 
 setTimeout(main);
 
@@ -101,8 +105,13 @@ function render(window){
 }
 
 function randStr(){
-  var len = O.randInt(2, .75);
-  var arr = O.ca(len, () => O.rand(256));
+  var len = O.randInt(RAND_START, RAND_FACTOR);
+
+  var arr = O.ca(len, () => {
+    if(O.randf() < RAND_SPACE) return 0;
+    return O.rand(256);
+  });
+
   var buff = Buffer.from(arr);
   var str = buff.toString('hex');
 

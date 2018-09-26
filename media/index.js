@@ -41,6 +41,7 @@ module.exports = {
   logStatus,
 
   loadImage,
+  saveImage,
   loadAudio,
 
   renderImage,
@@ -91,9 +92,17 @@ function loadImage(input){
 
     editImage(input, '-', (w, h, g) => {
       img = g;
-    }, () => {
-      res(img);
-    });
+    }, () => res(img));
+  });
+}
+
+function saveImage(output, img){
+  return new Promise(res => {
+    var {canvas} = img;
+
+    renderImage(output, canvas.width, canvas.height, (w, h, g) => {
+      g.drawImage(canvas, 0, 0);
+    }, () => res());
   });
 }
 
@@ -544,8 +553,7 @@ function onProcExit(proc, exitCb=O.nop){
   var index = procs.indexOf(proc);
   procs.splice(index, 1);
 
-  if(exitCb !== null)
-    tryToCallExitCb();
+  tryToCallExitCb();
 
   function tryToCallExitCb(){
     if(procs.length !== 0){
