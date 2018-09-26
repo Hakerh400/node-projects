@@ -4,6 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const O = require('../framework');
 const browser = require('../browser');
+const media = require('../media');
 const Presentation = require('../presentation');
 
 const url = '/?project=other-projects&sub-project=grid';
@@ -28,7 +29,9 @@ function main(){
 
 function render(window){
   var canvas = window._canvases[0];
+
   var pr = new Presentation(w, h, fps, fast);
+  pr.verbose = 0;
 
   pr.render('-vid/1.mp4', async (w, h, g, g1) => {
     g1.font = '48px arial';
@@ -41,7 +44,9 @@ function render(window){
     var testsDir = path.join(__dirname, '../grid-test/tests');
     var testsNum = fs.readdirSync(testsDir).length;
 
-    for(var i = 0; i < testsNum; i++){
+    for(var i = 0; i !== testsNum; i++){
+      media.logStatus(i + 1, testsNum, 'test');
+
       await pr.caption(`Test ${i + 1}/${testsNum}`);
 
       evt.type = 'import';
