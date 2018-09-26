@@ -8,11 +8,12 @@ const fsRec = require('../fs-recursive');
 
 const PROC_PRIORITY = 'realtime';
 
-const dirs = O.sanl(fs.readFileSync('D:/Music/playlist.txt', 'utf8'));
+const mainDir = 'D:/Music';
 
 var index = 0;
 var playing = 1;
 var proc = null;
+var file = null;
 
 var timeStart = 0;
 var timeTotal = 0;
@@ -24,6 +25,7 @@ setTimeout(main);
 async function main(){
   aels();
 
+  var dirs = O.sanl(fs.readFileSync(path.join(mainDir, 'playlist.txt'), 'utf8'));
   var files = [];
 
   dirs.forEach(dir => {
@@ -40,9 +42,9 @@ async function main(){
   while(index !== files.length){
     if(index < 0) index = 0;
 
-    var file = files[index];
+    file = files[index];
 
-    await play(file);
+    await play();
     await O.while(() => !playing);
   }
 
@@ -50,7 +52,7 @@ async function main(){
 }
 
 function aels(){
-  process.stdin.on('data', data => {
+  process.stdin.on('data', async data => {
     if(data.includes(0x03)) return exit();
 
     var str = data.toString('utf8');
@@ -63,12 +65,24 @@ function aels(){
         case 'n': next(); break;
         case 'r': restart(); break;
         case ' ': playOrPause(); break;
+
+        default:
+          if('123z'.includes(c)){
+            playOrPause();
+            await O.while(() => proc !== null);
+
+            var {base} = path.parse(file);
+            fs.renameSync(file, path.join(mainDir, c, base));
+
+            playOrPause();
+          }
+          break;
       }
     }
   });
 }
 
-function play(file){
+function play(){
   return new Promise(res => {
     timeStart = Date.now();
     if(wasPaused) timeStart -= timeTotal;

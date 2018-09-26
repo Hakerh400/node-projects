@@ -136,7 +136,7 @@ function setUrlParams(url, ps){
 function escape(str){
   str = str.split('').filter(char => {
     if(char < ' ' || char > '~') return 0;
-    if('>\\/:*?"<>|'.includes(char)) return 0;
+    if('>\\/:*?"<>|\[\]'.includes(char)) return 0;
     return 1;
   }).join('');
 
