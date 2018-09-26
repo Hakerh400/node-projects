@@ -1,18 +1,20 @@
 'use strict';
 
-var fs = require('fs');
-var path = require('path');
-var O = require('../framework');
-var browser = require('../browser');
-var Presentation = require('../presentation');
+const fs = require('fs');
+const path = require('path');
+const O = require('../framework');
+const browser = require('../browser');
+const Presentation = require('../presentation');
 
-var url = '/?project=grid-projects&sub-project=grid';
+const url = '/?project=other-projects&sub-project=grid';
 
-var w = 1920;
-var h = 1080;
-var fps = 60;
-var duration = 60 * 10;
-var framesNum = fps * duration;
+const w = 1920;
+const h = 1080;
+const fps = 60;
+const fast = 0;
+
+const duration = 60 * 10;
+const framesNum = fps * duration;
 
 setTimeout(main);
 
@@ -26,7 +28,7 @@ function main(){
 
 function render(window){
   var canvas = window._canvases[0];
-  var pr = new Presentation(w, h, fps);
+  var pr = new Presentation(w, h, fps, fast);
 
   pr.render('-vid/1.mp4', async (w, h, g, g1) => {
     g1.font = '48px arial';
