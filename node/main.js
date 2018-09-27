@@ -114,7 +114,13 @@ function updatePath(str){
       return `\\u${O.hex(O.cc(token), 2)}`;
     });
 
-    var dirs = getDirs();
+    var dirs = getDirs().sort((dir1, dir2) => {
+      var len1 = dir1.length;
+      var len2 = dir2.length;
+
+      return (len1 > len2) - (len1 < len2);
+    });
+    
     var reg = new RegExp(`^${dir}$`, 'i');
 
     var index = dirs.findIndex(d => {

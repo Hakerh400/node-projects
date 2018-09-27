@@ -1,7 +1,7 @@
 'use strict';
 
 const HD = 1;
-const SEGMENTATE = 0;
+const SEGMENTATE = 1;
 
 const fs = require('fs');
 const path = require('path');
@@ -54,7 +54,7 @@ async function main(){
     log('Analyzing');
     var paint = new Paint(img);
 
-    pr.framesNum = fps * 60 * 60 * 10;
+    pr.framesNum = 2077400;
     await pr.frame();
 
     var drawing = 0;

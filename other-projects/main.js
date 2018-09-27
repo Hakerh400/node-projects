@@ -18,7 +18,7 @@ const FADE_TIME = 1e3;
 
 const RAND_START = 2;
 const RAND_FACTOR = .9;
-const RAND_SPACE = .5;
+const DENSITY = .5;
 
 const w = 1920;
 const h = 1080;
@@ -44,7 +44,7 @@ function render(window){
   var pr = new Presentation(w, h, fps, fast);
   pr.verbose = 0;
 
-  pr.render('-vid/1.mp4', async (w, h, g, g1) => {
+  pr.render('D:/Render/grid.mp4', async (w, h, g, g1) => {
     var len = O.sanl(get()).join('').length << 2;
 
     for(var i = 0; i !== SAMPLES_NUM; i++){
@@ -108,7 +108,7 @@ function randStr(){
   var len = O.randInt(RAND_START, RAND_FACTOR);
 
   var arr = O.ca(len, () => {
-    if(O.randf() < RAND_SPACE) return 0;
+    if(O.randf() > DENSITY) return 0;
     return O.rand(256);
   });
 
