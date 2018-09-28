@@ -127,7 +127,7 @@ Simple solution:
 - Division - iteratively try to multiply denominator by positive integers until the result is larger that the numerator
 - Exponentiation - iterative multiplication
 
-Don't be scared of the huge amout of nested iterations described here. There is no need to worry about performances, since the optimizer may replace any of these operations with just a single processor instruction. For example, multiplying two 64-bit integers requires `64 * 64` function calls in the wors case, but the optimizer may replace it with just a single `mul rax, rbx` instruction, increasing the speed thousands of times. Also, the otpimizer may replace bytes and integers with literal processor integers and use them instead, avoiding the closures completely.
+Don't be scared of the huge amout of nested iterations described here. There is no need to worry about performances, since the optimizer may replace any of these operations with just a single processor instruction. For example, multiplying two 64-bit integers requires `64 * 64` function calls in the wors case, but the optimizer may replace it with just a single `mul rax, rbx, rcx` instruction, increasing the speed thousands of times. Also, the otpimizer may replace bytes and integers with literal processor integers and use them instead, avoiding the closures completely.
 
 ### Non-inetger number
 
