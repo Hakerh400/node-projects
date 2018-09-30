@@ -1,7 +1,6 @@
 'use strict';
 
 const HD = 1;
-const WAIT_AFTER_END = HD;
 
 const O = require('../framework');
 const media = require('../media');
@@ -9,7 +8,8 @@ const Presentation = require('../presentation');
 const ImageData = require('../image-data');
 
 const CIRCS_NUM = 5e5;
-const SPEED = 50;
+
+const WAIT_AFTER_END = HD;
 const TIME_TO_WAIT = 60e3 * 10;
 
 const w = HD ? 1920 : 640;
@@ -37,14 +37,14 @@ async function main(){
     await pr.frame();
 
     var d = new ImageData(g1);
-    var f = 0;
     var speed = 1;
+    var f = 0;
 
     for(var i = 0; i !== CIRCS_NUM; i++){
       if((i & 1023) === 0)
         media.logStatus(i + 1, CIRCS_NUM, 'circle');
 
-      speed = (i / 1e3 | 0) + 1;
+      speed = 1 + i / 5e3;
 
       var x = O.rand(w);
       var y = O.rand(h);
@@ -128,7 +128,6 @@ async function main(){
     var len = coords.length;
     var c = new O.Color(0, 0, 0);
 
-    speed = SPEED;
     media.resetStatus();
 
     for(var i = 0; i !== len; i++){
@@ -154,7 +153,7 @@ async function main(){
 
     async function frame(draw=0){
       if(++f >= speed){
-        f = 0;
+        f -= speed;
         if(draw) g.drawImage(g1.canvas, 0, 0);
         await pr.frame();
       }
