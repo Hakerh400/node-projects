@@ -38,7 +38,9 @@ module.exports = {
 
   createCanvas,
   createContext,
+
   logStatus,
+  resetStatus,
 
   loadImage,
   saveImage,
@@ -617,4 +619,8 @@ function getTempDir(){
     tempDir = require('../temp-dir')(__filename);
 
   return tempDir;
+}
+
+function resetStatus(){
+  logStatus.reset();
 }

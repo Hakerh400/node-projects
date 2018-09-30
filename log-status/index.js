@@ -9,6 +9,8 @@ const MAX_STR_LEN = 160;
 var startTime = null;
 var fd = process.stdout.fd;
 
+logStatus.reset = reset;
+
 module.exports = logStatus;
 
 function logStatus(f, n=null, type='frame'){
@@ -49,4 +51,8 @@ function log(str){
   }
 
   fs.writeSync(fd, str);
+}
+
+function reset(){
+  startTime = null;
 }

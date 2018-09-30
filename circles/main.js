@@ -1,24 +1,29 @@
 'use strict';
 
 const HD = 1;
+const WAIT_AFTER_END = HD;
 
 const O = require('../framework');
 const media = require('../media');
 const Presentation = require('../presentation');
 const ImageData = require('../image-data');
 
-const CIRCS_NUM = 2e5;
-const SPEED = 1;
+const CIRCS_NUM = 5e5;
+const SPEED = 50;
+const TIME_TO_WAIT = 60e3 * 10;
 
 const w = HD ? 1920 : 640;
 const h = HD ? 1080 : 480;
 const fps = 60;
 const fast = !HD;
 
+const inputFile = '-dw/1.jpeg';
+const outputFile = HD ? 'D:/Render/circles.mp4' : '-vid/1.mp4';
+
 setTimeout(main);
 
 async function main(){
-  var img = await media.loadImage('-dw/1.jpeg');
+  var img = await media.loadImage(inputFile);
   var dImg = new ImageData(img);
 
   var pr = new Presentation(w, h, fps, fast);
@@ -28,7 +33,7 @@ async function main(){
   var col1 = Buffer.alloc(3);
   var col2 = Buffer.alloc(3);
 
-  pr.render('-vid/1.mp4', async (w, h, g, g1) => {
+  pr.render(outputFile, async (w, h, g, g1) => {
     await pr.frame();
 
     var d = new ImageData(g1);
@@ -36,8 +41,9 @@ async function main(){
     var speed = 1;
 
     for(var i = 0; i !== CIRCS_NUM; i++){
-      media.logStatus(i + 1, CIRCS_NUM, 'circle');
-      
+      if((i & 1023) === 0)
+        media.logStatus(i + 1, CIRCS_NUM, 'circle');
+
       speed = (i / 1e3 | 0) + 1;
 
       var x = O.rand(w);
@@ -80,7 +86,7 @@ async function main(){
         if(collision){
           g1.fillStyle = c;
           g1.beginPath();
-          g1.arc(x, y, r, 0, O.pi2);
+          g1.arc(x, y, r + 1 / speed - 1, 0, O.pi2);
           g1.fill();
 
           d.fetch();
@@ -102,8 +108,52 @@ async function main(){
     g.drawImage(g1.canvas, 0, 0);
     await pr.frame();
 
-    async function frame(draw){
-      if(++f >= SPEED){
+    log('');
+    log('Enumerating remaining pixels');
+    log('');
+
+    d = new ImageData(g);
+    var coords = [];
+
+    d.iterate((x, y) => {
+      dImg.get(x, y, col);
+      d.get(x, y, col1);
+      if(col1.equals(col)) return;
+
+      coords.push([x, y]);
+    });
+
+    O.shuffle(coords);
+
+    var len = coords.length;
+    var c = new O.Color(0, 0, 0);
+
+    speed = SPEED;
+    media.resetStatus();
+
+    for(var i = 0; i !== len; i++){
+      if((i & 1023) === 0)
+        media.logStatus(i + 1, len, 'pixel');
+
+      var [x, y] = coords[i];
+      dImg.get(x, y, col);
+      c.from(col);
+
+      g.fillStyle = c;
+      g.fillRect(x, y, 1, 1);
+      await frame();
+    }
+
+    log('');
+    log('Finalizing');
+
+    if(WAIT_AFTER_END)
+      await pr.wait(TIME_TO_WAIT);
+
+    await pr.fadeOut(3e3);
+
+    async function frame(draw=0){
+      if(++f >= speed){
         f = 0;
         if(draw) g.drawImage(g1.canvas, 0, 0);
         await pr.frame();
