@@ -1,7 +1,7 @@
 'use strict';
 
 const HD = 1;
-const SEGMENTATE = 1;
+const SEGMENTATE = 0;
 
 const fs = require('fs');
 const path = require('path');

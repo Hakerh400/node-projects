@@ -41,9 +41,6 @@ async function main(){
     var f = 0;
 
     for(var i = 0; i !== CIRCS_NUM; i++){
-      if((i & 1023) === 0)
-        media.logStatus(i + 1, CIRCS_NUM, 'circle');
-
       speed = 1 + i / 5e3;
 
       var x = O.rand(w);
@@ -57,6 +54,9 @@ async function main(){
         i--;
         continue;
       }
+
+      if((i & 1023) === 0)
+        media.logStatus(i + 1, CIRCS_NUM, 'circle');
 
       var c = O.Color.from(col1);
 
