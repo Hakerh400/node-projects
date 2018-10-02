@@ -7,7 +7,8 @@ const media = require('../media');
 const Presentation = require('../presentation');
 const ImageData = require('../image-data');
 
-const CIRCS_NUM = 5e5;
+const CIRCS_NUM = 500e3;
+const SPEED_FACTOR = 1 / 20e3;
 
 const WAIT_AFTER_END = HD;
 const TIME_TO_WAIT = 60e3 * 10;
@@ -17,7 +18,7 @@ const h = HD ? 1080 : 480;
 const fps = 60;
 const fast = !HD;
 
-const inputFile = '-dw/1.jpeg';
+const inputFile = '-dw/1.png';
 const outputFile = HD ? 'D:/Render/circles.mp4' : '-vid/1.mp4';
 
 setTimeout(main);
@@ -41,7 +42,7 @@ async function main(){
     var f = 0;
 
     for(var i = 0; i !== CIRCS_NUM; i++){
-      speed = 1 + i / 5e3;
+      speed = 1 + i / SPEED_FACTOR;
 
       var x = O.rand(w);
       var y = O.rand(h);
