@@ -18,7 +18,7 @@ const h = HD ? 1080 : 480;
 const fps = 60;
 const fast = !HD;
 
-const inputFile = '-dw/1.png';
+const inputFile = '-dw/1.jpg';
 const outputFile = HD ? 'D:/Render/circles.mp4' : '-vid/1.mp4';
 
 setTimeout(main);
@@ -42,7 +42,7 @@ async function main(){
     var f = 0;
 
     for(var i = 0; i !== CIRCS_NUM; i++){
-      speed = 1 + i / SPEED_FACTOR;
+      speed = 1 + i * SPEED_FACTOR;
 
       var x = O.rand(w);
       var y = O.rand(h);
