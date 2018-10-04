@@ -1,24 +1,27 @@
 'use strict';
 
 const HD = 1;
+const FILL = 0;
 
 const O = require('../framework');
 const media = require('../media');
 const Presentation = require('../presentation');
 const ImageData = require('../image-data');
 
-const CIRCS_NUM = 500e3;
-const SPEED_FACTOR = 1 / 20e3;
+const CIRCS_NUM = HD ? 500e3 : 100e3;
+const SPEED_FACTOR = HD ? .05e-3 : 1e-3;
 
 const WAIT_AFTER_END = HD;
 const TIME_TO_WAIT = 60e3 * 10;
+
+const FADE_OUT = HD;
 
 const w = HD ? 1920 : 640;
 const h = HD ? 1080 : 480;
 const fps = 60;
 const fast = !HD;
 
-const inputFile = '-dw/1.jpg';
+const inputFile = '-dw/1.jpeg';
 const outputFile = HD ? 'D:/Render/circles.mp4' : '-vid/1.mp4';
 
 setTimeout(main);
@@ -85,10 +88,16 @@ async function main(){
         }
 
         if(collision){
-          g1.fillStyle = c;
           g1.beginPath();
-          g1.arc(x, y, r + 1 / speed - 1, 0, O.pi2);
-          g1.fill();
+          g1.arc(x + .5, y + .5, r + 1 / speed - 1, 0, O.pi2);
+
+          if(FILL){
+            g1.fillStyle = c;
+            g1.fill();
+          }else{
+            g1.strokeStyle = c;
+            g1.stroke();
+          }
 
           d.fetch();
           await frame(1);
@@ -97,10 +106,16 @@ async function main(){
         }
 
         g.drawImage(g1.canvas, 0, 0);
-        g.fillStyle = c;
         g.beginPath();
-        g.arc(x, y, r, 0, O.pi2);
-        g.fill();
+        g.arc(x + .5, y + .5, r, 0, O.pi2);
+
+        if(FILL){
+          g.fillStyle = c;
+          g.fill();
+        }else{
+          g.strokeStyle = c;
+          g.stroke();
+        }
 
         await frame();
       }
@@ -126,6 +141,10 @@ async function main(){
 
     O.shuffle(coords);
 
+    r = 1 + 1 / speed;
+    if(FILL) speed *= r * r * O.pi;
+    else speed *= r * O.pi2;
+
     var len = coords.length;
     var c = new O.Color(0, 0, 0);
 
@@ -147,10 +166,8 @@ async function main(){
     log('');
     log('Finalizing');
 
-    if(WAIT_AFTER_END)
-      await pr.wait(TIME_TO_WAIT);
-
-    await pr.fadeOut(3e3);
+    if(WAIT_AFTER_END) await pr.wait(TIME_TO_WAIT);
+    if(FADE_OUT) await pr.fadeOut(3e3);
 
     async function frame(draw=0){
       if(++f >= speed){
@@ -159,9 +176,13 @@ async function main(){
         await pr.frame();
       }
     }
-  });
+  }, exit);
 }
 
 function isIn(x, y){
   return x >= 1 && y >= 1 && x < w - 1 && y < h - 1;
+}
+
+function exit(){
+  process.exit();
 }
