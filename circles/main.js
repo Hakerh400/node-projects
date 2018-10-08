@@ -1,7 +1,10 @@
 'use strict';
 
 const HD = 1;
-const FILL = 0;
+const FILL = 1;
+
+const WAIT_AFTER_END = HD;
+const FADE_OUT = 0;
 
 const O = require('../framework');
 const media = require('../media');
@@ -9,19 +12,15 @@ const Presentation = require('../presentation');
 const ImageData = require('../image-data');
 
 const CIRCS_NUM = HD ? 500e3 : 100e3;
-const SPEED_FACTOR = HD ? .05e-3 : 1e-3;
-
-const WAIT_AFTER_END = HD;
+const SPEED_FACTOR = HD ? .01e-3 : 1e-3;
 const TIME_TO_WAIT = 60e3 * 10;
-
-const FADE_OUT = HD;
 
 const w = HD ? 1920 : 640;
 const h = HD ? 1080 : 480;
 const fps = 60;
 const fast = !HD;
 
-const inputFile = '-dw/1.jpeg';
+const inputFile = '-dw/1.png';
 const outputFile = HD ? 'D:/Render/circles.mp4' : '-vid/1.mp4';
 
 setTimeout(main);
@@ -89,7 +88,7 @@ async function main(){
 
         if(collision){
           g1.beginPath();
-          g1.arc(x + .5, y + .5, r + 1 / speed - 1, 0, O.pi2);
+          g1.arc(x + .5, y + .5, r + 1 / speed - .5, 0, O.pi2);
 
           if(FILL){
             g1.fillStyle = c;
@@ -107,7 +106,7 @@ async function main(){
 
         g.drawImage(g1.canvas, 0, 0);
         g.beginPath();
-        g.arc(x + .5, y + .5, r, 0, O.pi2);
+        g.arc(x + .5, y + .5, r + 1 / speed - .5, 0, O.pi2);
 
         if(FILL){
           g.fillStyle = c;

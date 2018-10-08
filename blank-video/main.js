@@ -2,6 +2,8 @@
 
 const HD = 0;
 
+const fs = require('fs');
+const path = require('path');
 const O = require('../framework');
 const media = require('../media');
 const blank = require('.');
@@ -14,16 +16,33 @@ const fast = !HD;
 const duration = 10;
 const framesNum = fps * duration;
 
+const inputFile = '-dw/1.png';
+const outputFile = getOutputFile();
+
 setTimeout(main);
 
-function main(){
-  function init(g){}
+async function main(){
+  var img = await media.loadImage(inputFile);
 
-  media.renderVideo('-vid/1.mp4', w, h, fps, fast, (w, h, g, f) => {
+  function init(g){
+    g.drawImage(img.canvas, 0, 0);
+  }
+
+  media.renderVideo(outputFile, w, h, fps, fast, (w, h, g, f) => {
     media.logStatus(f, framesNum);
 
     if(f === 1) init(g);
 
     return f !== framesNum;
-  });
+  }, exit);
+}
+
+function getOutputFile(){
+  if(!HD) return '-vid/1.mp4';
+  var project = path.parse(__dirname).name;
+  return `-render/${project}.mp4`;
+}
+
+function exit(){
+  process.exit();
 }

@@ -18,7 +18,7 @@ const COLS_NUM = 10;
 const EPOCHS_NUM = 100;
 
 const WAIT_AFTER_END = HD;
-const TIME_TO_WAIT = 60e3;
+const TIME_TO_WAIT = 60e3 * 10;
 
 const w = HD ? 1920 : 640;
 const h = HD ? 1080 : 480;
