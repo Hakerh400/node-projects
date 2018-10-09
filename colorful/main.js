@@ -28,7 +28,7 @@ async function main(){
 
   pr.render(outputFile, async (w, h, g, g1) => {
     var circumference = O.hypot(w, h) * O.pi;
-    var fn = 180//Math.ceil(circumference);
+    var fn = Math.ceil(circumference);
     pr.framesNum = fn;
 
     var col = Buffer.alloc(3);

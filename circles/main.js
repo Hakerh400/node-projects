@@ -11,12 +11,12 @@ const media = require('../media');
 const Presentation = require('../presentation');
 const ImageData = require('../image-data');
 
-const CIRCS_NUM = HD ? 500e3 : 100e3;
+const CIRCS_NUM = HD ? 2e6 : 100e3;
 const SPEED_FACTOR = HD ? .01e-3 : 1e-3;
 const TIME_TO_WAIT = 60e3 * 10;
 
-const w = HD ? 1920 : 640;
-const h = HD ? 1080 : 480;
+const w = 3840//HD ? 1920 : 640;
+const h = 2160//HD ? 1080 : 480;
 const fps = 60;
 const fast = !HD;
 
