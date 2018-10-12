@@ -9,19 +9,23 @@ const logStatus = require('../log-status');
 const formatFileName = require('../format-file-name');
 
 const DEBUG = 0;
+const ENABLE_TRUNC = 0;
 
 const FFMPEG_DIR = 'C:/Program Files/Ffmpeg/bin/original';
 
 const BGRA = '-f rawvideo -pix_fmt bgra';
 const RGBA = '-f rawvideo -pix_fmt rgba';
-const TRUNC = '-vf "scale=trunc(iw/2)*2:trunc(ih/2)*2"';
+const TRUNC = ENABLE_TRUNC ? '-vf "scale=trunc(iw/2)*2:trunc(ih/2)*2"' : '';
 
 const VIDEO_PRESET = '-preset slow -profile:v high -crf 18 -coder 1 -pix_fmt yuv420p -movflags +faststart -bf 2 -c:a aac -b:a 384k -profile:a aac_low';
 const FAST_PRESET = `-c:v ${'h264_nvenc'} ${VIDEO_PRESET}`;
 const HD_PRESET = `-c:v ${'libx264'} ${VIDEO_PRESET}`;
 
+const SYM_PROC_IRRELEVANT = Symbol();
+
 const flags = {
   verbose: 1,
+  forcedExit: 0,
 };
 
 const fd = process.stdout.fd;
@@ -32,8 +36,105 @@ var shouldExit = 0;
 
 addEventListeners();
 
+class Video{
+  constructor(input, w, h, framesNum){
+    this.input = input;
+
+    this.w = w;
+    this.h = h;
+
+    this.framesNum = framesNum;
+    this.f = 0;
+
+    this.g = createContext(w, h);
+    this.imgd = this.g.createImageData(w, h);
+    this.data = this.imgd.data;
+
+    this.data.fill(128);
+
+    this.iMax = w * h << 2;
+    this.index = 0;
+
+    this.chunks = [];
+
+    var proc = spawnFfmpeg(`-i "${input}" ${RGBA} -`);
+    this.proc = proc;
+
+    proc[SYM_PROC_IRRELEVANT] = 1;
+
+    proc.stdout.on('data', this.onProcData.bind(this));
+    proc.on('exit', this.onProcExit.bind(this));
+  }
+
+  onProcData(data){
+    this.chunks.push(data);
+    this.consume();
+  }
+
+  onProcExit(status){
+    end(this.proc);
+  }
+
+  consume(){
+    var {chunks, data, iMax, index} = this;
+
+    while(chunks.length !== 0){
+      var chunk = chunks[0];
+      chunk.copy(data, index);
+
+      index += chunk.length;
+
+      if(index > iMax){
+        chunks[0] = chunk.slice(iMax - index);
+        index = iMax;
+        break;
+      }else if(index === iMax){
+        chunks.shift();
+        break;
+      }
+
+      chunks.shift();
+    }
+
+    this.index = index;
+    if(this.isReady()) this.pause();
+  }
+
+  update(){
+    this.g.putImageData(this.imgd, 0, 0);
+    this.index = 0;
+  }
+
+  async frame(){
+    this.resume();
+
+    await O.while(() => {
+      return this.proc !== null && !this.isReady();
+    });
+
+    if(this.proc === null)
+      return this.g;
+
+    this.update();
+
+    this.resume();
+    this.consume();
+
+    this.f++;
+
+    return this.g;
+  }
+
+  pause(){ this.proc.stdout.pause(); }
+  resume(){ this.proc.stdout.resume(); }
+  isReady(){ return !shouldExit && this.index === this.iMax; }
+  hasMore(){ return !shouldExit && this.f !== this.framesNum; }
+};
+
 module.exports = {
   Canvas,
+  Video,
+
   flags,
 
   createCanvas,
@@ -45,6 +146,7 @@ module.exports = {
   loadImage,
   saveImage,
   loadAudio,
+  loadVideo,
 
   renderImage,
   editImage,
@@ -85,6 +187,9 @@ function onError(err){
 }
 
 function onSigint(){
+  if(flags.forcedExit)
+    return process.exit();
+
   closeProcs();
 }
 
@@ -127,6 +232,17 @@ function loadAudio(input, convertToArr=0){
     });
 
     proc.stdout.on('data', buff => buffs.push(buff));
+  });
+}
+
+function loadVideo(input){
+  input = formatFileName(input);
+
+  return new Promise(res => {
+    getMediaParams(input, (w, h, framesNum) => {
+      var vid = new Video(input, w, h, framesNum);
+      res(vid);
+    });
   });
 }
 
@@ -507,15 +623,17 @@ function getMediaParams(mediaFile, cb){
       return cb(null, status);
 
     var str = data.toString('utf8');
+    var err = null;
 
     try{
       var obj = JSON.parse(str);
       var s = obj.streams[0];
-
-      cb(s.width, s.height, s.nb_frames);
     }catch(e){
-      cb(null);
+      err = e;
     }
+
+    if(err !== null) return cb(null, err);
+    cb(s.width, s.height, Number(s.nb_frames));
   });
 
   return proc;
@@ -558,15 +676,18 @@ function onProcExit(proc, exitCb=O.nop){
   tryToCallExitCb();
 
   function tryToCallExitCb(){
-    if(procs.length !== 0){
+    /*if(procs.length !== 0){
       setTimeout(tryToCallExitCb);
       return;
+    }*/
+
+    if(procs.length === 0){
+      process.stdin.removeListener('data', onStdinData);
+      process.stdin.unref();
+
+      if(shouldExit) process.exit();
+      if(flags.verbose) log('P0');
     }
-
-    process.stdin.removeListener('data', onStdinData);
-    process.stdin.unref();
-
-    if(flags.verbose) log('P0');
 
     exitCb();
   }
@@ -598,9 +719,10 @@ function closeProcs(){
   shouldExit = 1;
 
   procs.forEach(proc => {
-    try{
-      proc.stdin.end();
-    }catch{}
+    if(proc[SYM_PROC_IRRELEVANT])
+      try{ proc.kill(); }catch{}
+    else
+      try{ proc.stdin.end(); }catch{}
   });
 }
 

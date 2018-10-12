@@ -7,6 +7,7 @@ const Sequence = require('.');
 
 const MEM_SIZE = 10;
 const BINARY = 0;
+const ONE_LINE = 1;
 
 const EXTENSION = 'txt';
 
@@ -26,5 +27,9 @@ function main(){
     seq.add(input[i]);
 
   var sample = seq.sample(BINARY);
+
+  if(ONE_LINE)
+    sample = sample.replace(/\r\n|\r|\n/g, ' ');
+
   fs.writeFileSync(outputFile, sample);
 }

@@ -37,8 +37,8 @@ async function main(){
   }, exit);
 }
 
-function getOutputFile(){
-  if(!HD) return '-vid/1.mp4';
+function getOutputFile(vid=0){
+  if(vid || !HD) return '-vid/1.mp4';
   var project = path.parse(__dirname).name;
   return `-render/${project}.mp4`;
 }
