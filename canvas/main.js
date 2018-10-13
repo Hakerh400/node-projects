@@ -16,7 +16,7 @@ function main(){
 
   img.onerror = err => {
     log(err);
-    process.exit();
+    process.exit(1);
   };
 
   img.src = 'C:/Users/Thomas/Downloads/1.jpg';
@@ -25,7 +25,5 @@ function main(){
 function render(img){
   media.renderImage('-img/1.png', img.width, img.height, (w, h, g) => {
     g.drawImage(img, 0, 0);
-  }, () => {
-    process.exit();
   });
 }

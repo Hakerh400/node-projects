@@ -21,8 +21,6 @@ const outputFile = getOutputFile(1);
 setTimeout(main);
 
 async function main(){
-  media.flags.forcedExit = 1;
-
   var pr = new Presentation(w, h, fps, fast);
   pr.verbose = 0;
 
@@ -109,15 +107,11 @@ async function main(){
       await pr.wait(wait);
       await pr.fadeOut(fade);
     }
-  }, exit);
+  });
 }
 
 function getOutputFile(vid=0){
   if(vid || !HD) return '-vid/1.mp4';
   var project = path.parse(__dirname).name;
   return `-render/${project}.mp4`;
-}
-
-function exit(){
-  process.exit();
 }

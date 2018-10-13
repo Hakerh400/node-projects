@@ -175,13 +175,9 @@ async function main(){
         await pr.frame();
       }
     }
-  }, exit);
+  });
 }
 
 function isIn(x, y){
   return x >= 1 && y >= 1 && x < w - 1 && y < h - 1;
-}
-
-function exit(){
-  process.exit();
 }

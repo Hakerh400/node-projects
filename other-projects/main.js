@@ -92,7 +92,7 @@ function render(window){
       await pr.fade(FADE_TIME);
       await pr.wait(WAIT_TIME);
     }
-  }, () => process.exit());
+  });
 
   function pressLetter(letter){
     pressKey(`Key${letter.toUpperCase()}`);

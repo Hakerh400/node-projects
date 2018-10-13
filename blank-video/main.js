@@ -34,15 +34,11 @@ async function main(){
     if(f === 1) init(g);
 
     return f !== framesNum;
-  }, exit);
+  });
 }
 
 function getOutputFile(vid=0){
   if(vid || !HD) return '-vid/1.mp4';
   var project = path.parse(__dirname).name;
   return `-render/${project}.mp4`;
-}
-
-function exit(){
-  process.exit();
 }

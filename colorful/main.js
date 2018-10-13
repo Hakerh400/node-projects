@@ -50,15 +50,11 @@ async function main(){
       d.put();
       await pr.frame();
     }
-  }, exit);
+  });
 }
 
 function getOutputFile(){
   if(!HD) return '-vid/1.mp4';
   var project = path.parse(__dirname).name;
   return `-render/${project}.mp4`;
-}
-
-function exit(){
-  process.exit();
 }

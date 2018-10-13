@@ -21,8 +21,8 @@ function find(dirs, exts, func){
       if(!exts.includes(ext)) return;
 
       var src = fs.readFileSync(d.fullPath, 'utf8');
-      var line = func(src);
-      if(line === 0) return;
+      var line = func(d.fullPath, src);
+      if(!line) return;
 
       arr.push(new Element(d.fullPath, line));
     });

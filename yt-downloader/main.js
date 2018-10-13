@@ -242,7 +242,9 @@ function mode2str(m=mode){
 }
 
 async function exit(){
-  process.exit();
+  server.close();
+  rl.close();
+  process.stdin.unref();
 }
 
 function formatStr(str, num){

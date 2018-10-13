@@ -23,11 +23,6 @@ const HD_PRESET = `-c:v ${'libx264'} ${VIDEO_PRESET}`;
 
 const SYM_PROC_IRRELEVANT = Symbol();
 
-const flags = {
-  verbose: 1,
-  forcedExit: 0,
-};
-
 const fd = process.stdout.fd;
 
 var procs = [];
@@ -106,7 +101,7 @@ class Video{
   }
 
   async frame(){
-    this.resume();
+    if(!this.isReady()) this.resume();
 
     await O.while(() => {
       return this.proc !== null && !this.isReady();
@@ -117,7 +112,7 @@ class Video{
 
     this.update();
 
-    this.resume();
+    if(!this.isReady()) this.resume();
     this.consume();
 
     this.f++;
@@ -134,8 +129,6 @@ class Video{
 module.exports = {
   Canvas,
   Video,
-
-  flags,
 
   createCanvas,
   createContext,
@@ -187,9 +180,6 @@ function onError(err){
 }
 
 function onSigint(){
-  if(flags.forcedExit)
-    return process.exit();
-
   closeProcs();
 }
 
@@ -676,17 +666,9 @@ function onProcExit(proc, exitCb=O.nop){
   tryToCallExitCb();
 
   function tryToCallExitCb(){
-    /*if(procs.length !== 0){
-      setTimeout(tryToCallExitCb);
-      return;
-    }*/
-
     if(procs.length === 0){
       process.stdin.removeListener('data', onStdinData);
       process.stdin.unref();
-
-      if(shouldExit) process.exit();
-      if(flags.verbose) log('P0');
     }
 
     exitCb();

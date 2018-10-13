@@ -29,11 +29,14 @@ function main(){
   else log(str);
 }
 
-function func(src){
+function func(file, src){
+  var dirs = file.split(/[\/\\]/);
+  if(dirs.includes('test')) return;
+
   var lines = O.sanl(src);
 
   var index = lines.findIndex(line => {
-    return line.includes(`capitaliz${'e'}`);
+    return line.includes(`process.exi${'t'}`);
   });
 
   return index + 1;
