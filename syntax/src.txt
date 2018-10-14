@@ -1,0 +1,51 @@
+script
+  firstLine
+  rest
+after(d)
+  return d.i === d.n;
+
+firstLine
+  charArr
+after(d, e)
+  d.len = e.str.length;
+  d.len1 = d.len + 1;
+  d.n = d.len * d.len1 - 1;
+  d.i = d.len;
+
+rest
+  token
+  token rest
+
+charArr
+  ""
+  "O" charArr
+
+token
+  tokenNonSpace
+  tokenSpace
+  tokenNewLine
+after(d)
+  d.i++;
+
+tokenNonSpace
+  "O"
+before(d)
+  var x = d.i % d.len1;
+  var y = d.i / d.len1;
+  return x === 0 || x === d.len - 1 || y === d.len - 1;
+
+tokenSpace
+  " "
+before(d)
+  var x = d.i % d.len1;
+  var y = d.i / d.len1;
+  return x !== 0 && x < d.len - 1 && y !== d.len - 1;
+
+tokenNewLine
+  "\r\n"
+  "\r"
+  "\n"
+before(d)
+  var x = d.i % d.len1;
+  var y = d.i / d.len1;
+  return x === d.len;

@@ -18,8 +18,8 @@ const RGBA = '-f rawvideo -pix_fmt rgba';
 const TRUNC = ENABLE_TRUNC ? '-vf "scale=trunc(iw/2)*2:trunc(ih/2)*2"' : '';
 
 const VIDEO_PRESET = '-preset slow -profile:v high -crf 18 -coder 1 -pix_fmt yuv420p -movflags +faststart -bf 2 -c:a aac -b:a 384k -profile:a aac_low';
-const FAST_PRESET = `-c:v ${'h264_nvenc'} ${VIDEO_PRESET}`;
-const HD_PRESET = `-c:v ${'libx264'} ${VIDEO_PRESET}`;
+const FAST_PRESET = `-c:v h264_nvenc ${VIDEO_PRESET}`;
+const HD_PRESET = `-c:v libx264 ${VIDEO_PRESET}`;
 
 const SYM_PROC_IRRELEVANT = Symbol();
 
