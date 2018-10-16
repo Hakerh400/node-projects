@@ -1,5 +1,8 @@
 'use strict';
 
+const fs = require('fs');
+const path = require('path');
+const util = require('util');
 const O = require('../framework');
 
 const TAB_SIZE = 2;
@@ -13,8 +16,6 @@ const patTypes = O.enum([
 class Syntax{
   constructor(src){
     [this.defs, this.defsObj] = Syntax.parseSrc(src);
-
-    log(this.defs.join('\n\n'));
   }
 
   static parseSrc(src){
@@ -100,6 +101,41 @@ class Syntax{
 
     return pats;
   }
+
+  parse(str, defName){
+    var logStr = '';
+    var firstLog = 1;
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    var def = this.defsObj[defName];
+    var len = str.length;
+
+    var stack = [new StackFrame(def)];
+
+    while(1){
+      break;
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    return logStr;
+
+    function log(...args){
+      if(args.length === 1 && typeof args[0] === 'string'){
+        var str = args[0];
+      }else{
+        var str = args.map(arg => {
+          return util.inspect(arg);
+        });
+      }
+
+      if(firstLog) firstLog = 0;
+      else logStr += '\n';
+
+      logStr += str;
+    }
+  }
 };
 
 class Definition{
@@ -160,7 +196,20 @@ class CheckerFunction{
   }
 };
 
+class StackFrame{
+  constructor(def, charIndex=0, matchIndex=0, patIndex=0, data=O.obj(), elem=null){
+    this.def = def;
+    this.charIndex = charIndex;
+    this.matchIndex = matchIndex;
+    this.patIndex = patIndex;
+    this.data = data;
+    this.elem = elem;
+  }
+};
+
 Syntax.Definition = Definition;
 Syntax.Pattern = Pattern;
+Syntax.CheckerFunction = CheckerFunction;
+Syntax.StackFrame = StackFrame;
 
 module.exports = Syntax;

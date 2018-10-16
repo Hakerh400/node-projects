@@ -14,7 +14,7 @@ setTimeout(main);
 
 function main(){
   var src = fs.readFileSync(srcFile, 'utf8');
-  var input = fs.readFileSync(inputFile);
+  var input = fs.readFileSync(inputFile, 'utf8');
 
   var syntax = new Syntax(src);
   var output = getOutput(syntax, input);
@@ -23,5 +23,6 @@ function main(){
 }
 
 function getOutput(syntax, input){
-  return input;
+  var output = syntax.parse(input, 'script');
+  return output;
 }

@@ -2,6 +2,8 @@
 
 const HD = 1;
 
+const fs = require('fs');
+const path = require('path');
 const O = require('../framework');
 const media = require('../media');
 const ImageData = require('../image-data');
@@ -11,7 +13,7 @@ const h = HD ? 1080 : 480;
 const fps = 60;
 const fast = !HD;
 
-const duration = 60;
+const duration = 60 * 60;
 const framesNum = fps * duration;
 
 const exp1 = 2;
@@ -21,6 +23,8 @@ const layersNum = 20;
 const entsPerLayer = 40;
 
 const [wh, hh] = [w, h].map(a => a >> 1);
+
+const outputFile = getOutputFile();
 
 var layers = null;
 
@@ -43,7 +47,7 @@ function main(){
     data = imgd.data;
   }
 
-  media.renderVideo('-vid/1.mp4', w, h, fps, fast, (w, h, g, f) => {
+  media.renderVideo(outputFile, w, h, fps, fast, (w, h, g, f) => {
     if(f === 1) init(g);
 
     layers.forEach(layer => {
@@ -139,4 +143,10 @@ class Entity{
 
 function randCol(){
   return O.ca(3, () => O.rand(256));
+}
+
+function getOutputFile(vid=0){
+  if(vid || !HD) return '-vid/1.mp4';
+  var project = path.parse(__dirname).name;
+  return `-render/${project}.mp4`;
 }

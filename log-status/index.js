@@ -21,7 +21,7 @@ function logStatus(f, n=null, type='frame'){
 
   var msgs = [
     `Processing ${type} ${formatNumber(f)}${isSizeKnown ? ` of ${formatNumber(n)}` : ``}`,
-    ...isSizeKnown ? [`Time remaining: ${formatTime(calcTime(startTime, f, n))}`] : [],
+    ...isSizeKnown ? [`ETA: ${formatTime(calcTime(startTime, f, n))}`] : [],
     `FPS: ${formatInt(f / ((Date.now() - startTime) / 1e3))}`,
   ];
 
