@@ -18,7 +18,6 @@ const fast = !HD;
 const duration = 60;
 const framesNum = fps * duration;
 
-const inputFile = '-dw/1.png';
 const outputFile = getOutputFile(1);
 
 const [wh, hh] = [w, h].map(a => a >> 1);
