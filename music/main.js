@@ -3,7 +3,7 @@
 var path = require('path');
 var music = require('.');
 
-var song = 'Military Storm';
+var song = 'test';
 
 setTimeout(main);
 

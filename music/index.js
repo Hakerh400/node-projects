@@ -4,7 +4,6 @@ var fs = require('fs');
 var path = require('path');
 var O = require('../framework');
 var media = require('../media');
-var logStatus = require('./log-status.js');
 var frequencies = require('./frequencies.json');
 
 var w = 44100;
@@ -25,7 +24,7 @@ function render(notesFile, audioFile, cb = O.nop){
   var lastNoteIndex = 0;
 
   media.renderAudio(audioFile, w, (w, d, f) => {
-    logStatus(f, framesNum);
+    media.logStatus(f, framesNum);
     f--;
 
     for(var i = 0; i < w; i++){
