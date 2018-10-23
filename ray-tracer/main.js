@@ -18,9 +18,11 @@ const fast = !HD;
 const duration = 60;
 const framesNum = fps * duration;
 
-const outputFile = getOutputFile(1);
+const outputFile = getOutputFile();
 
 const [wh, hh] = [w, h].map(a => a >> 1);
+
+const v = new Vector(0, 0, 0);
 
 setTimeout(main);
 
@@ -29,7 +31,7 @@ function main(){
   const n2 = 23;
   const r = 2;
 
-  const cubs = [];
+  const cubes = [];
 
   O.repeat(n2, z => {
     O.repeat(n1, i => {
@@ -40,8 +42,8 @@ function main(){
       var x = Math.cos(a) * r;
       var y = Math.sin(a) * r;
 
-      var cub = new Cuboid(x, y, z + .5, 1, 1, 1, k1);
-      cubs.push(cub);
+      var cube = new Cube(x, y, z, 1, 0, z / n2 * O.pi2, 0, k1);
+      cubes.push(cube);
     });
   });
 
@@ -50,7 +52,7 @@ function main(){
   function init(g){
     const d = new ImageData(g);
 
-    const ray = new Ray();
+    const ray = new Ray(0, 0, 0);
 
     d.iterate((x, y) => {
       if(x === 0)
@@ -64,11 +66,11 @@ function main(){
       ray.vel.setLen(.005);
 
       while(ray.len() < 30){
-        for(var i = 0; i !== cubs.length; i++){
-          const cub = cubs[i];
+        for(var i = 0; i !== cubes.length; i++){
+          const cube = cubes[i];
 
-          if(cub.has(ray))
-            return cub.paint(ray, col);
+          if(cube.has(ray))
+            return cube.paint(ray, col);
         }
 
         ray.move();
@@ -87,20 +89,28 @@ function main(){
   });
 }
 
-class Cuboid extends Vector{
-  constructor(x, y, z, dx, dy, dz, col){
-    var dxh = dx / 2, dyh = dy / 2, dzh = dz / 2;
-    super(x + dxh, y + dyh, z + dzh);
+class Cube extends Vector{
+  constructor(x, y, z, size, rx, ry, rz, col){
+    super(x, y, z);
 
-    this.v1 = new Vector(x, y, z);
-    this.v2 = new Vector(x + dx, y + dy, z + dz);
+    this.size = size;
+    this.sizeH = size / 2;
 
-    this.rad = Math.sqrt(dxh ** 2 + dyh ** 2 + dzh ** 2);
+    this.rad = size / 1.5 ** .5;
+    this.rot = new Vector(rx, ry, rz);
+
     this.col = col;
   }
 
-  has(v){ return v.gt(this.v1) && v.lt(this.v2); }
-  paint(v, col){ return O.hsv((v.dist(this) / this.rad * .9 + this.col) % 1, col); }
+  has(vv){
+    const s = this.sizeH;
+    v.set(vv).sub(this).rotn(this.rot);
+    return v.gt_(-s, -s, -s) && v.lt_(s, s, s);
+  }
+
+  paint(v, col){
+    return O.hsv((v.dist(this) / this.rad * .9 + this.col) % 1, col);
+  }
 };
 
 function getOutputFile(vid=0){
