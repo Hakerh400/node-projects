@@ -298,6 +298,9 @@ function renderVideo(output, w, h, fps, fast, frameFunc=O.nop, exitCb=O.nop){
       f--;
       setTimeout(frame);
       return;
+    }else if(value === -1){
+      end(proc);
+      return;
     }else{
       buff = canvas.toBuffer('raw');
     }

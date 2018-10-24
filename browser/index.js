@@ -29,13 +29,15 @@ class Window extends EventTarget{
     this.innerHeight = h;
 
     this.document = new Document(this);
+    this.navigator = new Navigator();
     this.location = new Location(url);
+
     this.XMLHttpRequest = createXMLHttpRequestConstructor(this);
     this.Function = createFunctionContrustor(this);
 
     this._rafEvents = [];
     this._canvases = [];
-    this._ready = true;
+    this._ready = 1;
 
     if(!O) O = require('../framework');
 
@@ -45,10 +47,10 @@ class Window extends EventTarget{
       });
     }
 
-    this.addEventListener('_raf', () => {
+    this.addEventListener('_raf', (...args) => {
       var rafEvents = [...this._rafEvents];
       this._rafEvents.length = 0;
-      rafEvents.forEach(({func}) => func());
+      rafEvents.forEach(({func}) => func(...args));
     });
 
     isReady();
@@ -74,9 +76,9 @@ class Window extends EventTarget{
   dispatchEvent({func, type, details: evt}){
     switch(type){
       case 'timeout':
-        this._ready = false;
+        this._ready = 0;
         setTimeout(() => {
-          this._ready = true;
+          this._ready = 1;
           func();
         }, evt.time);
         break;
@@ -187,8 +189,14 @@ class WindowEvent{
   }
 };
 
+class Navigator{
+  constructor(){
+    this.vendor = 'Google Inc.';
+  }
+};
+
 module.exports = {
-  Window
+  Window,
 };
 
 O = require('../framework');
@@ -278,7 +286,7 @@ function createXMLHttpRequestConstructor(window){
     }
 
     send(){
-      this.window._ready = false;
+      this.window._ready = 0;
 
       getPage(this.url, (err, data, status) => {
         if(err){
@@ -290,7 +298,7 @@ function createXMLHttpRequestConstructor(window){
           this.responseText = data.toString();
         }
 
-        this.window._ready = true;
+        this.window._ready = 1;
         this.onreadystatechange();
       });
     }
