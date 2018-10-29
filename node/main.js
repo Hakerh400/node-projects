@@ -68,11 +68,11 @@ async function processInput(str){
   }
 
   switch(str){
-    case 'cls':
+    case 'cls': case 'clear':
       await clear();
       return;
 
-    case 'exit':
+    case 'exit': case '.exit':
       rl.close();
       shouldExit = 1;
       return;
@@ -120,19 +120,19 @@ function updatePath(str){
 
       return (len1 > len2) - (len1 < len2);
     });
-    
+
     var reg = new RegExp(`^${dir}$`, 'i');
+    var matches = dirs.filter(d => reg.test(d));
 
-    var index = dirs.findIndex(d => {
-      return reg.test(d);
-    });
-
-    if(index === -1){
+    if(matches.length === 0){
       found = 0;
       return;
     }
 
-    currDir = path.join(currDir, dirs[index]);
+    var index = matches.findIndex(d => d.startsWith(str));
+    var match = matches[index !== -1 ? index : 0];
+
+    currDir = path.join(currDir, match);
   });
 
   return found;
