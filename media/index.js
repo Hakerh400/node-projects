@@ -649,7 +649,11 @@ function spawnProc(name, args, exitCb=O.nop){
     log(str);
   }
 
-  var proc = cp.spawn(name, args);
+  var options = {
+    windowsHide: false,
+  };
+
+  var proc = cp.spawn(name, args, options);
 
   procs.push(proc);
 
