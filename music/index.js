@@ -1,22 +1,33 @@
 'use strict';
 
-var fs = require('fs');
-var path = require('path');
-var O = require('../framework');
-var media = require('../media');
-var frequencies = require('./frequencies.json');
+const fs = require('fs');
+const path = require('path');
+const O = require('../framework');
+const media = require('../media');
+const frequencies = require('./frequencies.json');
 
-var w = 44100;
+const w = 44100;
 
-var defaultNoteNum = 4;
-var noteDuration = w / 8;
-var pauseFactor = .2;
+const defaultNoteNum = 4;
+const noteDuration = w / 16;
+const pauseFactor = .01;
+
+const freqOffset = 50;
+const freqArr = getFreqArr();
 
 module.exports = {
-  render
+  render,
 };
 
-function render(notesFile, audioFile, cb = O.nop){
+function getFreqArr(){
+  return O.keys(frequencies).sort((a, b) => {
+    a = frequencies[a];
+    b = frequencies[b];
+    return (a > b) - (a < b);
+  });
+}
+
+function render(notesFile, audioFile, cb=O.nop){
   var notes = loadNotes(notesFile);
   var framesNum = Math.ceil(notes.time / w);
 
@@ -67,6 +78,7 @@ function loadNotes(file){
 
     note = note.toUpperCase();
     if(!/\d/.test(note)) note += defaultNoteNum;
+    else if(/^\d+$/.test(note)) note = freqArr[Number(note) + freqOffset];
     if(!(note in frequencies)) throw new SyntaxError(`Unrecognized note "${note}".`);
 
     duration = Number(duration) * noteDuration;
