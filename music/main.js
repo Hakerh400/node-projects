@@ -1,9 +1,9 @@
 'use strict';
 
-var path = require('path');
-var music = require('.');
+const path = require('path');
+const music = require('.');
 
-var song = 'test';
+const song = 'test';
 
 setTimeout(main);
 
