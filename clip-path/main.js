@@ -21,8 +21,13 @@ async function main(){
      0, ay, ax,
   ].reduce((clip, cNew, index) => {
     var coords = O.last(clip).slice();
-    coords[index & 1] = cNew;
-    clip.push(coords)
+
+    var i = index & 1;
+    if(coords[i] === cNew) return clip;
+
+    coords[i] = cNew;
+    clip.push(coords);
+
     return clip;
   }, [[ax, 0]]);
 
