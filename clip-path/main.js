@@ -30,7 +30,7 @@ async function main(){
     clipPath.map(coords => {
       return coords.map(coord => {
         return `${Math.round(coord * 100)}%`;
-      }).join(' ')
+      }).join(' ');
     }).join(', ')
   }) !important;`;
 
@@ -38,7 +38,9 @@ async function main(){
 }
 
 async function getArr(){
-  var arr = await O.caa(4, i => n(i));
+  var arr = await O.caa(4, async i => {
+    return await n(i);
+  });
 
   close();
   return arr;
