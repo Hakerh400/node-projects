@@ -14,7 +14,6 @@ async function main(){
   var flat = O.flatten(arr);
 
   var [ax, ay, bx, by, cx, cy, dx, dy] = flat;
-  // 279 136
 
   var clipPath = [
     bx, by,  1, dy,
