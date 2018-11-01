@@ -42,6 +42,7 @@ async function processInput(str){
 
   if(str.length === 0 || str.startsWith('-')){
     if(files.includes(MAIN_SCRIPT)){
+      //////////////////////////////// Begin
       await clear();
 
       var args = [];
@@ -60,6 +61,7 @@ async function processInput(str){
       });
 
       proc.on('exit', onProcExit);
+      //////////////////////////////// End
     }else{
       log(`Missing "${MAIN_SCRIPT}"`);
     }
@@ -83,6 +85,25 @@ async function processInput(str){
     if(!found) log('Directory not found');
     return;
   }
+
+  var batchName = `${str}.bat`;
+  var batchFile = path.join(currDir, batchName);
+
+  if(!fs.existsSync(batchFile)){
+    log(`Batch file "${batchName}" not found`);
+    return;
+  }
+
+  //////////////////////////////// Begin
+  await clear();
+
+  proc = cp.spawn(batchFile, [], {
+    cwd: currDir,
+    stdio: 'inherit',
+  });
+
+  proc.on('exit', onProcExit);
+  //////////////////////////////// End
 }
 
 function updatePath(str){
