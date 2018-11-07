@@ -8,7 +8,8 @@ const readline = require('readline');
 const cp = require('child_process');
 const O = require('../framework');
 
-const MAIN_SCRIPT = 'main.js';
+const MAIN_SCRIPT_JS = 'main.js';
+const MAIN_SCRIPT_PY = 'main.py';
 
 var currDir = process.cwd();
 var rl = readline.createInterface(process.stdin, process.stdout);
@@ -41,7 +42,7 @@ async function processInput(str){
   var files = getFiles();
 
   if(str.length === 0 || str.startsWith('-')){
-    if(files.includes(MAIN_SCRIPT)){
+    if(files.includes(MAIN_SCRIPT_JS)){
       //////////////////////////////// Begin
       await clear();
 
@@ -53,7 +54,28 @@ async function processInput(str){
       }
 
       proc = cp.spawn('node', [
-        MAIN_SCRIPT,
+        MAIN_SCRIPT_JS,
+        ...args,
+      ], {
+        cwd: currDir,
+        stdio: 'inherit',
+      });
+
+      proc.on('exit', onProcExit);
+      //////////////////////////////// End
+    }else if(files.includes(MAIN_SCRIPT_PY)){
+      //////////////////////////////// Begin
+      await clear();
+
+      var args = [];
+
+      if(str.length !== 0 && str !== '-'){
+        str = str.substring(1).trim();
+        args = str.split(/\s+/);
+      }
+
+      proc = cp.spawn('C:/Users/Thomas/AppData/Local/Programs/Python/Python37/python.exe', [
+        MAIN_SCRIPT_PY,
         ...args,
       ], {
         cwd: currDir,

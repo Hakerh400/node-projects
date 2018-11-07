@@ -14,7 +14,7 @@ const scale = 1;
 setTimeout(() => main().catch(err));
 
 async function main(){
-  var img = await loadImg('-dw/bmp/3.bmp');
+  var img = await loadImg('-dw/h.bmp');
 
   const {width, height} = img;
   log({width, height});

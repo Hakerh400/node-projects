@@ -3,7 +3,9 @@
 using namespace std;
 using namespace BMPParser;
 
-#define DEBUG 1
+#define DEBUG 0
+
+#define MAX_IMG_SIZE 10000
 
 #define E(cond, msg) if(cond) return setErr(msg)
 #define EU(cond, msg) if(cond) return setErrUnsupported(msg)
@@ -24,13 +26,22 @@ using namespace BMPParser;
   else if(col##Mask == 0xff000000u) col##Mask = 24; \
   else EU(1, #col " mask");
 
-void log(char a){ if(DEBUG) cout << a << endl; }
-void log(int16_t a){ if(DEBUG) cout << (int32_t)a << endl; }
-void log(uint16_t a){ if(DEBUG) cout << (uint32_t)a << endl; }
-void log(int32_t a){ if(DEBUG) cout << a << endl; }
-void log(uint32_t a){ if(DEBUG) cout << a << endl; }
-void log(void *a){ if(DEBUG) cout << a << endl; }
-void log(string a){ if(DEBUG) cout << a << endl; }
+#define CHECK_OVERFLOW(size, type) \
+  if(ptr + (size) - data > len){ \
+    setErr("unexpected end of file"); \
+    return type(); \
+  }
+
+// If someone decide to improve this parser in the future
+#if DEBUG
+void log(char a){ cout << a << endl; }
+void log(int16_t a){ cout << (int32_t)a << endl; }
+void log(uint16_t a){ cout << (uint32_t)a << endl; }
+void log(int32_t a){ cout << a << endl; }
+void log(uint32_t a){ cout << a << endl; }
+void log(void *a){ cout << a << endl; }
+void log(string a){ cout << a << endl; }
+#endif
 
 Parser::Parser(){
   status = Status::EMPTY;
@@ -47,6 +58,7 @@ Parser::Parser(){
 }
 
 Parser::~Parser(){
+  // `imgd` is deallocated implicitly
   data = nullptr;
   ptr = nullptr;
 }
@@ -102,19 +114,21 @@ void Parser::parse(byte *data, int len){
   // Image width (specification allows non-positive values)
   w = I4();
   EU(w <= 0, "non-positive image width");
+  E(w > MAX_IMG_SIZE, "too large image width");
 
   // Image height (specification allows non-positive values)
   h = I4();
   EU(h <= 0, "non-positive image height");
+  E(h > MAX_IMG_SIZE, "too large image height");
 
   // Number of color planes (must be 1)
   E(U2() != 1, "number of color planes must be 1");
 
   // Bits per pixel (color depth)
   auto bpp = U2();
-  auto isBppValid = bpp == 24 || bpp == 32;
+  auto isBppValid = bpp == 1  || bpp == 24 || bpp == 32;
   EU(!isBppValid, "color depth");
-  
+
   // Compression type
   auto compr = U4();
   temp = "compression type"s;
@@ -131,8 +145,11 @@ void Parser::parse(byte *data, int len){
   auto isComprValid = compr == 0 || compr == 3;
   EX(!isComprValid, temp);
   
-  // Also ensure that BI_BITFIELDS appears only with BITMAPV4HEADER
-  E(compr == 3 && dibSize != 108, "compression BI_BITFIELDS can be used only with BITMAPV4HEADER");
+  // Also ensure that BI_BITFIELDS appears only with BITMAPV4HEADER and 32-bit colors
+  if(compr == 3){
+    E(dibSize != 108, "compression BI_BITFIELDS can be used only with BITMAPV4HEADER");
+    E(bpp != 32, "compression BI_BITFIELDS can be used only with 32-bit color depth");
+  }
 
   // Calculate image data size and padding
   uint32_t expectedImgdSize = (((w * bpp + 31) >> 5) << 2) * h;
@@ -181,6 +198,12 @@ void Parser::parse(byte *data, int len){
     skip(48);
   }
 
+  /**
+   * Skip to the image data. There may be other chunks between,
+   * but they are optional.
+   */
+  ptr = data + imgdOffset;
+
   // Start parsing image data
   setOp("image data");
 
@@ -193,16 +216,39 @@ void Parser::parse(byte *data, int len){
 
   // Bitmap data starts at the lower left corner
   for(int y = h - 1; y != -1; y--){
+    // Use in-byte offset for bpp < 8
+    byte colOffset = 0;
+    byte cval = 0;
+
     for(int x = 0; x != w; x++){
-      // Index in the RGBa image data
+      // Index in the RGBA image data
       int i = (x + y * w) << 2;
 
       switch(compr){
         case 0: // BI_RGB
-          blue = U1();
-          green = U1();
-          red = U1();
-          alpha = 255;
+          switch(bpp){
+            case 1:
+              if(colOffset) ptr--;
+              cval = (U1() >> (7 - colOffset)) & 1;
+              red = green = blue = cval ? 255 : 0;
+              alpha = 255;
+              colOffset = (colOffset + 1) & 7;
+              break;
+
+            case 24:
+              blue = U1();
+              green = U1();
+              red = U1();
+              alpha = 255;
+              break;
+
+            case 32:
+              blue = U1();
+              green = U1();
+              red = U1();
+              alpha = U1();
+              break;
+          }
           break;
 
         case 3: // BI_BITFIELDS
@@ -214,7 +260,6 @@ void Parser::parse(byte *data, int len){
           break;
       }
 
-      // BGRA pixel format
       imgd[i] = red;
       imgd[i + 1] = green;
       imgd[i + 2] = blue;
@@ -238,26 +283,23 @@ string Parser::getErrMsg() const{
 }
 
 template <typename T> T Parser::get(){
-  if(ptr + sizeof(T) - data > len){
-    setErr("unexpected end of file");
-    return T();
-  }
-
+  CHECK_OVERFLOW(sizeof(T), T);
   T val = *(T*)ptr;
   ptr += sizeof(T);
-
   return val;
 }
 
-string Parser::getStr(int len, bool reverse){
+string Parser::getStr(int size, bool reverse){
+  CHECK_OVERFLOW(size, string);
   string val = ""s;
-  while(len--) val += (char)*ptr++;
+  while(size--) val += (char)*ptr++;
   if(reverse) std::reverse(val.begin(), val.end());
   return val;
 }
 
-void Parser::skip(int len){
-  ptr += len;
+void Parser::skip(int size){
+  CHECK_OVERFLOW(size, void);
+  ptr += size;
 }
 
 void Parser::setOp(string op){
