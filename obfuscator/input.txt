@@ -1,3 +1,10 @@
-0 read "console" prop "log" array
-  array 1 + 2 + 3 +
-  push method
+// 0 - main
+1 func array
+  7
+push call
+
+// 1 - log
+"log" 1 set
+0 read 1 get prop
+0 read "console" prop 1 get prop
+|| array 0 get push call

@@ -1,18 +1,24 @@
 'use strict';
 
-var fs = require('fs');
-var path = require('path');
-var O = require('../framework');
-var fsRec = require('../fs-recursive');
-var encryptor = require('../encryptor');
-var tempDir = require('../temp-dir')(__filename);
-var bisector = require('.');
+const fs = require('fs');
+const path = require('path');
+const O = require('../framework');
+const fsRec = require('../fs-recursive');
+const encryptor = require('../encryptor');
+const media = require('../media');
+const tempDir = require('../temp-dir')(__filename);
+const bisector = require('.');
 
-var repo = 'Hakerh400/node-projects';
+const repo = 'Hakerh400/node-projects';
+
+var index = 0;
+var num = null;
 
 setTimeout(main);
 
 function main(){
+  log('Initializing');
+
   bisector.bisect(repo, firstCommit, nextCommit, checkFunc, (err, commit) => {
     if(err) return log(err);
     if(commit === null) return log('Not found.');
@@ -22,6 +28,7 @@ function main(){
 }
 
 function firstCommit(n){
+  num = n;
   return n - 1;
 }
 
@@ -30,6 +37,8 @@ function nextCommit(i, n){
 }
 
 function checkFunc(dir, cb){
+  media.logStatus(++index, num, 'commit');
+
   resetTempDir();
 
   var found = 0;
@@ -37,8 +46,13 @@ function checkFunc(dir, cb){
   fsRec.processFilesSync(dir, d => {
     if(found || d.processed) return;
 
-    if(d.name === 'syntax-finder')
-      found = 1;
+    var p = d.fullPath;
+
+    if(p.includes('obfuscator') && p.endsWith('.txt')){
+      var str = fs.readFileSync(p, 'utf8');
+      if(str.includes('swap'))
+        found = 1;
+    }
   });
 
   cb(found);

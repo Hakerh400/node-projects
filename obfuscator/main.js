@@ -6,7 +6,7 @@ var O = require('../framework');
 var obfuscator = require('.');
 
 const EXECUTE = 1;
-const ALIGN = 0;
+const ALIGN = 1;
 
 var cwd = __dirname;
 var inputFile = path.join(cwd, 'input.txt');
@@ -15,11 +15,15 @@ var outputFile = path.join(cwd, 'output.js');
 setTimeout(main);
 
 function main(){
+  O.enhanceRNG();
+
   var input = fs.readFileSync(inputFile, 'utf8');
   var output = obfuscator.obfuscate(input);
 
   if(ALIGN){
-    while(1){
+    for(var i = 0;; i++){
+      log(`Align attempt ${i + 1}`);
+
       var lines = O.sanl(output);
       lines.pop();
 

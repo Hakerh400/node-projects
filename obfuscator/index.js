@@ -5,7 +5,8 @@ var O = require('../framework');
 
 const DEBUG = 0;
 const SHUFFLE = 1;
-const ONLOAD = 0;
+
+const FUNC_NAME = null;
 
 const MAX_LINE_LEN = 80;
 const NEW_LINE = '\r\n'
@@ -20,17 +21,17 @@ var opCodes = [
   /* a */ [0x00, 'call', (a, b) => r(a, b)],
   /* b */ [0x01, 'method', (a, b, c) => r(a, p(a, b), c)],
   /* c */ [0x02, 'read', a => m.a[a]],
-  /* d */ [0x03, 'write', (a, b) => m.a[b] = a, true],
+  /* d */ [0x03, 'write', (a, b) => m.a[b] = a, 1],
   /* e */ [0x04, 'clone', () => C(m.b)],
   /* f */ [0x05, 'prop', (a, b) => a[p(a, b)]],
-  /* g */ [0x06, 'update', (a, b, c) => a[p(a, b)] = c, true],
+  /* g */ [0x06, 'update', (a, b, c) => a[p(a, b)] = c, 1],
   /* h */ [0x07, 'array', () => []],
   /* i */ [0x08, 'push', (a, b) => (a[s(14)](b),a)],
-  /* j */ [0x09, 'pop', a => a, true],
-  /* k */ [0x0A, 'swap', (a, b) => [m[b], m[a]] = [(m = m.b)[a = C(m,s) - a], m[b = C(m,C) - b]], true],
+  /* j */ [0x09, 'pop', a => a, 1],
+  /* k */ [0x0A, 'swap', (a, b,c=(a=>{debugger})()) => [m[b], m[a]] = [(m = m.b)[a = C(m, s) - a], m[b = C(m, C) - b]], 1],
   /* l */ [0x0B, 'typeof', a => typeof(a)],
   /* m */ [0x0C, 'get', a => C(m.L)[a]],
-  /* n */ [0x0D, 'set', (a, b) => C(m.L)[b] = a, true],
+  /* n */ [0x0D, 'set', (a, b) => C(m.L)[b] = a, 1],
   /* o */ [0x0E, 'if', (a, b, c) => a && r(b, c)],
   /* p */ [0x0F, 'else', (a, b, c, d, e) => a ? r(b, c) : r(d, e)],
   /* q */ [0x10, 'tern', (a, b, c) => a ? b : c],
@@ -83,12 +84,6 @@ module.exports = {
 function obfuscate(src){
   global.indent = 0;
 
-  global.log = (...a) => {
-    fs.writeSync(process.stdout.fd, ' '.repeat(indent << 1));
-    console.log(...a);
-    return a[a.length - 1];
-  };
-
   global.format = (a, b=0) => {
     var str = 'CIRCULAR';
 
@@ -129,7 +124,7 @@ function obfuscate(src){
   out += `,\n`;
   out += `[${opCodes.map(op => {
     var func = op[2];
-    var pop = op[3] === true;
+    var pop = op[3] === 1;
     var str = `${func}`.replace(/ /g, '');
 
     if(str[0] === '(' && str[2] === ')')
@@ -334,7 +329,7 @@ function obfuscate(src){
 
     var str = `${randLetter()}=>`;
     var parens = [];
-    var first = true;
+    var first = 1;
 
     (src.match(/\S+/g) || []).forEach(op => {
       if(!first){
@@ -342,7 +337,7 @@ function obfuscate(src){
         else str += O.randElem(jsOps);
       }
 
-      first = false;
+      first = 0;
 
       if(O.rand(parens.length + 2) === 0){
         var type = O.rand(2);
@@ -391,8 +386,8 @@ function obfuscate(src){
   out = `(${getVar('N')}=>{${out}})\`\``;
   checkCode();
 
-  if(ONLOAD){
-    out = `onload=a=>${out}`;
+  if(FUNC_NAME !== null){
+    out = `${FUNC_NAME}=a=>${out}`;
     checkCode();
   }
 
@@ -403,7 +398,7 @@ function obfuscate(src){
       break;
     }
 
-    for(var i = MAX_LINE_LEN; i > 0; i--){
+    for(var i = MAX_LINE_LEN; i !== -1; i--){
       var s = out.substring(i - 1, i + 1);
       if(/[\'\`\\\$\{\}]|[a-zA-Z0-9]{2}/.test(s))
         continue;
@@ -442,13 +437,13 @@ function obfuscate(src){
   }
 
   function isCodeValid(code){
-    var valid = false;
+    var valid = 0;
 
     saveConsole();
 
     try{
       var func = new Function(getVar('N'), code);
-      valid = true;
+      valid = 1;
     }catch{}
 
     restoreConsole();
