@@ -28,7 +28,7 @@ var opCodes = [
   /* h */ [0x07, 'array', () => []],
   /* i */ [0x08, 'push', (a, b) => (a[s(14)](b),a)],
   /* j */ [0x09, 'pop', a => a, 1],
-  /* k */ [0x0A, 'swap', (a, b,c=(a=>{debugger})()) => [m[b], m[a]] = [(m = m.b)[a = C(m, s) - a], m[b = C(m, C) - b]], 1],
+  /* k */ [0x0A, 'swap', (a, b) => [m[b], m[a]] = [(m = m.b)[a = C(m, s) - a], m[b = C(m, C) - b]], 1],
   /* l */ [0x0B, 'typeof', a => typeof(a)],
   /* m */ [0x0C, 'get', a => C(m.L)[a]],
   /* n */ [0x0D, 'set', (a, b) => C(m.L)[b] = a, 1],
