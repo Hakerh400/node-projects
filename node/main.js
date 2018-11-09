@@ -85,7 +85,7 @@ async function processInput(str){
       proc.on('exit', onProcExit);
       //////////////////////////////// End
     }else{
-      log(`Missing "${MAIN_SCRIPT}"`);
+      log(`Missing "${MAIN_SCRIPT_JS}"`);
     }
 
     return;
@@ -205,13 +205,13 @@ function getEntries(dir=currDir){
 
 function getDirs(dir=currDir){
   return getEntries(dir).filter(d => {
-    return fs.statSync(path.join(dir, d)).isDirectory();
+    return stat(path.join(dir, d)).isDirectory();
   });
 }
 
 function getFiles(dir=currDir){
   return getEntries(dir).filter(d => {
-    return fs.statSync(path.join(dir, d)).isFile();
+    return stat(path.join(dir, d)).isFile();
   });
 }
 
@@ -225,4 +225,15 @@ function write(str){
       res();
     });
   });
+}
+
+function stat(file){
+  try{
+    return fs.statSync(file);
+  }catch{
+    return {
+      isFile(){ return 0; },
+      isDirectory(){ return 0; },
+    };
+  }
 }
