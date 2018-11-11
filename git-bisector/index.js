@@ -1,16 +1,16 @@
 'use strict';
 
-var fs = require('fs');
-var cp = require('child_process');
-var O = require('../framework');
-var fsRec = require('../fs-recursive');
-var tempDir = require('../temp-dir')(__filename);
+const fs = require('fs');
+const cp = require('child_process');
+const O = require('../framework');
+const fsRec = require('../fs-recursive');
+const tempDir = require('../temp-dir')(__filename);
 
 module.exports = {
   bisect,
 };
 
-function bisect(repo, firstCommit, nextCommit, checkFunc, cb = O.nop){
+function bisect(repo, firstCommit, nextCommit, checkFunc, cb=O.nop){
   var repoPath = `https://github.com/${repo}.git`;
 
   resetTempDir();
