@@ -7,7 +7,7 @@ const O = require('../framework');
 const ffn = require('../format-file-name');
 
 const ORIGIN = 'o';
-const START = '188c4ca7f2ea510991e1da390a22f06f69405af2';
+const START = 'ed005a219207e50ac091e6a9c84d822e911164ae';
 
 const GOOD_BUILD_STR = 'Good build';
 const BAD_BUILD_STR = 'Bad build';
@@ -41,9 +41,9 @@ function bisect(dir, first=null){
 
   git(`checkout ${ORIGIN}/master`);
 
-  var cs = git('log --pretty=oneline --no-decorate')
-    .split(/\r\n|\r|\n/)
-    .map(a => a.trim()).filter(a => a)
+  var cs = O.sanl(git('log --pretty=oneline --no-decorate'))
+    .map(a => a.trim())
+    .filter(a => a.length !== 0)
     .map(a => a.substring(0, 40)).reverse();
 
   if(cs.length <= 1)
@@ -56,7 +56,7 @@ function bisect(dir, first=null){
   var out2 = test(j);
 
   if(out1 === out2)
-    throw new TypeError('Nothing to bisect');
+    throw new TypeError(`Nothing to bisect - [${out1}]`);
 
   while(j - i !== 1){
     log(`${i} ${j}`);
@@ -81,7 +81,9 @@ function bisect(dir, first=null){
     var out = bat('b');
     if(out === '1') return 1;
     else if(out === '0') return 0;
-    else throw new TypeError(`Unknown result\n${out}\nat commit ${c}`);
+    
+    var s = `\n\n${'/'.repeat(100)}\n\n`;
+    throw new TypeError(`Unknown result${s}${out}${s}at commit ${c}`);
   }
 }
 

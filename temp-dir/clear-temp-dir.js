@@ -1,9 +1,9 @@
 'use strict';
 
-var fs = require('fs');
-var path = require('path');
-var O = require('../framework');
-var fsRec = require('../fs-recursive');
+const fs = require('fs');
+const path = require('path');
+const O = require('../framework');
+const fsRec = require('../fs-recursive');
 
 setTimeout(main);
 

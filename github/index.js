@@ -37,6 +37,9 @@ function push(repoName, cb=O.nop){
   var gitPush = path.join(cwd, 'git-push.bat');
 
   var user = repos.user;
+  if(!repos.repos.hasOwnProperty(repoName))
+    throw new TypeError('Unknown repository');
+  
   var repo = repos.repos[repoName];
 
   Object.setPrototypeOf(repo, null);

@@ -650,7 +650,7 @@ function spawnProc(name, args, exitCb=O.nop){
   }
 
   var options = {
-    windowsHide: false,
+    windowsHide: true,
   };
 
   var proc = cp.spawn(name, args, options);

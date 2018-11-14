@@ -4,8 +4,10 @@ const fs = require('fs');
 const path = require('path');
 const O = require('../framework');
 
+const FS_SEPARATOR = '\\';
+
 class FileQueueElem{
-  constructor(fullPath, relativePath=null, depth=null, name=null, isDir=null, processed=false){
+  constructor(fullPath, relativePath=null, depth=null, name=null, isDir=null, processed=0){
     if(isDir === null) isDir = fs.statSync(fullPath).isDirectory();
     if(name === null) name = path.parse(fullPath).base;
     if(relativePath === null) relativePath = name;
@@ -13,6 +15,7 @@ class FileQueueElem{
 
     this.fullPath = fullPath;
     this.relativePath = relativePath;
+    this.relativeSubPath = relativePath.split(/[\/\\]/).slice(1).join(FS_SEPARATOR);
     this.depth = depth;
     this.name = name;
     this.isDir = isDir;
@@ -29,6 +32,8 @@ module.exports = {
   FileQueueElem,
   processFiles,
   processFilesSync,
+  copyFiles,
+  copyFilesSync,
   deleteFiles,
   deleteFilesSync,
   createDir,
@@ -36,11 +41,11 @@ module.exports = {
 };
 
 function processFiles(filePath, func, cb=O.nop){
-  processElem(false, [new FileQueueElem(formatPath(filePath))], func, cb);
+  processElem(0, [new FileQueueElem(formatPath(filePath))], func, cb);
 }
 
 function processFilesSync(filePath, func){
-  processElem(true, [new FileQueueElem(formatPath(filePath))], func);
+  processElem(1, [new FileQueueElem(formatPath(filePath))], func);
 }
 
 function processElem(sync, queue, func, cb=O.nop){
@@ -50,7 +55,7 @@ function processElem(sync, queue, func, cb=O.nop){
     func(FileQueueElem.copy(elem));
 
     if(elem.isDir && !elem.processed){
-      elem.processed = true;
+      elem.processed = 1;
       queue.push(elem);
 
       var files = fs.readdirSync(elem.fullPath);
@@ -65,12 +70,28 @@ function processElem(sync, queue, func, cb=O.nop){
 
     if(queue.length){
       if(sync) continue;
-      else return setTimeout(() => processElem(false, queue, func, cb));
+      else return setTimeout(() => processElem(0, queue, func, cb));
     }else{
       if(sync) return cb();
       else return setTimeout(() => cb());
     }
   }
+}
+
+function copyFiles(filePath, dest, cb=O.nop){
+  processFiles(filePath, d => copyFile(d, dest), cb);
+}
+
+function copyFilesSync(filePath, dest){
+  processFilesSync(filePath, d => copyFile(d, dest));
+}
+
+function copyFile(d, dest){
+  if(d.depth === 0 || d.processed) return;
+
+  var destPath = path.join(dest, d.relativeSubPath);
+  if(d.isDir) fs.mkdirSync(destPath)
+  else fs.writeFileSync(destPath, fs.readFileSync(d.fullPath));
 }
 
 function deleteFiles(filePath, cb=O.nop){
@@ -81,11 +102,11 @@ function deleteFilesSync(filePath){
   processFilesSync(filePath, deleteFile);
 }
 
-function deleteFile(obj){
-  if(obj.isDir){
-    if(obj.processed) fs.rmdirSync(obj.fullPath);
+function deleteFile(d){
+  if(d.isDir){
+    if(d.processed) fs.rmdirSync(d.fullPath);
   }else{
-    fs.unlinkSync(obj.fullPath);
+    fs.unlinkSync(d.fullPath);
   }
 }
 
