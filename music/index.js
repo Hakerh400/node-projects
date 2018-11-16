@@ -9,8 +9,8 @@ const frequencies = require('./frequencies.json');
 const w = 44100;
 
 const defaultNoteNum = 4;
-const noteDuration = w / 16;
-const pauseFactor = .01;
+const noteDuration = w / 4;
+const pauseFactor = .5;
 
 const freqOffset = 50;
 const freqArr = getFreqArr();
