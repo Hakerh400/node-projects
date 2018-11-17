@@ -53,15 +53,10 @@ async function processInput(str){
         args = str.split(/\s+/);
       }
 
-      proc = cp.spawn('node', [
+      proc = spawn('node', [
         MAIN_SCRIPT_JS,
         ...args,
-      ], {
-        cwd: currDir,
-        stdio: 'inherit',
-      });
-
-      proc.on('exit', onProcExit);
+      ]);
       //////////////////////////////// End
     }else if(files.includes(MAIN_SCRIPT_PY)){
       //////////////////////////////// Begin
@@ -74,15 +69,10 @@ async function processInput(str){
         args = str.split(/\s+/);
       }
 
-      proc = cp.spawn('C:/Users/Thomas/AppData/Local/Programs/Python/Python37/python.exe', [
+      proc = spawn('C:/Users/Thomas/AppData/Local/Programs/Python/Python37/python.exe', [
         MAIN_SCRIPT_PY,
         ...args,
-      ], {
-        cwd: currDir,
-        stdio: 'inherit',
-      });
-
-      proc.on('exit', onProcExit);
+      ]);
       //////////////////////////////// End
     }else{
       log(`Missing "${MAIN_SCRIPT_JS}"`);
@@ -119,12 +109,7 @@ async function processInput(str){
   //////////////////////////////// Begin
   await clear();
 
-  proc = cp.spawn(batchFile, [], {
-    cwd: currDir,
-    stdio: 'inherit',
-  });
-
-  proc.on('exit', onProcExit);
+  proc = spawn(batchFile, []);
   //////////////////////////////// End
 }
 
@@ -182,20 +167,26 @@ function updatePath(str){
 }
 
 async function onInput(str){
-  rl.pause();
   await processInput(str);
   if(!shouldExit && proc === null) onProcExit();
 }
 
-function onProcExit(code=null){
+function spawn(name, args){
+  var proc = cp.spawn(name, args, {
+    cwd: currDir,
+    stdio: 'inherit',
+  });
+
+  proc.on('exit', onProcExit);
+
+  return proc;
+}
+
+async function onProcExit(code=null){
   if(code !== null && DISPLAY_EXIT_CODE)
     log(code);
 
-  if(proc !== null){
-    rl.resume();
-    proc = null;
-  }
-  
+  proc = null;
   askForInput();
 }
 

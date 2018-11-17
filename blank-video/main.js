@@ -13,6 +13,8 @@ const h = HD ? 1080 : 480;
 const fps = 60;
 const fast = !HD;
 
+const [wh, hh] = [w, h].map(a => a >> 1);
+
 const duration = 10;
 const framesNum = fps * duration;
 

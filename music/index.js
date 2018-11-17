@@ -12,6 +12,8 @@ const defaultNoteNum = 4;
 const noteDuration = w / 4;
 const pauseFactor = .5;
 
+const volume = 1;
+
 const freqOffset = 50;
 const freqArr = getFreqArr();
 
@@ -38,14 +40,14 @@ function render(notesFile, audioFile, cb=O.nop){
     media.logStatus(f, framesNum);
     f--;
 
-    for(var i = 0; i < w; i++){
+    for(var i = 0; i !== w; i++){
       var sample = f * w + i;
 
       var v = 0;
       var vt = 0;
 
-      for(var j = lastNoteIndex; j < notes.length; j++){
-        v += vt;
+      for(var j = lastNoteIndex; j !== notes.length; j++){
+        v += vt * volume;
         vt = 0;
 
         var [freq, start, end] = notes[j];
@@ -60,7 +62,7 @@ function render(notesFile, audioFile, cb=O.nop){
         lastNoteIndex++;
       }
 
-      v += vt;
+      v += vt * volume;
 
       d.writeFloatLE(v, i << 2);
     }
