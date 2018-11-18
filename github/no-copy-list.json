@@ -1,6 +1,9 @@
 [
-  "git-init-temp.bat",
-  
   "package-lock.json",
-  "passwords.json"
+  "passwords.json",
+
+  "input.txt",
+  "output.txt",
+  
+  "git-init-temp.bat"
 ]
