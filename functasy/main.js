@@ -16,6 +16,8 @@ function main(){
   var src = fs.readFileSync(srcFile);
   var input = fs.readFileSync(inputFile);
 
+  fs.writeFileSync(outputFile, '');
+
   var output = functasy.run(src, input);
   fs.writeFileSync(outputFile, output);
 }

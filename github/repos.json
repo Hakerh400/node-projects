@@ -26,6 +26,12 @@
       "dest": "C:/Github/functional"
     },
 
+    "fsy": {
+      "name": "functasy",
+      "src": "C:/Projects/Functasy",
+      "dest": "C:/Github/functasy"
+    },
+
     "tasks": {
       "name": "tasks",
       "src": "C:/Projects/Tasks",

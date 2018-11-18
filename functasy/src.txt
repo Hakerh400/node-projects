@@ -1,34 +1,22 @@
-(
-  (((((((((
-    (a)()9()(9)
-    ((
-      b0()b()(9)
-      ab
-    ))()8()(9)
+var get = 0;
+var set = 1;
 
-    ((b))()0()(9)
-    ((a))()1()(9)
-    ((
-      (b)()2()(9)
-      (
-        a0()c()(9)
-        a0()b()(9)
-        c
-      )()3()(9)
-    )()(8b)(a0))(
-      0()a()(9)
-      ()(()(1()a))()(9)
-      a
-    )()(9)
-    (a(()0)(0())0)()4()(9)
+var Class = [a]{
+  var get = {a};
+  var set = [b]{a = b};
 
-    (
-      (
-        20(
-          4()(8d)(30)()(9)
-          a0
-        )00
-      )()a0
-    )0
-  )))))))))000000000
-)(())
+  [m]{
+    m(set)(get);
+  };
+};
+
+var obj1 = Class(0);
+var obj2 = Class(1);
+
+write(obj2(get)());
+write(0); write(0); write(0);
+write(1); write(1); write(0); write(0);
+
+write(obj1(get)());
+write(0); write(0); write(0);
+write(1); write(1);
