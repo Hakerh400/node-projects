@@ -1,22 +1,45 @@
+var if = [a, b, c]{
+  a(b)(c)();
+};
+
+var while = [cond, func]{
+  if(cond(), {
+    func();
+    while(cond, func);
+  }, 0);
+};
+
 var get = 0;
 var set = 1;
 
-var Class = [a]{
-  var get = {a};
-  var set = [b]{a = b};
+var Pair = [a, b]{
+  var get = [i]{
+    i(b)(a);
+  };
+
+  var set = [i, v]{
+    if(i, {b = v}, {a = v});
+  };
 
   [m]{
     m(set)(get);
   };
 };
 
-var obj1 = Class(0);
-var obj2 = Class(1);
+var a = Pair(0, 0);
+var b = a;
 
-write(obj2(get)());
-write(0); write(0); write(0);
-write(1); write(1); write(0); write(0);
+while({more()}, {
+  b(set, 0, 1);
+  b = b(set, 1, Pair(0, 0));
+  b(set, 0, read());
+  b = b(set, 1, Pair(0, 0));
+});
 
-write(obj1(get)());
-write(0); write(0); write(0);
-write(1); write(1);
+b = a;
+
+while({b(get, 0)}, {
+  b = b(get, 1);
+  write(b(get, 0));
+  b = b(get, 1);
+});
