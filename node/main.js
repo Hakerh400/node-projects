@@ -41,7 +41,7 @@ async function processInput(str){
 
   var files = getFiles();
 
-  if(str.length === 0 || str.startsWith('-')){
+  loadScript: if(str.length === 0 || str.startsWith('-')){
     if(files.includes(MAIN_SCRIPT_JS)){
       //////////////////////////////// Begin
       await clear();
@@ -75,7 +75,8 @@ async function processInput(str){
       ]);
       //////////////////////////////// End
     }else{
-      log(`Missing "${MAIN_SCRIPT_JS}"`);
+      str = 't';
+      break loadScript;
     }
 
     return;

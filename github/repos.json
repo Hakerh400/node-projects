@@ -14,6 +14,13 @@
       "dest": "C:/Github/browser-projects"
     },
 
+    "O": {
+      "name": "omikron",
+      "src": "C:/Projects/Omikron",
+      "dest": "C:/Github/omikron",
+      "includeAll": true
+    },
+
     "io": {
       "name": "%user%.github.io",
       "src": "C:/wamp/www",
@@ -29,7 +36,8 @@
     "fsy": {
       "name": "functasy",
       "src": "C:/Projects/Functasy",
-      "dest": "C:/Github/functasy"
+      "dest": "C:/Github/functasy",
+      "includeAll": true
     },
 
     "tasks": {

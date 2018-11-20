@@ -19,19 +19,17 @@ const LINE_SEP = '\r\n';
 
 const TAB = ' '.repeat(TAB_SIZE);
 
-var cwd = __dirname;
-var readmesDir = path.join(cwd, 'readmes');
-var readmeFileName = 'readme.md';
-var licenseFile = path.join(cwd, 'license.md');
-var licenseFileName = 'license.md';
+const cwd = __dirname;
+const readmesDir = path.join(cwd, 'readmes');
+const readmeFileName = 'readme.md';
+const licenseFile = path.join(cwd, 'license.md');
+const licenseFileName = 'license.md';
 
 module.exports = {
   push
 };
 
 function push(repoName, cb=O.nop){
-  var cwd = process.cwd();
-
   var gitInit = path.join(cwd, 'git-init.bat');
   var gitInitTemp = path.join(cwd, 'git-init-temp.bat');
   var gitPush = path.join(cwd, 'git-push.bat');
@@ -43,7 +41,7 @@ function push(repoName, cb=O.nop){
   var repo = repos.repos[repoName];
 
   Object.setPrototypeOf(repo, null);
-  var {owner, name, src, dest, encrypt, minify, script, newLine} = repo;
+  var {owner, name, src, dest, encrypt, minify, script, newLine, includeAll} = repo;
 
   if(owner) user = owner;
 
@@ -122,8 +120,12 @@ function push(repoName, cb=O.nop){
       if(fp.includes(KW_EXCL)) return;
 
       if(!script){
-        if(skipList.some(a => fp === a || fp.endsWith(`\\${a}`) || fp.includes(`\\${a}\\`))) return;
-        if(noCopyList.some(a => e.name == a)) return;
+        if(/node_modules|package\-lock\.json/.test(fp)) return;
+
+        if(!includeAll){
+          if(skipList.some(a => fp === a || fp.endsWith(`\\${a}`) || fp.includes(`\\${a}\\`))) return;
+          if(noCopyList.some(a => e.name == a)) return;
+        }
       }
 
       var srcPath = e.relativePath.split(/[\/\\]/).slice(1).join('//');

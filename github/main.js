@@ -1,8 +1,8 @@
 'use strict';
 
-var github = require('.');
+const github = require('.');
 
-var repo = getRepo();
+const repo = getRepo();
 
 setTimeout(main);
 
