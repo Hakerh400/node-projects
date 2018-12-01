@@ -16,6 +16,7 @@ class FileQueueElem{
     this.fullPath = fullPath;
     this.relativePath = relativePath;
     this.relativeSubPath = relativePath.split(/[\/\\]/).slice(1).join(FS_SEPARATOR);
+    this.subPath = this.relativeSubPath;
     this.depth = depth;
     this.name = name;
     this.isDir = isDir;

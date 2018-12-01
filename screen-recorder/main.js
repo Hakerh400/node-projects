@@ -32,13 +32,12 @@ var rec = 0;
 setTimeout(main);
 
 function main(){
-  media.flags.verbose = 0;
   askForInput();
 }
 
 function askForInput(){
   log('');
-  rl.question('>', onInput);
+  rl.question('>', str => onInput(str).catch(log));
 }
 
 async function onInput(str){

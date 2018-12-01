@@ -87,7 +87,30 @@ async function processInput(str){
       await clear();
       return;
 
-    case 'exit': case '.exit':
+    case 'dbg':
+      if(!files.includes(MAIN_SCRIPT_JS))
+        return log(`Cannot find "${MAIN_SCRIPT_JS}"`);
+      //////////////////////////////// Begin
+      await clear();
+
+      var args = [];
+
+      if(str.length !== 0 && str !== '-'){
+        str = str.substring(1).trim();
+        args = str.split(/\s+/);
+      }
+
+      proc = spawn('node', [
+        '--inspect-brk',
+        MAIN_SCRIPT_JS,
+        ...args,
+      ], {
+        stdio: 'ignore',
+      });
+      //////////////////////////////// End
+      return;
+
+    case 'exit': case '.exit': case 'q': case ':q': case ':wq':
       rl.close();
       shouldExit = 1;
       return;
@@ -172,10 +195,11 @@ async function onInput(str){
   if(!shouldExit && proc === null) onProcExit();
 }
 
-function spawn(name, args){
+function spawn(name, args, options=O.obj()){
   var proc = cp.spawn(name, args, {
     cwd: currDir,
     stdio: 'inherit',
+    ...options,
   });
 
   proc.on('exit', onProcExit);

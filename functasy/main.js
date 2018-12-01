@@ -16,8 +16,22 @@ function main(){
   var src = fs.readFileSync(srcFile);
   var input = fs.readFileSync(inputFile);
 
-  fs.writeFileSync(outputFile, '');
+  var eng = new functasy.EngineWithIO(src, input);
 
-  var output = functasy.run(src, input);
-  fs.writeFileSync(outputFile, output);
+  do{
+    log(eng.toString());
+  }while(!eng.run(1));
+}
+
+function buf2str(buf){
+  return [...buf].map(byte => {
+    return byte
+      .toString(2)
+      .padStart(8, '0')
+      .split('')
+      .reverse()
+      .join('')
+      .match(/.{4}/g)
+      .join(' ');
+  }).join(' ');
 }
