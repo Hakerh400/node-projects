@@ -17,9 +17,16 @@ function main(){
   var input = fs.readFileSync(inputFile, 'utf8');
 
   var syntax = new Syntax(src);
-  var output = getOutput(syntax, input);
+  var pd = getOutput(syntax, input);
 
-  fs.writeFileSync(outputFile, output);
+  if(pd === null){
+    log('null');
+    return;
+  }
+
+  pd.iter(['expr'], pd => log(pd.toString()));
+
+  fs.writeFileSync(outputFile, pd);
 }
 
 function getOutput(syntax, input){
