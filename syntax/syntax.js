@@ -2,7 +2,11 @@
 
 const fs = require('fs');
 const path = require('path');
+const v8 = require('v8');
 const O = require('../framework');
+const debug = require('../debug');
+
+const DISPLAY_CHARACTER_INDEX = 0;
 
 class Syntax{
   constructor(src){
@@ -12,34 +16,51 @@ class Syntax{
   }
 
   parseSrc(src){
-    const getDef = this.getDef.bind(this);
-
     O.sanll(src).forEach(src => {
-      var lines = O.sanl(src).map(line => {
-        line = line.trim();
-        if(line === '/') line = '';
-        return line;
-      });
-
+      var lines = O.sanl(src);
       var name = lines.shift();
-      var pats = lines.map(line => parsePattern(line));
 
-      getDef(name).pats = pats;
-    });
+      var sects = {};
+      var sect = 'pats';
+      sects[sect] = [];
 
-    function parsePattern(line){
-      var elems = line.match(/"(?:\\.|[^"])*"|[a-zA-Z0-9_\$]+/gs);
-      if(elems === null) elems = [];
-
-      return new Pattern(elems.map(str => {
-        if(str[0] === '"'){
-          str = JSON.parse(str);
-          return new Terminal(str);
+      for(var line of lines){
+        if(!/^\s+/.test(line)){
+          sect = line;
+          sects[sect] = [];
+          continue;
         }
 
-        return new NonTerminal(getDef(str));
-      }));
-    }
+        line = line.trimLeft();
+        for(line of line.split(' | '))
+          sects[sect].push(line);
+      }
+
+      var def = this.getDef(name);
+      def.setPats(this.parsePats(sects.pats));
+      if('before' in sects) def.setBefore(sects.before.join('\n'));
+      if('after' in sects) def.setAfter(sects.after.join('\n'));
+    });
+  }
+
+  parsePat(line){
+    if(line === '/') line = '';
+
+    var elems = line.match(/"(?:\\.|[^"])*"[\?\*\+]?|\S+/gs);
+    if(elems === null) elems = [];
+
+    return new Pattern(elems.map(str => {
+      if(O.last(str) === '"'){
+        str = JSON.parse(str);
+        return new Terminal(str);
+      }
+
+      return new NonTerminal(this.getDef(str));
+    }));
+  }
+
+  parsePats(pats){
+    return pats.map(line => this.parsePat(line))
   }
 
   setDef(name, def){
@@ -48,15 +69,64 @@ class Syntax{
 
   getDef(name){
     const {defs} = this;
-    if(!(name in defs))
-      this.setDef(name, new Definition(name));
+
+    if(!(name in defs)){
+      var def = new Definition(name);
+      this.setDef(name, def);
+
+      var name1 = name.slice(0, name.length - 1);
+      var pats;
+
+      switch(name.slice(-1)){
+        case '?':
+          pats = ['/', name1];
+          break;
+
+        case '*':
+          pats = ['/', `${name1} ${name}`];
+          break;
+
+        case '+':
+          pats = [name1, `${name1} ${name}`];
+          break;
+
+        default:
+          if(name.length === 3 && name[1] === '-'){
+            var c1 = O.cc(name[0]);
+            var c2 = O.cc(name[2]);
+
+            pats = O.ca(c2 - c1 + 1, i => {
+              return JSON.stringify(O.sfcc(c1 + i));
+            });
+            break;
+          }
+
+          return defs[name];
+      }
+
+      def.setPats(this.parsePats(pats));
+    }
+
     return defs[name];
   }
 
   parse(str, name){
+    var lines = O.sanl(str);
+    str = lines.join('\n');
+
     const {defs} = this;
     const getDef = this.getDef.bind(this);
     const strObj = new String(str);
+
+    var len = 0;
+    var indices = lines.map(line => {
+      var prev = len;
+      len += line.length + 1;
+      return prev;
+    });
+
+    var index = -1;
+    var scope = null;
 
     const stack = [];
     push(name);
@@ -64,8 +134,15 @@ class Syntax{
     while(1){
       var pd = O.last(stack);
 
-      if(stack.length > (str.length - pd.end >> 1) + 4 || pd.i === pd.def.pats.length){
-        if(stack.length === 1) return null;
+      if(pd.end > index){
+        index = pd.end;
+        scope = stack.map(pd => pd.def.name).join('\n');
+      }
+
+      debug(stack.map(pd => pd.def.name).join('\n')+'\n---> '+JSON.stringify(str.slice(0, pd.end))+'\n');
+
+      if(/*(stack.length >> 3) > str.length + 20 || */pd.i === pd.def.pats.length){
+        if(stack.length === 1) break;
 
         stack.pop()
         pd = O.last(stack);
@@ -76,7 +153,17 @@ class Syntax{
 
       var pat = pd.def.pats[pd.i];
 
+      if(pd.j === 0 && pd.def.before !== null && !pd.before(stack)){
+        next();
+        continue;
+      }
+
       if(pd.j === pat.elems.length){
+        if(pd.def.after !== null && !pd.after(stack)){
+          next();
+          continue;
+        }
+
         if(stack.length === 1){
           if(pd.end !== str.length){
             next();
@@ -86,9 +173,7 @@ class Syntax{
         }
 
         stack.pop();
-
-        var parent = O.last(stack);
-        parent.push(pd);
+        O.last(stack).push(pd);
 
         continue;
       }
@@ -109,6 +194,16 @@ class Syntax{
 
       push(elem.def.name);
     }
+
+    var lineIndex = indices.findIndex(i => index < i) - 1;
+    var j = index - indices[lineIndex];
+
+    log(`${name}:${lineIndex + 1}${
+      DISPLAY_CHARACTER_INDEX ? `:${j + 1}` : ''
+    }\n${lines[lineIndex]}\n${
+      ' '.repeat(j)
+    }^\n\n${scope}`);
+    process.exit(0);
 
     function push(name){
       var pd = new Parsed(strObj, O.last(stack), getDef(name));
@@ -136,19 +231,30 @@ class Parsed{
     this.j = j;
 
     this.elems = [];
+
+    if(parent === null) this.state1 = v8.serialize({});
+    else this.state1 = parent.state2;
+    this.state2 = this.state1;
   }
 
-  set(str){
-    this.str = str;
-    this.start = 0;
-    this.end = str.length;
+  before(stack){
+    var state = v8.deserialize(this.state2);
+    var ok = this.def.before(O, stack, state, this.elems.map(e => e.toString()));
+    this.state2 = v8.serialize(state);
+    return ok;
+  }
+
+  after(stack){
+    var state = v8.deserialize(this.state2);
+    var ok = this.def.after(O, stack, state, this.elems.map(e => e.toString()), this.toString());
+    this.state2 = v8.serialize(state);
+    return ok;
   }
 
   push(elem){
-    elem.parent = this;
-
     this.elems.push(elem);
     this.end = elem.end;
+    this.state2 = elem.state2;
     this.j++;
   }
 
@@ -160,6 +266,7 @@ class Parsed{
 
     var elem = this.elems.pop();
     this.end = elem.start;
+    this.state2 = elem.state1;
 
     return elem;
   }
@@ -176,11 +283,15 @@ class Parsed{
     pd.i++;
     pd.j = 0;
     pd.end = pd.start;
+    pd.state2 = pd.state1;
   }
 
   iter(names, func=null){
     if(func === null)
       [names, func] = [[], names];
+
+    if(!Array.isArray(names))
+      names = [names];
 
     var queue = [this];
 
@@ -195,15 +306,37 @@ class Parsed{
     }
   }
 
+  set(str){
+    this.str = str;
+    this.start = 0;
+    this.end = str.length;
+  }
+
   toString(){
     return this.str.slice(this.start, this.end);
   }
 };
 
 class Definition{
-  constructor(name, pats=[]){
+  constructor(name){
     this.name = name;
-    this.pats = pats;
+
+    this.pats = null;
+    this.before = null;
+    this.after = null;
+  }
+
+  setPats(pats){ this.pats = pats; }
+  setBefore(before){ this.before = Definition.makeCb(before); }
+  setAfter(after){ this.after = Definition.makeCb(after, 1); }
+
+  static makeCb(code, match=0){
+    code = `${code};return 1`;
+
+    var args = ['O', 'stack', 's', 'es'];
+    if(match) args.push('m');
+
+    return new Function(...args, code);
   }
 };
 

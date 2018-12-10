@@ -1,0 +1,218 @@
+script
+  s* body? s*
+
+s
+  space | "\t" | "\r" | "\n"
+
+space
+  " "
+
+body
+  stat*
+
+stat
+  varDecl s* ";" s*
+  funcDecl s*
+  classDecl s* ";" s*
+  expr s* ";" s*
+
+string
+  "'" char1* "'"
+  "\"" char2* "\""
+  "`" char3* "`"
+
+char1
+  strChar
+  !-&
+  (-~
+
+char2
+  strChar
+  "!"
+  #-~
+
+char3
+  strChar
+  !-_
+  a-~
+
+strChar
+  space
+  escapedChar
+
+escapedChar
+  "\\" anyChar
+
+anyChar
+  space
+  !-~
+
+digit
+  0-9
+
+letter
+  a-z
+  A-Z
+
+ident
+  identStart identRest*
+
+identStart
+  letter
+  otherIdentChar
+
+identRest
+  identStart
+  otherIdentChar
+
+otherIdentChar
+  "$"
+  "_"
+
+varDecl
+  varType s+ varDeclList
+
+varType
+  "var"
+  "let"
+  "const"
+
+varDeclList
+  ident s* varInit?
+  ident s* varInit? s* "," s* varDeclList
+
+varInit
+  "=" s* expr2_
+
+funcDecl
+  "funcDecl"
+
+classDecl
+  "classDecl"
+
+elem
+  string
+  ident
+
+expr
+  elem | expr1_
+
+expr1
+  "expr1"
+
+expr2
+  "expr2"
+
+expr3
+  "expr3"
+
+expr4
+  "expr4"
+
+expr5
+  "expr5"
+
+expr6
+  "expr6"
+
+expr7
+  "expr7"
+
+expr8
+  "expr8"
+
+expr9
+  "expr9"
+
+expr10
+  "expr10"
+
+expr11
+  "expr11"
+
+expr12
+  "expr12"
+
+expr13
+  "expr13"
+
+expr14
+  "expr14"
+
+expr15
+  "expr15"
+
+expr16
+  "expr16"
+
+expr17
+  "expr17"
+
+expr18
+  "expr18"
+
+expr19
+  expr19_ s* "(" s* expr? s* ")"
+
+expr20
+  "(" s* expr s* ")"
+
+expr1_
+  elem | expr1 | expr2_
+
+expr2_
+  elem | expr2 | expr3_
+
+expr3_
+  elem | expr3 | expr4_
+
+expr4_
+  elem | expr4 | expr5_
+
+expr5_
+  elem | expr5 | expr6_
+
+expr6_
+  elem | expr6 | expr7_
+
+expr7_
+  elem | expr7 | expr8_
+
+expr8_
+  elem | expr8 | expr9_
+
+expr9_
+  elem | expr9 | expr10_
+
+expr10_
+  elem | expr10 | expr11_
+
+expr11_
+  elem | expr11 | expr12_
+
+expr12_
+  elem | expr12 | expr13_
+
+expr13_
+  elem | expr13 | expr14_
+
+expr14_
+  elem | expr14 | expr15_
+
+expr15_
+  elem | expr15 | expr16_
+
+expr16_
+  elem | expr16 | expr17_
+
+expr17_
+  elem | expr17 | expr18_
+
+expr18_
+  elem | expr18 | expr19_
+
+expr19_
+  elem | expr19 | expr20_
+
+expr20_
+  elem | expr20

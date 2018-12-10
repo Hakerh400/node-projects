@@ -24,7 +24,7 @@ function main(){
     return;
   }
 
-  pd.iter(['expr'], pd => log(pd.toString()));
+  pd.iter('ident', pd => log(pd.toString()));
 
   fs.writeFileSync(outputFile, pd);
 }
