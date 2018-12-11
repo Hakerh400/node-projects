@@ -8,6 +8,8 @@ const debug = require('../debug');
 
 const DISPLAY_CHARACTER_INDEX = 0;
 
+const MAX_DEPTH = 30;
+
 class Syntax{
   constructor(src){
     this.defs = O.obj();
@@ -128,8 +130,10 @@ class Syntax{
     var index = -1;
     var scope = null;
 
-    const stack = [];
+    const stack = new Stack;
     push(name);
+
+    var t = Date.now();
 
     while(1){
       var pd = O.last(stack);
@@ -139,9 +143,22 @@ class Syntax{
         scope = stack.map(pd => pd.def.name).join('\n');
       }
 
-      debug(stack.map(pd => pd.def.name).join('\n')+'\n---> '+JSON.stringify(str.slice(0, pd.end))+'\n');
+      //debug(stack.map(pd => pd.def.name).join('\n')+'\n---> '+JSON.stringify(str.slice(0, pd.end))+'\n');
 
-      if(/*(stack.length >> 3) > str.length + 20 || */pd.i === pd.def.pats.length){
+      if(0&&Date.now() - t > 3e3){
+        var lineIndex = indices.findIndex(i => index < i) - 1;
+        var j = index - indices[lineIndex];
+
+        log(`\n${name}:${lineIndex + 1}${
+          DISPLAY_CHARACTER_INDEX ? `:${j + 1}` : ''
+        }\n${lines[lineIndex]}\n${
+          ' '.repeat(j)
+        }^\n`);
+
+        t = Date.now();
+      }
+
+      if(stack.depth > MAX_DEPTH || pd.i === pd.def.pats.length){
         if(stack.length === 1) break;
 
         stack.pop()
@@ -217,6 +234,24 @@ class Syntax{
 };
 
 module.exports = Syntax;
+
+class Stack extends Array{
+  constructor(){
+    super();
+
+    this.depth = 0;
+  }
+
+  push(pd){
+    super.push(pd);
+    if(!pd.def.isArr) this.depth++;
+  }
+
+  pop(){
+    var pd = super.pop();
+    if(!pd.def.isArr) this.depth--;
+  }
+};
 
 class Parsed{
   constructor(str, parent, def, i=0, j=0, elems=[]){
@@ -306,6 +341,20 @@ class Parsed{
     }
   }
 
+  copy(){
+    var pd = new Parsed(this.str, this.parent, this.def);
+
+    pd.start = this.start;
+    pd.end = this.end;
+    pd.i = this.i;
+    pd.j = this.j;
+    pd.elems = this.elems.map(pd => pd.copy());
+    pd.state1 = this.state1;
+    pd.state2 = this.state2;
+
+    return pd;
+  }
+
   set(str){
     this.str = str;
     this.start = 0;
@@ -324,6 +373,8 @@ class Definition{
     this.pats = null;
     this.before = null;
     this.after = null;
+
+    this.isArr = /[\+\*\#]$/.test(name);
   }
 
   setPats(pats){ this.pats = pats; }

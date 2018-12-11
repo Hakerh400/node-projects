@@ -3,12 +3,13 @@
 var main = () => {
   var list = new List();
 
-  io.iter(a => {
-    list.push(a);
+  loop(() => io.hasMore(), () => {
+    var byte = new Byte(() => io.read());
+    list.push(byte);
   });
 
-  list.iter(a => {
-    io.write(a);
+  list.iter(byte => {
+    byte.iter(bit => io.write(bit));
   });
 };
 
@@ -17,20 +18,29 @@ var I = a => a;
 class Base{};
 
 class Bit extends Base{
-  constructor(func){
-    super();
-    this.func = func;
-  }
+  constructor(){ super(); }
 
-  not(){ return this.if(B0, B1); }
-  if(f){ return this.func(f)(I)(); }
-  ife(f, g){ return this.func(f)(g)(); }
+  choose(f, g){}
+
+  if(f){ return this.ife(f, I); }
+  ife(f, g){ return this.choose(f, g)(); }
   nif(f){ return this.not().if(f); }
-  nife(f, g){ return this.not().ife(f, g); }
+  nife(f, g){ return this.ife(g, f); }
+  not(){ return this.choose(B0, B1); }
 };
 
-var B0 = new Bit(() => I);
-var B1 = new Bit(a => () => a);
+class Bit0 extends Bit{
+  constructor(){ super(); }
+  choose(f, g){ return g; }
+};
+
+class Bit1 extends Bit{
+  constructor(){ super(); }
+  choose(f, g){ return f; }
+};
+
+var B0 = new Bit0();
+var B1 = new Bit1();
 
 var loop = (cond, func) => {
   cond().if(() => {
@@ -39,21 +49,34 @@ var loop = (cond, func) => {
   });
 };
 
-class Object extends Bit{
-  constructor(){
-    super(B1.func);
-  }
+class Primitive extends Bit{
+  constructor(){ super(); }
+
+  toBit(){}
+  copy(){}
+
+  ife(f, g){ return this.toBit().ife(f, g); }
+};
+
+class Object extends Bit1{
+  constructor(){ super(); }
 };
 
 class IO extends Object{
   constructor(){
     super();
+
+    this.more = B0;
     this.checkMore();
   }
 
+  hasMore(){
+    return this.more;
+  }
+
   checkMore(){
-    this.hasMore = B0;
-    _read(() => this.hasMore = B1);
+    this.more = B0;
+    _read(() => this.more = B1);
   }
 
   read(){
@@ -68,7 +91,7 @@ class IO extends Object{
   }
 
   iter(func){
-    loop(() => this.hasMore, () => {
+    loop(() => this.hasMore(), () => {
       func(this.read());
     });
   }
@@ -76,10 +99,16 @@ class IO extends Object{
 
 var io = new IO();
 
-class Node extends Object{
-  constructor(v, p, n){
+class Reference extends Object{
+  constructor(v){
     super();
     this.v = v;
+  }
+};
+
+class NodeBase extends Object{
+  constructor(p, n){
+    super();
     this.p = p;
     this.n = n;
   }
@@ -120,11 +149,22 @@ class Node extends Object{
   }
 };
 
+class Node extends NodeBase{
+  constructor(v, p, n){
+    super(p, n);
+    this.v = v;
+  }
+};
+
 class List extends Object{
   constructor(){
     super();
     this.first = B0;
     this.last = B0;
+  }
+
+  hasMore(){
+    return this.first;
   }
 
   unshift(v){
@@ -137,6 +177,7 @@ class List extends Object{
     );
 
     this.first = e;
+    return this;
   }
 
   push(v){
@@ -149,6 +190,7 @@ class List extends Object{
     );
 
     this.last = e;
+    return this;
   }
 
   shift(){
@@ -167,19 +209,23 @@ class List extends Object{
 
   iter(func){
     var e = this.first;
+
     loop(() => e, () => {
       func(e.v);
       e = e.n;
     });
+
     return this;
   }
 
   iterRev(func){
     var e = this.last;
+
     loop(() => e, () => {
       func(e.v);
       e = e.p;
     });
+
     return this;
   }
 
@@ -195,10 +241,187 @@ class List extends Object{
 
   reverse(){
     var list = new List();
+
     this.iterRev(v => list.push(v));
     this.first = list.first;
     this.last = list.last;
+
     return this;
+  }
+};
+
+class TinyUint extends Primitive{
+  constructor(){
+    super();
+    this.v = B0;
+  }
+
+  toBit(){
+    return this.v;
+  }
+
+  copy(){
+    var uint = new TinyUint();
+    uint.v = this.v;
+    return uint;
+  }
+
+  inc(){
+    this.v = new Reference(this.v);
+    return this;
+  }
+
+  dec(){
+    this.v = this.v.v;
+    return this;
+  }
+
+  iter(func){
+    var v = this.v;
+
+    loop(() => v, () => {
+      func();
+      v = v.v;
+    });
+
+    return this;
+  }
+};
+
+class SmallUint extends Primitive{
+  constructor(){
+    super();
+    this.bits = new List();
+  }
+
+  toBit(){
+    var isZero = B1;
+    this.iter(bit => bit.if(() => isZero = B0));
+    return isZero;
+  }
+
+  copy(){
+    var uint = new SmallUint();
+    uint.bits = this.bits.slice();
+    return uint;
+  }
+
+  hasMore(){
+    return this.bits.hasMore();
+  }
+
+  push(bit){
+    this.bits.push(bit);
+    return this;
+  }
+
+  shift(){
+    return this.bits.shift();
+  }
+
+  iter(func){
+    return this.bits.iter(func);
+  }
+}
+
+class CompleteTree extends Object{
+  constructor(depth, func){
+    super();
+
+    var val = depth;
+    var left = B0;
+    var right = B0;
+
+    depth.ife(() => {
+      depth = depth.copy().dec();
+      left = new CompleteTree(depth, func);
+      right = new CompleteTree(depth, func);
+    }, () => {
+      val = func();
+    });
+
+    this.root = new Node(val, left, right);
+  }
+
+  isLeaf(){
+    return this.root.p.not();
+  }
+
+  get(i, node){
+    var root = this.root;
+
+    return i.hasMore().ife(() => {
+      i = i.copy();
+
+      return i.shift().ife(
+        () => root.n.get(i, node),
+        () => root.p.get(i, node)
+      );
+    }, () => {
+      return node.choose(
+        root,
+        root.v
+      );
+    });
+  }
+
+  set(i, v, node){
+    var root = this.root;
+
+    i.hasMore().ife(() => {
+      i = i.copy();
+
+      i.shift().ife(
+        () => root.n.set(i, v, node),
+        () => root.p.set(i, v, node)
+      );
+    }, () => {
+      node.ife(
+        () => this.root = v,
+        () => root.v = v
+      );
+    });
+
+    return this;
+  }
+
+  iter(func){
+    var root = this.root;
+
+    root.p.ife(() => {
+      root.p.iter(func);
+      root.n.iter(func);
+    }, () => {
+      func(root.v);
+    });
+
+    return this;
+  }
+};
+
+class Integer extends CompleteTree{
+  constructor(depth, func){
+    super(depth, func);
+  }
+};
+
+class SignedInteger extends Integer{
+  constructor(depth, func){
+    super(depth, func);
+  }
+};
+
+class UnsignedInteger extends Integer{
+  constructor(depth, func){
+    super(depth, func);
+  }
+};
+
+var tinyUint3 = new TinyUint().inc().inc().inc();
+
+class Byte extends UnsignedInteger{
+  constructor(func){
+    super(tinyUint3, func);
   }
 };
 

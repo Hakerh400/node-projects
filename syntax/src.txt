@@ -1,11 +1,17 @@
 script
-  s* body? s*
+  s* body s*
 
 s
   space | "\t" | "\r" | "\n"
 
-space
-  " "
+s?
+  s | ""
+
+s*
+  s s* | ""
+
+s+
+  s s*
 
 body
   stat*
@@ -14,12 +20,18 @@ stat
   varDecl s* ";" s*
   funcDecl s*
   classDecl s* ";" s*
+  block
+  if
+  while
   expr s* ";" s*
 
 string
   "'" char1* "'"
   "\"" char2* "\""
   "`" char3* "`"
+
+space
+  " "
 
 char1
   strChar
@@ -70,22 +82,39 @@ otherIdentChar
   "_"
 
 varDecl
-  varType s+ varDeclList
+  varType s+ varDeclList#
 
 varType
   "var"
   "let"
   "const"
 
-varDeclList
+varDeclList#
   ident s* varInit?
-  ident s* varInit? s* "," s* varDeclList
+  ident s* varInit? s* "," s* varDeclList#
 
 varInit
   "=" s* expr2_
 
 funcDecl
-  "funcDecl"
+  "function" s+ ident "(" s* formalArgs s* ")" s* "{" s* body s* "}"
+
+formalArgs
+  /
+  formalArgsList#
+
+formalArgsList#
+  ident
+  ident s* "," s* formalArgsList#
+
+block
+  "{" s* body s* "}"
+
+if
+  "if" s* "(" s* expr s* ")" s* "{" s* body s* "}"
+
+while
+  "while" s* "(" s* expr s* ")" s* "{" s* body s* "}"
 
 classDecl
   "classDecl"
@@ -94,125 +123,154 @@ elem
   string
   ident
 
-expr
-  elem | expr1_
+memberAccess
+  expr19_ s* "." s* expr20_
 
-expr1
-  "expr1"
+newWithArgList
+  "new" s+ ident s* "(" s* expr? s* ")"
 
-expr2
-  "expr2"
-
-expr3
-  "expr3"
-
-expr4
-  "expr4"
-
-expr5
-  "expr5"
-
-expr6
-  "expr6"
-
-expr7
-  "expr7"
-
-expr8
-  "expr8"
-
-expr9
-  "expr9"
-
-expr10
-  "expr10"
-
-expr11
-  "expr11"
-
-expr12
-  "expr12"
-
-expr13
-  "expr13"
-
-expr14
-  "expr14"
-
-expr15
-  "expr15"
-
-expr16
-  "expr16"
-
-expr17
-  "expr17"
-
-expr18
-  "expr18"
-
-expr19
+functionCall
   expr19_ s* "(" s* expr? s* ")"
+
+equality
+  expr10_ s* "==" s* expr11_
+
+inequality
+  expr10_ s* "!=" s* expr11_
+
+strictEquality
+  expr10_ s* "===" s* expr11_
+
+strictInequality
+  expr10_ s* "!==" s* expr11_
+
+commaSequence
+  expr1_ s* "," s* expr2_
+
+expr
+  expr1_
 
 expr20
   "(" s* expr s* ")"
 
-expr1_
-  elem | expr1 | expr2_
+expr19
+  memberAccess
+  newWithArgList
+  functionCall
 
-expr2_
-  elem | expr2 | expr3_
+expr18
+  "expr18"
 
-expr3_
-  elem | expr3 | expr4_
+expr17
+  "expr17"
 
-expr4_
-  elem | expr4 | expr5_
+expr16
+  "expr16"
 
-expr5_
-  elem | expr5 | expr6_
+expr15
+  "expr15"
 
-expr6_
-  elem | expr6 | expr7_
+expr14
+  "expr14"
 
-expr7_
-  elem | expr7 | expr8_
+expr13
+  "expr13"
 
-expr8_
-  elem | expr8 | expr9_
+expr12
+  "expr12"
 
-expr9_
-  elem | expr9 | expr10_
+expr11
+  "expr11"
 
-expr10_
-  elem | expr10 | expr11_
+expr10
+  equality
+  inequality
+  strictEquality
+  strictInequality
 
-expr11_
-  elem | expr11 | expr12_
+expr9
+  "expr9"
 
-expr12_
-  elem | expr12 | expr13_
+expr8
+  "expr8"
 
-expr13_
-  elem | expr13 | expr14_
+expr7
+  "expr7"
 
-expr14_
-  elem | expr14 | expr15_
+expr6
+  "expr6"
 
-expr15_
-  elem | expr15 | expr16_
+expr5
+  "expr5"
 
-expr16_
-  elem | expr16 | expr17_
+expr4
+  "expr4"
 
-expr17_
-  elem | expr17 | expr18_
+expr3
+  "expr3"
 
-expr18_
-  elem | expr18 | expr19_
+expr2
+  "expr2"
 
-expr19_
-  elem | expr19 | expr20_
+expr1
+  commaSequence
 
 expr20_
   elem | expr20
+
+expr19_
+  elem | expr19 | expr20
+
+expr18_
+  elem | expr18 | expr19 | expr20
+
+expr17_
+  elem | expr17 | expr18 | expr19 | expr20
+
+expr16_
+  elem | expr16 | expr17 | expr18 | expr19 | expr20
+
+expr15_
+  elem | expr15 | expr16 | expr17 | expr18 | expr19 | expr20
+
+expr14_
+  elem | expr14 | expr15 | expr16 | expr17 | expr18 | expr19 | expr20
+
+expr13_
+  elem | expr13 | expr14 | expr15 | expr16 | expr17 | expr18 | expr19 | expr20
+
+expr12_
+  elem | expr12 | expr13 | expr14 | expr15 | expr16 | expr17 | expr18 | expr19 | expr20
+
+expr11_
+  elem | expr11 | expr12 | expr13 | expr14 | expr15 | expr16 | expr17 | expr18 | expr19 | expr20
+
+expr10_
+  elem | expr10 | expr11 | expr12 | expr13 | expr14 | expr15 | expr16 | expr17 | expr18 | expr19 | expr20
+
+expr9_
+  elem | expr9 | expr10 | expr11 | expr12 | expr13 | expr14 | expr15 | expr16 | expr17 | expr18 | expr19 | expr20
+
+expr8_
+  elem | expr8 | expr9 | expr10 | expr11 | expr12 | expr13 | expr14 | expr15 | expr16 | expr17 | expr18 | expr19 | expr20
+
+expr7_
+  elem | expr7 | expr8 | expr9 | expr10 | expr11 | expr12 | expr13 | expr14 | expr15 | expr16 | expr17 | expr18 | expr19 | expr20
+
+expr6_
+  elem | expr6 | expr7 | expr8 | expr9 | expr10 | expr11 | expr12 | expr13 | expr14 | expr15 | expr16 | expr17 | expr18 | expr19 | expr20
+
+expr5_
+  elem | expr5 | expr6 | expr7 | expr8 | expr9 | expr10 | expr11 | expr12 | expr13 | expr14 | expr15 | expr16 | expr17 | expr18 | expr19 | expr20
+
+expr4_
+  elem | expr4 | expr5 | expr6 | expr7 | expr8 | expr9 | expr10 | expr11 | expr12 | expr13 | expr14 | expr15 | expr16 | expr17 | expr18 | expr19 | expr20
+
+expr3_
+  elem | expr3 | expr4 | expr5 | expr6 | expr7 | expr8 | expr9 | expr10 | expr11 | expr12 | expr13 | expr14 | expr15 | expr16 | expr17 | expr18 | expr19 | expr20
+
+expr2_
+  elem | expr2 | expr3 | expr4 | expr5 | expr6 | expr7 | expr8 | expr9 | expr10 | expr11 | expr12 | expr13 | expr14 | expr15 | expr16 | expr17 | expr18 | expr19 | expr20
+
+expr1_
+  elem | expr1 | expr2 | expr3 | expr4 | expr5 | expr6 | expr7 | expr8 | expr9 | expr10 | expr11 | expr12 | expr13 | expr14 | expr15 | expr16 | expr17 | expr18 | expr19 | expr20
