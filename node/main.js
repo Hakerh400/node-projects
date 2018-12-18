@@ -4,30 +4,24 @@ const DISPLAY_EXIT_CODE = 0;
 
 const fs = require('fs');
 const path = require('path');
-const readline = require('readline');
 const cp = require('child_process');
 const O = require('../framework');
+const readline = require('../readline');
+const logSync = require('../log-sync');
+const engs = require('./engines');
 
-const MAIN_SCRIPT_JS = 'main.js';
-const MAIN_SCRIPT_PY = 'main.py';
+const sigintBuf = Buffer.from([0x03]);
 
 var currDir = process.cwd();
-var rl = readline.createInterface(process.stdin, process.stdout);
+var rl = readline.rl();
 
 var proc = null;
 var shouldExit = 0;
 
-setTimeout(main);
+setTimeout(() => main().catch(log));
 
 async function main(){
-  clear();
-  aels();
   askForInput();
-}
-
-function aels(){
-  process.on('SIGINT', O.nop);
-  rl.on('SIGINT', O.nop);
 }
 
 function askForInput(newLine=1){
@@ -42,38 +36,10 @@ async function processInput(str){
   var files = getFiles();
 
   loadScript: if(str.length === 0 || str.startsWith('-')){
-    if(files.includes(MAIN_SCRIPT_JS)){
-      //////////////////////////////// Begin
-      await clear();
-
-      var args = [];
-
-      if(str.length !== 0 && str !== '-'){
-        str = str.substring(1).trim();
-        args = str.split(/\s+/);
-      }
-
-      proc = spawn('node', [
-        MAIN_SCRIPT_JS,
-        ...args,
-      ]);
-      //////////////////////////////// End
-    }else if(files.includes(MAIN_SCRIPT_PY)){
-      //////////////////////////////// Begin
-      await clear();
-
-      var args = [];
-
-      if(str.length !== 0 && str !== '-'){
-        str = str.substring(1).trim();
-        args = str.split(/\s+/);
-      }
-
-      proc = spawn('C:/Users/Thomas/AppData/Local/Programs/Python/Python37/python.exe', [
-        MAIN_SCRIPT_PY,
-        ...args,
-      ]);
-      //////////////////////////////// End
+    if(files.includes(engs.node.script)){
+      await spawn('node');
+    }else if(files.includes(engs.python.script)){
+      await spawn('python');
     }else{
       str = 't';
       break loadScript;
@@ -88,26 +54,10 @@ async function processInput(str){
       return;
 
     case 'dbg':
-      if(!files.includes(MAIN_SCRIPT_JS))
-        return log(`Cannot find "${MAIN_SCRIPT_JS}"`);
-      //////////////////////////////// Begin
-      await clear();
+      if(!files.includes(engs.node.script))
+        return log(`Cannot find "${engs.node.script}"`);
 
-      var args = [];
-
-      if(str.length !== 0 && str !== '-'){
-        str = str.substring(1).trim();
-        args = str.split(/\s+/);
-      }
-
-      proc = spawn('node', [
-        '--inspect-brk',
-        MAIN_SCRIPT_JS,
-        ...args,
-      ], {
-        stdio: 'ignore',
-      });
-      //////////////////////////////// End
+      await spawn('node', ['--inspect-brk'], {stdio: 'ignore'});
       return;
 
     case 'exit': case '.exit': case 'q': case ':q': case ':wq':
@@ -130,11 +80,26 @@ async function processInput(str){
     return;
   }
 
-  //////////////////////////////// Begin
   await clear();
-
   proc = spawn(batchFile, []);
-  //////////////////////////////// End
+
+  async function spawn(name, args=[], options=O.obj()){
+    await clear();
+
+    var eng = engs[name];
+    var scriptArgs = [];
+    
+    if(str.length !== 0 && str !== '-'){
+      str = str.substring(1).trim();
+      scriptArgs = str.split(/\s+/);
+    }
+
+    proc = spawnProc(eng.exe, [
+      ...args,
+      eng.script,
+      ...scriptArgs,
+    ], options);
+  }
 }
 
 function updatePath(str){
@@ -190,21 +155,56 @@ function updatePath(str){
   return found;
 }
 
-async function onInput(str){
-  await processInput(str);
-  if(!shouldExit && proc === null) onProcExit();
+function onInput(str){
+  (async () => {
+    await processInput(str);
+
+    if(!shouldExit && proc === null)
+      onProcExit();
+  })().catch(log);
 }
 
-function spawn(name, args, options=O.obj()){
+function spawnProc(name, args=[], options=O.obj()){
   var proc = cp.spawn(name, args, {
     cwd: currDir,
-    stdio: 'inherit',
     ...options,
   });
 
-  proc.on('exit', onProcExit);
+  var onSigint = () => write(sigintBuf);
+  var onData = data => write(data);
+  var onEnd = () => proc.stdin.end();
+
+  O.proc.on('sigint', onSigint);
+  O.proc.stdin.on('data', onData);
+  O.proc.stdin.on('end', onEnd);
+  O.proc.stdin.ref();
+
+  proc.stdout.on('data', logSync);
+  proc.stderr.on('data', logSync);
+
+  var refs = 3;
+  proc.stdout.on('end', onFinish);
+  proc.stderr.on('end', onFinish);
+  proc.on('exit', onFinish);
 
   return proc;
+
+  function write(buf){
+    try{
+      proc.stdin.write(buf);
+    }catch{}
+  }
+
+  function onFinish(){
+    if(--refs !== 0) return;
+
+    O.proc.removeListener('sigint', onSigint);
+    O.proc.stdin.removeListener('data', onData);
+    O.proc.stdin.removeListener('end', onEnd);
+    O.proc.stdin.unref();
+
+    onProcExit();
+  }
 }
 
 async function onProcExit(code=null){

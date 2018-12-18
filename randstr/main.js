@@ -1,18 +1,23 @@
 'use strict';
 
-var readline = require('readline');
-var O = require('../framework');
+const O = require('../framework');
+const readline = require('../readline');
 
-var rl = readline.createInterface(process.stdin, process.stdout);
+var rl = readline.rl();
 
-var chars;
-var lens;
-var strNum;
+var chars = null;
+var lens = null;
+var strNum = null;
 
 setTimeout(main);
 
 function main(){
+  aels();
   genRandStr();
+}
+
+function aels(){
+  rl.on('sigint', exit);
 }
 
 function genRandStr(){
@@ -20,6 +25,11 @@ function genRandStr(){
 }
 
 function processRanges(ranges){
+  if(ranges === ''){
+    exit();
+    return;
+  }
+
   if(ranges.length === 0) ranges = '  ';
   else if(ranges.length === 1) ranges += ranges[0];
 
@@ -61,4 +71,8 @@ function displayStrings(){
 
   log('');
   genRandStr();
+}
+
+function exit(){
+  rl.close();
 }

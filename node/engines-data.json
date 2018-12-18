@@ -1,0 +1,14 @@
+{
+  "mainScript": "main",
+  "engines": [
+    {
+      "name": "node",
+      "exe": "node",
+      "ext": "js"
+    }, {
+      "name": "python",
+      "exe": "C:/Users/Thomas/AppData/Local/Programs/Python/Python37/python.exe",
+      "ext": "py"
+    }
+  ]
+}

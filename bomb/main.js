@@ -33,8 +33,6 @@ const outputFile = getOutputFile(1);
 
 setTimeout(() => main().catch(log));
 
-process.exit = null;
-
 async function main(){
   registerFont(ffn(fontFile), {family: fontFamily});
 

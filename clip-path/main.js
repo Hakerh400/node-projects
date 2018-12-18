@@ -2,10 +2,10 @@
 
 const fs = require('fs');
 const path = require('path');
-const readline = require('readline');
 const O = require('../framework');
+const readline = require('../readline');
 
-const rl = readline.createInterface(process.stdin, process.stdout);
+const rl = readline.rl();
 
 setTimeout(main);
 
@@ -104,5 +104,5 @@ function err(msg){
 }
 
 function exit(code){
-  process.exit(code);
+  O.proc.exit(code);
 }

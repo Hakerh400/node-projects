@@ -220,7 +220,7 @@ class Syntax{
     }\n${lines[lineIndex]}\n${
       ' '.repeat(j)
     }^\n\n${scope}`);
-    process.exit(0);
+    O.proc.exit(0);
 
     function push(name){
       var pd = new Parsed(strObj, O.last(stack), getDef(name));

@@ -3,11 +3,11 @@
 const fs = require('fs');
 const formatNumber = require('../format-number');
 const formatTime = require('../format-time');
+const logSync = require('../log-sync');
 
 const MAX_STR_LEN = 160;
 
 var startTime = null;
-var fd = process.stdout.fd;
 
 logStatus.reset = reset;
 
@@ -50,7 +50,7 @@ function log(str){
     str = `${str.substring(0, MAX_STR_LEN - 3)}...`;
   }
 
-  fs.writeSync(fd, str);
+  logSync(str);
 }
 
 function reset(){

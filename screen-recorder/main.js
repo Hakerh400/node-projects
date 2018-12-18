@@ -7,8 +7,8 @@ const VERBOSE = 0;
 var fs = require('fs');
 var path = require('path');
 var cp = require('child_process');
-var readline = require('readline');
 var O = require('../framework');
+var readline = require('../readline');
 var media = require('../media');
 var Presentation = require('../presentation');
 var scs = require('../screenshot');
@@ -26,7 +26,7 @@ const fast = 1;
 
 const [wh, hh] = [w, h].map(a => a >> 1);
 
-var rl = readline.createInterface(process.stdin, process.stdout);
+var rl = readline.rl();
 var rec = 0;
 
 setTimeout(main);

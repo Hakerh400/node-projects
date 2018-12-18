@@ -5,6 +5,7 @@ const path = require('path');
 const cp = require('child_process');
 const {Canvas} = require('../canvas');
 const O = require('../framework');
+const logSync = require('../log-sync');
 const logStatus = require('../log-status');
 const formatFileName = require('../format-file-name');
 
@@ -22,8 +23,6 @@ const FAST_PRESET = `-c:v h264_nvenc ${VIDEO_PRESET}`;
 const HD_PRESET = `-c:v libx264 ${VIDEO_PRESET}`;
 
 const SYM_PROC_IRRELEVANT = Symbol();
-
-const fd = process.stdout.fd;
 
 var procs = [];
 var tempDir = null;
@@ -163,18 +162,13 @@ const conv = require('../color-converter');
 
 function addEventListeners(){
   process.on('uncaughtException', onError);
-  process.on('SIGINT', O.nop);
-}
-
-function onStdinData(data){
-  if(shouldExit) return;
-
-  if(data.includes(0x03))
-    onSigint();
+  O.proc.on('sigint', onSigint);
 }
 
 function onError(err){
-  if(err instanceof Error) err = err.stack;
+  if(err instanceof Error)
+    err = err.stack;
+
   log(err);
   closeProcs();
 }
@@ -660,9 +654,6 @@ function spawnProc(name, args, exitCb=O.nop){
   proc.stderr.on('data', DEBUG ? onStderrData : O.nop);
   proc.on('exit', () => onProcExit(proc, exitCb));
 
-  if(procs.length === 1)
-    process.stdin.on('data', onStdinData);
-
   return proc;
 }
 
@@ -670,20 +661,11 @@ function onProcExit(proc, exitCb=O.nop){
   var index = procs.indexOf(proc);
   procs.splice(index, 1);
 
-  tryToCallExitCb();
-
-  function tryToCallExitCb(){
-    if(procs.length === 0){
-      process.stdin.removeListener('data', onStdinData);
-      process.stdin.unref();
-    }
-
-    exitCb();
-  }
+  exitCb();
 }
 
 function onStderrData(data){
-  process.stdout.write(data);
+  logSync(data);
 }
 
 function createCanvas(w, h){

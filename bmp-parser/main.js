@@ -48,5 +48,5 @@ function loadImg(file){
 function err(err){
   var msg = err instanceof Error ? err.stack : err;
   log(msg);
-  process.exit();
+  O.proc.exit(1);
 }

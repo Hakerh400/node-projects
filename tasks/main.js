@@ -151,12 +151,7 @@ class Task{
 };
 
 function projName(name){
-  name = O.projectToName(name);
-
-  if(name.startsWith('Fs '))
-    name = `FS${name.substring(2)}`;
-
-  return name;
+  return O.projectToName(name);
 }
 
 function syntax(){

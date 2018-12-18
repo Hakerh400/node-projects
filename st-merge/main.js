@@ -90,5 +90,5 @@ function copyZippedFile(file, lang){
 
 function err(msg){
   log(`ERROR: ${msg}`);
-  process.exit(1);
+  O.proc.exit(1);
 }

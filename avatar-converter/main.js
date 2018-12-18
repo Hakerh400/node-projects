@@ -1,15 +1,15 @@
 'use strict';
 
-var fs = require('fs');
-var path = require('path');
-var http = require('http');
-var urlModule = require('url');
-var readline = require('readline');
-var O = require('../framework');
-var media = require('../media');
-var fsRec = require('../fs-recursive');
-var hash = require('../hash');
-var converter = require('.');
+const fs = require('fs');
+const path = require('path');
+const http = require('http');
+const urlModule = require('url');
+const O = require('../framework');
+const readline = require('../readline');
+const media = require('../media');
+const fsRec = require('../fs-recursive');
+const hash = require('../hash');
+const converter = require('.');
 
 const PORT = 1037;
 
@@ -18,9 +18,10 @@ var avatarsDirName = 'avatars';
 
 var avatarsDir = path.join(O.dirs.wamp, 'projects', wampProject, avatarsDirName);
 
-var avatarsNum;
-var server;
-var rl;
+var avatarsNum = null;
+var server = null;
+
+var rl = readline.rl();
 
 setTimeout(main);
 
@@ -31,7 +32,6 @@ function main(){
   server = http.createServer(onReq);
   server.listen(PORT);
 
-  rl = readline.createInterface(process.stdin, process.stdout);
   rl.on('line', onInput);
 }
 

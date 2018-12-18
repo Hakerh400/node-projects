@@ -19,6 +19,7 @@ var timeStart = 0;
 var timeTotal = 0;
 
 var wasPaused = 0;
+var shouldExit = 0;
 
 setTimeout(main);
 
@@ -39,7 +40,7 @@ async function main(){
 
   O.shuffle(files);
 
-  while(index !== files.length){
+  while(index !== files.length && !shouldExit){
     if(index < 0) index = 0;
 
     file = files[index];
@@ -47,14 +48,12 @@ async function main(){
     await play();
     await O.while(() => !playing);
   }
-
-  exit();
 }
 
 function aels(){
-  process.stdin.on('data', async data => {
-    if(data.includes(0x03)) return exit();
+  O.proc.on('sigint', exit);
 
+  O.proc.stdin.on('data', async data => {
     var str = data.toString('utf8');
 
     for(var i = 0; i !== str.length; i++){
@@ -164,5 +163,5 @@ function kill(){
 }
 
 function exit(){
-  process.exit();
+  shouldExit = 1;
 }

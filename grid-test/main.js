@@ -5,6 +5,7 @@ var path = require('path');
 var O = require('../framework');
 var browser = require('../browser');
 var consoleColors = require('../console-colors');
+var logSync = require('../log-sync');
 
 var url = '/?project=other-projects&sub-project=grid';
 
@@ -104,10 +105,10 @@ function err(msg){
 
 function log(...args){
   if(args.length === 1){
-    fs.writeSync(process.stdout.fd, `${args[0]}`);
+    logSync(`${args[0]}`);
   }else if(args.length === 2){
     setCol(args[0]);
-    fs.writeSync(process.stdout.fd, `${args[1]}`);
+    logSync(`${args[1]}`);
     resetCol();
   }else{
     throw new TypeError('Expected 1 or 2 arguments');

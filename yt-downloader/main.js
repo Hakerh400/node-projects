@@ -3,8 +3,8 @@
 const fs = require('fs');
 const path = require('path');
 const http = require('http');
-const readline = require('readline');
 const O = require('../framework');
+const readline = require('../readline');
 const Video = require('./video');
 
 const PORT = 27000;
@@ -39,7 +39,7 @@ var subDir = null;
 var downloading = null;
 
 var server = http.createServer(onReq).listen(PORT);
-var rl = readline.createInterface(process.stdin, process.stdout);
+var rl = readline.rl();
 
 setTimeout(main);
 
@@ -244,7 +244,6 @@ function mode2str(m=mode){
 async function exit(){
   server.close();
   rl.close();
-  process.stdin.unref();
 }
 
 function formatStr(str, num){

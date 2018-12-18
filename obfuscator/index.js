@@ -1,7 +1,8 @@
 'use strict';
 
-var fs = require('fs');
-var O = require('../framework');
+const fs = require('fs');
+const O = require('../framework');
+const debug = require('../debug');
 
 const DEBUG = 0;
 const SHUFFLE = 1;
@@ -98,9 +99,7 @@ function obfuscate(src){
   };
 
   global.wait = () => {
-    var buff = Buffer.alloc(2);
-    fs.readSync(process.stdin.fd, buff, 0, 2);
-    if(buff.toString() !== '\r\n') process.exit(1);
+    debug();
   };
 
   var out = ``;

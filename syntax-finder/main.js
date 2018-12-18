@@ -1,14 +1,15 @@
 'use strict';
 
-var fs = require('fs');
-var path = require('path');
-var O = require('../framework');
-var finder = require('.');
+const fs = require('fs');
+const path = require('path');
+const O = require('../framework');
+const finder = require('.');
+const skipList = require('./skip-list');
 
 const SAVE_OUTPUT = 0;
 
-var cwd = __dirname;
-var outputFile = path.join(cwd, 'output.txt');
+const cwd = __dirname;
+const outputFile = path.join(cwd, 'output.txt');
 
 var dirs = [
   O.dirs.node,
@@ -31,12 +32,12 @@ function main(){
 
 function func(file, src){
   var dirs = file.split(/[\/\\]/);
-  if(dirs.includes('test')) return;
+  if(dirs.some(dir => skipList.includes(dir))) return;
 
   var lines = O.sanl(src);
 
   var index = lines.findIndex(line => {
-    return line.includes(`process.exi${'t'}`);
+    return /Math\.(?:random)/.test(line);
   });
 
   return index + 1;
