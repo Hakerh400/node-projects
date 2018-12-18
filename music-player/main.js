@@ -7,7 +7,8 @@ const O = require('../framework');
 const readline = require('../readline');
 const fsRec = require('../fs-recursive');
 
-const SHUFFLE = 0;
+const SHUFFLE = 1;
+const SORT = !SHUFFLE;
 
 const PROC_PRIORITY = 'realtime';
 
@@ -44,10 +45,8 @@ async function main(){
     });
   });
 
-  O.sortAsc(files);
-
-  if(SHUFFLE)
-    O.shuffle(files);
+  if(SORT) O.sortAsc(files);
+  if(SHUFFLE) O.shuffle(files);
 
   while(index < files.length && !shouldExit){
     if(index < 0) index = 0;
