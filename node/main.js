@@ -66,7 +66,7 @@ async function processInput(str){
       return;
   }
 
-  if(str.length > 1 || /[\/\\]/.test(str)){
+  if(str.length > 1 || /[\.\/\\]/.test(str)){
     var found = updatePath(str);
     if(!found) log('Directory not found');
     return;
@@ -90,7 +90,7 @@ async function processInput(str){
     var scriptArgs = [];
     
     if(str.length !== 0 && str !== '-'){
-      str = str.substring(1).trim();
+      str = str.slice(1).trim();
       scriptArgs = str.split(/\s+/);
     }
 
@@ -103,10 +103,15 @@ async function processInput(str){
 }
 
 function updatePath(str){
+  if(str === '\\' || str === '/'){
+    currDir = currDir.replace(/[\/\\].*/s, a => a[0]);
+    return 1;
+  }
+
   var dirs = str.split(/[\/\\]/);
 
   if(dirs[0] === ''){
-    currDir = currDir.substring(0, 3);
+    currDir = currDir.slice(0, 3);
     dirs.shift();
   }else{
     dirs = dirs.map(dir => {

@@ -4,7 +4,10 @@ const fs = require('fs');
 const path = require('path');
 const cp = require('child_process');
 const O = require('../framework');
+const readline = require('../readline');
 const fsRec = require('../fs-recursive');
+
+const SHUFFLE = 0;
 
 const PROC_PRIORITY = 'realtime';
 
@@ -19,7 +22,10 @@ var timeStart = 0;
 var timeTotal = 0;
 
 var wasPaused = 0;
+var wasRestarted = 0;
 var shouldExit = 0;
+
+var rl = readline.rl();
 
 setTimeout(main);
 
@@ -38,23 +44,33 @@ async function main(){
     });
   });
 
-  O.shuffle(files);
+  O.sortAsc(files);
 
-  while(index !== files.length && !shouldExit){
+  if(SHUFFLE)
+    O.shuffle(files);
+
+  while(index < files.length && !shouldExit){
     if(index < 0) index = 0;
 
     file = files[index];
 
     await play();
-    await O.while(() => !playing);
+    await O.while(() => !(playing || shouldExit));
   }
+
+  rl.close();
 }
 
 function aels(){
   O.proc.on('sigint', exit);
 
-  O.proc.stdin.on('data', async data => {
+  rl.on('line', data => {
     var str = data.toString('utf8');
+
+    if(str === ''){
+      playOrPause();
+      return;
+    }
 
     for(var i = 0; i !== str.length; i++){
       var c = str[i];
@@ -64,18 +80,6 @@ function aels(){
         case 'n': next(); break;
         case 'r': restart(); break;
         case ' ': playOrPause(); break;
-
-        default:
-          if('123z'.includes(c)){
-            playOrPause();
-            await O.while(() => proc !== null);
-
-            var {base} = path.parse(file);
-            fs.renameSync(file, path.join(mainDir, c, base));
-
-            playOrPause();
-          }
-          break;
       }
     }
   });
@@ -113,12 +117,13 @@ function play(){
       res();
     });
 
-    if(wasPaused){
-      wasPaused = 0;
-    }else{
+    if(!wasRestarted){
       var {name} = path.parse(file);
       log(name);
     }
+
+    wasPaused = 0;
+    wasRestarted = 0;
 
     setTimeout(setPriority);
 
@@ -138,22 +143,29 @@ function play(){
   });
 }
 
-function prev(){
-  index -= 2;
+function playOrPause(){
+  playing ^= 1;
   kill();
+}
+
+function prev(){
+  nav(-1);
 }
 
 function next(){
-  kill();
+  nav(1);
 }
 
 function restart(){
-  index--;
-  kill();
+  wasRestarted = 1;
+  nav(0);
 }
 
-function playOrPause(){
-  playing ^= 1;
+function nav(di){
+  if(wasPaused) index++;
+  wasPaused = 0;
+  playing = 1;
+  index += di - 1;
   kill();
 }
 
@@ -164,4 +176,5 @@ function kill(){
 
 function exit(){
   shouldExit = 1;
+  rl.close();
 }

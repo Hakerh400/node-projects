@@ -55,13 +55,8 @@ class Task{
 
       var task = new Task(line);
 
-      while(newIndent < indents[indents.length - 1]){
-        if(newIndent !== indents[indents.length - 2])
-          syntax();
-
-        tasks[tasks.length - 2].push(tasks.pop());
-        indents.pop();
-      }
+      while(newIndent < indents[indents.length - 1])
+        pop();
 
       if(newIndent > indents[indents.length - 1]){
         tasks.push(tasks[tasks.length - 1].pop());
@@ -71,8 +66,19 @@ class Task{
       tasks[tasks.length - 1].push(task);
     });
 
+    while(indents.length !== 1)
+      pop();
+
     if(tasks.length !== 1 || indents.length !== 1 || indents[0] !== 0)
-      syntax();
+      this.err();
+
+    function pop(){
+      if(tasks.length < 2 || indents.length === 0)
+        this.err();
+
+      tasks[tasks.length - 2].push(tasks.pop());
+      indents.pop();
+    }
   }
 
   rand(){
@@ -148,14 +154,15 @@ class Task{
 
     return str;
   }
+
+  err(...args){
+    log(...args);
+    err(`[${this.name}] Invalid syntax`);
+  }
 };
 
 function projName(name){
   return O.projectToName(name);
-}
-
-function syntax(){
-  err('Invalid syntax');
 }
 
 function err(msg){
