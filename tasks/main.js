@@ -2,7 +2,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const O = require('../framework');
+const O = require('../omikron');
 const formatFileName = require('../format-file-name');
 
 const TAB_SIZE = 2;

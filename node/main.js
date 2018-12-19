@@ -1,11 +1,13 @@
 'use strict';
 
 const DISPLAY_EXIT_CODE = 0;
+const DISPLAY_SIGINT = 1;
+const KILL_ON_SECOND_SIGINT = 1;
 
 const fs = require('fs');
 const path = require('path');
 const cp = require('child_process');
-const O = require('../framework');
+const O = require('../omikron');
 const readline = require('../readline');
 const logSync = require('../log-sync');
 const engs = require('./engines');
@@ -81,7 +83,7 @@ async function processInput(str){
   }
 
   await clear();
-  proc = spawn(batchFile, []);
+  proc = spawnProc(batchFile);
 
   async function spawn(name, args=[], options=O.obj()){
     await clear();
@@ -175,7 +177,8 @@ function spawnProc(name, args=[], options=O.obj()){
     ...options,
   });
 
-  var onSigint = () => write(sigintBuf);
+  var sentSigint = 0;
+
   var onData = data => write(data);
   var onEnd = () => proc.stdin.end();
 
@@ -194,10 +197,15 @@ function spawnProc(name, args=[], options=O.obj()){
 
   return proc;
 
-  function write(buf){
-    try{
-      proc.stdin.write(buf);
-    }catch{}
+  function onSigint(){
+    if(DISPLAY_SIGINT)
+      logSync('^C');
+
+    if(sentSigint && KILL_ON_SECOND_SIGINT)
+      proc.kill();
+
+    sentSigint = 1;
+    write(sigintBuf);
   }
 
   function onFinish(){
@@ -209,6 +217,12 @@ function spawnProc(name, args=[], options=O.obj()){
     O.proc.stdin.unref();
 
     onProcExit();
+  }
+
+  function write(buf){
+    try{
+      proc.stdin.write(buf);
+    }catch{}
   }
 }
 

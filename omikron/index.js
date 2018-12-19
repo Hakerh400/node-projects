@@ -1,10 +1,19 @@
 'use strict';
 
 const fs = require('fs');
-const browser = require('../browser');
 const Process = require('./process');
 const dirs = require('./dirs.json');
 const passwords = require('./passwords.json');
+
+class Window{
+  constructor(){
+    this.document = new Document();
+  }
+};
+
+class Document{
+  constructor(){}
+};
 
 module.exports = getFramework();
 
@@ -15,8 +24,8 @@ function getFramework(){
   str = str.join('\n');
 
   var func = new Function('window', 'document', 'require', str);
-  var window = new browser.Window();
-  var document = window.document;
+  var window = new Window();
+  var {document} = window;
 
   var O = func(window, document, getReq());
   O.init(0);

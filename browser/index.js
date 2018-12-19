@@ -3,11 +3,10 @@
 const EventEmitter = require('events');
 const http = require('http');
 const urlModule = require('url');
-const {Canvas} = require('../canvas');
+const O = require('../omikron');
+const {Canvas} = require('../media');
 
 const server = 'http://localhost/';
-
-var O;
 
 class EventTarget extends EventEmitter{
   constructor(){
@@ -38,8 +37,6 @@ class Window extends EventTarget{
     this._rafEvents = [];
     this._canvases = [];
     this._ready = 1;
-
-    if(!O) O = require('../framework');
 
     if(url !== null){
       loadPage(this, url, err => {
@@ -198,8 +195,6 @@ class Navigator{
 module.exports = {
   Window,
 };
-
-O = require('../framework');
 
 function loadPage(window, url, cb=O.nop){
   window._ready = 0;

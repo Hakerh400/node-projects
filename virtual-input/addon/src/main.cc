@@ -11,14 +11,19 @@ namespace vi = VirtualInput;
 typedef const FunctionCallbackInfo<Value> &CbInfo;
 
 #define FUNC(name) void name(CbInfo info)
-#define ISO() Isolate::GetCurrent()
+#define ISO() Isolate *iso = Isolate::GetCurrent();
+
+#define CTX() \
+  ISO(); \
+  Local<Context> ctx = iso->GetCurrentContext();
 
 #define ARGS(num) \
+  CTX(); \
   int args[num]; \
   for(int i = 0; i < num; i++) \
-    args[i] = info[i]->Int32Value();
+    args[i] = info[i + 1]->Int32Value(ctx).FromMaybe(0);
 
-#define RET(val) info.GetReturnValue().Set(Number::New(ISO(), val));
+#define RET(val) info.GetReturnValue().Set(Number::New(iso, val));
 
 #define WRAP_0(func) FUNC(func){ vi::func(); }
 #define WRAP_1(func) FUNC(func){ ARGS(1); vi::func(args[0]); }
@@ -30,8 +35,8 @@ typedef const FunctionCallbackInfo<Value> &CbInfo;
     else { ARGS(2); vi::func(args[0], args[1]); } \
   }
 
-FUNC(cx){ RET(vi::cx()); }
-FUNC(cy){ RET(vi::cy()); }
+FUNC(cx){ CTX(); RET(vi::cx()); }
+FUNC(cy){ CTX(); RET(vi::cy()); }
 
 WRAP_2(move);
 WRAP_0_2(mdown);

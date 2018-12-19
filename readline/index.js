@@ -3,7 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 const EventEmitter = require('events');
-const O = require('../framework');
+const O = require('../omikron');
 const Ebuf = require('../ebuf');
 const logSync = require('../log-sync');
 

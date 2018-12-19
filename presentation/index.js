@@ -1,7 +1,9 @@
 'use strict';
 
-var O = require('../framework');
-var media = require('../media');
+const fs = require('fs');
+const path = require('path');
+const O = require('../omikron');
+const media = require('../media');
 
 class Presentation{
   constructor(w, h, fps, fast=0){

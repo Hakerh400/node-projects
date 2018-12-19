@@ -2,8 +2,8 @@
 
 const fs = require('fs');
 const cp = require('child_process');
-const O = require('../framework');
-const fsRec = require('../fs-recursive');
+const O = require('../omikron');
+const fsRec = require('../fs-rec');
 const tempDir = require('../temp-dir')(__filename);
 
 module.exports = {
@@ -36,7 +36,7 @@ function bisect(repo, firstCommit, nextCommit, checkFunc, cb=O.nop){
     var commit = commits[i];
     spawnGit(`reset --hard ${commit}`);
 
-    checkFunc(tempDir, result => {
+    checkFunc(i, tempDir, result => {
       checkedCommits[i] = true;
       if(result) return cb(null, commit);
 

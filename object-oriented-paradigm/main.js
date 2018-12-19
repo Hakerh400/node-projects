@@ -2,8 +2,8 @@
 
 const fs = require('fs');
 const path = require('path');
-const O = require('../framework');
-const functasy = require('../../Functasy');
+const O = require('../omikron');
+const functasy = require('../functasy');
 
 const cwd = __dirname;
 const srcFile = path.join(cwd, 'src.js');

@@ -3,7 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 const http = require('http');
-const O = require('../framework');
+const O = require('../omikron');
 const readline = require('../readline');
 const Video = require('./video');
 

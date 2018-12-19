@@ -1,6 +1,9 @@
 'use strict';
 
-var crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
+const crypto = require('crypto');
+const O = require('../omikron');
 
 module.exports = hash;
 

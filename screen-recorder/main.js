@@ -1,18 +1,19 @@
 'use strict';
 
-const STABILIZE_FPS = 0;
-const RECORD_CURSOR = 0;
+const STABILIZE_FPS = 1;
+const RECORD_CURSOR = 1;
 const VERBOSE = 0;
 
-var fs = require('fs');
-var path = require('path');
-var cp = require('child_process');
-var O = require('../framework');
-var readline = require('../readline');
-var media = require('../media');
-var Presentation = require('../presentation');
-var scs = require('../screenshot');
-var vi = require('../virtual-input');
+const fs = require('fs');
+const path = require('path');
+const cp = require('child_process');
+const O = require('../omikron');
+const readline = require('../readline');
+const media = require('../media');
+const Presentation = require('../presentation');
+const scs = require('../screenshot');
+const vi = require('../virtual-input');
+const setPriority = require('../set-priority');
 
 const TIMEOUT = 0;
 
@@ -29,26 +30,25 @@ const [wh, hh] = [w, h].map(a => a >> 1);
 var rl = readline.rl();
 var rec = 0;
 
-setTimeout(main);
+setTimeout(() => main().catch(log));
 
-function main(){
-  askForInput();
+async function main(){
+  await setPriority();
+  media.setPriority();
+
+  startRecording();
+  aels();
 }
 
-function askForInput(){
-  log('');
-  rl.question('>', str => onInput(str).catch(log));
+function aels(){
+  rl.on('line', onInput)
 }
 
 async function onInput(str){
-  switch(str){
-    case '': case 'start recording': await startRecording(); break;
-    case 'stop recording': await stopRecording(); break;
-    case 'launch chrome': await launchChrome(); break;
-    default: info('Unknown command'); break;
+  if(str === ''){
+    rl.close();
+    stopRecording();
   }
-
-  askForInput();
 }
 
 async function startRecording(){
@@ -84,10 +84,7 @@ async function startRecording(){
       rec = 0;
 
       async function frame(){
-        var img = scs.take(0, 0, w, h);
-
-        for(var i = 0; i !== img.length; i++)
-          data[i] = img[i];
+        scs.take(data, 0, 0, w, h);
 
         g.putImageData(imgd, 0, 0);
 

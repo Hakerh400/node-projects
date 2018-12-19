@@ -3,14 +3,13 @@
 const fs = require('fs');
 const path = require('path');
 const cp = require('child_process');
-const O = require('../framework');
+const O = require('../omikron');
 const readline = require('../readline');
-const fsRec = require('../fs-recursive');
+const fsRec = require('../fs-rec');
+const setPriority = require('../set-priority');
 
 const SHUFFLE = 1;
 const SORT = !SHUFFLE;
-
-const PROC_PRIORITY = 'realtime';
 
 const mainDir = 'D:/Music';
 
@@ -28,9 +27,11 @@ var shouldExit = 0;
 
 var rl = readline.rl();
 
-setTimeout(main);
+setTimeout(() => main().catch(log));
 
 async function main(){
+  await setPriority();
+
   aels();
 
   var dirs = O.sanl(fs.readFileSync(path.join(mainDir, 'playlist.txt'), 'utf8'));
@@ -123,22 +124,6 @@ function play(){
 
     wasPaused = 0;
     wasRestarted = 0;
-
-    setTimeout(setPriority);
-
-    function setPriority(){
-      var result = cp.spawnSync('wmic', [
-        'process',
-        'where',
-        'name="ffplay.exe"',
-        'CALL',
-        'setpriority',
-        PROC_PRIORITY,
-      ]).stdout.toString('utf8');
-
-      if(result.includes('No Instance(s) Available.'))
-        setTimeout(setPriority);
-    }
   });
 }
 

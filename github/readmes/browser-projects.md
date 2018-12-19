@@ -1,1 +1,1 @@
-This is collection of my JavaScript projects for browsers. More projects can be found [here](https://github.com/Hakerh400/browser-projects/releases).
+This is collection of our JavaScript projects for browsers. More projects can be found [here](https://github.com/Hakerh400/browser-projects/releases).

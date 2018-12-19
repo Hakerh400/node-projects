@@ -3,7 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 const v8 = require('v8');
-const O = require('../framework');
+const O = require('../omikron');
 const debug = require('../debug');
 
 const DISPLAY_CHARACTER_INDEX = 0;

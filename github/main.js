@@ -1,5 +1,8 @@
 'use strict';
 
+const fs = require('fs');
+const path = require('path');
+const O = require('../omikron');
 const github = require('.');
 
 const repo = getRepo();

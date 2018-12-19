@@ -11,7 +11,7 @@ namespace scs = Screenshot;
 
 typedef unsigned char Byte;
 
-Local<Object> scs::take(int x, int y, int w, int h){
+void scs::take(uint8_t *data, int x, int y, int w, int h){
   Isolate *iso = Isolate::GetCurrent();
 
   HDC hScreenDC = GetDC(0);
@@ -36,7 +36,6 @@ Local<Object> scs::take(int x, int y, int w, int h){
   BitBlt(hLocalDC, 0, 0, iScreenWidth, iScreenHeight, hScreenDC, 0, 0, SRCCOPY);
 
   int len = w * h << 2;
-  Byte *data = (Byte*)malloc(len);
 
   for(int y = 0, i = 0; y != h; y++){
     for(int x = 0; x != w; x++, i += 4){
@@ -52,8 +51,4 @@ Local<Object> scs::take(int x, int y, int w, int h){
   DeleteObject(hBitmap);
   DeleteDC(hLocalDC);
   DeleteDC(hScreenDC);
-
-  Local<Object> buff = node::Buffer::New(iso, (char*)data, len).ToLocalChecked();
-
-  return buff;
 }

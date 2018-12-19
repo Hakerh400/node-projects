@@ -4,7 +4,7 @@ const HD = 0;
 
 const fs = require('fs');
 const path = require('path');
-const O = require('../framework');
+const O = require('../omikron');
 const media = require('../media');
 const blank = require('.');
 
@@ -21,7 +21,7 @@ const framesNum = fps * duration;
 const inputFile = '-dw/1.png';
 const outputFile = getOutputFile();
 
-setTimeout(main);
+setTimeout(() => main().catch(log));
 
 async function main(){
   var img = await media.loadImage(inputFile);

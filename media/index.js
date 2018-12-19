@@ -1,16 +1,22 @@
 'use strict';
 
+const DEBUG = 0;
+const ENABLE_TRUNC = 0;
+
 const fs = require('fs');
 const path = require('path');
 const cp = require('child_process');
-const {Canvas} = require('../canvas');
-const O = require('../framework');
+const nodeCanvas = require('canvas');
+const O = require('../omikron');
 const logSync = require('../log-sync');
 const logStatus = require('../log-status');
-const formatFileName = require('../format-file-name');
+const format = require('../format');
+const setPriority = require('../set-priority');
 
-const DEBUG = 0;
-const ENABLE_TRUNC = 0;
+const {
+  Canvas,
+  registerFont,
+} = nodeCanvas;
 
 const FFMPEG_DIR = 'C:/Program Files/Ffmpeg/bin/original';
 
@@ -24,11 +30,12 @@ const HD_PRESET = `-c:v libx264 ${VIDEO_PRESET}`;
 
 const SYM_PROC_IRRELEVANT = Symbol();
 
+const ctx = createContext(1, 1);
+
 var procs = [];
 var tempDir = null;
 var shouldExit = 0;
-
-addEventListeners();
+var priority = 0;
 
 class Video{
   constructor(input, w, h, framesNum){
@@ -125,8 +132,12 @@ class Video{
   hasMore(){ return !shouldExit && this.f !== this.framesNum; }
 };
 
+init();
+
 module.exports = {
   Canvas,
+  registerFont,
+  
   Video,
 
   createCanvas,
@@ -156,11 +167,20 @@ module.exports = {
 
   blur,
   fill,
+
+  col2rgb,
+  rgb2col,
+  normalize,
+  color,
+
+  setPriority: setPriorityForNewProcs,
 };
 
-const conv = require('../color-converter');
+function init(){
+  aels();
+}
 
-function addEventListeners(){
+function aels(){
   process.on('uncaughtException', onError);
   O.proc.on('sigint', onSigint);
 }
@@ -169,7 +189,11 @@ function onError(err){
   if(err instanceof Error)
     err = err.stack;
 
-  log(err);
+  if(typeof global.log === 'function')
+    log(err);
+  else
+    console.log(err);
+  
   closeProcs();
 }
 
@@ -198,7 +222,7 @@ function saveImage(output, img){
 }
 
 function loadAudio(input, convertToArr=0){
-  input = formatFileName(input);
+  input = format.path(input);
 
   return new Promise(res => {
     var buffs = [];
@@ -220,7 +244,7 @@ function loadAudio(input, convertToArr=0){
 }
 
 function loadVideo(input){
-  input = formatFileName(input);
+  input = format.path(input);
 
   return new Promise(res => {
     getMediaParams(input, (w, h, framesNum) => {
@@ -231,7 +255,7 @@ function loadVideo(input){
 }
 
 function renderImage(output, w, h, frameFunc=O.nop, exitCb=O.nop){
-  output = formatFileName(output);
+  output = format.path(output);
 
   var canvas = createCanvas(w, h);
   var g = canvas.getContext('2d');
@@ -244,8 +268,8 @@ function renderImage(output, w, h, frameFunc=O.nop, exitCb=O.nop){
 }
 
 function editImage(input, output, frameFunc=O.nop, exitCb=O.nop){
-  input = formatFileName(input);
-  output = formatFileName(output);
+  input = format.path(input);
+  output = format.path(output);
 
   getMediaParams(input, (w, h) => {
     var canvas = createCanvas(w, h);
@@ -270,7 +294,7 @@ function editImage(input, output, frameFunc=O.nop, exitCb=O.nop){
 }
 
 function renderVideo(output, w, h, fps, fast, frameFunc=O.nop, exitCb=O.nop){
-  output = formatFileName(output);
+  output = format.path(output);
 
   var canvas = createCanvas(w, h);
   var g = canvas.getContext('2d');
@@ -305,8 +329,8 @@ function renderVideo(output, w, h, fps, fast, frameFunc=O.nop, exitCb=O.nop){
 }
 
 function editVideo(input, output, w2, h2, fps, fast, frameFunc=O.nop, exitCb=O.nop){
-  input = formatFileName(input);
-  output = formatFileName(output);
+  input = format.path(input);
+  output = format.path(output);
 
   getMediaParams(input, (w1, h1, framesNum) => {
     var g1 = createCanvas(w1, h1).getContext('2d');
@@ -350,7 +374,7 @@ function editVideo(input, output, w2, h2, fps, fast, frameFunc=O.nop, exitCb=O.n
 }
 
 function renderAudio(output, w, func, exitCb=O.nop){
-  output = formatFileName(output);
+  output = format.path(output);
 
   var buffLen = w << 2;
   var f = 0;
@@ -375,7 +399,7 @@ function renderAudio(output, w, func, exitCb=O.nop){
 }
 
 function presentation(output, w, h, fps, fast, exitCb=O.nop){
-  output = formatFileName(output);
+  output = format.path(output);
 
   var canvas = createCanvas(w, h);
   var g = canvas.getContext('2d');
@@ -409,7 +433,7 @@ function presentation(output, w, h, fps, fast, exitCb=O.nop){
 }
 
 function custom(inputArgs, input, outputArgs, output, func=O.nop, exitCb=O.nop){
-  output = formatFileName(output);
+  output = format.path(output);
 
   var f = 0;
   var proc = spawnFfmpeg(`${inputArgs} -i "${input}" -y ${outputArgs} "${output}"`, exitCb);
@@ -525,7 +549,7 @@ function fill(g, x, y, imgd=null){
   if(imgd === null) imgd = g.getImageData(0, 0, w, h);
   var data = imgd.data;
 
-  var col = Buffer.from(conv.col2rgb(g.fillStyle));
+  var col = Buffer.from(col2rgb(g.fillStyle));
 
   var i = getI(x, y);
   var colPrev = Buffer.alloc(3);
@@ -644,10 +668,11 @@ function spawnProc(name, args, exitCb=O.nop){
   }
 
   var options = {
-    windowsHide: true,
+    windowsHide: false,
   };
 
   var proc = cp.spawn(name, args, options);
+  if(priority) setPriority(proc.pid);
 
   procs.push(proc);
 
@@ -716,4 +741,35 @@ function getTempDir(){
 
 function resetStatus(){
   logStatus.reset();
+}
+
+function col2rgb(col){
+  ctx.fillStyle = '#000000';
+  ctx.fillStyle = col;
+
+  col = ctx.fillStyle.match(/[0-9a-z]{2}/g);
+  col = col.map(byte => parseInt(byte, 16));
+
+  return col;
+}
+
+function rgb2col(rgb){
+  ctx.fillStyle = '#000000';
+  ctx.fillStyle = `rgb(${[...rgb]})`;
+
+  var col = ctx.fillStyle;
+
+  return col;
+}
+
+function normalize(col){
+  return rgb2col(col2rgb(col));
+}
+
+function color(col){
+  return O.Color.from(col2rgb(col));
+}
+
+function setPriorityForNewProcs(pr=1){
+  priority = pr;
 }

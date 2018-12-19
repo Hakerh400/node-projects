@@ -4,11 +4,9 @@ const HD = 1;
 
 const fs = require('fs');
 const path = require('path');
-const {registerFont} = require('../canvas');
-const O = require('../framework');
+const O = require('../omikron');
 const media = require('../media');
-const ffn = require('../ffn');
-const formatTime = require('../format-time');
+const format = require('../format');
 
 const FACTOR = .9;
 
@@ -34,7 +32,7 @@ const outputFile = getOutputFile(1);
 setTimeout(() => main().catch(log));
 
 async function main(){
-  registerFont(ffn(fontFile), {family: fontFamily});
+  media.registerFont(format.path(fontFile), {family: fontFamily});
 
   const tt = 1 / (fps * noteDuration);
 
@@ -75,7 +73,7 @@ async function main(){
     g.fillStyle = 'white';
     g.fillRect(0, 0, w, h);
 
-    var text = formatTime(time).substring(3);
+    var text = format.time(time).substring(3);
     g.font = `${10 + f / 10}px '${fontFamily}'`;
 
     g.fillStyle = '#aaa';
@@ -85,7 +83,7 @@ async function main(){
 
     return f !== framesNum;
   }, () => {
-    media.spawnFfmpeg(`-i "${ffn('-dw/1.mp4')}" -i "${ffn(path.join(cwd, '../music/songs/test.mp3'))}" -y -c copy "${ffn('-vid/1.mp4')}"`);
+    media.spawnFfmpeg(`-i "${format.path('-dw/1.mp4')}" -i "${format.path(path.join(cwd, '../music/songs/test.mp3'))}" -y -c copy "${format.path('-vid/1.mp4')}"`);
   });
 }
 

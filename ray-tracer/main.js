@@ -1,10 +1,10 @@
 'use strict';
 
-const HD = 1;
+const HD = 0;
 
 const fs = require('fs');
 const path = require('path');
-const O = require('../framework');
+const O = require('../omikron');
 const media = require('../media');
 const browser = require('../browser');
 
@@ -32,12 +32,12 @@ function main(){
 
 function render(window){
   const canvas = window._canvases[0];
-  const buff = Buffer.alloc(w * h << 2);
-  buff.fill(255);
+  const buf = Buffer.alloc(w * h << 2);
+  buf.fill(255);
 
   const {width: cw, height: ch} = canvas;
 
-  var evt = {type: 'setBuff', buff};
+  var evt = {type: 'setBuff', buf};
   window.emit('_msg', evt);
 
   var evt = {code: 'KeyW'};
@@ -48,7 +48,7 @@ function render(window){
     if(f === framesNum) return -1;
 
     window.emit('_raf');
-    return buff;
+    return buf;
   });
 }
 

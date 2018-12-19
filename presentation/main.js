@@ -1,7 +1,9 @@
 'use strict';
 
-var O = require('../framework');
-var Presentation = require('.');
+const fs = require('fs');
+const path = require('path');
+const O = require('../omikron');
+const Presentation = require('.');
 
 var w = 1920;
 var h = 1080;

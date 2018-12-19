@@ -2,6 +2,6 @@
 
 const fs = require('fs');
 const path = require('path');
-const O = require('../framework');
+const O = require('../omikron');
 
 module.exports = {};

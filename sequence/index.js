@@ -1,6 +1,8 @@
 'use strict';
 
-const O = require('../framework');
+const fs = require('fs');
+const path = require('path');
+const O = require('../omikron');
 
 const DEFAULT_TOKEN = Symbol('defaultToken');
 const PROBABILITIES = Symbol('probabilities');

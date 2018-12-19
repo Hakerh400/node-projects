@@ -2,12 +2,13 @@
 
 const fs = require('fs');
 const path = require('path');
-const O = require('../framework');
-const fsRec = require('../fs-recursive');
-const encryptor = require('../encryptor');
+const O = require('../omikron');
+const fsRec = require('../fs-rec');
 const media = require('../media');
 const tempDir = require('../temp-dir')(__filename);
 const bisector = require('.');
+
+const REVERSED = 1;
 
 const repo = 'Hakerh400/node-projects';
 
@@ -29,15 +30,15 @@ function main(){
 
 function firstCommit(n){
   num = n;
-  return n - 1;
+  return REVERSED ? n - 1 : 0;
 }
 
 function nextCommit(i, n){
-  return i - 1;
+  return REVERSED ? i - 1 : i + 1;
 }
 
-function checkFunc(dir, cb){
-  media.logStatus(++index, num, 'commit');
+function checkFunc(ci, dir, cb){
+  media.logStatus(++index, num, `commit [${ci}]`);
 
   resetTempDir();
 
@@ -48,11 +49,8 @@ function checkFunc(dir, cb){
 
     var p = d.fullPath;
 
-    if(p.includes('obfuscator') && p.endsWith('.txt')){
-      var str = fs.readFileSync(p, 'utf8');
-      if(str.includes('swap'))
-        found = 1;
-    }
+    if(p.includes('ray-tracer'))
+      found = 1;
   });
 
   cb(found);

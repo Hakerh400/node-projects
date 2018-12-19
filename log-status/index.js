@@ -1,8 +1,9 @@
 'use strict';
 
 const fs = require('fs');
-const formatNumber = require('../format-number');
-const formatTime = require('../format-time');
+const path = require('path');
+const O = require('../omikron');
+const format = require('../format');
 const logSync = require('../log-sync');
 
 const MAX_STR_LEN = 160;
@@ -20,8 +21,8 @@ function logStatus(f, n=null, type='frame'){
   var isSizeKnown = n !== null;
 
   var msgs = [
-    `Processing ${type} ${formatNumber(f)}${isSizeKnown ? ` out of ${formatNumber(n)}` : ``}`,
-    ...isSizeKnown ? [`ETA: ${formatTime(calcTime(startTime, f, n))}`] : [],
+    `Processing ${type} ${format.num(f)}${isSizeKnown ? ` out of ${format.num(n)}` : ``}`,
+    ...isSizeKnown ? [`ETA: ${format.time(calcTime(startTime, f, n))}`] : [],
     `FPS: ${formatInt(f / ((Date.now() - startTime) / 1e3))}`,
   ];
 

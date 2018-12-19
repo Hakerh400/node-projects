@@ -4,8 +4,8 @@ const fs = require('fs');
 const path = require('path');
 const http = require('http');
 const https = require('https');
-const O = require('../framework');
-const fsRec = require('../fs-recursive');
+const O = require('../omikron');
+const fsRec = require('../fs-rec');
 
 const exts = [
   'mp3',

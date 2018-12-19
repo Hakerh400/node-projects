@@ -3,9 +3,8 @@
 const fs = require('fs');
 const path = require('path');
 const cp = require('child_process');
-const O = require('../framework');
-const fsRec = require('../fs-recursive');
-const encryptor = require('../encryptor');
+const O = require('../omikron');
+const fsRec = require('../fs-rec');
 const tempDir = require('../temp-dir')(__filename);
 
 const repos = require('./repos.json');
@@ -95,20 +94,10 @@ function push(repoName, cb=O.nop){
     cp.spawnSync('node', [script]);
   }
 
-  if(encrypt){
-    // Encrypt
+  if(encrypt)
+    throw new TypeError('Encryption is not supported');
 
-    fs.mkdirSync(tempDir);
-
-    encryptor.encrypt(src, tempDir, O.password, err => {
-      if(err) return cb(err);
-
-      src = tempDir;
-      copyAndPushFiles();
-    });
-  }else{
-    copyAndPushFiles();
-  }
+  copyAndPushFiles();
 
   function copyAndPushFiles(){
     // Copy files

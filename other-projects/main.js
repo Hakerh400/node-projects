@@ -2,17 +2,17 @@
 
 const fs = require('fs');
 const path = require('path');
-const O = require('../framework');
+const O = require('../omikron');
 const browser = require('../browser');
 const media = require('../media');
 const Presentation = require('../presentation');
 
-const tileSize = 10;
+const tileSize = 40;
 const tileSizeH = tileSize / 2;
 
 const url = `/?project=other-projects&sub-project=grid&size=${tileSize}`;
 
-const SAMPLES_NUM = 100;
+const SAMPLES_NUM = 5;
 const WAIT_TIME = 10e3;
 const FADE_TIME = 1e3;
 
@@ -44,7 +44,7 @@ function render(window){
   var pr = new Presentation(w, h, fps, fast);
   pr.verbose = 0;
 
-  pr.render('D:/Render/grid.mp4', async (w, h, g, g1) => {
+  pr.render('-render/grid.mp4', async (w, h, g, g1) => {
     var len = O.sanl(get()).join('').length << 2;
 
     for(var i = 0; i !== SAMPLES_NUM; i++){

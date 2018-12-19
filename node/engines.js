@@ -2,7 +2,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const O = require('../framework');
+const O = require('../omikron');
 const enginesData = require('./engines-data');
 
 module.exports = getEngs();

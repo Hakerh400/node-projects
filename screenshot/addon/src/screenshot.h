@@ -8,5 +8,5 @@ using namespace std;
 using namespace v8;
 
 namespace Screenshot{
-  Local<Object> take(int x, int y, int w, int h);
+  void take(uint8_t *data, int x, int y, int w, int h);
 }

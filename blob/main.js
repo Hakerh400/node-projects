@@ -4,7 +4,7 @@ const HD = 1;
 
 const fs = require('fs');
 const path = require('path');
-const O = require('../framework');
+const O = require('../omikron');
 const media = require('../media');
 const ImageData = require('../image-data');
 
