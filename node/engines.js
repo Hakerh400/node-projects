@@ -18,6 +18,8 @@ function getEngs(){
       eng.script = `${data.mainScript}.${eng.ext}`;
     if(!eng.hasOwnProperty('ext'))
       eng.ext = eng.script.split('.').pop();
+    if(!eng.hasOwnProperty('options'))
+      eng.options = O.obj();
 
     obj[eng.name] = eng;
   });

@@ -33,7 +33,9 @@ class Stdin extends EventEmitter{
     stdin.on('end', this.onEnd.bind(this));
 
     this.refs = 0;
-    stdin.unref();
+
+    if('unref' in stdin)
+      stdin.unref();
   }
 
   ref(){

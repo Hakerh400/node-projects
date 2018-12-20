@@ -40,6 +40,8 @@ async function processInput(str){
   loadScript: if(str.length === 0 || str.startsWith('-')){
     if(files.includes(engs.node.script)){
       await spawn('node');
+    }else if(files.includes(engs.electron.script)){
+      await spawn('electron');
     }else if(files.includes(engs.python.script)){
       await spawn('python');
     }else{
@@ -100,7 +102,7 @@ async function processInput(str){
       ...args,
       eng.script,
       ...scriptArgs,
-    ], options);
+    ], options, eng.options);
   }
 }
 
@@ -171,12 +173,19 @@ function onInput(str){
   })().catch(log);
 }
 
-function spawnProc(name, args=[], options=O.obj()){
+function spawnProc(name, args=[], options=O.obj(), opts=O.obj()){
+  opts = {
+    skipFirst: 0,
+    killOnSigint: 0,
+    ...opts,
+  };
+
   var proc = cp.spawn(name, args, {
     cwd: currDir,
     ...options,
   });
 
+  var first = 1;
   var sentSigint = 0;
 
   var onData = data => write(data);
@@ -187,22 +196,39 @@ function spawnProc(name, args=[], options=O.obj()){
   O.proc.stdin.on('end', onEnd);
   O.proc.stdin.ref();
 
-  proc.stdout.on('data', logSync);
-  proc.stderr.on('data', logSync);
+  proc.stdout.on('data', onLog);
+  proc.stderr.on('data', onLog);
 
   var refs = 3;
+  var exitCode = null;
+
   proc.stdout.on('end', onFinish);
   proc.stderr.on('end', onFinish);
-  proc.on('exit', onFinish);
+
+  proc.on('exit', code => {
+    exitCode = code;
+    onFinish();
+  });
 
   return proc;
+
+  function onLog(data){
+    if(opts.skipFirst && first){
+      first = 0;
+      return;
+    }
+
+    logSync(data);
+  }
 
   function onSigint(){
     if(DISPLAY_SIGINT)
       logSync('^C');
 
-    if(sentSigint && KILL_ON_SECOND_SIGINT)
+    if(opts.killOnSigint || (sentSigint && KILL_ON_SECOND_SIGINT)){
       proc.kill();
+      return;
+    }
 
     sentSigint = 1;
     write(sigintBuf);
@@ -216,7 +242,7 @@ function spawnProc(name, args=[], options=O.obj()){
     O.proc.stdin.removeListener('end', onEnd);
     O.proc.stdin.unref();
 
-    onProcExit();
+    onProcExit(exitCode);
   }
 
   function write(buf){

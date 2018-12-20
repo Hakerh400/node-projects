@@ -17,7 +17,7 @@ const fast = !HD;
 
 const [wh, hh] = [w, h].map(a => a >> 1);
 
-const duration = 41;
+const duration = 120;
 const framesNum = fps * duration;
 
 const noteDuration = 1 / 4;
@@ -38,7 +38,11 @@ async function main(){
 
   var rhythm = [0, startDelay]
     .concat(fs.readFileSync(rhythmFile, 'utf8')
-    .match(/ \d+/g)
+    .replace(/(\d+)\[([^\]]*)\]/g, (m, num, chunk) => {
+      num |= 0;
+      chunk = ` ${chunk} `;
+      return chunk.repeat(num);
+    }).match(/ \d+/g)
     .map(t => Number(t)));
 
   var indexPrev = 0;
@@ -61,7 +65,7 @@ async function main(){
 
     var dt = rhythm[index] -= tt;
     while(dt < 0){
-      if(++index === rhythm.length) return;
+      if(++index === rhythm.length) return 0;
 
       dt = rhythm[index] += dt;
       if(index >= 4 && (index & 1) === 0){
@@ -70,21 +74,43 @@ async function main(){
       }
     }
 
+    var k1 = 1 - k;
+
     g.fillStyle = 'white';
     g.fillRect(0, 0, w, h);
 
     var text = format.time(time).substring(3);
-    g.font = `${10 + f / 10}px '${fontFamily}'`;
+    var font = 400;
 
-    g.fillStyle = '#aaa';
-    g.fillText(text, wh, hh);
-    g.fillStyle = new O.Color(Math.round(k * 255), 0, 0);
-    g.fillText(text, wh, hh);
+    if(index >= 36) font += k * 100;
+    g.font = `${font}px '${fontFamily}'`;
 
-    return f !== framesNum;
+    g.fillStyle = 'black';
+    if(index >= 20) g.fillStyle = new O.Color(Math.round(k * 255), 0, 0);
+
+    var angle = 0;
+    if(index >= 56){
+      var i = (index - 56 >> 1);
+      angle = calcAngle(i) * k + calcAngle(i + 1) * k1;
+    }
+
+    g.save();
+    g.translate(wh, hh);
+    g.rotate(angle);
+    g.fillText(text, 0, 0);
+    g.restore();
+
+    return 1;
   }, () => {
     media.spawnFfmpeg(`-i "${format.path('-dw/1.mp4')}" -i "${format.path(path.join(cwd, '../music/songs/test.mp3'))}" -y -c copy "${format.path('-vid/1.mp4')}"`);
   });
+}
+
+function calcAngle(i){
+  if((i & 1) === 0) return 0;
+  var a = O.pi / 6;
+  if(i & 2) a = -a;
+  return a;
 }
 
 function getOutputFile(vid=0){

@@ -72,7 +72,13 @@ function render(notesFile, audioFile, cb=O.nop){
 }
 
 function loadNotes(file){
-  var notes = fs.readFileSync(file).toString();
+  var notes = fs.readFileSync(file, 'utf8')
+    .replace(/(\d+)\[([^\]]*)\]/g, (m, num, chunk) => {
+      num |= 0;
+      chunk = ` ${chunk} `;
+      return chunk.repeat(num);
+    });
+
   var time = 0;
 
   notes = notes.replace(/[^a-z0-9\#\d\.\- ]/gi, ' ').replace(/\s+/g, ' ').match(/\S+ \S+ \S+/g).map((line, index) => {
