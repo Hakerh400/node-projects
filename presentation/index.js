@@ -38,7 +38,7 @@ class Presentation{
     this.finished = 0;
   }
 
-  render(file, func, cb=O.nop){
+  async render(file, func, cb=O.nop){
     var {w, h, fps, fast} = this;
 
     this.file = file;
@@ -52,7 +52,7 @@ class Presentation{
     this.mFrame = mFrame;
     this.g = mFrame.g;
 
-    this.start();
+    await this.start();
   }
 
   async start(){
