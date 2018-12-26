@@ -19,12 +19,43 @@ class Float{
     return new Float(!s, m, e);
   }
 
-  add(n, L=0){
+  abs(){
     var {s, m, e} = this;
-    var {s: s1, m: m1, e: e1} = n;
-    var ms = m.s;
+    return new Float(0, m, e);
+  }
 
-    if(s | s1) throw 'neg';
+  eq(n){
+    var {s, m, e} = this;
+    return s === n.s & m.eq(n.m) & e.eq(n.e);
+  }
+
+  neq(n){
+    var {s, m, e} = this;
+    return s !== n.s | m.neq(n.m) | e.neq(n.e);
+  }
+
+  gt(n){
+    var {s, m, e} = this;
+    return !s & n.s | e.gt(n.e) | e.eq(n.e) & m.gt(n.m);
+  }
+
+  lt(n){
+    var {s, m, e} = this;
+    return s & !n.s | e.lt(n.e) | e.eq(n.e) & m.lt(n.m);
+  }
+
+  gte(n){
+    return this.eq(n) | this.gt(n);
+  }
+
+  lte(n){
+    return this.eq(n) | this.lt(n);
+  }
+
+  op(n, s, f){
+    var {m, e} = this;
+    var {m: m1, e: e1} = n;
+    var ms = m.s;
 
     m = m.expand().shrb();
     m1 = m1.expand().shrb();
@@ -43,23 +74,97 @@ class Float{
       }
     }
 
-    m = m.add(m1);
+    m = f(m, m1);
     if(m.z()) throw 'zero';
 
+    e = e.add(new Uint(e.s, i => !!(ms & (1 << i))));
     while(!m.getLast()){
       m = m.shlb();
       e = e.dec();
     }
 
-    if(L){
-      m.shlb().log();
-      m.shlb().round().log();
+    m = m.shlb().round();
+
+    return new Float(s, m, e);
+  }
+
+  add(n){
+    var b = this;
+    var {s, m, e} = b;
+    var s1 = n.s;
+
+    if(s | s1){
+      if(s & s1)
+        return b.op(n, 1, (m, m1) => m.add(m1));
+
+      if(s) [b, n] = [n, b];
+      s = b.lt(n.neg());
+      if(s) [b, n] = [n, b];
+
+      return b.op(n, s, (m, m1) => m.sub(m1));
+    }
+
+    return b.op(n, 0, (m, m1) => m.add(m1));
+  }
+
+  sub(n){
+    return this.add(n.neg());
+  }
+
+  mul(n){
+    var {s, m, e} = this;
+    var {s: s1, m: m1, e: e1} = n;
+    var ms = m.s;
+
+    var ui = new Uint(ms, i => !!(ms & (i < 32 ? 1 << i : 0)));
+    m = m.expand().shr(ui);
+    m1 = m1.expand().shr(ui);
+
+    m.set(ms, 1);
+    m1.set(ms, 1);
+
+    m = m.mul(m1);
+    if(m.z()) throw 'zero';
+
+    e = e.add(e1).add(new Uint(e.s, i => !!(ms - e.os + 1 & (1 << i))));
+    while(!m.getLast()){
+      m = m.shlb();
+      e = e.dec();
     }
 
     m = m.shlb().round();
-    e = e.add(new Uint(e.s, i => !!(ms & (1 << i))));
 
-    return new Float(s, m, e);
+    return new Float(s ^ s1, m, e);
+  }
+
+  div(n){
+    var {s, m, e} = this;
+    var {s: s1, m: m1, e: e1} = n;
+    var ms = m.s;
+
+    var ui = new Uint(ms, i => !!(ms - 1 & (i < 32 ? 1 << i : 0)));
+    m = m.expand().shl(ui);
+    m1 = m1.expand().shl(ui);
+
+    m.set(ms * 3 - 1, 1);
+    m1.set(ms * 3 - 1, 1);
+
+    m.log();
+    m1.log();
+    m.div(m1).log();
+
+    m = m.div(m1);
+    if(m.z()) throw 'zero';
+
+    e = e.add(e1).add(new Uint(e.s, i => !!(ms - e.os + 1 & (1 << i))));
+    while(!m.getLast()){
+      m = m.shlb();
+      e = e.dec();
+    }
+
+    m = m.shlb().round();
+
+    return new Float(s ^ s1, m, e);
   }
 
   num(){
