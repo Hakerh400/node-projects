@@ -8,26 +8,78 @@ const fi = a => a;
 const f0 = () => 0;
 
 class Float{
-  constructor(ms, es, mf=f0, ef=f0){
-    this.ms = ms;
-    this.es = es;
-
-    this.m = new BitArray(ms, mf);
-    this.e = new BitArray(es, ef);
+  constructor(s, m, e){
+    this.s = s & 1;
+    this.m = m;
+    this.e = e;
   }
 
-  toString(){
-    return String(this.m.m() * 2 ** this.e.e());
+  neg(){
+    var {s, m, e} = this;
+    return new Float(!s, m, e);
+  }
+
+  add(n, L=0){
+    var {s, m, e} = this;
+    var {s: s1, m: m1, e: e1} = n;
+    var ms = m.s;
+
+    if(s | s1) throw 'neg';
+
+    m = m.expand().shrb();
+    m1 = m1.expand().shrb();
+
+    m.set(ms * 2 - 1, 1);
+    m1.set(ms * 2 - 1, 1);
+
+    var d1 = e.lte(e1);
+    while(e.neq(e1)){
+      if(d1){
+        m = m.shrb();
+        e = e.inc();
+      }else{
+        m1 = m1.shrb();
+        e1 = e1.inc();
+      }
+    }
+
+    m = m.add(m1);
+    if(m.z()) throw 'zero';
+
+    while(!m.getLast()){
+      m = m.shlb();
+      e = e.dec();
+    }
+
+    if(L){
+      m.shlb().log();
+      m.shlb().round().log();
+    }
+
+    m = m.shlb().round();
+    e = e.add(new Uint(e.s, i => !!(ms & (1 << i))));
+
+    return new Float(s, m, e);
+  }
+
+  num(){
+    var val = this.m.m() * 2 ** this.e.e();
+    if(this.s === 1) val  = -val;
+    return val;
+  }
+
+  log(){
+    return this.m.log();
   }
 };
 
-module.exports = Float;
-
-class BitArray{
+class Uint{
   constructor(s, f=f0){
-    this.s = s;
+    this.s = s | 0;
     this.os = 1 - 2 ** (s - 1);
-    this.d = Buffer.from(O.ca(s, i => f(i) & 1));
+
+    var arr = O.ca(s, i => f(i) & 1);
+    this.d = Buffer.from(arr);
   }
 
   get(i){
@@ -38,20 +90,40 @@ class BitArray{
     this.d[i] = a & 1;
   }
 
+  getLast(){
+    return this.get(this.s - 1);
+  }
+
+  setLast(a){
+    this.set(this.s - 1, a);
+  }
+
+  zero(){
+    return new Uint(this.s);
+  }
+
+  one(){
+    return new Uint(this.s, i => !i);
+  }
+
   iter(f, dir=1){
-    const {d} =this;
+    const {d} = this;
     if(dir) d.forEach((a, i) => f(a, i));
     else for(var i = this.s - 1; i !== -1; i--) f(d[i], i);
   }
 
-  map(f, dir=1){
+  map(f, dir=1, dirm=1){
     var d = [];
-    this.iter((a, i) => d.push(f(a, i) & 1), dir);
-    return new BitArray(this.s, i => d[i]);
+    this.iter((a, i) => {
+      var v = f(a, i) & 1;
+      if(dirm) d.push(v);
+      else d.unshift(v);
+    }, dir);
+    return new Uint(this.s, i => d[i]);
   }
 
-  red(f, v){
-    this.iter((a, i) => v = f(v, a, i));
+  red(f, v, dir=1){
+    this.iter((a, i) => v = f(v, a, i), dir);
     return v;
   }
 
@@ -63,17 +135,246 @@ class BitArray{
     return this.map(fi, 0);
   }
 
+  expand(){
+    return new Uint(this.s * 3, i => {
+      i -= this.s;
+      if(i < 0 || i >= this.s) return 0;
+      return this.get(i);
+    });
+  }
+
+  round(){
+    var s = this.s / 3 | 0;
+    var z = 1;
+
+    this.iter((a, i) => {
+      if(i < s * 2 - 1)
+        z &= !a;
+    });
+
+    var b = new Uint(s, i => {
+      return this.get(this.s - s + i);
+    });
+
+    if(this.get(s * 2 - 1) & (!z | b.odd()))
+      b = b.inc();
+
+    return b;
+  }
+
+  even(){
+    return !this.get(0);
+  }
+
+  odd(){
+    return this.get(0);
+  }
+
+  eq(n){
+    var eq = 1;
+    this.iter((a, i) => eq &= !(a ^ n.get(i)));
+    return eq;
+  }
+
+  neq(n){
+    return !this.eq(n);
+  }
+
+  gt(n){
+    var gt = 0;
+    this.iter((a, i) => {
+      var b = n.get(i);
+      gt = gt & (a | !b) | a & !b;
+    });
+    return gt;
+  }
+
+  lt(n){
+    var lt = 0;
+    this.iter((a, i) => {
+      var b = n.get(i);
+      lt = lt & (!a | b) | !a & b;
+    });
+    return lt;
+  }
+
+  gte(n){
+    var gte = 1;
+    this.iter((a, i) => {
+      var b = n.get(i);
+      gte = gte & (a | !b) | a & !b;
+    });
+    return gte;
+  }
+
+  lte(n){
+    var lte = 1;
+    this.iter((a, i) => {
+      var b = n.get(i);
+      lte = lte & (!a | b) | !a & b;
+    });
+    return lte;
+  }
+
+  neq(n){
+    return !this.eq(n);
+  }
+
+  z(){
+    var z = 1;
+    this.iter(a => z &= !a);
+    return z;
+  }
+
+  nz(){
+    return !this.z();
+  }
+
+  not(){
+    return this.map((a, i) => !a);
+  }
+
+  neg(){
+    return this.sub(this.zero());
+  }
+
+  and(n){
+    return this.map((a, i) => a & n.get(i));
+  }
+
+  or(n){
+    return this.map((a, i) => a | n.get(i));
+  }
+
+  xor(n){
+    return this.map((a, i) => a ^ n.get(i));
+  }
+
+  inc(){
+    var c = 1;
+    return this.map((a, i) => {
+      var v = a ^ c;
+      c &= a;
+      return v;
+    });
+  }
+
+  dec(){
+    var e = 1;
+    return this.map((a, i) => {
+      var v = a ^ e;
+      e &= !a;
+      return v;
+    });
+  }
+
+  add(n){
+    var c = 0;
+    return this.map((a, i) => {
+      var b = n.get(i);
+      var v = a ^ b ^ c;
+      c = a & b | a & c | b & c;
+      return v;
+    });
+  }
+
+  sub(n){
+    var e = 0;
+    return this.map((a, i) => {
+      var b = n.get(i);
+      var v = a ^ b ^ e;
+      e = !a & (b | e) | a & b & e;
+      return v;
+    });
+  }
+
+  shlb(v=0){
+    return this.map((a, i) => {
+      var vv = v;
+      v = a;
+      return vv;
+    });
+  }
+
+  shrb(v=0){
+    return this.map((a, i) => {
+      var vv = v;
+      v = a;
+      return vv;
+    }, 0, 0);
+  }
+
+  shl(n){
+    var b = this;
+    while(n.nz()){
+      n = n.dec();
+      b = b.shlb(0);
+    }
+    return b;
+  }
+
+  shr(n){
+    var b = this;
+    while(n.nz()){
+      n = n.dec();
+      b = b.shrb(0);
+    }
+    return b;
+  }
+
+  mul(n){
+    var b = this.zero();
+    this.iter((a, i) => {
+      if(a) b = b.add(n);
+      n = n.shlb();
+    });
+    return b;
+  }
+
+  div(n){
+    var q = this.zero();
+    var r = this.zero();
+    this.iter((a, i) => {
+      r = r.shlb(a);
+      if(r.gte(n)){
+        r = r.sub(n);
+        q.set(i, 1);
+      }
+    }, 0);
+    return q;
+  }
+
+  exp(n){
+    var b = this.one();
+    while(n.nz()){
+      n = n.dec();
+      b = b.mul(this);
+    }
+    return b;
+  }
+
   m(){
-    return this.red((a, b, i) => a + b * 2 ** -(i + 1), 1);
+    return this.red((a, b, i) => a + b * 2 ** -(this.s - i), 1, 0);
   }
 
   e(){
     return this.red((a, b, i) => a + b * 2 ** i, this.os);
   }
 
-  toString(){
-    var s = '';
-    this.iter(a => s += a);
-    return s;
+  int(){
+    return this.red((a, b, i) => a + b * 2 ** i, 0);
   }
+
+  log(){
+    return log(`1.${
+      [...this.d]
+      .reverse()
+      .join('')
+    }`);
+  }
+};
+
+module.exports = {
+  Float,
+  Uint,
 };
