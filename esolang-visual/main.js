@@ -1,12 +1,13 @@
 'use strict';
 
 const flags = {  
-  MULTIPLE_PROGRAMS: 1,
+  MULTIPLE_PROGRAMS: 0,
+  PAD_DATA: 1,
   TOKENIZED: 0,
   PARSED: 0,
   SERIALIZED: 0,
   NORMALIZED: 0,
-  VERBOSE: 1,
+  WAIT_AFTER_END: 1,
 };
 
 const fs = require('fs');
@@ -33,7 +34,7 @@ const sy = 12;
 const ws = w / sx | 0;
 const hs = h / sy | 0;
 
-const ioCtor = functasy.IO;
+const ioCtor = functasy.IOBit;
 
 const cols = {
   bg: new O.Color(0, 0, 0),
@@ -119,13 +120,13 @@ async function main(){
       var input = inputs[index] || '';
       await h2('Input', input);
 
-      var output = functasy.run(src, input);
+      var output = functasy.run(src, input, ioCtor, flags.PAD_DATA);
       await h2('Output', output);
 
       if(++index === srcs.length) break;
     }
 
-    if(flags.VERBOSE)
+    if(flags.WAIT_AFTER_END)
       await pr.wait(TIME_TO_WAIT);
 
     async function h1(strs){

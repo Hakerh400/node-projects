@@ -278,7 +278,7 @@ function editImage(input, output, frameFunc=O.nop, exitCb=O.nop){
     var buffLen = w * h << 2;
     var buff = Buffer.alloc(0);
 
-    var proc1 = spawnFfmpeg(`-i "${input}" ${RGBA} -`);
+    var proc1 = spawnFfmpeg(`-i "${input}" ${RGBA} -vframes 1 -`);
     var proc2 = spawnFfmpeg(`${BGRA} -s ${w}x${h} -i - -y ${TRUNC} "${output}"`, exitCb);
 
     proc1.stdout.on('data', data => {
