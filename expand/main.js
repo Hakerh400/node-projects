@@ -1,6 +1,8 @@
 'use strict';
 
 const HD = 1;
+const SCALE = !HD;
+const WAIT_AFTER_END = HD;
 
 const fs = require('fs');
 const path = require('path');
@@ -8,6 +10,11 @@ const O = require('../omikron');
 const media = require('../media');
 const Presentation = require('../presentation');
 const ImageData = require('../image-data');
+
+const TIME_TO_WAIT = 60;
+
+const wt = HD ? 1920 : 640;
+const ht = HD ? 1080 : 480;
 
 const fps = 60;
 const fast = !HD;
@@ -18,18 +25,18 @@ const outputFile = getOutputFile();
 setTimeout(() => main().catch(log));
 
 async function main(){
-  const img = await media.loadImage(inputFile);
-  const {canvas} = img;
+  var img = await media.loadImage(inputFile);
+  if(SCALE) img = media.scale(img, wt, ht);
 
+  const {canvas} = img;
   const pr = new Presentation(canvas.width, canvas.height, fps, fast);
   pr.verbose = 0;
 
-  const colNew = Buffer.from([0, 255, 0]);
   const col = Buffer.alloc(3);
 
   await pr.render(outputFile, async (w, h, g, g1) => {
     const [wh, hh] = [w, h].map(a => a >> 1);
-    const start = [wh, hh];
+    const start = [w, h].map(a => O.rand(a));
 
     const pixelsNum = w * h;
     var pixelsDone = 0;
@@ -59,21 +66,28 @@ async function main(){
     dPix.set(...start, 1);
     const queue = [[[...start]]];
 
+    var epoch = -1;
+
     while(queue.length !== 0){
+      epoch++;
+
       var elems = queue.shift();
       if(elems.length === 0) continue;
 
       media.logStatus(pixelsDone + 1, pixelsNum, 'pixel');
 
+      var k = epoch / (256 * 6);
+      O.hsv(k % 1, col);
+
       for(var [x, y] of elems){
-        dg.set(x, y, colNew);
+        dg.set(x, y, col);
         pixelsDone++;
 
         d.adj(x, y, (x, y, v) => {
           if(!d.has(x, y) || dPix.get(x, y)) return;
           dPix.set(x, y, 1);
 
-          var n = O.rand(v);
+          var n = O.rand(v + 2);
           while(n >= queue.length)
             queue.push([]);
           queue[n].push([x, y]);
@@ -82,6 +96,12 @@ async function main(){
 
       dg.put();
       await pr.frame();
+    }
+
+    if(WAIT_AFTER_END){
+      var n = Math.ceil(TIME_TO_WAIT * fps);
+      for(var i = 0; i !== n; i++)
+        await pr.frame();
     }
   });
 }

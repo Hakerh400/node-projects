@@ -167,6 +167,7 @@ module.exports = {
 
   blur,
   fill,
+  scale,
 
   col2rgb,
   rgb2col,
@@ -602,6 +603,16 @@ function fill(g, x, y, imgd=null){
   function getI(x, y){
     return x + y * w << 2;
   }
+}
+
+function scale(g, wt, ht){
+  const {canvas} = g;
+  const {width: w, height: h} = canvas;
+
+  const g1 = createContext(wt, ht);
+  g1.drawImage(canvas, 0, 0, w, h, 0, 0, wt, ht);
+
+  return g1;
 }
 
 function putBuffer(g, buff){

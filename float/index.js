@@ -169,7 +169,7 @@ class Float{
 
   num(){
     var val = this.m.m() * 2 ** this.e.e();
-    if(this.s === 1) val  = -val;
+    if(this.s) val = -val;
     return val;
   }
 

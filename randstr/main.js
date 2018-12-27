@@ -1,6 +1,6 @@
 'use strict';
 
-const O = require('../framework');
+const O = require('../omikron');
 const readline = require('../readline');
 
 var rl = readline.rl();
