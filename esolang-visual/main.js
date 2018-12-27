@@ -16,6 +16,8 @@ const Presentation = require('../presentation');
 const VisualConsole = require('../visual-console');
 const functasy = require('../functasy');
 
+const TIME_TO_WAIT = 5e3;
+
 const cwd = __dirname;
 const srcFile = path.join(cwd, 'src.txt');
 const inputFile = path.join(cwd, 'input.txt');
@@ -123,7 +125,8 @@ async function main(){
       if(++index === srcs.length) break;
     }
 
-    if(flags.VERBOSE) await pr.wait(10e3);
+    if(flags.VERBOSE)
+      await pr.wait(TIME_TO_WAIT);
 
     async function h1(strs){
       if(Array.isArray(strs)) strs = strs.join('\n');

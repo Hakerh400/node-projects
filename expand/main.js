@@ -11,7 +11,7 @@ const media = require('../media');
 const Presentation = require('../presentation');
 const ImageData = require('../image-data');
 
-const TIME_TO_WAIT = 60;
+const TIME_TO_WAIT = 5e3;
 
 const wt = HD ? 1920 : 640;
 const ht = HD ? 1080 : 480;
@@ -98,11 +98,8 @@ async function main(){
       await pr.frame();
     }
 
-    if(WAIT_AFTER_END){
-      var n = Math.ceil(TIME_TO_WAIT * fps);
-      for(var i = 0; i !== n; i++)
-        await pr.frame();
-    }
+    if(WAIT_AFTER_END)
+      await pr.wait(TIME_TO_WAIT);
   });
 }
 
