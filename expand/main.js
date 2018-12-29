@@ -1,6 +1,6 @@
 'use strict';
 
-const HD = 0;
+const HD = 1;
 const SCALE = !HD;
 const WAIT_AFTER_END = HD;
 

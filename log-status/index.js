@@ -23,10 +23,10 @@ function logStatus(f, n=null, type='frame'){
   var msgs = [
     `Processing ${type} ${format.num(f)}${isSizeKnown ? ` out of ${format.num(n)}` : ``}`,
     ...isSizeKnown ? [`ETA: ${format.time(calcTime(startTime, f, n))}`] : [],
-    `FPS: ${formatInt(f / ((Date.now() - startTime) / 1e3))}`,
+    `Speed: ${formatInt(f / (Math.max(Date.now() - startTime, 1) / 1e3))}`,
   ];
 
-  log(msgs.join('  '));
+  log(msgs.join(' '.repeat(2)));
 }
 
 function calcTime(t, f, n){

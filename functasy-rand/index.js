@@ -3,38 +3,76 @@
 const fs = require('fs');
 const path = require('path');
 const O = require('../omikron');
-const {Serializer, toName} = require('../functasy');
+const functasy = require('../functasy');
+const logStatus = require('../log-status');
 
-const START = 10;
-const PROB = .9;
+const {Serializer, toName} = functasy;
 
-module.exports = gen;
+const VERBOSE = 1;
 
-function gen(start=START, prob=PROB){
-  var buf = genBuf(start, prob);
-  var ser = new Serializer(buf);
+const LENGTH = [200, 300];
+const DEPTH = [20, 30];
+const START_LENGTH = 50;
 
-  var depth = 0;
-  var s = '';
+const TICKS_NUM = 2e5;
+const INPUTS_NUM = 256;
+const OUTPUTS_NUM = 2;
+const TIMEOUTS_NUM = 5;
 
-  while(ser.hasMore() || depth !== 0){
-    if(depth === 0){
-      open();
-      continue;
+module.exports = {
+  gen,
+};
+
+function gen(includeOuts=0){
+  var n = 0;
+
+  while(1){
+    if(VERBOSE) logStatus(++n, null, 'source');
+
+    var len = O.rand(...LENGTH) - 1;
+    var src = genSrc(len);
+    var start = O.ca(START_LENGTH, () => O.rand(2)).join('');
+
+    var outs = new Set();
+    var timeouts = 0;
+
+    for(var i = 0; i !== INPUTS_NUM; i++){
+      var input = start + i.toString(2).split('').reverse().join('');
+      var out = functasy.run(src, input, functasy.IOBit, 1, TICKS_NUM, 'utf8');
+
+      outs.add(out);
+
+      if(out === null){
+        if(++timeouts > TIMEOUTS_NUM) break;
+      }
     }
 
-    if(s.slice(-3) !== '()(' && !r()){
-      close();
-      continue;
-    }
-
-    if(!r()){
-      s += toName(r(depth - 1));
-      continue;
-    }
-
-    open();
+    if(outs.size >= OUTPUTS_NUM) break;
   }
+
+  if(VERBOSE) log();
+
+  if(includeOuts) return {src, outs};
+  return src;
+}
+
+function genSrc(len){
+  var s = '(';
+  var depth = 1;
+
+  while(s.length + depth < len){
+    if(s.endsWith('()(')){ next(); continue; }
+
+    var shouldClose = depth < DEPTH[0] ? O.rand(3) === 0 :
+                      depth < DEPTH[1] ? O.rand(2) === 0 :
+                      O.rand(3) !== 0;
+
+    if(shouldClose) { close(); continue; }
+
+    next();
+  }
+
+  s += ')'.repeat(depth);
 
   return s;
 
@@ -45,15 +83,15 @@ function gen(start=START, prob=PROB){
 
   function close(){
     s += ')';
-    depth--;
+    if(--depth === 0) open();
+  }
+
+  function next(){
+    if(O.rand(2) === 0) s += toName(r(depth), depth);
+    else open();
   }
 
   function r(n=1){
-    return ser.read(n);
+    return O.rand(n);
   }
-}
-
-function genBuf(start, prob){
-  var len = O.randInt(start, prob);
-  return Buffer.from(O.ca(len, () => O.rand(256)));
 }
