@@ -3,6 +3,7 @@
 const HD = 1;
 const SCALE = !HD;
 const WAIT_AFTER_END = HD;
+const RANDOM = 0;
 
 const fs = require('fs');
 const path = require('path');
@@ -87,10 +88,12 @@ async function main(){
           if(!d.has(x, y) || dPix.get(x, y)) return;
           dPix.set(x, y, 1);
 
-          var n = O.rand(v + 2);
-          while(n >= queue.length)
-            queue.push([]);
-          queue[n].push([x, y]);
+          v += 2;
+          if(RANDOM) v = O.rand(v);
+          else v >>= 1;
+
+          while(v >= queue.length) queue.push([]);
+          queue[v].push([x, y]);
         });
       }
 

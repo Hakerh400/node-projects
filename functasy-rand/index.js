@@ -10,14 +10,15 @@ const {Serializer, toName} = functasy;
 
 const VERBOSE = 1;
 
-const LENGTH = [200, 300];
-const DEPTH = [20, 30];
-const START_LENGTH = 50;
+const LENGTH = [1e3, 1e5];
+const DEPTH = [20, 50];
+const START_LENGTH = 200;
 
-const TICKS_NUM = 2e5;
+const TICKS_NUM = 1e6;
+const TIMEOUTS_NUM = 2;
+
 const INPUTS_NUM = 256;
-const OUTPUTS_NUM = 2;
-const TIMEOUTS_NUM = 5;
+const OUTPUTS_NUM = 3;
 
 module.exports = {
   gen,
@@ -35,6 +36,10 @@ function gen(includeOuts=0){
 
     var outs = new Set();
     var timeouts = 0;
+
+    log('-'.repeat(80));
+    log(src);
+    log('-'.repeat(80));
 
     for(var i = 0; i !== INPUTS_NUM; i++){
       var input = start + i.toString(2).split('').reverse().join('');

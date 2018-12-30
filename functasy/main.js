@@ -16,10 +16,7 @@ function main(){
   var src = fs.readFileSync(srcFile);
   var input = fs.readFileSync(inputFile);
 
-  var eng = new functasy.EngineWithIO(src, input);
-  eng.run();
-
-  var output = eng.getOutput();
+  var output = functasy.run(src, input, functasy.IO, 1, 1e5, 'utf8');
   fs.writeFileSync(outputFile, output);
 }
 
