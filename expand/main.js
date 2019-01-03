@@ -2,7 +2,7 @@
 
 const HD = 1;
 const SCALE = !HD;
-const WAIT_AFTER_END = HD;
+const WAIT_AFTER_END = 0;
 const RANDOM = 1;
 
 const fs = require('fs');
