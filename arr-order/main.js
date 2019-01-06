@@ -17,7 +17,7 @@ function main(){
     assert.strictEqual(id, i);
 
     arr = arrOrder.arr(vals, i, 1);
-    id = arrOrder.id(vals, arr, 2);
+    id = arrOrder.id(vals, arr, 1);
     assert.strictEqual(id, i);
   }
 }
