@@ -2,7 +2,7 @@
 
 const STABILIZE_FPS = 1;
 const RECORD_CURSOR = 1;
-const VERBOSE = 0;
+const VERBOSE = 1;
 
 const fs = require('fs');
 const path = require('path');
@@ -15,10 +15,12 @@ const scs = require('../screenshot');
 const vi = require('../virtual-input');
 const setPriority = require('../set-priority');
 
-const TIMEOUT = 0;
+const TIMEOUT = VERBOSE ? 3e3 : 0;
 
 const cwd = __dirname;
 const curImgPath = path.join(cwd, 'cursor.png');
+
+const recorderName = decode(']23/6/7905:');
 
 const w = 1920;
 const h = 1080;
@@ -33,11 +35,20 @@ var rec = 0;
 setTimeout(() => main().catch(log));
 
 async function main(){
+  if(VERBOSE)
+    log(`\n=== ${recorderName} screen recorder ===\n`);
+
+  info('Increasing process priority to "realtime"');
   await setPriority();
   media.setPriority();
 
-  startRecording();
+  info('Initializing CLI interface');
   aels();
+
+  await startRecording();
+
+  info('Started recording');
+  info('Press enter to stop');
 }
 
 function aels(){
@@ -47,17 +58,13 @@ function aels(){
 async function onInput(str){
   if(str === ''){
     rl.close();
+
+    info('Stopping recorder');
     stopRecording();
   }
 }
 
 async function startRecording(){
-  if(rec !== 0){
-    info('Screen recording is already started');
-    return;
-  }
-
-  info('Starting screen recording');
   rec = 2;
 
   var cur = await media.loadImage(curImgPath);
@@ -113,28 +120,10 @@ async function startRecording(){
 }
 
 async function stopRecording(){
-  if(rec !== 2){
-    info('Screen recording is already stopped');
-    return;
-  }
-
-  info('Stopping screen recording');
   await sleep();
 
   rec = 1;
   await O.while(() => rec !== 0);
-}
-
-async function launchChrome(){
-  info('Launching chrome 67.0.3396.87');
-  await sleep();
-
-  cp.spawn('cmd', [
-    '/k', 'chrome',
-  ], {
-    stdio: 'ignore',
-    windowsHide: true,
-  });
 }
 
 async function sleep(){
@@ -143,5 +132,13 @@ async function sleep(){
 
 function info(msg){
   if(!VERBOSE) return;
-  log(msg);
+  log(`[info] ${msg}`);
+}
+
+function decode(str){
+  return str.split('').
+    map(a => a.charCodeAt(0) - 32).
+    map(a => 94 - a).
+    map(a => String.fromCharCode(32 + a)).
+    join('');
 }
