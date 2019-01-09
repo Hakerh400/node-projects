@@ -30,8 +30,6 @@ var rl = readline.rl();
 setTimeout(() => main().catch(log));
 
 async function main(){
-  await setPriority();
-
   aels();
 
   var dirs = O.sanl(fs.readFileSync(path.join(mainDir, 'playlist.txt'), 'utf8'));
@@ -101,6 +99,8 @@ function play(){
       ] : [],
       '-i', file,
     ]);
+
+    setPriority(proc.pid);
 
     proc.stdout.on('data', O.nop);
     proc.stderr.on('data', O.nop);
