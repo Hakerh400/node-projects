@@ -47,7 +47,7 @@ async function main(){
 
   await startRecording();
 
-  info('Started recording');
+  info('Started recorder');
   info('Press enter to stop');
 }
 
