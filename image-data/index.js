@@ -47,37 +47,6 @@ class ImageData{
     this.g.putImageData(this.imgd, 0, 0);
   }
 
-  iterate(func, includeAlpha=false){
-    const {w, h, d} = this;
-
-    if(includeAlpha){
-      for(var y = 0, i = 0; y < h; y++){
-        for(var x = 0; x < w; x++, i += 4){
-          var col = func(x | 0, y | 0, d[i | 0] | 0, d[(i | 0) + 1 | 0] | 0, d[(i | 0) + 2 | 0] | 0, d[(i | 0) + 3 | 0] | 0);
-
-          if(col){
-            d[i | 0] = col[0] | 0;
-            d[(i | 0) + 1 | 0] = col[1] | 0;
-            d[(i | 0) + 2 | 0] = col[2] | 0;
-            d[(i | 0) + 3 | 0] = col[3] | 0;
-          }
-        }
-      }
-    }else{
-      for(var y = 0, i = 0; y < h; y++){
-        for(var x = 0; x < w; x++, i += 4){
-          var col = func(x | 0, y | 0, d[i | 0] | 0, d[(i | 0) + 1 | 0] | 0, d[(i | 0) + 2 | 0] | 0);
-          
-          if(col){
-            d[i | 0] = col[0] | 0;
-            d[(i | 0) + 1 | 0] = col[1] | 0;
-            d[(i | 0) + 2 | 0] = col[2] | 0;
-          }
-        }
-      }
-    }
-  }
-
   get(x, y, col, includeAlpha){
     const {w, h, d} = this;
 
@@ -133,6 +102,41 @@ class ImageData{
     d[i | 0] = r | 0;
     d[(i | 0) + 1 | 0] = g | 0;
     d[(i | 0) + 2 | 0] = b | 0;
+  }
+
+  iter(func, includeAlpha=false){
+    const {w, h, d} = this;
+
+    if(includeAlpha){
+      for(var y = 0, i = 0; y < h; y++){
+        for(var x = 0; x < w; x++, i += 4){
+          var col = func(x | 0, y | 0, d[i | 0] | 0, d[(i | 0) + 1 | 0] | 0, d[(i | 0) + 2 | 0] | 0, d[(i | 0) + 3 | 0] | 0);
+
+          if(col){
+            d[i | 0] = col[0] | 0;
+            d[(i | 0) + 1 | 0] = col[1] | 0;
+            d[(i | 0) + 2 | 0] = col[2] | 0;
+            d[(i | 0) + 3 | 0] = col[3] | 0;
+          }
+        }
+      }
+    }else{
+      for(var y = 0, i = 0; y < h; y++){
+        for(var x = 0; x < w; x++, i += 4){
+          var col = func(x | 0, y | 0, d[i | 0] | 0, d[(i | 0) + 1 | 0] | 0, d[(i | 0) + 2 | 0] | 0);
+          
+          if(col){
+            d[i | 0] = col[0] | 0;
+            d[(i | 0) + 1 | 0] = col[1] | 0;
+            d[(i | 0) + 2 | 0] = col[2] | 0;
+          }
+        }
+      }
+    }
+  }
+
+  iterate(func, includeAlpha){
+    this.iter(func, includeAlpha);
   }
 };
 
