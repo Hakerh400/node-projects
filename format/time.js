@@ -4,9 +4,9 @@ const fs = require('fs');
 const path = require('path');
 const O = require('../omikron');
 
-module.exports = formatTime;
+module.exports = fTime;
 
-function formatTime(t){
+function fTime(t){
   var years = t / (60 * 60 * 24 * 31 * 12) | 0;
   var months = t / (60 * 60 * 24 * 31) % 12 | 0;
   var days = t / (60 * 60 * 24) % 31 | 0;

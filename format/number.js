@@ -4,9 +4,9 @@ const fs = require('fs');
 const path = require('path');
 const O = require('../omikron');
 
-module.exports = formatNumber;
+module.exports = fNum;
 
-function formatNumber(num, forceSign=0){
+function fNum(num, forceSign=0){
   var sign = Math.sign(num);
   num = Math.abs(num);
 

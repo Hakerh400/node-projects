@@ -4,9 +4,9 @@ const fs = require('fs');
 const path = require('path');
 const O = require('../omikron');
 
-module.exports = ffn;
+module.exports = fPath;
 
-function ffn(name){
+function fPath(name){
   if(name.startsWith('-') && name.length !== 1){
     var dir = name.match(/[a-zA-Z0-9]+/)[0];
     name = name.substring(dir.length + 2);
