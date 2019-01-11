@@ -8,7 +8,7 @@ const logSync = require('../log-sync');
 
 const MAX_STR_LEN = 160;
 
-var startTime = null;
+let startTime = null;
 
 logStatus.reset = reset;
 
@@ -18,38 +18,29 @@ function logStatus(f, n=null, type='frame'){
   if(startTime === null)
     startTime = Date.now();
 
-  var isSizeKnown = n !== null;
+  const isSizeKnown = n !== null;
+  const dt = Date.now() - startTime;
+  const eta = calcTime(dt, f, n);
 
-  var msgs = [
+  const msgs = [
     `Processing ${type} ${format.num(f)}${isSizeKnown ? ` out of ${format.num(n)}` : ``}`,
-    ...isSizeKnown ? [`ETA: ${format.time(calcTime(startTime, f, n))}`] : [],
-    `Speed: ${formatInt(f / (Math.max(Date.now() - startTime, 1) / 1e3))}`,
+    ...isSizeKnown && eta > 0 ? [`ETA: ${format.time(eta)}`] : [],
+    ...dt !== 0 ? [`Speed: ${f / (dt / 1e3) + .5 | 0}`] : [],
   ];
 
   log(msgs.join(' '.repeat(2)));
 }
 
-function calcTime(t, f, n){
-  var dt = Date.now() - t;
-  var remaining = dt * (n - f + 1) / f;
-  return formatInt(remaining / 1e3 + .5);
-}
-
-function formatInt(val){
-  val = Math.floor(val);
-
-  if(!(1 / val)) val = '-';
-  else val = String(val);
-
-  return val;
+function calcTime(dt, f, n){
+  const remaining = dt * (n - f + 1) / f;
+  return remaining / 1e3 + .5 | 0;
 }
 
 function log(str){
-  if(str.length < MAX_STR_LEN){
+  if(str.length < MAX_STR_LEN)
     str += '\n';
-  }else if(str.length > MAX_STR_LEN){
+  else if(str.length > MAX_STR_LEN)
     str = `${str.substring(0, MAX_STR_LEN - 3)}...`;
-  }
 
   logSync(str);
 }

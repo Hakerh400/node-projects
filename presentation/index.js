@@ -39,7 +39,7 @@ class Presentation{
   }
 
   async render(file, func, cb=O.nop){
-    var {w, h, fps, fast} = this;
+    const {w, h, fps, fast} = this;
 
     this.file = file;
     this.func = func;
@@ -56,7 +56,7 @@ class Presentation{
   }
 
   async start(){
-    var {w, h, g, g1} = this;
+    const {w, h, g, g1} = this;
 
     this.started = true;
     await this.func(w, h, g, g1);
@@ -73,7 +73,7 @@ class Presentation{
   }
 
   async frame(arg=true){
-    var {mFrame} = this;
+    const {mFrame} = this;
 
     if(this.verbose)
       media.logStatus(mFrame.f, this.framesNum);
@@ -92,7 +92,7 @@ class Presentation{
   }
 
   async fade(time=this.transTime){
-    var {g, g1, g2} = this;
+    const {g, g1, g2} = this;
 
     var alpha = g.globalAlpha;
     var ttime = time;
@@ -116,7 +116,7 @@ class Presentation{
   }
 
   async fadeOut(time=this.transTime){
-    var {w, h, g1} = this;
+    const {w, h, g1} = this;
 
     g1.fillStyle = 'black';
     g1.fillRect(0, 0, w, h);
@@ -124,8 +124,8 @@ class Presentation{
     await this.fade(time);
   }
 
-  async caption(text, time=this.transTime, fadeOut=1){
-    var {w, h, wh, hh, g, g1} = this;
+  async caption(text, wait=this.transTime, fade=wait){
+    const {w, h, wh, hh, g, g1} = this;
 
     g.fillStyle = 'black';
     g.fillRect(0, 0, w, h);
@@ -135,10 +135,9 @@ class Presentation{
     g1.fillStyle = 'darkgray';
     g1.fillText(text, wh, hh);
 
-    await this.fade(time);
-
-    if(fadeOut)
-      await this.fadeOut(time);
+    await this.fade(fade);
+    await this.wait(wait);
+    await this.fadeOut(fade);
   }
 };
 
