@@ -24,7 +24,7 @@ const outputFile = getOutputFile();
 setTimeout(() => main().catch(log));
 
 async function main(){
-  var img = await media.loadImage(inputFile);
+  const img = await media.loadImage(inputFile);
 
   function init(g){
     g.drawImage(img.canvas, 0, 0);
@@ -41,6 +41,6 @@ async function main(){
 
 function getOutputFile(vid=0){
   if(vid || !HD) return '-vid/1.mp4';
-  var project = path.parse(__dirname).name;
+  const project = path.parse(__dirname).name;
   return `-render/${project}.mp4`;
 }

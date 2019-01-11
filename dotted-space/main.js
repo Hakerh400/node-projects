@@ -1,6 +1,7 @@
 'use strict';
 
 const HD = 1;
+const DISPLAY_DOTS = 0;
 
 const fs = require('fs');
 const path = require('path');
@@ -12,17 +13,16 @@ const DottedSpace = require('./dotted-space');
 const Demo = require('./demo');
 const Line = require('./line');
 
-const DISPLAY_DOTS = 1;
 const TIME_TO_WAIT = 5e3;
+const LINES_PER_FRAME = 100;
 
 const w = HD ? 1920 : 640;
 const h = HD ? 1080 : 480;
 const fps = 60;
 const fast = !HD;
 
-const linesNum = 4;
-const space = 20;
-const maxDist = null;
+const linesNum = HD ? 6750 : 1000;
+const space = 1;
 const fontScale = .075;
 
 const [wh, hh] = [w, h].map(a => a >> 1);
@@ -31,12 +31,12 @@ const spaceh = space / 2;
 const outputFile = getOutputFile(1);
 
 const demos = [
-  new Demo('Square grid', p => {}),
+  /*new Demo('Square grid', p => {}),
 
   new Demo('Rotated square grid', p => {
     if(p.y / space & 1) p.x += spaceh;
     p.x *= Math.SQRT2;
-  }),
+  }),*/
 
   new Demo('Random distribution', p => {
     p.x = O.randf(w);
@@ -52,7 +52,7 @@ async function main(){
   const pr = new Presentation(w, h, fps, fast);
 
   pr.framesNum = demos.length * (
-    (w * h / space ** 2) / linesNum +
+    (w * h / space ** 2) / LINES_PER_FRAME +
     (pr.transTime * 5 + TIME_TO_WAIT) / 1e3 * fps
   ) | 0;
 
@@ -67,7 +67,8 @@ async function main(){
       if(!first) await pr.fadeOut();
       first = 0;
 
-      await pr.caption(demo.name);
+      if(demos.length !== 1)
+        await pr.caption(demo.name);
 
       if(DISPLAY_DOTS)
         g1.fillStyle = 'white';
@@ -75,7 +76,7 @@ async function main(){
       O.repeat(h, y => O.repeat(w, x => {
         if(!(x % space === 0 && y % space === 0)) return;
 
-        var p = new O.Vector(x + O.randf(1e-3) + .5, y + O.randf(1e-3) + .5);
+        let p = new O.Vector(x + O.randf(1e-3) + .5, y + O.randf(1e-3) + .5);
         demo.func(p);
 
         ds.add(p.x, p.y);
@@ -84,30 +85,33 @@ async function main(){
           g1.fillRect(p.x | 0, p.y | 0, 1, 1);
       }));
 
-      await pr.fade();
+      if(DISPLAY_DOTS)
+        await pr.fade();
+      else
+        await pr.frame();
 
-      var lines = O.ca(linesNum, (i, k) => {
-        var x = O.randf(w);
-        var y = O.randf(h);
-        var col = O.Color.from(O.hsv(k));
+      const lines = O.ca(linesNum, (i, k) => {
+        let angle = O.pih - k * O.pi2;
+        let radius = h / 4;
+
+        let x = wh + Math.cos(angle) * radius;
+        let y = hh - Math.sin(angle) * radius;
+
+        let col = O.Color.from(O.hsv(k));
 
         return new Line(x, y, col);
       });
 
-      do{
-        var active = 0;
+      g.clearRect(0, 0, w, h);
+      g.globalCompositeOperation = 'destination-over';
 
-        for(var line of lines){
-          if(!line.active) continue;
-          active = 1;
+      mainLoop: while(1){
+        for(let i = 0; i !== LINES_PER_FRAME; i++){
+          let line = O.randElem(lines);
 
-          var {x, y} = line;
-          var p = ds.nearest(x, y);
-
-          if(p === null || (maxDist !== null && p.dist(x, y) > maxDist)){
-            line.active = 0;
-            break;
-          }
+          let {x, y} = line;
+          let p = ds.nearest(x, y);
+          if(p === null) break mainLoop;
 
           ds.remove(p.x, p.y);
 
@@ -119,11 +123,15 @@ async function main(){
           g.moveTo(x, y);
           g.lineTo(p.x, p.y);
           g.stroke();
+
         }
 
         await pr.frame();
-      }while(active);
+      }
 
+      g.globalCompositeOperation = 'source-over';
+
+      await pr.frame();
       await pr.wait(TIME_TO_WAIT);
     }
   });
@@ -131,6 +139,6 @@ async function main(){
 
 function getOutputFile(vid=0){
   if(vid || !HD) return '-vid/1.mp4';
-  var project = path.parse(__dirname).name;
+  const project = path.parse(__dirname).name;
   return `-render/${project}.mp4`;
 }
