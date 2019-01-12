@@ -1,6 +1,6 @@
 'use strict';
 
-const HD = 1;
+const HD = 0;
 const DISPLAY_DOTS = 0;
 
 const fs = require('fs');
@@ -21,8 +21,8 @@ const h = HD ? 1080 : 480;
 const fps = 60;
 const fast = !HD;
 
-const linesNum = HD ? 6750 : 1000;
-const space = 1;
+const linesNum = 20;
+const space = 2;
 const fontScale = .075;
 
 const [wh, hh] = [w, h].map(a => a >> 1);
@@ -39,8 +39,6 @@ const demos = [
   }),*/
 
   new Demo('Random distribution', p => {
-    p.x = O.randf(w);
-    p.y = O.randf(h);
   }),
 ];
 
@@ -76,10 +74,10 @@ async function main(){
       O.repeat(h, y => O.repeat(w, x => {
         if(!(x % space === 0 && y % space === 0)) return;
 
-        let p = new O.Vector(x + O.randf(1e-3) + .5, y + O.randf(1e-3) + .5);
+        let p = new O.Vector(x, y);
         demo.func(p);
 
-        ds.add(p.x, p.y);
+        ds.add(p.x + .5|0, p.y + .5|0);
 
         if(DISPLAY_DOTS)
           g1.fillRect(p.x | 0, p.y | 0, 1, 1);
@@ -99,7 +97,7 @@ async function main(){
 
         let col = O.Color.from(O.hsv(k));
 
-        return new Line(x, y, col);
+        return new Line(x|0, y|0, col);
       });
 
       g.clearRect(0, 0, w, h);
@@ -123,7 +121,6 @@ async function main(){
           g.moveTo(x, y);
           g.lineTo(p.x, p.y);
           g.stroke();
-
         }
 
         await pr.frame();

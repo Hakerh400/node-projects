@@ -114,7 +114,7 @@ class DottedSpace{
       x2++, y2++;
     }
 
-    let psArr = Array.from(ps);
+    const psArr = O.shuffle(Array.from(ps));
 
     psArr.sort((p1, p2) => {
       if(p1.dist(xs, ys) <= p2.dist(xs, ys)) return -1;
