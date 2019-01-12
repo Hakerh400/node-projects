@@ -1,6 +1,6 @@
 'use strict';
 
-const HD = 0;
+const HD = 1;
 const DISPLAY_DOTS = 0;
 
 const fs = require('fs');
@@ -21,8 +21,8 @@ const h = HD ? 1080 : 480;
 const fps = 60;
 const fast = !HD;
 
-const linesNum = 20;
-const space = 2;
+const linesNum = 1;
+const space = 10;
 const fontScale = .075;
 
 const [wh, hh] = [w, h].map(a => a >> 1);
@@ -31,14 +31,16 @@ const spaceh = space / 2;
 const outputFile = getOutputFile(1);
 
 const demos = [
-  /*new Demo('Square grid', p => {}),
+  new Demo('Square grid', p => {}),
 
   new Demo('Rotated square grid', p => {
     if(p.y / space & 1) p.x += spaceh;
     p.x *= Math.SQRT2;
-  }),*/
+  }),
 
   new Demo('Random distribution', p => {
+    p.x = O.randf(w);
+    p.y = O.randf(h);
   }),
 ];
 
@@ -62,7 +64,15 @@ async function main(){
     g1.font = `${w * fontScale}px arial`;
 
     for(let demo of demos){
-      if(!first) await pr.fadeOut();
+      if(!first){
+        g.globalCompositeOperation = 'destination-over';
+        g.fillStyle = 'black';
+        g.fillRect(0, 0, w, h);
+        g.globalCompositeOperation = 'source-over';
+
+        await pr.fadeOut();
+      }
+
       first = 0;
 
       if(demos.length !== 1)
@@ -77,7 +87,7 @@ async function main(){
         let p = new O.Vector(x, y);
         demo.func(p);
 
-        ds.add(p.x + .5|0, p.y + .5|0);
+        ds.add(p.x + .5, p.y + .5);
 
         if(DISPLAY_DOTS)
           g1.fillRect(p.x | 0, p.y | 0, 1, 1);
@@ -97,7 +107,7 @@ async function main(){
 
         let col = O.Color.from(O.hsv(k));
 
-        return new Line(x|0, y|0, col);
+        return new Line(x, y, col);
       });
 
       g.clearRect(0, 0, w, h);
