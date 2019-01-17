@@ -24,7 +24,7 @@ function logStatus(f, n=null, type='frame'){
 
   const msgs = [
     `Processing ${type} ${format.num(f)}${isSizeKnown ? ` out of ${format.num(n)}` : ``}`,
-    ...isSizeKnown && eta > 0 ? [`ETA: ${format.time(eta)}`] : [],
+    ...isSizeKnown && eta >= 0 ? [`ETA: ${format.time(eta)}`] : [],
     ...dt !== 0 ? [`Speed: ${f / (dt / 1e3) + .5 | 0}`] : [],
   ];
 

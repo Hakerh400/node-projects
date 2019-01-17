@@ -1,8 +1,8 @@
 'use strict';
 
-const STABILIZE_FPS = 1;
-const RECORD_CURSOR = 1;
-const VERBOSE = 1;
+const STABILIZE_FPS = 0;
+const RECORD_CURSOR = 0;
+const VERBOSE = 0;
 
 const fs = require('fs');
 const path = require('path');
