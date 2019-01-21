@@ -19,24 +19,27 @@ function post(data){
 
   return new Promise((resolve, reject) => {
     const opts = {
-      'method': 'POST',
-      'host': 'file.io',
-      'path': '/',
-      'port': 443,
-      'headers': {
+      method: 'POST',
+      host: 'file.io',
+      path: '/',
+      port: 443,
+      headers: {
         'content-type': `multipart/form-data; boundary=${bnd}`,
       },
     }
 
     const req = https.request(opts, res => {
       const bufs = [];
+
       res.on('data', buf => bufs.push(buf));
+
       res.on('end', () => {
         const json = Buffer.concat(bufs);
         const obj = JSON.parse(json);
         if(!obj.success) return reject(obj);
         resolve(obj.key);
       });
+      
       res.on('error', reject);
     });
 
