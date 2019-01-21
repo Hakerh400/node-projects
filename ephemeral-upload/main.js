@@ -13,11 +13,11 @@ async function main(){
 }
 
 function post(data){
-  const buf = Buffer.from(data);
-  const uid = genUid();
-  const bnd = genBnd();
-
   return new Promise((resolve, reject) => {
+    const buf = Buffer.from(data);
+    const uid = genUid();
+    const bnd = genBnd();
+    
     const opts = {
       method: 'POST',
       host: 'file.io',
