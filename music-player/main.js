@@ -8,10 +8,10 @@ const readline = require('../readline');
 const fsRec = require('../fs-rec');
 const setPriority = require('../set-priority');
 
-const SHUFFLE = 1;
-const SORT = !SHUFFLE;
 const TEST_MODE = 1;
 const SUB_FOLDERS = 0;
+const SHUFFLE = 1;
+const SORT = !SHUFFLE;
 
 const mainDir = 'D:/Music';
 
@@ -91,12 +91,12 @@ function aels(){
 
       switch(c){
         case ' ': playOrPause(); break;
-        case 'p': prev(); break;
         case 'r': restart(); break;
         case 'q': exit(); break;
 
-        case 't': TEST_MODE && moveTo('Trance'); break;
         case 'n': TEST_MODE ? moveTo('Nightcore') : next(); break;
+        case 'p': TEST_MODE ? moveTo('Priority') : prev(); break;
+        case 't': TEST_MODE && moveTo('Trance'); break;
         case 'i': TEST_MODE && moveTo('Improvable'); break;
         case 'o': TEST_MODE && moveTo('Other'); break;
       }
@@ -135,7 +135,7 @@ function play(){
       }
 
       proc = null;
-      waiting = TEST_MODE && !shouldExit;
+      waiting = TEST_MODE && !(wasPaused || shouldExit);
 
       O.while(() => waiting).then(() => {
         waiting = 0;
