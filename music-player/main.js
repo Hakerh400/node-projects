@@ -10,42 +10,58 @@ const setPriority = require('../set-priority');
 
 const SHUFFLE = 1;
 const SORT = !SHUFFLE;
+const TEST_MODE = 1;
+const SUB_FOLDERS = 0;
 
 const mainDir = 'D:/Music';
 
-var index = 0;
-var playing = 1;
-var proc = null;
-var file = null;
+const rl = readline.rl();
 
-var timeStart = 0;
-var timeTotal = 0;
+let index = 0;
+let playing = 1;
+let proc = null;
+let file = null;
 
-var wasPaused = 0;
-var wasRestarted = 0;
-var shouldExit = 0;
+let timeStart = 0;
+let timeTotal = 0;
 
-var rl = readline.rl();
+let wasPaused = 0;
+let wasRestarted = 0;
+let shouldExit = 0;
+let waiting = 0;
 
 setTimeout(() => main().catch(log));
 
 async function main(){
-  aels();
+  O.enhanceRNG();
 
-  var dirs = O.sanl(fs.readFileSync(path.join(mainDir, 'playlist.txt'), 'utf8'));
-  var files = [];
+  const dirs = O.sanl(fs.readFileSync(path.join(mainDir, 'playlist.txt'), 'utf8'));
+  const files = [];
 
   dirs.forEach(dir => {
-    fsRec.processFilesSync(dir, d => {
-      if(d.processed) return;
-      if(d.isDir) return;
+    if(SUB_FOLDERS){
+      fsRec.processFilesSync(dir, d => {
+        if(d.processed) return;
+        if(d.isDir) return;
 
-      files.push(d.fullPath);
-    });
+        if(!files.includes(d.fullPath))
+          files.push(d.fullPath);
+      });
+    }else{
+      for(const file of fs.readdirSync(dir)){
+        const fp = path.join(dir, file);
+        if(!fs.statSync(fp).isFile()) continue;
+
+        if(!files.includes(fp))
+          files.push(fp);
+      }
+    }
   });
 
   if(SORT) O.sortAsc(files);
   if(SHUFFLE) O.shuffle(files);
+
+  aels();
 
   while(index < files.length && !shouldExit){
     if(index < 0) index = 0;
@@ -74,10 +90,15 @@ function aels(){
       var c = str[i];
 
       switch(c){
-        case 'p': prev(); break;
-        case 'n': next(); break;
-        case 'r': restart(); break;
         case ' ': playOrPause(); break;
+        case 'p': prev(); break;
+        case 'r': restart(); break;
+        case 'q': exit(); break;
+
+        case 't': TEST_MODE && moveTo('Trance'); break;
+        case 'n': TEST_MODE ? moveTo('Nightcore') : next(); break;
+        case 'i': TEST_MODE && moveTo('Improvable'); break;
+        case 'o': TEST_MODE && moveTo('Other'); break;
       }
     }
   });
@@ -114,7 +135,12 @@ function play(){
       }
 
       proc = null;
-      res();
+      waiting = TEST_MODE && !shouldExit;
+
+      O.while(() => waiting).then(() => {
+        waiting = 0;
+        res();
+      });
     });
 
     if(!wasRestarted){
@@ -125,6 +151,27 @@ function play(){
     wasPaused = 0;
     wasRestarted = 0;
   });
+}
+
+function moveTo(dir){
+  const fOld = file;
+  const pd = path.parse(fOld);
+  const fNew = path.join(pd.dir, dir, pd.base);
+
+  if(proc === null) setTimeout(move);
+  else proc.on('exit', move);
+
+  next();
+
+  function move(){
+    rename(fOld, fNew);
+    waiting = 0;
+  }
+}
+
+function rename(fOld, fNew){
+  fsRec.createDirSync(path.join(fNew, '..'));
+  fs.renameSync(fOld, fNew);
 }
 
 function playOrPause(){
@@ -160,5 +207,7 @@ function kill(){
 
 function exit(){
   shouldExit = 1;
+  waiting = 0;
   rl.close();
+  kill();
 }
