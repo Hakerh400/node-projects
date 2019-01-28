@@ -21,6 +21,7 @@ class FileQueueElem{
     this.name = name;
     this.isDir = isDir;
     this.processed = processed;
+    this.ext = path.parse(name).ext.slice(1);
   }
 
   static copy(elem){
