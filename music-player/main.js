@@ -135,7 +135,7 @@ function play(){
       }
 
       proc = null;
-      waiting = TEST_MODE && !(wasPaused || shouldExit);
+      waiting = TEST_MODE && !(wasPaused || wasRestarted || shouldExit);
 
       O.while(() => waiting).then(() => {
         waiting = 0;
