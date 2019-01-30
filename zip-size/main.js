@@ -39,10 +39,11 @@ async function main(){
     await zipFiles(dir, zipFile);
 
     const actualSize = fs.statSync(zipFile).size;
-    log(actualSize / size);
+    log((actualSize / size).toFixed(9));
     if(actualSize === size) break;
 
     fileSize = fileSize / actualSize * size + .5 | 0;
+    fileSize += O.rand(-5, 5);
   }
 
   fs.unlinkSync(file);
