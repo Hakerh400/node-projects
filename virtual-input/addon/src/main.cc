@@ -21,7 +21,7 @@ typedef const FunctionCallbackInfo<Value> &CbInfo;
   CTX(); \
   int args[num]; \
   for(int i = 0; i < num; i++) \
-    args[i] = info[i + 1]->Int32Value(ctx).FromMaybe(0);
+    args[i] = info[i]->Int32Value(ctx).FromMaybe(0);
 
 #define RET(val) info.GetReturnValue().Set(Number::New(iso, val));
 

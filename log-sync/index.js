@@ -6,7 +6,9 @@ const O = require('../omikron');
 
 const fdOut = process.stdout.fd;
 
-module.exports = logSync;
+module.exports = (
+  O.isElectron ? console.logRaw.bind(console) : logSync
+);
 
 function logSync(data){
   fs.writeSync(fdOut, data);

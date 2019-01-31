@@ -8,10 +8,10 @@
     }, {
       "name": "electron",
       "exe": "C:/Users/Thomas/AppData/Roaming/npm/node_modules/electron/dist/electron.exe",
-      "script": "app.js",
+      "script": "electron.js",
       "options": {
         "skipFirst": true,
-        "killOnSigint": true
+        "killOnSigint": false
       }
     }, {
       "name": "python",

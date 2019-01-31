@@ -6,7 +6,7 @@ const ENABLE_TRUNC = 0;
 const fs = require('fs');
 const path = require('path');
 const cp = require('child_process');
-const nodeCanvas = require('canvas');
+const nodeCanvas = require('../canvas');
 const O = require('../omikron');
 const logSync = require('../log-sync');
 const logStatus = require('../log-status');
@@ -22,12 +22,13 @@ const FFMPEG_DIR = 'C:/Program Files/Ffmpeg/bin/original';
 
 const BGRA = '-f rawvideo -pix_fmt bgra';
 const RGBA = '-f rawvideo -pix_fmt rgba';
-const TRUNC = ENABLE_TRUNC ? '-vf "scale=trunc(iw/2)*2:trunc(ih/2)*2"' : '';
+const PIXEL_FORMAT = O.isElectron ? RGBA : BGRA;
 
 const VIDEO_PRESET = '-preset slow -profile:v high -crf 18 -coder 1 -pix_fmt yuv420p -movflags +faststart -bf 2 -c:a aac -b:a 384k -profile:a aac_low';
 const FAST_PRESET = `-c:v h264_nvenc ${VIDEO_PRESET}`;
 const HD_PRESET = `-c:v libx264 ${VIDEO_PRESET}`;
 
+const TRUNC = ENABLE_TRUNC ? '-vf "scale=trunc(iw/2)*2:trunc(ih/2)*2"' : '';
 const SYM_PROC_IRRELEVANT = Symbol();
 
 const ctx = createContext(1, 1);
@@ -187,14 +188,8 @@ function aels(){
 }
 
 function onError(err){
-  if(err instanceof Error)
-    err = err.stack;
-
-  if(typeof global.log === 'function')
-    log(err);
-  else
-    console.log(err);
-  
+  if(!O.isElectron)
+    console.error(err);
   closeProcs();
 }
 
@@ -261,7 +256,7 @@ function renderImage(output, w, h, frameFunc=O.nop, exitCb=O.nop){
   var canvas = createCanvas(w, h);
   var g = canvas.getContext('2d');
 
-  var proc = spawnFfmpeg(`${BGRA} -s ${w}x${h} -i - -y ${TRUNC} "${output}"`, exitCb);
+  var proc = spawnFfmpeg(`${PIXEL_FORMAT} -s ${w}x${h} -i - -y ${TRUNC} "${output}"`, exitCb);
 
   frameFunc(w, h, g);
 
@@ -279,7 +274,7 @@ function editImage(input, output, frameFunc=O.nop, exitCb=O.nop){
     var buff = Buffer.alloc(0);
 
     var proc1 = spawnFfmpeg(`-i "${input}" ${RGBA} -vframes 1 -`);
-    var proc2 = spawnFfmpeg(`${BGRA} -s ${w}x${h} -i - -y ${TRUNC} "${output}"`, exitCb);
+    var proc2 = spawnFfmpeg(`${PIXEL_FORMAT} -s ${w}x${h} -i - -y ${TRUNC} "${output}"`, exitCb);
 
     proc1.stdout.on('data', data => {
       buff = Buffer.concat([buff, data]);
@@ -301,7 +296,7 @@ function renderVideo(output, w, h, fps, fast, frameFunc=O.nop, exitCb=O.nop){
   var g = canvas.getContext('2d');
   var f = 0;
 
-  var proc = spawnFfmpeg(`${BGRA} -s ${w}x${h} -framerate ${fps} -i - -y -framerate ${fps} ${
+  var proc = spawnFfmpeg(`${PIXEL_FORMAT} -s ${w}x${h} -framerate ${fps} -i - -y -framerate ${fps} ${
     fast ? FAST_PRESET : HD_PRESET
   } ${TRUNC} "${output}"`, exitCb);
 
@@ -341,7 +336,7 @@ function editVideo(input, output, w2, h2, fps, fast, frameFunc=O.nop, exitCb=O.n
     var f = 0;
 
     var proc1 = spawnFfmpeg(`-i "${input}" ${RGBA} -r ${fps} -`);
-    var proc2 = spawnFfmpeg(`${BGRA} -s ${w2}x${h2} -framerate ${fps} -i - -y -pix_fmt yuv420p -framerate ${fps} ${
+    var proc2 = spawnFfmpeg(`${PIXEL_FORMAT} -s ${w2}x${h2} -framerate ${fps} -i - -y -pix_fmt yuv420p -framerate ${fps} ${
       fast ? FAST_PRESET : HD_PRESET
     } ${TRUNC} "${output}"`, exitCb);
 
@@ -406,7 +401,7 @@ function presentation(output, w, h, fps, fast, exitCb=O.nop){
   var g = canvas.getContext('2d');
   var f = 0;
 
-  var proc = spawnFfmpeg(`${BGRA} -s ${w}x${h} -framerate ${fps} -i - -y -framerate ${fps} ${
+  var proc = spawnFfmpeg(`${PIXEL_FORMAT} -s ${w}x${h} -framerate ${fps} -i - -y -framerate ${fps} ${
     fast ? FAST_PRESET : HD_PRESET
   } ${TRUNC} "${output}"`, exitCb);
 

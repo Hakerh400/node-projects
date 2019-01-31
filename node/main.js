@@ -3,6 +3,7 @@
 const DISPLAY_EXIT_CODE = 0;
 const DISPLAY_SIGINT = 1;
 const KILL_ON_SECOND_SIGINT = 1;
+const ELECTRON_NIGHTLY = 1;
 
 const fs = require('fs');
 const path = require('path');
@@ -11,6 +12,9 @@ const O = require('../omikron');
 const readline = require('../readline');
 const logSync = require('../log-sync');
 const engs = require('./engines');
+
+const cwd = __dirname;
+const electronAppScript = path.join(cwd, 'electron-app.js');
 
 const sigintBuf = Buffer.from([0x03]);
 
@@ -23,6 +27,13 @@ var shouldExit = 0;
 setTimeout(() => main().catch(log));
 
 async function main(){
+  if(ELECTRON_NIGHTLY){
+    engs.electron.exe = engs.electron.exe.replace(
+      '/electron/',
+      '/electron-nightly/'
+    );
+  }
+
   askForInput();
 }
 
@@ -35,13 +46,17 @@ async function processInput(str){
   str = str.trim();
   str = str.replace(/\s+/g, ' ');
 
+  var scriptArgs = [];
+  if(str.length !== 0 && str !== '-')
+    scriptArgs = str.slice(1).trim().split(/\s+/);
+
   var files = getFiles();
 
   loadScript: if(str.length === 0 || str.startsWith('-')){
-    if(files.includes(engs.node.script)){
+    if(files.includes(engs.electron.script)){
+      await spawn('electron', [electronAppScript]);
+    }else if(files.includes(engs.node.script)){
       await spawn('node');
-    }else if(files.includes(engs.electron.script)){
-      await spawn('electron');
     }else if(files.includes(engs.python.script)){
       await spawn('python');
     }else{
@@ -91,12 +106,6 @@ async function processInput(str){
     await clear();
 
     var eng = engs[name];
-    var scriptArgs = [];
-    
-    if(str.length !== 0 && str !== '-'){
-      str = str.slice(1).trim();
-      scriptArgs = str.split(/\s+/);
-    }
 
     proc = spawnProc(eng.exe, [
       ...args,
