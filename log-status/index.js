@@ -23,7 +23,7 @@ function logStatus(f, n=null, type='frame'){
   const eta = calcTime(dt, f, n);
 
   const msgs = [
-    `Processing ${type} ${format.num(f)}${isSizeKnown ? ` out of ${format.num(n)}` : ``}`,
+    `Processing ${type} ${format.num(f)}${isSizeKnown ? ` of ${format.num(n)}` : ``}`,
     ...isSizeKnown && eta >= 0 ? [`ETA: ${format.time(eta)}`] : [],
     ...dt !== 0 ? [`Speed: ${f / (dt / 1e3) + .5 | 0}`] : [],
   ];
