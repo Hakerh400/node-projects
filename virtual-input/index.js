@@ -58,14 +58,14 @@ vi.nav = dir => {
   vi.dir(dir);
 };
 
-vi.code = async (str, lang=null, tMin=25, tMax=150) => {
+vi.code = async (str, lang=null, tMin=20, tMax=120) => {
   str = str
     .replace(/\r\n|\r|\n/g, '\n')
     .replace(/\n\s+/g, '\n');
 
   switch(lang){
     case 'html':
-      str = str.replace(/\/[a-z0-9]+>/g, '/');
+      str = str.replace(/\/[a-z0-9]+>/g, '/\x00\x00');
       break;
   }
 
@@ -74,6 +74,26 @@ vi.code = async (str, lang=null, tMin=25, tMax=150) => {
   let c;
 
   for(c of str){
+    if(prev === '\x00'){
+      const cc = O.cc(c);
+
+      switch(cc){
+        case 0: vi.key(0x1B); break; // Escape
+
+        default:
+          throw new TypeError(`Unsupported instruction 0x${String(cc).padStart(2, '0')}`);
+          break;
+      }
+
+      prev = null;
+      continue;
+    }
+
+    if(c === '\x00'){
+      prev = c;
+      continue;
+    }
+
     if(prev !== '\\'){
       if(/[\(\[\{]/.test(c)) push();
       else if(/\)\]\}/.test(c)) pop();
