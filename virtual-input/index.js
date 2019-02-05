@@ -78,7 +78,7 @@ vi.code = async (str, lang=null, tMin=20, tMax=120) => {
       const cc = O.cc(c);
 
       switch(cc){
-        case 0: vi.key(0x1B); break; // Escape
+        case 0x00: vi.key(0x1B); break; // Escape
 
         default:
           throw new TypeError(`Unsupported instruction 0x${String(cc).padStart(2, '0')}`);
