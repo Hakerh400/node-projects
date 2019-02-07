@@ -28,7 +28,7 @@ module.exports = {
   push
 };
 
-function push(repoName, cb=O.nop){
+async function push(repoName, cb=O.nop){
   var gitInit = path.join(cwd, 'git-init.bat');
   var gitInitTemp = path.join(cwd, 'git-init-temp.bat');
   var gitPush = path.join(cwd, 'git-push.bat');
@@ -70,10 +70,10 @@ function push(repoName, cb=O.nop){
     fs.unlinkSync(gitInitTemp);
   }
 
-  resetDir(dest);
+  await resetDir(dest);
 
   if(fs.existsSync(tempDir))
-    fsRec.deleteFilesSync(tempDir);
+    await fsRec.deleteFilesSync(tempDir);
 
   // Copy readme file
 
@@ -97,12 +97,12 @@ function push(repoName, cb=O.nop){
   if(encrypt)
     throw new TypeError('Encryption is not supported');
 
-  copyAndPushFiles();
+  await copyAndPushFiles();
 
-  function copyAndPushFiles(){
+  async function copyAndPushFiles(){
     // Copy files
 
-    fsRec.processFilesSync(src, e => {
+    await fsRec.processFilesSync(src, e => {
       if(e.processed) return;
 
       var fp = e.fullPath;
@@ -156,7 +156,7 @@ function push(repoName, cb=O.nop){
     // Remove temp dir
 
     if(fs.existsSync(tempDir))
-      fsRec.deleteFilesSync(tempDir);
+      await fsRec.deleteFilesSync(tempDir);
 
     // Call callback
 
@@ -197,8 +197,8 @@ function processFileContent(file, str){
   return lines.join(LINE_SEP);
 }
 
-function resetDir(dir){
-  fsRec.processFilesSync(dir, e => {
+async function resetDir(dir){
+  await fsRec.processFilesSync(dir, e => {
     var isGit = /(?:^|[\/\\])\.git(?:[^a-zA-Z0-9]|$)/.test(e.fullPath);
 
     if(e.processed){

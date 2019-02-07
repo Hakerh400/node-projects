@@ -46,15 +46,15 @@ function processFiles(filePath, func, cb=O.nop){
   processElem(0, [new FileQueueElem(formatPath(filePath))], func, cb);
 }
 
-function processFilesSync(filePath, func){
-  processElem(1, [new FileQueueElem(formatPath(filePath))], func);
+async function processFilesSync(filePath, func){
+  await processElem(1, [new FileQueueElem(formatPath(filePath))], func);
 }
 
-function processElem(sync, queue, func, cb=O.nop){
+async function processElem(sync, queue, func, cb=O.nop){
   while(1){
     var elem = queue.pop();
 
-    func(FileQueueElem.copy(elem));
+    await func(FileQueueElem.copy(elem));
 
     if(elem.isDir && !elem.processed){
       elem.processed = 1;
@@ -84,8 +84,8 @@ function copyFiles(filePath, dest, cb=O.nop){
   processFiles(filePath, d => copyFile(d, dest), cb);
 }
 
-function copyFilesSync(filePath, dest){
-  processFilesSync(filePath, d => copyFile(d, dest));
+async function copyFilesSync(filePath, dest){
+  await processFilesSync(filePath, d => copyFile(d, dest));
 }
 
 function copyFile(d, dest){
@@ -96,12 +96,12 @@ function copyFile(d, dest){
   else fs.writeFileSync(destPath, fs.readFileSync(d.fullPath));
 }
 
-function deleteFiles(filePath, cb=O.nop){
-  processFiles(filePath, deleteFile, cb);
+async function deleteFiles(filePath, cb=O.nop){
+  await processFiles(filePath, deleteFile, cb);
 }
 
-function deleteFilesSync(filePath){
-  processFilesSync(filePath, deleteFile);
+async function deleteFilesSync(filePath){
+  await processFilesSync(filePath, deleteFile);
 }
 
 function deleteFile(d){
