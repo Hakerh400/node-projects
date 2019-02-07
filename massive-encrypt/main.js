@@ -110,7 +110,7 @@ async function encrypt(input, output, pass){
       ser.write(1);
       ser.writeInt(obj[dir][0]);
 
-      out = path.join(out, String(obj[dir][0]));
+      out = path.join(out, String(obj[dir][0] + 1));
       obj = obj[dir][1];
     }
 
@@ -165,9 +165,9 @@ async function decrypt(input, output, pass){
     let obj = map;
     let out = output;
 
-    for(const dir of rel.split(/[\/\\]/)){
+    for(let dir of rel.split(/[\/\\]/)){
       ser.write(1);
-      ser.writeInt(dir | 0);
+      ser.writeInt(--dir);
 
       out = path.join(out, String(obj[dir][0]));
       obj = obj[dir][1];
