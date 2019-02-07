@@ -16,8 +16,15 @@ const rl = readline.createInterface(process.stdin, process.stdout);
 setTimeout(() => main().catch(log));
 
 async function main(){
+  O.proc.on('sigint', () => {
+    log();
+    log('Terminating');
+    O.proc.exit();
+  });
+
   let mode = await ask('Encrypt or decrypt [e/d]');
   mode = mode.toLowerCase();
+
   if('encrypt'.startsWith(mode)) mode = 0;
   else if('decrypt'.startsWith(mode)) mode = 1;
   else err('Unrecognized mode');
@@ -207,12 +214,24 @@ function xorFile(input, output, pass){
   });
 }
 
-function ask(prompt){
-  return new Promise(res => {
-    rl.question(`${prompt}: `, answer => {
-      res(answer);
+async function ask(prompt){
+  let answer;
+
+  while(1){
+    answer = await ask();
+    if(answer !== '') break;
+    log('Input cannot be empty');
+  }
+
+  return answer;
+
+  function ask(){
+    return new Promise(res => {
+      rl.question(`${prompt}: `, answer => {
+        res(answer);
+      });
     });
-  });
+  }
 }
 
 function logFile(file){
