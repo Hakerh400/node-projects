@@ -29,19 +29,21 @@ async function main(){
   else if('decrypt'.startsWith(mode)) mode = 1;
   else err('Unrecognized mode');
 
-  const checkDir = dir => {
-    const msg = 'The path provided';
+  const formatDir = dir => {
+    if(dir[0] === '"')
+      dir = dir.slice(1, dir.length - 1);
 
+    const msg = 'The path provided';
     if(!fs.existsSync(dir)) err(`${msg} doesn't exist`);
     if(!fs.statSync(dir).isDirectory()) err(`${msg} is not a directory`);
+
+    return dir;
   }
 
-  let input = await ask('Input directory');
-  checkDir(input);
+  let input = formatDir(await ask('Input directory'));
   input = path.normalize(input);
 
-  let output = await ask('Output directory');
-  checkDir(output);
+  let output = formatDir(await ask('Output directory'));
   if(fs.readdirSync(output).length !== 0) err('Output directory is not empty');
   output = path.normalize(output);
 
