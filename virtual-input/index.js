@@ -61,7 +61,8 @@ vi.nav = dir => {
 vi.code = async (str, lang=null, tMin=20, tMax=120) => {
   str = str
     .replace(/\r\n|\r|\n/g, '\n')
-    .replace(/\n\s+/g, '\n');
+    .replace(/\n[ \t]+/g, '\n')
+    .replace(/\n[\)\]\}]/g, '\x00\x01');
 
   switch(lang){
     case 'html':
@@ -78,7 +79,15 @@ vi.code = async (str, lang=null, tMin=20, tMax=120) => {
       const cc = O.cc(c);
 
       switch(cc){
-        case 0x00: vi.key(0x1B); break; // Escape
+        case 0x00:
+          vi.key(0x1B); // Escape
+          break;
+
+        case 0x01:
+          vi.nav(2);
+          vi.key(0x24) // Home
+          pop();
+          break;
 
         default:
           throw new TypeError(`Unsupported instruction 0x${String(cc).padStart(2, '0')}`);
@@ -96,8 +105,8 @@ vi.code = async (str, lang=null, tMin=20, tMax=120) => {
 
     if(prev !== '\\'){
       if(/[\(\[\{]/.test(c)) push();
-      else if(/\)\]\}/.test(c)) pop();
-      else if(/'"`/.test(c)) O.last(scopes) !== c ? push() : pop();
+      else if(/[\)\]\}]/.test(c)) pop();
+      else if(/['"`]/.test(c)) O.last(scopes) !== c ? push() : pop();
       else vi.char(c);
     }else{
       vi.char(c);
@@ -112,13 +121,13 @@ vi.code = async (str, lang=null, tMin=20, tMax=120) => {
   vi.ctrl(0x53); // Ctrl + S
 
   function push(){
-    vi.char(c);
     scopes.push(c);
+    vi.char(c);
   }
 
   function pop(){
-    vi.nav(1);
     scopes.pop();
+    vi.nav(1);
   }
 };
 

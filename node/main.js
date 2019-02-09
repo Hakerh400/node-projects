@@ -5,6 +5,8 @@ const DISPLAY_SIGINT = 1;
 const KILL_ON_SECOND_SIGINT = 1;
 const ELECTRON_NIGHTLY = 1;
 
+const NODE_FLAGS = [];
+
 const fs = require('fs');
 const path = require('path');
 const cp = require('child_process');
@@ -105,7 +107,10 @@ async function processInput(str){
   async function spawn(name, args=[], options=O.obj()){
     await clear();
 
-    var eng = engs[name];
+    const eng = engs[name];
+
+    if(name === 'node')
+      args = NODE_FLAGS.concat(args);
 
     proc = spawnProc(eng.exe, [
       ...args,
