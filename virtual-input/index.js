@@ -85,7 +85,7 @@ vi.code = async (str, lang=null, tMin=20, tMax=120) => {
 
         case 0x01:
           vi.nav(2);
-          vi.key(0x24) // Home
+          vi.key(0x24); // Home
           pop();
           break;
 

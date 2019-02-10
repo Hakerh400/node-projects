@@ -5,7 +5,7 @@ const path = require('path');
 const O = require('../omikron');
 
 class BitBuffer{
-  constructor(data){
+  constructor(data=''){
     if(data instanceof BitBuffer)
       data = data.buf;
 
@@ -40,7 +40,7 @@ class BitBuffer{
 
   get(i){
     const byteIndex = i >> 3;
-    if(byteIndex > this.len) return 0;
+    if(byteIndex >= this.len) return 0;
 
     const bitIndex = i & 7;
     return this.buf[byteIndex] & (1 << bitIndex) ? 1 : 0;

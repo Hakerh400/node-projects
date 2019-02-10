@@ -7,10 +7,10 @@ const readline = require('../readline');
 const BT = require('.');
 
 const ops = [
-  'jump',
+  'jmp',
   'xor',
-  'read',
-  'write',
+  'in',
+  'out',
 ];
 
 const rl = readline.rl();
@@ -19,7 +19,7 @@ setTimeout(main);
 
 function main(){
   const src = BT.BitBuffer.from(`
-    0101.0100 0010.1100
+    1000101110111010101001010111010
   `);
 
   const eng = new BT.Engine(src);
@@ -30,6 +30,12 @@ function main(){
 
   const logEng = () => {
     log(`\n${eng.toString()}\n`);
+  };
+
+  const formatInst = inst => {
+    return `[${inst.map((a, i) => {
+      return i & 1 ? ops[a] : a;
+    }).join(' ')}]`;
   };
 
   rl.on('sigint', () => {
@@ -46,12 +52,12 @@ function main(){
     log(`OUT: ${bit}`);
   });
 
-  eng.on('beforeTick', (op, addr) => {
-    log(`INSTRUCTION ${ops[op]} ${addr}`);
+  eng.on('beforeTick', (inst, op, addr) => {
+    log(`INSTRUCTION ${formatInst(inst)} ${ops[op]} ${addr}`);
     logEng();
   });
 
-  eng.on('afterTick', (op, addr) => {
+  eng.on('afterTick', () => {
     logEng();
 
     rl.question('', () => {

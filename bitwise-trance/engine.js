@@ -13,9 +13,15 @@ class Engine extends EventEmitter{
     this.mem = new BitBuffer(src);
     this.reader = new Reader(this.mem);
     this.addr = this.reader.addr;
+
+    this.ready = 1;
   }
 
   async tick(){
+    if(!this.ready)
+      throw new TypeError('Previous instruction has not finished yet');
+    this.ready = 0;
+
     const {mem, reader} = this;
 
     const addr0 = reader.readAddr();
@@ -27,20 +33,22 @@ class Engine extends EventEmitter{
     const bit = mem.get(addr0);
     const op = bit ? op2 : op1;
     const addr = bit ? addr2 : addr1;
+    const inst = [addr0, op1, addr1, op2, addr2];
 
-    this.emit('beforeTick', op, addr);
+    this.emit('beforeTick', inst, op, addr);
 
     await this.execOp(op, addr);
     this.addr = this.reader.addr;
 
-    this.emit('afterTick', op, addr);
+    this.ready = 1;
+    this.emit('afterTick', inst, op, addr);
   }
 
   async execOp(op, addr){
     const {mem, reader} = this;
 
     switch(op){
-      case 0: // jump
+      case 0: // jmp
         reader.jump(addr);
         break;
 
@@ -48,12 +56,12 @@ class Engine extends EventEmitter{
         mem.xor(addr);
         break;
 
-      case 2: // read
+      case 2: // in
         const bit = (await this.read()) & 1;
         mem.set(addr, bit);
         break;
 
-      case 3: // write
+      case 3: // out
         this.write(mem.get(addr));
         break;
     }
