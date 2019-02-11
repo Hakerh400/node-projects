@@ -14,6 +14,12 @@
       "dest": "C:/Github/browser-projects"
     },
 
+    "cpp": {
+      "name": "cpp-projects",
+      "src": "C:/Projects/C++",
+      "dest": "C:/Github/cpp-projects"
+    },
+
     "O": {
       "name": "omikron",
       "src": "C:/Projects/Omikron",
