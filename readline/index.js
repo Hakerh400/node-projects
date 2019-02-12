@@ -48,12 +48,26 @@ class ReadlineInterface extends EventEmitter{
     O.proc.stdin.ref();
   }
 
-  question(prompt, cb){
+  ask(prompt='', cb){
     if(this.qCb !== null)
       throw new TypeError('Question callback is already set');
 
     logSync(prompt);
     this.qCb = cb;
+  }
+
+  aska(prompt){
+    return new Promise(res => {
+      this.ask(prompt, res);
+    });
+  }
+
+  question(prompt, cb){
+    return this.ask(prompt, cb);
+  }
+
+  questiona(prompt, cb){
+    return this.aska(prompt, cb);
   }
 
   onData(data){

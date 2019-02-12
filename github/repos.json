@@ -46,6 +46,13 @@
       "includeAll": true
     },
 
+    "bt": {
+      "name": "bitwise-trance",
+      "src": "C:/Projects/Bitwise Trance",
+      "dest": "C:/Github/bt",
+      "includeAll": true
+    },
+
     "tasks": {
       "name": "tasks",
       "src": "C:/Projects/Tasks",
