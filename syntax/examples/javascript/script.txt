@@ -1,0 +1,5 @@
+script{
+  s* body s*
+}.inside(d){
+  d.flags.global = 1;
+}

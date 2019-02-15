@@ -1,0 +1,14 @@
+string[n]{ strBoundary[n]{2}strBody }
+strBody{ strElem[n]* }
+
+strBoundary[1]{ "'" }
+strBoundary[2]{ "\"" }
+strBoundary[3]{ "`" }
+
+strElem[n]{ escape | strChar[n] }
+strElem[3]{ escape | strTemplate | strChar[3] }
+
+strChar[n]{ any }.not{ newLine | strBoundary[n] }
+strChar[3]{ any }.not{ strBoundary[n] }
+
+strTemplate{ "${" s* expr s* "}" }

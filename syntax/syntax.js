@@ -2,420 +2,364 @@
 
 const fs = require('fs');
 const path = require('path');
-const v8 = require('v8');
 const O = require('../omikron');
-const debug = require('../debug');
-
-const DISPLAY_CHARACTER_INDEX = 0;
-
-const MAX_DEPTH = 30;
+const Rule = require('./rule');
+const Section = require('./section');
+const Pattern = require('./pattern');
+const Element = require('./element');
+const Range = require('./range');
 
 class Syntax{
-  constructor(src){
-    this.defs = O.obj();
-
-    this.parseSrc(src);
+  constructor(str){
+    this.rules = this.parseRules(str);
   }
 
-  parseSrc(src){
-    O.sanll(src).forEach(src => {
-      var lines = O.sanl(src);
-      var name = lines.shift();
+  static fromStr(str){
+    return new Syntax(str);
+  }
 
-      var sects = {};
-      var sect = 'pats';
-      sects[sect] = [];
+  static fromDir(dir){
+    dir = path.normalize(dir);
 
-      for(var line of lines){
-        if(!/^\s+/.test(line)){
-          sect = line;
-          sects[sect] = [];
+    const dirs = [dir];
+    let str = '';
+
+    while(dirs.length !== 0){
+      const d = dirs.shift();
+      const names = O.sortAsc(fs.readdirSync(d));
+
+      for(const name of names){
+        const file = path.join(d, name);
+
+        if(fs.statSync(file).isDirectory()){
+          dirs.push(file);
           continue;
         }
 
-        line = line.trimLeft();
-        for(line of line.split(' | '))
-          sects[sect].push(line);
+        const pack = path.relative(dir, file)
+          .replace(/\.[a-z0-9]+$/i, '')
+          .replace(/[\/\\]/g, '.')
+          .replace(/\-./g, a => a[1].toUpperCase());
+
+        const src = fs.readFileSync(file, 'utf8');
+        str = `${str}\n#package{${pack}}\n${src}`;
+      }
+    }
+
+    return new Syntax(str);
+  }
+
+  /**
+  * Called only once during object construction
+  */
+  parseRules(str){
+    str = str.replace(/\r\n|\r|\n/g, '\n');
+
+    const len = str.length; // String length
+
+    let i = 0; // Position from start of string
+    let j = 0; // Line index
+    let k = 0; // Position from start of line
+
+    // Handle error
+    const err = msg => {
+      const line = O.sanl(str)[j];
+      log(`Syntax error on line ${j + 1}:\n`);
+      log(line);
+      log('^'.padStart(k + 1));
+      log(`\n${msg}`);
+      O.proc.exit(1);
+    };
+
+    const sf = a => O.sfy(a); // JSON.stringify
+    const neof = () => i !== len; // Not end of file
+    const eof = () => i === len; // End of file
+
+    // Read single char
+    const c = (char=null, modify=1) => {
+      if(eof()) err('Unexpected EOF');
+      const c = str[i];
+
+      if(char !== null && typeof char !== 'string'){
+        modify = char;
+        char = null;
       }
 
-      var def = this.getDef(name);
-      def.setPats(this.parsePats(sects.pats));
-      if('before' in sects) def.setBefore(sects.before.join('\n'));
-      if('after' in sects) def.setAfter(sects.after.join('\n'));
-    });
-  }
-
-  parsePat(line){
-    if(line === '/') line = '';
-
-    var elems = line.match(/"(?:\\.|[^"])*"[\?\*\+]?|\S+/gs);
-    if(elems === null) elems = [];
-
-    return new Pattern(elems.map(str => {
-      if(O.last(str) === '"'){
-        str = JSON.parse(str);
-        return new Terminal(str);
+      if(modify){
+        pc(c);
+        if(char !== null && c !== char)
+          err(`Expected ${sf(char)}, but got ${sf(c)}`);
       }
 
-      return new NonTerminal(this.getDef(str));
-    }));
-  }
+      return c;
+    }
 
-  parsePats(pats){
-    return pats.map(line => this.parsePat(line))
-  }
+    // Process char
+    const pc = c => {
+      if(O.cc(c) > 255) err('Only characters in range [0-255] are allowed');
+      i++; k++;
+      if(c === '\n'){
+        j++;
+        k = 0;
+      }
+    };
 
-  setDef(name, def){
-    this.defs[name] = def;
-  }
+    const s = () => { while(neof() && /\s/.test(c(0))) c(); }; // Read zero or more spaces
+    const ss = () => { if(eof() || /\S/.test(c(0))) err('Missing space'); }; // Read one or more spaces
 
-  getDef(name){
-    const {defs} = this;
+    // Match char and surrounding spaces
+    const sc = (char, modify) => {
+      s();
+      const result = c(char, modify);
+      s();
+      return !modify && typeof char === 'string' ? result === char : result;
+    }
 
-    if(!(name in defs)){
-      var def = new Definition(name);
-      this.setDef(name, def);
+    const is = char => sc(char, 0); // Check for the given char
 
-      var name1 = name.slice(0, name.length - 1);
-      var pats;
+    // Read char is possible
+    const scm = char => {
+      if(!is(char)) return 0;
+      sc();
+      return 1;
+    }
 
-      switch(name.slice(-1)){
-        case '?':
-          pats = ['/', name1];
-          break;
+    // Match regular expression
+    const reg = (reg, spaces=1, name=reg) => {
+      if(spaces) s();
+      reg.lastIndex = i;
 
-        case '*':
-          pats = ['/', `${name1} ${name}`];
-          break;
+      const match = str.match(reg);
+      if(match === null) err(`Unable to parse ${name}`);
 
-        case '+':
-          pats = [name1, `${name1} ${name}`];
-          break;
+      const m = match[0];
+      for(const char of m) pc(char);
 
-        default:
-          if(name.length === 3 && name[1] === '-'){
-            var c1 = O.cc(name[0]);
-            var c2 = O.cc(name[2]);
+      if(spaces) s();
+      return m;
+    };
 
-            pats = O.ca(c2 - c1 + 1, i => {
-              return JSON.stringify(O.sfcc(c1 + i));
-            });
+    // Several parsing functions
+    const p = {
+      ident: (s=1) => reg(/[a-z\$_][a-z0-9\$_]*/iy, s, 'identifier'),
+      num: (s=1) => reg(/[0-9]+/y, s, 'number'),
+      rdots: (s=1) => reg(/\.{2}/y, s, 'range dots'),
+    };
+
+    // Parse range of integers
+    const parseRange = (r=new Range()) => {
+      const v = () => scm('*') ? null : +p.num(); // Parse value
+
+      let val1 = v()
+      let val2 = val1;
+
+      if(c(0) === '.'){
+        p.rdots();
+        val2 = v();
+      }else if(scm('+')){
+        val2 = null;
+      }else if(scm('-')){
+        val2 = val1;
+        val1 = null;
+      }
+
+      r.start = val1;
+      r.end = val2;
+
+      if(!r.isValid()) err('Invalid range');
+      return r;
+    };
+
+    // Parse Section.Include or Section.Exclude
+    const parseMatchSect = (rule, ctor) => {
+      sc('{');
+      if(is('|')) err('Match section cannot start with delimiter');
+      if(is('}')) err('Match cannot be empty');
+
+      const sect = new ctor();
+
+      // Parse patterns
+      while(!scm('}')){
+        const pat = new Pattern();
+
+        // Parse elements
+        while(!(scm('|') || sc('}', 0))){
+          const char = sc(0);
+          let elem;
+
+          if(char === '"'){ // Literal string
+            elem = new Element.String();
+            sc();
+          }else if(char === '['){ // Characters range
+            elem = new Element.CharsRange();
+            c();
+
+            while(c(0) !== ']'){
+              const range = new Range();
+
+              let first = 1;
+              let vals = [];
+
+              while(1){
+                const char = c();
+
+                if(first === 0 && /[\-\]]/.test(char))
+                  err(`Character ${sf(char)} must be escaped`);
+
+                if(char === '\\'){ // Escape sequence
+                  const next = c();
+
+                  if(/[\\\-\]]/.test(next)){ // Literal backslash, hypthen or closed bracket
+                    vals.push(O.cc(next));
+                  }else if(/x/i.test(next)){ // Hexadecimal escape sequence
+                    const hex = c() + c();
+                    if(!/[0-9a-f]{2}/i.test(hex)) err('Invalid hexadecimal escape sequence');
+                    vals.push(parseInt(hex, 16));
+                  }else if(next === 'r'){ // Carriage return
+                    vals.push(O.cc('\r'));
+                  }else if(next === 'n'){ // Line feed
+                    vals.push(O.cc('\n'));
+                  }else if(next === 't'){ // Tab
+                    vals.push(O.cc('\t'));
+                  }else if(next === '\n'){ // Literal new line
+                    err('New line should not be escaped like this');
+                  }else{ // Any other character
+                    err('Unrecognized escape sequence');
+                  }
+                }else if(char === '-'){ // Character separator should not appear here
+                  err('Missing character');
+                }else if(char === '\n'){ // Literal new line
+                  err('New lines must be escaped');
+                }else{ // Any other char
+                  vals.push(O.cc(char));
+                }
+
+                // In case of single character break the loop
+                if(!first || c(0) !== '-') break;
+
+                // Prepare for the last character in the range
+                first = 0;
+                c();
+              }
+
+              if(vals.length === 1) vals.push(vals[0]);
+
+              range.start = vals[0];
+              range.end = vals[1];
+
+              if(!range.isValid()) err('Invalid characters range');
+              if(elem.overlaps(range)) err('Overlapping characters range');
+
+              elem.add(range);
+            }
+
+            // Closed bracket
+            c();
+
+            if(elem.isEmpty()) err('Empty characters range');
+          }else{
+            err('Unexpected token in pattern');
+          }
+
+          pat.addElem(elem);
+        }
+
+        sect.addPat(pat);
+      }
+
+      rule.addSect(sect);
+    };
+
+    const rules = O.obj(); // Rules will be stored here after parsing
+    const nterms = new Set(); // Keep track of non-terminals to add rules after parsing
+
+    let pack = '';
+
+    while(neof()){
+      s();
+      if(eof()) break;
+
+      // Meta directive
+      if(scm('#')){
+        const type = p.ident();
+        sc('{');
+
+        switch(type){
+          case 'package':
+            const idents = [];
+            while(!is('}')){
+              idents.push(p.ident());
+              scm('.');
+            }
+            pack = idents.join('.');
             break;
-          }
 
-          return defs[name];
-      }
-
-      def.setPats(this.parsePats(pats));
-    }
-
-    return defs[name];
-  }
-
-  parse(str, name){
-    var lines = O.sanl(str);
-    str = lines.join('\n');
-
-    const {defs} = this;
-    const getDef = this.getDef.bind(this);
-    const strObj = new String(str);
-
-    var len = 0;
-    var indices = lines.map(line => {
-      var prev = len;
-      len += line.length + 1;
-      return prev;
-    });
-
-    var index = -1;
-    var scope = null;
-
-    const stack = new Stack;
-    push(name);
-
-    var t = Date.now();
-
-    while(1){
-      var pd = O.last(stack);
-
-      if(pd.end > index){
-        index = pd.end;
-        scope = stack.map(pd => pd.def.name).join('\n');
-      }
-
-      //debug(stack.map(pd => pd.def.name).join('\n')+'\n---> '+JSON.stringify(str.slice(0, pd.end))+'\n');
-
-      if(0&&Date.now() - t > 3e3){
-        var lineIndex = indices.findIndex(i => index < i) - 1;
-        var j = index - indices[lineIndex];
-
-        log(`\n${name}:${lineIndex + 1}${
-          DISPLAY_CHARACTER_INDEX ? `:${j + 1}` : ''
-        }\n${lines[lineIndex]}\n${
-          ' '.repeat(j)
-        }^\n`);
-
-        t = Date.now();
-      }
-
-      if(stack.depth > MAX_DEPTH || pd.i === pd.def.pats.length){
-        if(stack.length === 1) break;
-
-        stack.pop()
-        pd = O.last(stack);
-        next();
-
-        continue;
-      }
-
-      var pat = pd.def.pats[pd.i];
-
-      if(pd.j === 0 && pd.def.before !== null && !pd.before(stack)){
-        next();
-        continue;
-      }
-
-      if(pd.j === pat.elems.length){
-        if(pd.def.after !== null && !pd.after(stack)){
-          next();
-          continue;
+          default: err(`Unexpected meta directive "${type}"`);
         }
 
-        if(stack.length === 1){
-          if(pd.end !== str.length){
-            next();
-            continue;
-          }
-          return pd;
-        }
-
-        stack.pop();
-        O.last(stack).push(pd);
-
+        sc('}');
         continue;
       }
 
-      var elem = pat.elems[pd.j];
+      // Parse rule header
 
-      if(elem.isTerm()){
-        if(!str.slice(pd.end).startsWith(elem.str)){
-          next();
-          continue;
-        }
+      const name = p.ident();
+      let range = null;
 
-        pd.end += elem.str.length;
-        pd.j++;
-
-        continue;
+      if(scm('[')){
+        range = parseRange();
+        if(!range.isSingleton())
+          err('Definition range must be a singleton');
+        sc(']');
       }
 
-      push(elem.def.name);
+      const greediness = scm('?') ? 0 : scm('*') ? 2 : 1;
+
+      const rule = new Rule(this, pack, name, greediness, range);
+      if(!(name in rules)) rules[name] = O.obj();
+
+      const obj = rules[name];
+      if('*' in obj) err('Duplicate definition');
+      if(!rule.isArr()){
+        obj['*'] = rule;
+      }else{
+        const i = range.start;
+        if(i in obj) err(`Index ${i} is already defined`);
+        obj[i] = rule;
+      }
+
+      // Parse main section
+      // Main section is of type Section.Include
+      parseMatchSect(rule, Section.Include);
+
+      // Parse other sections
+
+      while(scm('.')){ // Other sections start with "."
+        const type = p.ident();
+
+        switch(type){
+          case 'not': case 'exclude':
+            parseMatchSect(rule, Section.Exclude);
+            break;
+
+          default:
+            err(`Unknown section ${sf(type)}`);
+            break;
+        }
+      }
+
+      log(JSON.stringify(rules, null, 2));
+      O.proc.exit();
+
+      err('Unable to parse further');
     }
 
-    var lineIndex = indices.findIndex(i => index < i) - 1;
-    var j = index - indices[lineIndex];
+    // Replace rule names by real rules
+    for(const nterm of nterms)
+      nterm.rule = rules[nterm.rule];
 
-    log(`${name}:${lineIndex + 1}${
-      DISPLAY_CHARACTER_INDEX ? `:${j + 1}` : ''
-    }\n${lines[lineIndex]}\n${
-      ' '.repeat(j)
-    }^\n\n${scope}`);
-    O.proc.exit(0);
-
-    function push(name){
-      var pd = new Parsed(strObj, O.last(stack), getDef(name));
-      stack.push(pd);
-    }
-
-    function next(){
-      pd.next(stack);
-    }
+    return rules;
   }
 };
 
 module.exports = Syntax;
-
-class Stack extends Array{
-  constructor(){
-    super();
-
-    this.depth = 0;
-  }
-
-  push(pd){
-    super.push(pd);
-    if(!pd.def.isArr) this.depth++;
-  }
-
-  pop(){
-    var pd = super.pop();
-    if(!pd.def.isArr) this.depth--;
-  }
-};
-
-class Parsed{
-  constructor(str, parent, def, i=0, j=0, elems=[]){
-    this.str = str;
-    this.parent = parent;
-    this.def = def;
-
-    this.start = parent !== null ? parent.end : 0;
-    this.end = this.start;
-
-    this.i = i;
-    this.j = j;
-
-    this.elems = [];
-
-    if(parent === null) this.state1 = v8.serialize({});
-    else this.state1 = parent.state2;
-    this.state2 = this.state1;
-  }
-
-  before(stack){
-    var state = v8.deserialize(this.state2);
-    var ok = this.def.before(O, stack, state, this.elems.map(e => e.toString()));
-    this.state2 = v8.serialize(state);
-    return ok;
-  }
-
-  after(stack){
-    var state = v8.deserialize(this.state2);
-    var ok = this.def.after(O, stack, state, this.elems.map(e => e.toString()), this.toString());
-    this.state2 = v8.serialize(state);
-    return ok;
-  }
-
-  push(elem){
-    this.elems.push(elem);
-    this.end = elem.end;
-    this.state2 = elem.state2;
-    this.j++;
-  }
-
-  pop(){
-    if(this.elems.length === 0) return null;
-
-    const {elems} = this.def.pats[this.i];
-    while(elems[--this.j].isTerm());
-
-    var elem = this.elems.pop();
-    this.end = elem.start;
-    this.state2 = elem.state1;
-
-    return elem;
-  }
-
-  next(stack){
-    var pd = this;
-
-    while(pd.elems.length !== 0){
-      var elem = pd.pop();
-      stack.push(elem);
-      pd = elem;
-    }
-
-    pd.i++;
-    pd.j = 0;
-    pd.end = pd.start;
-    pd.state2 = pd.state1;
-  }
-
-  iter(names, func=null){
-    if(func === null)
-      [names, func] = [[], names];
-
-    if(!Array.isArray(names))
-      names = [names];
-
-    var queue = [this];
-
-    while(queue.length !== 0){
-      var pd = queue.shift();
-
-      if(names.includes(pd.def.name))
-        func(pd);
-
-      for(var elem of pd.elems)
-        queue.push(elem);
-    }
-  }
-
-  copy(){
-    var pd = new Parsed(this.str, this.parent, this.def);
-
-    pd.start = this.start;
-    pd.end = this.end;
-    pd.i = this.i;
-    pd.j = this.j;
-    pd.elems = this.elems.map(pd => pd.copy());
-    pd.state1 = this.state1;
-    pd.state2 = this.state2;
-
-    return pd;
-  }
-
-  set(str){
-    this.str = str;
-    this.start = 0;
-    this.end = str.length;
-  }
-
-  toString(){
-    return this.str.slice(this.start, this.end);
-  }
-};
-
-class Definition{
-  constructor(name){
-    this.name = name;
-
-    this.pats = null;
-    this.before = null;
-    this.after = null;
-
-    this.isArr = /[\+\*\#]$/.test(name);
-  }
-
-  setPats(pats){ this.pats = pats; }
-  setBefore(before){ this.before = Definition.makeCb(before); }
-  setAfter(after){ this.after = Definition.makeCb(after, 1); }
-
-  static makeCb(code, match=0){
-    code = `${code};return 1`;
-
-    var args = ['O', 'stack', 's', 'es'];
-    if(match) args.push('m');
-
-    return new Function(...args, code);
-  }
-};
-
-class Pattern{
-  constructor(elems=[]){
-    this.elems = elems;
-  }
-};
-
-class Element{
-  isTerm(){ return !this.isNterm(); }
-  isNterm(){ return 0; }
-};
-
-class Terminal extends Element{
-  constructor(str){
-    super();
-    this.str = str;
-  }
-
-  isNterm(){ return 0; }
-};
-
-class NonTerminal extends Element{
-  constructor(def){
-    super();
-    this.def = def;
-  }
-
-  isNterm(){ return 1; }
-};

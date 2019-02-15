@@ -5,31 +5,24 @@ const path = require('path');
 const O = require('../omikron');
 const Syntax = require('.');
 
+const DIR = 0;
+
 const cwd = __dirname;
-const srcFile = path.join(cwd, 'src.txt');
-const inputFile = path.join(cwd, 'input.txt');
-const outputFile = path.join(cwd, 'output.txt');
+const examplesDir = path.join(cwd, 'examples');
+const testDir = path.join(cwd, 'test');
+const srcFile = path.join(testDir, 'src.txt');
+const inputFile = path.join(testDir, 'input.txt');
+const outputFile = path.join(testDir, 'output.txt');
 
 setTimeout(main);
 
 function main(){
-  var src = fs.readFileSync(srcFile, 'utf8');
-  var input = fs.readFileSync(inputFile, 'utf8');
+  const src = fs.readFileSync(srcFile, 'utf8');
+  const input = fs.readFileSync(inputFile, 'utf8');
 
-  var syntax = new Syntax(src);
-  var pd = getOutput(syntax, input);
+  const syntax = DIR ?
+    Syntax.fromDir(path.join(examplesDir, 'javascript')) :
+    Syntax.fromStr(src);
 
-  if(pd === null){
-    log('null');
-    return;
-  }
-
-  pd.iter('expr19', pd => log(pd.toString()));
-
-  fs.writeFileSync(outputFile, pd);
-}
-
-function getOutput(syntax, input){
-  var output = syntax.parse(input, 'script');
-  return output;
+  fs.writeFileSync(outputFile, '');
 }
