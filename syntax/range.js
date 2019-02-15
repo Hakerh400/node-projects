@@ -10,6 +10,11 @@ class Range{
     this.end = end;
   }
 
+  set(start=this.start, end=this.end){
+    this.start = start;
+    this.end = end;
+  }
+
   has(num){
     if(this.isAny()) return 1;
     if(this.isClosedLeft() && num < this.start) return 0;

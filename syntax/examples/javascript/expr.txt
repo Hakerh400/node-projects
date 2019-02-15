@@ -32,9 +32,9 @@ expr[18]{ "new" s+ expr[18+] }
 expr[19]{ memberAccess | computedMemberAccess | newWithArgs | functionCall }
   memberAccess{ expr[19+] s* "." s* ident }
   computedMemberAccess{ expr[19+] s* "[" s* expr s* "]" }
-  newWithArgs{ "new" s+ expr[19+] s* "(" s* expr[2+]*argsSep s* ")" }
-  functionCall{ expr[19+] s* "(" s* expr[2+]*argsSep s* ")" }
+  newWithArgs{ "new" s+ expr[19+] s* "(" s* expr[2+]*argSep s* ")" }
+  functionCall{ expr[19+] s* "(" s* expr[2+]*argSep s* ")" }
 expr[20]{ "(" s* expr s* ")" }
 expr[21]{ elem }
 
-argsSep{ s* "," s* }
+argSep{ s* "," s* }

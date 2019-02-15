@@ -1,5 +1,5 @@
 script{
   s* body s*
-}.inside(d){
+}.inside(d){#
   d.flags.global = 1;
-}
+#}

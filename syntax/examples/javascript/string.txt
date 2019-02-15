@@ -1,14 +1,16 @@
-string[n]{ strBoundary[n]{2}strBody }
-strBody{ strElem[n]* }
+string{ strBoundary{2}strBody }
+strBody{ strElem* }
 
 strBoundary[1]{ "'" }
 strBoundary[2]{ "\"" }
 strBoundary[3]{ "`" }
 
-strElem[n]{ escape | strChar[n] }
+strElem[1]{ escape | strChar[1] }
+strElem[2]{ escape | strChar[2] }
 strElem[3]{ escape | strTemplate | strChar[3] }
 
-strChar[n]{ any }.not{ newLine | strBoundary[n] }
-strChar[3]{ any }.not{ strBoundary[n] }
+strChar[1]{ any }.not{ newLine | strBoundary[1] }
+strChar[2]{ any }.not{ newLine | strBoundary[2] }
+strChar[3]{ any }.not{ strBoundary[3] }
 
 strTemplate{ "${" s* expr s* "}" }

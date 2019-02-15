@@ -28,14 +28,17 @@ class NonTerminal extends Element{
     super();
 
     this.rule = rule;
+    this.ruleRange = new Range();
   }
 
   static name(){ return 'rule'; }
 };
 
 class String extends Terminal{
-  constructor(){
+  constructor(str=''){
     super();
+
+    this.str = '';
   }
 
   static name(){ return 'string'; }
