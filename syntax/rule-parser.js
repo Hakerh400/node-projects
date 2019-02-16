@@ -314,12 +314,12 @@ function parse(syntax, str){
         if(/[|}]/.test(sc(0))) break ext;
 
         /**
-         * Separator is not allowed for range {1..1}
+         * Separator is not allowed for range with `end <= 1`
          * Throw error instead of breaking this section, becase
          * we ensured the separator is present and thus should be parsed
          */
-        if(r.start === 1 && r.end === 1)
-          err('Separator should not be specified for singleton range');
+        if(r.isClosedRight() && r.end <= 1)
+          err('Separator cannot be specified for this range');
 
         const sep = parseElem(0);
         elem.separator = sep;

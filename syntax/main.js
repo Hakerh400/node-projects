@@ -5,11 +5,12 @@ const path = require('path');
 const O = require('../omikron');
 const Syntax = require('.');
 
-const DIR = 1;
+const TEST = 0;
 
 const cwd = __dirname;
 const examplesDir = path.join(cwd, 'examples');
-const exampleDir = path.join(examplesDir, 'JavaScript')
+const exampleDir = path.join(examplesDir, 'JavaScript');
+const ctxFile = path.join(exampleDir, 'context.js');
 
 const testDir = path.join(cwd, 'test');
 const srcFile = path.join(testDir, 'src.txt');
@@ -19,12 +20,16 @@ const outputFile = path.join(testDir, 'output.txt');
 setTimeout(main);
 
 function main(){
-  const src = fs.readFileSync(srcFile, 'utf8');
-  const input = fs.readFileSync(inputFile, 'utf8');
+  const src = TEST ? O.rfs(srcFile, 1) : null;
+  const ctxCtor = require(ctxFile);
 
-  const syntax = DIR ?
-    Syntax.fromDir(exampleDir) :
-    Syntax.fromStr(src);
+  const input = O.rfs(inputFile, 1);
 
-  fs.writeFileSync(outputFile, '');
+  const syntax = TEST ?
+    Syntax.fromStr(src, ctxCtor) :
+    Syntax.fromDir(exampleDir, ctxCtor);
+
+  const output = syntax.parse(input);
+
+  O.wfs(outputFile, output);
 }

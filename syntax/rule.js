@@ -14,16 +14,17 @@ class Rule{
     this.greediness = greediness;
     this.range = range;
 
-    this.sections = O.obj();
+    this.sects = O.obj();
   }
 
   hasRange(){ return this.range !== null; }
   isArr(){ return this.hasRange(); }
   isSingleton(){ return !this.hasRange() || this.range.isSingleton(); }
 
-  hasSect(name){ return name in this.sections; }
-  addSect(sect){ this.sections[sect.name()] = sect; }
+  hasSect(name){ return name in this.sects; }
   hasMainSect(){ return this.hasSect('main'); }
+  addSect(sect){ this.sects[sect.name()] = sect; }
+  getSect(name){ this.hasSect(name) ? this.sects[name] : null; }
 };
 
 module.exports = Rule;
