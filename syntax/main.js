@@ -29,7 +29,7 @@ function main(){
     Syntax.fromStr(src, ctxCtor) :
     Syntax.fromDir(exampleDir, ctxCtor);
 
-  const output = syntax.parse(input);
+  const output = syntax.parse(input, 'script');
 
   O.wfs(outputFile, output);
 }

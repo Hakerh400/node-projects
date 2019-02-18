@@ -116,7 +116,10 @@ async function processInput(str){
       ...args,
       eng.script,
       ...scriptArgs,
-    ], options, eng.options);
+    ], options, {
+      ...eng.options,
+      ...options.stdio === 'ignore' ? {ignore: 1} : {},
+    });
   }
 }
 
@@ -191,10 +194,11 @@ function spawnProc(name, args=[], options=O.obj(), opts=O.obj()){
   opts = {
     skipFirst: 0,
     killOnSigint: 0,
+    ignore: 0,
     ...opts,
   };
 
-  var proc = cp.spawn(name, args, {
+  const proc = cp.spawn(name, args, {
     cwd: currDir,
     ...options,
   });
@@ -210,14 +214,18 @@ function spawnProc(name, args=[], options=O.obj(), opts=O.obj()){
   O.proc.stdin.on('end', onEnd);
   O.proc.stdin.ref();
 
-  proc.stdout.on('data', onLog);
-  proc.stderr.on('data', onLog);
+  if(!opts.ignore){
+    proc.stdout.on('data', onLog);
+    proc.stderr.on('data', onLog);
+  }
 
-  var refs = 3;
+  var refs = opts.ignore ? 1 : 3;
   var exitCode = null;
 
-  proc.stdout.on('end', onFinish);
-  proc.stderr.on('end', onFinish);
+  if(!opts.ignore){
+    proc.stdout.on('end', onFinish);
+    proc.stderr.on('end', onFinish);
+  }
 
   proc.on('exit', code => {
     exitCode = code;
@@ -242,7 +250,7 @@ function spawnProc(name, args=[], options=O.obj(), opts=O.obj()){
     if(DISPLAY_SIGINT)
       logSync('^C');
 
-    if(opts.killOnSigint || (sentSigint && KILL_ON_SECOND_SIGINT)){
+    if(opts.ignore || opts.killOnSigint || (sentSigint && KILL_ON_SECOND_SIGINT)){
       proc.kill();
       return;
     }

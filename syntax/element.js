@@ -13,7 +13,7 @@ class Element extends NamedEntity{
 
     this.range = new Range(1, 1);
     this.greediness = 1;
-    this.separator = null;
+    this.sep = null;
   }
 };
 

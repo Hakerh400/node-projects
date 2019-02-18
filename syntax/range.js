@@ -27,6 +27,10 @@ class Range{
     return this.end - this.start + 1;
   }
 
+  len(){
+    return this.size();
+  }
+
   eq(range){
     return range.start === this.start  && range.end === this.end;
   }

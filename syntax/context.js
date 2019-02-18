@@ -11,7 +11,9 @@ const O = require('../omikron');
  */
 
 class Context{
-  constructor(){}
+  constructor(){
+    this.modified = 0;
+  }
 
   ser(ser=new O.Serializer()){ O.virtual('ser'); }
   static deser(ser){ O.virtual('deser'); }

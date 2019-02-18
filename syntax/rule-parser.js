@@ -322,7 +322,7 @@ function parse(syntax, str){
           err('Separator cannot be specified for this range');
 
         const sep = parseElem(0);
-        elem.separator = sep;
+        elem.sep = sep;
       }
     }
 
@@ -493,12 +493,11 @@ function parse(syntax, str){
         }
       }
     }
-
-    // Replace rule names by real rules
-    for(const nterm of nterms)
-      nterm.rule = rules[nterm.rule];
-
   }
+
+  // Replace rule names by real rules in non-terminal elements
+  for(const nterm of nterms)
+    nterm.rule = rules[nterm.rule];
 
   return rules;
 }
