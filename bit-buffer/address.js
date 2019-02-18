@@ -19,7 +19,7 @@ class Address{
     this.set(val);
   }
 
-  static arrize(){ return INT_SIZE; }
+  static intSize(){ return INT_SIZE; }
   static from(addr){ return new Address().from(addr); }
 
   static oldOrNew(addr, createNew){
@@ -78,11 +78,12 @@ class Address{
     const arr1 = addr.arr
     const len = arr.length;
     const len1 = arr1.length;
-    if(len >= len1) return;
 
-    let dif = len1 - len;
-    for(let i = 0; i !== dif; i++)
-      arr.push(0);
+    if(len < len1){
+      let dif = len1 - len;
+      for(let i = 0; i !== dif; i++)
+        arr.push(0);
+    }
 
     return this;
   }
@@ -115,28 +116,10 @@ class Address{
   gt(addr){ return this.cmp(addr) === 2; }
   gte(addr){ return this.cmp(addr) !== 0; }
 
-  inc(){
-    const {arr} = this;
-    const len = arr.length;
-    let bit = 1;
-
-    for(let i = 0; i !== len; i++){
-      const val = arr[i] + bit;
-      bit = val > INT_MASK ? 1 : 0;
-      arr[i] = val & INT_MASK;
-      if(!bit) break;
-    }
-
-    if(bit) arr.push(1);
-    return this;
-  }
-
   shl(n=1){
     const {arr} = this;
 
-    while(n !== 0){
-      n--;
-
+    while(n-- !== 0){
       const len = arr.length;
       let bit = 0;
 
@@ -156,9 +139,7 @@ class Address{
   shr(n=1){
     const {arr} = this;
 
-    while(n !== 0){
-      n--;
-
+    while(n-- !== 0){
       const len = arr.length;
       let bit = 0;
 
@@ -173,6 +154,22 @@ class Address{
       }
     }
 
+    return this;
+  }
+
+  inc(){
+    const {arr} = this;
+    const len = arr.length;
+    let bit = 1;
+
+    for(let i = 0; i !== len; i++){
+      const val = arr[i] + bit;
+      bit = val > INT_MASK ? 1 : 0;
+      arr[i] = val & INT_MASK;
+      if(!bit) break;
+    }
+
+    if(bit) arr.push(1);
     return this;
   }
 
@@ -265,7 +262,7 @@ class Address{
 
     if(len !== 0){
       for(let i = len - 1; ; i--){
-        val = (val << 8) | arr[i];
+        val = (val << INT_SIZE) | arr[i];
         if(i === 0) break;
       }
     }
