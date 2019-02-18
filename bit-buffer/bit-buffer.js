@@ -13,7 +13,7 @@ const Address = require('./address');
  * buffers of equal size (CHUNKS_NUM must be power of 2). If the address that is being accessed is not
  * withing the buffer range, then save some of the smaller buffers to the disk and replace it with
  * required buffer (either allocate new buffer or load existing from disk). All addresses are represented
- * as BigInt primitives.
+ * as Address instances.
  */
 
 const MAX_BUF_SIZE = 2 ** 30;
