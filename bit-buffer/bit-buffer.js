@@ -125,8 +125,8 @@ class BitBuffer{
   }
 
   dispose(){
-    if(!this.useMem) return;
-    this.mem.dispose();
+    if(this.useMem)
+      this.mem.dispose();
   }
 };
 

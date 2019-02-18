@@ -18,9 +18,20 @@ const rl = readline.rl();
 setTimeout(main);
 
 function main(){
-  const src = BT.BitBuffer.from(`
+  const srcStr = `
     1000101110111010101001010111010
-  `);
+  `;
+
+  const src = new BT.BitBuffer();
+  const addr = new BT.BitBuffer.Address();
+
+  for(const bit of srcStr){
+    switch(bit){
+      // `break` is omitted intentionally
+      case '1': src.write(addr, 1);
+      case '0': addr.inc();
+    }
+  }
 
   const eng = new BT.Engine(src);
 
@@ -34,7 +45,7 @@ function main(){
 
   const formatInst = inst => {
     return `[${inst.map((a, i) => {
-      return i & 1 ? ops[a] : a;
+      return i & 1 ? ops[a] : +a;
     }).join(' ')}]`;
   };
 

@@ -195,11 +195,11 @@ class AddrMap{
     this.map = new O.MultidimensionalMap();
   }
 
-  has(addr){ return this.map.has(addr.ints); }
-  get(addr){ return this.map.get(addr.ints); }
-  set(addr, val){ return this.map.set(addr.ints, val); }
-  remove(addr){ return this.map.remove(addr.ints); }
-  delete(addr){ return this.map.delete(addr.ints); }
+  has(addr){ return this.map.has(addr.arr); }
+  get(addr){ return this.map.get(addr.arr); }
+  set(addr, val){ return this.map.set(addr.arr, val); }
+  remove(addr){ return this.map.remove(addr.arr); }
+  delete(addr){ return this.map.delete(addr.arr); }
 };
 
 module.exports = Memory;

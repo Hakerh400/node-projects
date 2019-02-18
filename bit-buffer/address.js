@@ -10,12 +10,16 @@ const HIGHEST_BIT = 1 << INT_SIZE - 1;
 
 class Address{
   constructor(val=0){
-    this.ints = [];
+    this.arr = [];
+
+    // This is used for building address from bits
+    this.index = 0;
+    this.mask = 1;
 
     this.set(val);
   }
 
-  static intSize(){ return INT_SIZE; }
+  static arrize(){ return INT_SIZE; }
   static from(addr){ return new Address().from(addr); }
 
   static oldOrNew(addr, createNew){
@@ -26,20 +30,43 @@ class Address{
   static zero(createNew=0){ return Address.oldOrNew(zero, createNew); }
   static one(createNew=0){ return Address.oldOrNew(one, createNew); }
 
-  len(){ return this.ints.length; }
-  reset(val=0){ return this.set(val); }
-
-  from(addr){ return this.reset().add(addr); }
+  len(){ return this.arr.length; }
+  fromArr(arr){ this.arr = arr.slice(); return this; }
+  from(addr){ return this.fromArr(addr.arr); }
   copy(addr){ return addr.from(this); }
   clone(){ return Address.from(this); }
 
-  set(val=0){
-    const {ints} = this;
+  prepare(){
+    this.arr.length = 0;
+    this.arr.push(0);
 
-    ints.length = 0;
+    this.index = 0;
+    this.mask = 1;
+
+    return this;
+  }
+
+  push(bit){
+    if(bit) this.arr[this.index] |= this.mask;
+
+    if(this.mask !== HIGHEST_BIT){
+      this.mask <<= 1;
+    }else{
+      this.arr.push(0);
+      this.mask = 1;
+      this.index++;
+    }
+
+    return this;
+  }
+
+  set(val=0){
+    const {arr} = this;
+
+    arr.length = 0;
 
     while(val !== 0){
-      ints.push(val & INT_MASK);
+      arr.push(val & INT_MASK);
       val >>>= INT_SIZE;
     }
 
@@ -47,15 +74,15 @@ class Address{
   }
 
   adapt(addr){
-    const {ints} = this;
-    const ints1 = addr.ints
-    const len = ints.length;
-    const len1 = ints1.length;
+    const {arr} = this;
+    const arr1 = addr.arr
+    const len = arr.length;
+    const len1 = arr1.length;
     if(len >= len1) return;
 
     let dif = len1 - len;
     for(let i = 0; i !== dif; i++)
-      ints.push(0);
+      arr.push(0);
 
     return this;
   }
@@ -63,15 +90,15 @@ class Address{
   cmp(addr){
     this.adapt(addr);
 
-    const {ints} = this;
-    const ints1 = addr.ints
-    const len = ints.length;
-    const len1 = ints1.length;
+    const {arr} = this;
+    const arr1 = addr.arr
+    const len = arr.length;
+    const len1 = arr1.length;
 
     if(len !== 0){
       for(let i = len - 1; ; i--){
-        const val = ints[i];
-        const val1 = i < len1 ? ints1[i] : 0;
+        const val = arr[i];
+        const val1 = i < len1 ? arr1[i] : 0;
         if(val < val1) return 0;
         if(val > val1) return 1;
         if(i === 0) break;
@@ -89,59 +116,59 @@ class Address{
   gte(addr){ return this.cmp(addr) !== 0; }
 
   inc(){
-    const {ints} = this;
-    const len = ints.length;
+    const {arr} = this;
+    const len = arr.length;
     let bit = 1;
 
     for(let i = 0; i !== len; i++){
-      const val = ints[i] + bit;
+      const val = arr[i] + bit;
       bit = val > INT_MASK ? 1 : 0;
-      ints[i] = val & INT_MASK;
+      arr[i] = val & INT_MASK;
       if(!bit) break;
     }
 
-    if(bit) ints.push(1);
+    if(bit) arr.push(1);
     return this;
   }
 
   shl(n=1){
-    const {ints} = this;
+    const {arr} = this;
 
     while(n !== 0){
       n--;
 
-      const len = ints.length;
+      const len = arr.length;
       let bit = 0;
 
       for(let i = 0; i !== len; i++){
-        const v = ints[i];
+        const v = arr[i];
         const val = (v << 1) | bit;
         bit = v & HIGHEST_BIT ? 1 : 0;
-        ints[i] = val & INT_MASK;
+        arr[i] = val & INT_MASK;
       }
 
-      if(bit) ints.push(1);
+      if(bit) arr.push(1);
     }
 
     return this;
   }
 
   shr(n=1){
-    const {ints} = this;
+    const {arr} = this;
 
     while(n !== 0){
       n--;
 
-      const len = ints.length;
+      const len = arr.length;
       let bit = 0;
 
       if(len === 0) break;
 
       for(let i = len - 1; ; i--){
-        const v = ints[i];
+        const v = arr[i];
         const val = (v >>> 1) | (bit ? HIGHEST_BIT : 0);
         bit = v & 1;
-        ints[i] = val;
+        arr[i] = val;
         if(i === 0) break;
       }
     }
@@ -150,14 +177,14 @@ class Address{
   }
 
   dec(){
-    const {ints} = this;
-    const len = ints.length;
+    const {arr} = this;
+    const len = arr.length;
     let bit = 1;
 
     for(let i = 0; i !== len; i++){
-      const val = ints[i] - bit;
+      const val = arr[i] - bit;
       bit = val < 0 ? 1 : 0;
-      ints[i] = val & INT_MASK;
+      arr[i] = val & INT_MASK;
       if(!bit) break;
     }
 
@@ -168,37 +195,37 @@ class Address{
   add(addr){
     this.adapt(addr);
 
-    const {ints} = this;
-    const ints1 = addr.ints
-    const len = ints.length;
-    const len1 = ints1.length;
+    const {arr} = this;
+    const arr1 = addr.arr
+    const len = arr.length;
+    const len1 = arr1.length;
     let bit = 0;
 
     for(let i = 0; i !== len; i++){
-      const val1 = i < len1 ? ints1[i] : 0;
-      const val = ints[i] + val1 + bit;
+      const val1 = i < len1 ? arr1[i] : 0;
+      const val = arr[i] + val1 + bit;
       bit = val > INT_MASK ? 1 : 0;
-      ints[i] = val & INT_MASK;
+      arr[i] = val & INT_MASK;
     }
 
-    if(bit) ints.push(1);
+    if(bit) arr.push(1);
     return this;
   }
 
   sub(addr){
     this.adapt(addr);
 
-    const {ints} = this;
-    const ints1 = addr.ints
-    const len = ints.length;
-    const len1 = ints1.length;
+    const {arr} = this;
+    const arr1 = addr.arr
+    const len = arr.length;
+    const len1 = arr1.length;
     let bit = 0;
 
     for(let i = 0; i !== len; i++){
-      const val1 = i < len1 ? ints1[i] : 0;
-      const val = ints[i] - val1 - bit;
+      const val1 = i < len1 ? arr1[i] : 0;
+      const val = arr[i] - val1 - bit;
       bit = val < 0 ? 1 : 0;
-      ints[i] = val & INT_MASK;
+      arr[i] = val & INT_MASK;
     }
 
     if(bit) this.errNeg();
@@ -206,39 +233,39 @@ class Address{
   }
 
   lowestBits(n){
-    const {ints} = this;
-    const len = ints.length;
+    const {arr} = this;
+    const len = arr.length;
 
     const i = n / INT_SIZE | 0;
     const j = n % INT_SIZE | 0;
 
     if(i < len){
-      ints[i] &= (1 << j) - 1;
-      ints.length = i + 1;
+      arr[i] &= (1 << j) - 1;
+      arr.length = i + 1;
     }
 
     return this;
   }
 
   normalize(){
-    const {ints} = this;
-    let len = ints.length;
+    const {arr} = this;
+    let len = arr.length;
 
-    while(len !== 0 && ints[len - 1] === 0)
+    while(len !== 0 && arr[len - 1] === 0)
       len--;
 
-    ints.length = len;
+    arr.length = len;
     return this;
   }
 
   valueOf(){
-    const {ints} = this;
-    const len = ints.length;
+    const {arr} = this;
+    const len = arr.length;
     let val = 0;
 
     if(len !== 0){
       for(let i = len - 1; ; i--){
-        val = (val << 8) | ints[i];
+        val = (val << 8) | arr[i];
         if(i === 0) break;
       }
     }
