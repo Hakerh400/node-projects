@@ -4,144 +4,187 @@ const fs = require('fs');
 const path = require('path');
 const O = require('../omikron');
 const BitBuffer = require('../bit-buffer');
-const BigInt = require('../bigint');
 const Table = require('../table');
 
-const bi4 = new BigInt(4);
+const TABLE = 0;
 
 class Engine{
   constructor(src, input){
     this.mem = new BitBuffer(src);
+    this.io = new O.IO(input, 0, 1);
   }
 
   run(){
-    const {mem} =  this;
+    const {mem, io} =  this;
 
     const ops = [
-      /* 0 */ ['CONST', () => {
-        O.noimpl('CONST');
+      ['const', 0, 1, () => {
+        res = read(ip1++);
       }],
-      /* 1 */ ['JZ', () => {
-        O.noimpl('JZ');
+      ['jz', 2, 0, () => {
+        if(!num1) ip1 = num2;
       }],
-      /* 2 */ ['CALL', () => {
-        O.noimpl('CALL');
+      ['call', 1, 1, () => {
+        res = ip1;
+        ip1 = num1;
       }],
-      /* 3 */ ['RET', () => {
-        O.noimpl('RET');
+      ['ret', 1, 0, () => {
+        ip1 = num1;
       }],
-      /* 4 */ ['PUSH', () => {
-        O.noimpl('PUSH');
+      ['push', 0, 1, () => {
+        res = read(sp);
       }],
-      /* 5 */ ['POP', () => {
-        O.noimpl('POP');
+      ['pop', 1, 0, () => {
       }],
-      /* 6 */ ['GET', () => {
-        O.noimpl('GET');
+      ['get', 1, 1, () => {
+        res = read(sp + num1);
       }],
-      /* 7 */ ['SET', () => {
-        O.noimpl('SET');
+      ['set', 2, 0, () => {
+        wrAddr = sp + num2;
+        wrVal = num1;
       }],
-      /* 8 */ ['READ', () => {
-        O.noimpl('READ');
+      ['read', 1, 1, () => {
+        res = read(num1);
       }],
-      /* 9 */ ['WRITE', () => {
-        O.noimpl('WRITE');
+      ['write', 2, 0, () => {
+        wrAddr = num2;
+        wrVal = num1;
       }],
-      /* A */ ['NEG', () => {
-        O.noimpl('NEG');
+      ['neg', 1, 1, () => {
+        res = num1 ^ mask;
       }],
-      /* B */ ['IMP', () => {
-        argsNum = 2;
-        hasRes = 1;
-
-        mem.readInt(addr.from(sp).inc().lbs(s).mul(size), num1, size);
-        mem.readInt(addr.from(sp).mul(size), num2, size);
-
-        res.from(num1).imp(num2).lbs(s);
-
-        mem.writeInt(addr.from(ptr).mul(size), num3.from(ip).inc(), size);
-        mem.writeInt(addr.from(ptr).inc().lbs(s).mul(size), num3.from(sp).inc(), size);
-        mem.writeInt(addr.from(sp).inc().lbs(s).mul(size), res, size);
+      ['imp', 2, 1, () => {
+        res = (num1 ^ mask) | num2;
       }],
-      /* C */ ['SHL', () => {
-        argsNum = 2;
-        hasRes = 1;
-
-        mem.readInt(addr.from(sp).inc().lbs(s).mul(size), num1, size);
-        mem.readInt(addr.from(sp).mul(size), num2, size);
-
-        res.from(num1);
-        if(num3.from(num2).isPos()) res.shl(+num3)
-        else res.shr(+num3.minus());
-        res.lbs(s);
-
-        mem.writeInt(addr.from(ptr).mul(size), num3.from(ip).inc(), size);
-        mem.writeInt(addr.from(ptr).inc().lbs(s).mul(size), num3.from(sp).inc(), size);
-        mem.writeInt(addr.from(sp).inc().lbs(s).mul(size), res, size);
+      ['shl', 2, 1, () => {
+        if(num2 & upBit) res = num1 >> (num2 ^ mask) + 1n;
+        else res = num1 << num2;
       }],
-      /* D */ ['ADD', () => {
-        O.noimpl('ADD');
+      ['add', 2, 1, () => {
+        res = num1 + num2;
       }],
-      /* E */ ['IN', () => {
-        O.noimpl('IN');
+      ['in', 0, 1, () => {
+        inb = this.io.read();
+        res = BigInt(inb);
       }],
-      /* F */ ['OUT', () => {
-        O.noimpl('OUT');
+      ['out', 1, 0, () => {
+        outb = Number(num1 & 1n);
       }],
     ];
 
-    const columns = ['#', 'Size', 'PTR', 'IP', 'SP', 'Instruction', 'Arguments', 'Result', 'I/O'];
-    const table = new Table(columns);
+    const read = addr => {
+      return mem.readInt((addr & mask) * size, size);
+    };
 
-    const size = new BigInt();
-    const ptr = new BigInt();
-    const ip = new BigInt();
-    const sp = new BigInt();
-    const opc = new BigInt();
+    const write = (addr, num) => {
+      mem.writeInt((addr & mask) * size, num & mask, size);
+    };
 
-    const addr = new BigInt();
-    const num1 = new BigInt();
-    const num2 = new BigInt();
-    const num3 = new BigInt();
-    const res = new BigInt();
-
-    const args = [num1, num2];
-
-    let argsNum = 0;
-    let hasRes = 0;
-    let hasIO = 0;
-
-    let s;
-
-    let i = 0;
-    while(i++ !== 5){
-      argsNum = 0;
-      hasRes = 0;
-      hasIO = 0;
-
-      log(mem.buf.toString('hex'));
-
-      mem.readInt(addr.set(0), size);
-      size.add(bi4);
-      s = +size;
-
-      mem.readInt(size, ptr, size);
-      mem.readInt(addr.from(ptr).mul(size), ip, size);
-      mem.readInt(addr.from(ptr).inc().lbs(s).mul(size), sp, size);
-      mem.readInt(addr.from(ip).mul(size), opc, size);
-
-      const op = ops[+opc.lbs(4)];
-      op[1]();
-
-      const argsStr = args.slice(0, argsNum).map(arg => arg.toString()).join(', ');
-      const resStr = hasRes ? res : '/';
-      const ioStr = hasIO ? 'IO' : '/';
-
-      table.addRow([i, size, ptr, ip, sp, op[0], argsStr, resStr, ioStr]);
+    let columns, table;
+    if(TABLE){
+      columns = ['#', 'Size', 'PTR', 'IP', 'SP', 'Instruction', 'Arguments', 'Result', 'Stack', 'I/O'];
+      table = new Table(columns);
     }
 
-    return table.toString();
+    let size = 0n;
+    let mask = 0n;
+    let upBit = 0n;
+
+    let ptr = 0n;
+    let ip = 0n;
+    let sp = 0n;
+    let opc = 0n;
+
+    let addr = 0n;
+    let num1 = 0n;
+    let num2 = 0n;
+    let res = 0n;
+
+    let ip1 = 0n;
+    let wrAddr = 0n;
+    let wrVal = null;
+
+    let inb = null;
+    let outb = null;
+    let odd = 0;
+
+    let i = 0;
+
+    while(1){
+      i++;
+
+      size = mem.readInt(0n) + 4n;
+      mask = (1n << size) - 1n;
+      upBit = 1n << size - 1n;
+
+      ptr = read(1n);
+      ip = read(ptr);
+      sp = read(ptr + 1n);
+      opc = Number(read(ip) & 15n);
+
+      const [name, argsNum, hasRes, func] = ops[opc];
+
+      let argsStr;
+      {
+        if(argsNum === 1){
+          num1 = read(sp);
+          argsStr = `${num1}`;
+        }else if(argsNum === 2){
+          num1 = read(sp + 1n);
+          num2 = read(sp);
+          argsStr = `(${num1}, ${num2})`;
+        }else{
+          argsStr = '/';
+        }
+      }
+
+      ip1 = ip + 1n;
+      wrVal = null;
+      inb = null;
+      outb = null;
+
+      func();
+
+      {
+        write(ptr, ip1);
+
+        const dif = BigInt(argsNum - hasRes);
+        const sp1 = sp + dif;
+
+        if(dif) write(ptr + 1n, sp1);
+        if(hasRes) write(sp1, res);
+      }
+
+      if(wrVal !== null) write(wrAddr, wrVal);
+
+      if(TABLE){
+        const resStr = hasRes ? res : '/';
+        const ioStr = inb !== null ? `IN ${inb}` : outb !== null ? `OUT ${outb}` : '/';
+
+        const stack = [];
+        {
+          let s = sp + BigInt(argsNum - hasRes) & mask;
+          while(s !== mask){
+            stack.push(read(s));
+            s++;
+          }
+        }
+        const stackStr = `[${stack.join(', ')}]`;
+
+        table.addRow([i, size, ptr, ip, sp, name.toUpperCase(), argsStr, resStr, stackStr, ioStr]);
+      }
+
+      if(outb !== null){
+        if(!odd){ if(!outb) break; }
+        else io.write(outb);
+        odd ^= 1;
+      }
+    }
+
+    let outStr = io.getOutput();
+    if(TABLE) outStr = `${table.toString()}\n\n${outStr}`;
+
+    return outStr;
   }
 
   dispose(){

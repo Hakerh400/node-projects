@@ -4,7 +4,6 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 const O = require('../omikron');
-const BigInt = require('../bigint');
 
 const tempDir = os.tmpdir();
 
@@ -17,27 +16,25 @@ class Memory{
 
     this.bufLen = buf.length; // In bytes
     this.chunkSize = this.bufLen / chunksNum | 0; // In bytes
-    this.shiftNum = Math.log2(this.chunkSize) + 3 | 0; // In bits
-
-    // Used as auxiliary address
-    this.aux = new BigInt();
+    this.shiftNum = BigInt(Math.log2(this.chunkSize) + 3 | 0); // In bits
+    this.smask = (1n << this.shiftNum) - 1n;
 
     // Initialize RAM chunks
     {
       const size = this.chunkSize;
       const slices = [];
 
-      const ramMap = new AddrMap();
+      const ramMap = new Map();
       const ramArr = [];
       const refArr1 = [];
       const refArr2 = [];
 
       for(let i = 0; i !== chunksNum; i++){
         const offset = size * i;
-        const saddr = new BigInt(i);
+        const saddr = BigInt(i);
 
         ramMap.set(saddr, i);
-        ramArr.push(saddr.clone());
+        ramArr.push(saddr);
 
         slices.push(buf.slice(offset, offset + size));
         refArr1.push(i);
@@ -51,7 +48,7 @@ class Memory{
       this.refArr2 = refArr2;
     }
 
-    this.diskMap = new AddrMap();
+    this.diskMap = new Map();
     this.diskArr = [];
 
     // Create temp directory
@@ -85,8 +82,6 @@ class Memory{
   getChunk(saddr){
     const {ramMap, ramArr, diskMap, diskArr, refArr1, refArr2} = this;
     
-    saddr.normalize();
-
     if(!ramMap.has(saddr)){
       const i = O.last(refArr2);
       const slice = this.slices[i];
@@ -108,9 +103,9 @@ class Memory{
         ramArr[i] = saddr;
         diskArr[di] = saddr1;
 
-        ramMap.remove(saddr1);
+        ramMap.delete(saddr1);
         ramMap.set(saddr, i);
-        diskMap.remove(saddr);
+        diskMap.delete(saddr);
         diskMap.set(saddr1, di);
 
         diskMap.has(saddr1);
@@ -118,14 +113,14 @@ class Memory{
         const di = diskArr.length;
         const file = path.join(this.dir, String(di));
 
-        fs.writeFileSync(file, slice);
+        O.wfs(file, slice);
         slice.fill(0);
 
         const saddr1 = ramArr[i];
         ramArr[i] = saddr;
         diskArr.push(saddr1);
 
-        ramMap.remove(saddr1);
+        ramMap.delete(saddr1);
         ramMap.set(saddr, i);
         diskMap.set(saddr1, di);
       }
@@ -147,10 +142,10 @@ class Memory{
   }
 
   fetch(addr){
-    const saddr = addr.copy(this.aux).shr(this.shiftNum);
+    const saddr = addr >> this.shiftNum;
     this.getChunk(saddr);
 
-    const index = +addr.copy(this.aux).lowestBits(this.shiftNum);
+    const index = Number(addr & this.smask);
     this.slice = this.slices[this.sliceIndex];
     this.byteIndex = index >>> 3;
     this.bitIndex = index & 7;
@@ -188,18 +183,6 @@ class Memory{
 
     this.active = 0;
   }
-};
-
-class AddrMap{
-  constructor(){
-    this.map = new O.MultidimensionalMap();
-  }
-
-  has(addr){ return this.map.has(addr.arr); }
-  get(addr){ return this.map.get(addr.arr); }
-  set(addr, val){ return this.map.set(addr.arr, val); }
-  remove(addr){ return this.map.remove(addr.arr); }
-  delete(addr){ return this.map.delete(addr.arr); }
 };
 
 module.exports = Memory;
