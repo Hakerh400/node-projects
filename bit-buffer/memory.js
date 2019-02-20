@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 const O = require('../omikron');
-const Address = require('./address');
+const BigInt = require('../bigint');
 
 const tempDir = os.tmpdir();
 
@@ -20,7 +20,7 @@ class Memory{
     this.shiftNum = Math.log2(this.chunkSize) + 3 | 0; // In bits
 
     // Used as auxiliary address
-    this.aux = new Address();
+    this.aux = new BigInt();
 
     // Initialize RAM chunks
     {
@@ -34,7 +34,7 @@ class Memory{
 
       for(let i = 0; i !== chunksNum; i++){
         const offset = size * i;
-        const saddr = new Address(i);
+        const saddr = new BigInt(i);
 
         ramMap.set(saddr, i);
         ramArr.push(saddr.clone());

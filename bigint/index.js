@@ -8,11 +8,11 @@ const INT_SIZE = 8;
 const INT_MASK = (1 << INT_SIZE) - 1 | 0;
 const HIGHEST_BIT = 1 << INT_SIZE - 1;
 
-class Address{
+class BigInt{
   constructor(val=0){
     this.arr = [];
 
-    // This is used for building address from bits
+    // This is used for building BigInt from bits
     this.index = 0;
     this.mask = 1;
 
@@ -20,39 +20,36 @@ class Address{
   }
 
   static intSize(){ return INT_SIZE; }
-  static from(addr){ return new Address().from(addr); }
+  static from(bi){ return new BigInt().from(bi); }
 
-  static oldOrNew(addr, createNew){
-    if(createNew) return addr.clone();
-    return addr;
+  static oldOrNew(bi, createNew){
+    if(createNew) return bi.clone();
+    return bi;
   }
 
-  static zero(createNew=0){ return Address.oldOrNew(zero, createNew); }
-  static one(createNew=0){ return Address.oldOrNew(one, createNew); }
+  static zero(createNew=0){ return BigInt.oldOrNew(zero, createNew); }
+  static one(createNew=0){ return BigInt.oldOrNew(one, createNew); }
 
   len(){ return this.arr.length; }
   fromArr(arr){ this.arr = arr.slice(); return this; }
-  from(addr){ return this.fromArr(addr.arr); }
-  copy(addr){ return addr.from(this); }
-  clone(){ return Address.from(this); }
+  from(bi){ return this.fromArr(bi.arr); }
+  copy(bi){ return bi.from(this); }
+  clone(){ return BigInt.from(this); }
 
   prepare(){
     this.arr.length = 0;
-    this.arr.push(0);
-
     this.index = 0;
     this.mask = 1;
-
     return this;
   }
 
   push(bit){
+    if(this.mask === 1) this.arr.push(0);
     if(bit) this.arr[this.index] |= this.mask;
 
     if(this.mask !== HIGHEST_BIT){
       this.mask <<= 1;
     }else{
-      this.arr.push(0);
       this.mask = 1;
       this.index++;
     }
@@ -73,26 +70,55 @@ class Address{
     return this;
   }
 
-  adapt(addr){
+  setLen(lenNew){
     const {arr} = this;
-    const arr1 = addr.arr
     const len = arr.length;
-    const len1 = arr1.length;
 
-    if(len < len1){
-      let dif = len1 - len;
-      for(let i = 0; i !== dif; i++)
-        arr.push(0);
+    if(lenNew < len){
+      arr.length = len;
+    }else{
+      const dif = lenNew - len;
+      while(dif-- !== 0) arr.push(0);
     }
 
     return this;
   }
 
-  cmp(addr){
-    this.adapt(addr);
+  adapt(bi){
+    const {arr} = this;
+    const arr1 = bi.arr
+    const len = arr.length;
+    const len1 = arr1.length;
+
+    if(len < len1){
+      let dif = len1 - len;
+      while(dif-- !== 0) arr.push(0);
+    }else if(len > len1){
+      let dif = len - len1;
+      while(dif-- !== 0) arr1.push(0);
+    }
+
+    return this;
+  }
+
+  isZero(){
+    const {arr} = this;
+    const len = arr.length;
+
+    for(let i = 0; i !== len; i++)
+      if(arr[i] !== 0) return 0;
+
+    return 1;
+  }
+
+  isPos(){ return !this.highestBit(); }
+  isNeg(){ return this.highestBit(); }
+
+  cmp(bi){
+    this.adapt(bi);
 
     const {arr} = this;
-    const arr1 = addr.arr
+    const arr1 = bi.arr
     const len = arr.length;
     const len1 = arr1.length;
 
@@ -109,12 +135,78 @@ class Address{
     return 1;
   }
 
-  eq(addr){ return this.cmp(addr) === 1; }
-  neq(addr){ return this.cmp(addr) !== 1; }
-  lt(addr){ return this.cmp(addr) === 0; }
-  lte(addr){ return this.cmp(addr) !== 2; }
-  gt(addr){ return this.cmp(addr) === 2; }
-  gte(addr){ return this.cmp(addr) !== 0; }
+  eq(bi){ return this.cmp(bi) === 1; }
+  neq(bi){ return this.cmp(bi) !== 1; }
+  lt(bi){ return this.cmp(bi) === 0; }
+  lte(bi){ return this.cmp(bi) !== 2; }
+  gt(bi){ return this.cmp(bi) === 2; }
+  gte(bi){ return this.cmp(bi) !== 0; }
+
+  minus(){
+    return this.neg().inc();
+  }
+
+  neg(){
+    const {arr} = this;
+    const len = arr.length;
+
+    for(let i = 0; i !== len; i++)
+      arr[i] ^= INT_MASK;
+
+    return this;
+  }
+
+  and(bi){
+    this.adapt(bi);
+
+    const {arr} = this;
+    const arr1 = bi.arr;
+    const len = arr.length;
+
+    for(let i = 0; i !== len; i++)
+      arr[i] &= arr1[i];
+
+    return this;
+  }
+
+  or(bi){
+    this.adapt(bi);
+
+    const {arr} = this;
+    const arr1 = bi.arr;
+    const len = arr.length;
+
+    for(let i = 0; i !== len; i++)
+      arr[i] |= arr1[i];
+
+    return this;
+  }
+
+  xor(bi){
+    this.adapt(bi);
+
+    const {arr} = this;
+    const arr1 = bi.arr;
+    const len = arr.length;
+
+    for(let i = 0; i !== len; i++)
+      arr[i] ^= arr1[i];
+
+    return this;
+  }
+
+  imp(bi){
+    this.adapt(bi);
+
+    const {arr} = this;
+    const arr1 = bi.arr;
+    const len = arr.length;
+
+    for(let i = 0; i !== len; i++)
+      arr[i] = (arr[i] ^ INT_MASK) | arr1[i];
+
+    return this;
+  }
 
   shl(n=1){
     const {arr} = this;
@@ -185,15 +277,14 @@ class Address{
       if(!bit) break;
     }
 
-    if(bit) this.errNeg();
     return this;
   }
 
-  add(addr){
-    this.adapt(addr);
+  add(bi){
+    this.adapt(bi);
 
     const {arr} = this;
-    const arr1 = addr.arr
+    const arr1 = bi.arr
     const len = arr.length;
     const len1 = arr1.length;
     let bit = 0;
@@ -209,11 +300,11 @@ class Address{
     return this;
   }
 
-  sub(addr){
-    this.adapt(addr);
+  sub(bi){
+    this.adapt(bi);
 
     const {arr} = this;
-    const arr1 = addr.arr
+    const arr1 = bi.arr
     const len = arr.length;
     const len1 = arr1.length;
     let bit = 0;
@@ -225,8 +316,40 @@ class Address{
       arr[i] = val & INT_MASK;
     }
 
-    if(bit) this.errNeg();
     return this;
+  }
+
+  mul(bi){
+    const aux1 = this.clone();
+    const aux2 = bi.clone();
+
+    this.set(0);
+
+    while(!aux2.isZero()){
+      if(aux2.lowestBit())
+        this.add(aux1);
+
+      aux1.shl();
+      aux2.shr();
+    }
+
+    return this;
+  }
+
+  lowestBit(){
+    const {arr} = this;
+    const len = arr.length;
+
+    if(len === 0) return 0;
+    return arr[0] & 1;
+  }
+
+  highestBit(){
+    const {arr} = this;
+    const len = arr.length;
+
+    if(len === 0) return 0;
+    return arr[len - 1] & HIGHEST_BIT ? 1 : 0;
   }
 
   lowestBits(n){
@@ -255,6 +378,21 @@ class Address{
     return this;
   }
 
+  toJSBigInt(){
+    const {arr} = this;
+    const len = arr.length;
+    let val = i2bi(0);
+
+    if(len !== 0){
+      for(let i = len - 1; ; i--){
+        val = (val << i2bi(INT_SIZE)) | i2bi(arr[i]);
+        if(i === 0) break;
+      }
+    }
+
+    return val;
+  }
+
   valueOf(){
     const {arr} = this;
     const len = arr.length;
@@ -270,12 +408,19 @@ class Address{
     return val;
   }
 
-  errNeg(){
-    throw new TypeError('Negative address');
+  toString(){
+    return this.toJSBigInt().toString();
   }
 };
 
-const zero = new Address(0);
-const one = new Address(1);
+BigInt.prototype.lbs = BigInt.prototype.lowestBits;
 
-module.exports = Address;
+const zero = new BigInt(0);
+const one = new BigInt(1);
+
+module.exports = BigInt;
+
+// Convert integer into JavaScript BigInt
+function i2bi(val){
+  return global.BigInt(val);
+}
