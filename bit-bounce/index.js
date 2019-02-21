@@ -64,7 +64,7 @@ class Engine{
         res = num1 + num2;
       }],
       ['in', 0, 1, () => {
-        inb = this.io.read();
+        inb = io.read();
         res = BigInt(inb);
       }],
       ['out', 1, 0, () => {
