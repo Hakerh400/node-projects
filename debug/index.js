@@ -11,4 +11,5 @@ module.exports = debug;
 function debug(...args){
   log(...args);
   fs.readSync(fdIn, buff, 0, 2);
+  return O.last(args);
 }

@@ -48,21 +48,30 @@ async function getParams(){
   });
 
   const channel = await rl.aska('Channel: ');
-  const vids = [];
   
   log('Video IDs:\n');
 
-  while(1){
-    const id = await rl.aska();
-    if(id === '') break;
+  const vids = await(() => {
+    return new Promise(res => {
+      const onLine = id => {
+        if(id === ''){
+          rl.removeListener('line', onLine);
+          rl.close();
+          res(vids);
+          return;
+        }
 
-    if(!/^[a-zA-Z0-9\-_]{11}$/.test(id))
-      err('Invalid video ID');
+        if(!/^[a-zA-Z0-9\-_]{11}$/.test(id))
+          err('Invalid video ID');
 
-    vids.push(id);
-  }
+        vids.push(id);
+      };
 
-  rl.close();
+      const vids = [];
+
+      rl.on('line', onLine);
+    });
+  })();
 
   return {channel, vids};
 }

@@ -1,12 +1,5 @@
 'use strict';
 
-const DISPLAY_EXIT_CODE = 0;
-const DISPLAY_SIGINT = 1;
-const KILL_ON_SECOND_SIGINT = 1;
-const ELECTRON_NIGHTLY = 1;
-
-const NODE_FLAGS = [];
-
 const fs = require('fs');
 const path = require('path');
 const cp = require('child_process');
@@ -14,6 +7,15 @@ const O = require('../omikron');
 const readline = require('../readline');
 const logSync = require('../log-sync');
 const engs = require('./engines');
+
+const DISPLAY_EXIT_CODE = 0;
+const DISPLAY_SIGINT = 1;
+const KILL_ON_SECOND_SIGINT = 1;
+const ELECTRON_NIGHTLY = 1;
+
+const NODE_FLAGS = [
+  ...0 ? ['--expose-gc'] : [],
+];
 
 const cwd = __dirname;
 const electronAppScript = path.join(cwd, 'electron-app.js');
