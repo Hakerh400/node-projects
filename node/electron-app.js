@@ -1,6 +1,6 @@
 'use strict';
 
-const DEBUG = 1;
+const DEBUG = 0;
 
 const fs = require('fs');
 const path = require('path');
@@ -34,8 +34,8 @@ function main(){
     win.webContents.openDevTools();
 
     win.on('ready-to-show', () => {
-      win.maximize();
-      win.show();
+      //win.maximize();
+      //win.show();
     });
   }
 

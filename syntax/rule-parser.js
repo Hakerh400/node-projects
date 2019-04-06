@@ -390,9 +390,9 @@ function parse(syntax, str){
   const nterms = new Set(); // Keep track of non-terminals to add rules after parsing
 
   /**
-  * New elements should not be constructed directly
-  * Use this wrapper function instead
-  */
+   * New elements should not be constructed directly
+   * Use this wrapper function instead
+   */
   const newElem = ctor => {
     const elem = new ctor();
 

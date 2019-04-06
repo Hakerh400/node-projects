@@ -51,7 +51,7 @@ async function getParams(){
   
   log('Video IDs:\n');
 
-  const vids = await(() => {
+  const vids = await (() => {
     return new Promise(res => {
       const onLine = id => {
         if(id === ''){

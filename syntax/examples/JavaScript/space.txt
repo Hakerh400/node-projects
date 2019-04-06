@@ -4,7 +4,7 @@ tab{ "\t" }
 cr{ "\r" }
 lf{ "\n" }
 crlf{ cr lf }
-netLine{ crlf | cr | lf }
+newLine{ crlf | cr | lf }
 
 sn{ space | tab }
 s{ sn | newLine }

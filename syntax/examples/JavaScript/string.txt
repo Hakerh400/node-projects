@@ -1,9 +1,16 @@
-string{ strBoundary{2}strBody }
-strBody{ strElem* }
+string{
+  strBoundary[1]{2}strBody[1] |
+  strBoundary[2]{2}strBody[2] |
+  strBoundary[3]{2}strBody[3] |
+}
 
 strBoundary[1]{ "'" }
 strBoundary[2]{ "\"" }
 strBoundary[3]{ "`" }
+
+strBody[1]{ strElem[1]* }
+strBody[2]{ strElem[2]* }
+strBody[3]{ strElem[3]* }
 
 strElem[1]{ escape | strChar[1] }
 strElem[2]{ escape | strChar[2] }

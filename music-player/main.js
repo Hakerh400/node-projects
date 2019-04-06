@@ -8,7 +8,9 @@ const readline = require('../readline');
 const fsRec = require('../fs-rec');
 const setPriority = require('../set-priority');
 
-const TEST_MODE = 1;
+O.enhanceRNG();
+
+const TEST_MODE = 0;
 const SUB_FOLDERS = 0;
 const SHUFFLE = 1;
 const SORT = !SHUFFLE;
@@ -33,8 +35,6 @@ let waiting = 0;
 setTimeout(() => main().catch(log));
 
 async function main(){
-  O.enhanceRNG();
-
   const dirs = O.sanl(fs.readFileSync(path.join(mainDir, 'playlist.txt'), 'utf8'));
   const files = [];
 
