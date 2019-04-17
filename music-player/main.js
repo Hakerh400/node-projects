@@ -8,8 +8,6 @@ const readline = require('../readline');
 const fsRec = require('../fs-rec');
 const setPriority = require('../set-priority');
 
-O.enhanceRNG();
-
 const TEST_MODE = 0;
 const SUB_FOLDERS = 0;
 const SHUFFLE = 1;
