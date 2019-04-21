@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const O = require('../omikron');
 
-const FS_SEPARATOR = '\\';
+const FS_SEPARATOR = '/';
 
 class FileQueueElem{
   constructor(fullPath, relativePath=null, depth=null, name=null, isDir=null, processed=0){
@@ -40,21 +40,22 @@ module.exports = {
   deleteFilesSync,
   createDir,
   createDirSync,
+  resetDirSync,
 };
 
 function processFiles(filePath, func, cb=O.nop){
   processElem(0, [new FileQueueElem(formatPath(filePath))], func, cb);
 }
 
-async function processFilesSync(filePath, func){
-  await processElem(1, [new FileQueueElem(formatPath(filePath))], func);
+function processFilesSync(filePath, func){
+  processElem(1, [new FileQueueElem(formatPath(filePath))], func);
 }
 
-async function processElem(sync, queue, func, cb=O.nop){
+function processElem(sync, queue, func, cb=O.nop){
   while(1){
     var elem = queue.pop();
 
-    await func(FileQueueElem.copy(elem));
+    func(FileQueueElem.copy(elem));
 
     if(elem.isDir && !elem.processed){
       elem.processed = 1;
@@ -84,8 +85,8 @@ function copyFiles(filePath, dest, cb=O.nop){
   processFiles(filePath, d => copyFile(d, dest), cb);
 }
 
-async function copyFilesSync(filePath, dest){
-  await processFilesSync(filePath, d => copyFile(d, dest));
+function copyFilesSync(filePath, dest){
+  processFilesSync(filePath, d => copyFile(d, dest));
 }
 
 function copyFile(d, dest){
@@ -96,12 +97,12 @@ function copyFile(d, dest){
   else fs.writeFileSync(destPath, fs.readFileSync(d.fullPath));
 }
 
-async function deleteFiles(filePath, cb=O.nop){
-  await processFiles(filePath, deleteFile, cb);
+function deleteFiles(filePath, cb=O.nop){
+  processFiles(filePath, deleteFile, cb);
 }
 
-async function deleteFilesSync(filePath){
-  await processFilesSync(filePath, deleteFile);
+function deleteFilesSync(filePath){
+  processFilesSync(filePath, deleteFile);
 }
 
 function deleteFile(d){
@@ -143,6 +144,13 @@ function createDirSync(dirPath){
   }
 }
 
+function resetDirSync(dirPath){
+  if(fs.existsSync(dirPath))
+    deleteFilesSync(dirPath);
+
+  fs.mkdirSync(dirPath);
+}
+
 function formatPath(filePath){
-  return filePath.replace(/\//g, '\\');
+  return filePath.replace(/\//g, FS_SEPARATOR);
 }
