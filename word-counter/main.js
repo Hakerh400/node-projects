@@ -2,36 +2,28 @@
 
 const fs = require('fs');
 const path = require('path');
-const util = require('util');
-const http = require('http');
-const https = require('https');
-const net = require('net');
-const urlm = require('url');
-const stream = require('stream')
-const cp = require('child_process');
-const EventEmitter = require('events');
-const readline = require('readline');
-const crypto = require('crypto');
 const O = require('../omikron');
-const media = require('../media');
-const ImageData = require('../image-data');
 const fsRec = require('../fs-rec');
 const format = require('../format');
 const Table = require('../table');
 
+const MUSIC = 0;
+
+const dir = process.argv.slice(2).join(' ').replace(/"/g, '');
+
 const ws = [
-  'the','and', 'for', 'how', 'what', 'not',
+  'the', 'and', 'for', 'how', 'what', 'not',
 ];
 
 const strs = O.obj();
 
-fsRec.processFilesSync('D:/Videos/Other/Folder/Channels', d => {
+fsRec.processFilesSync(dir, d => {
   if(d.processed) return;
   if(d.isDir) return;
 
   log(d.relativeSubPath);
 
-  const {name} = path.parse(d.name);
+  const name = processName(path.parse(d.name).name);
 
   for(let str of name.match(/[a-z]+/gi) || []){
     str = str.toLowerCase();
@@ -60,3 +52,12 @@ for(const row of rows)
   table.addRow(row);
 
 O.wfs(format.path('-dw/1.txt'), table.toString());
+
+function processName(str){
+  if(MUSIC){
+    const i = str.indexOf(']');
+    if(i !== -1) str = str.slice(i);
+  }
+  
+  return str;
+}
