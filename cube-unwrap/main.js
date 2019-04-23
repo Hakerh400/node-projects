@@ -2,22 +2,9 @@
 
 const fs = require('fs');
 const path = require('path');
-const util = require('util');
-const http = require('http');
-const https = require('https');
-const net = require('net');
-const urlm = require('url');
-const stream = require('stream')
-const cp = require('child_process');
-const EventEmitter = require('events');
-const readline = require('readline');
-const crypto = require('crypto');
 const O = require('../omikron');
 const media = require('../media');
 const ImageData = require('../image-data');
-const fsRec = require('../fs-rec');
-const format = require('../format');
-const Table = require('../table');
 
 media.editImage('-wamp/projects/simulator/textures/sky.png', '-img/1.png', (w, h, g) => {
   const d = new ImageData(g);
