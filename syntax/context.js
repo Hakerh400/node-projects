@@ -5,7 +5,7 @@ const path = require('path');
 const O = require('../omikron');
 
 /**
- * This class is used for languages that depend on parametriz context
+ * This class is used for languages that depend on parametrized context
  * Context is an abstract class and only extended classes should be used
  * Extended classes must implement serializable interface
  */

@@ -32,7 +32,7 @@ class Range{
   }
 
   eq(range){
-    return range.start === this.start  && range.end === this.end;
+    return range.start === this.start && range.end === this.end;
   }
 
   neq(range){

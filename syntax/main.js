@@ -5,11 +5,11 @@ const path = require('path');
 const O = require('../omikron');
 const Syntax = require('.');
 
-const TEST = 0;
+const TEST = 1;
 
 const cwd = __dirname;
 const examplesDir = path.join(cwd, 'examples');
-const exampleDir = path.join(examplesDir, 'JavaScript');
+const exampleDir = path.join(examplesDir, 'javascript');
 const ctxFile = path.join(exampleDir, 'context.js');
 
 const testDir = path.join(cwd, 'test');
@@ -29,7 +29,7 @@ function main(){
     Syntax.fromStr(src, ctxCtor) :
     Syntax.fromDir(exampleDir, ctxCtor);
 
-  const output = syntax.parse(input, 'script');
+  const output = syntax.parse(input, 'expr');
 
   O.wfs(outputFile, output);
 }

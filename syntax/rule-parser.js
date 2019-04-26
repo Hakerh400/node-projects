@@ -9,6 +9,8 @@ const Pattern = require('./pattern');
 const Element = require('./element');
 const Range = require('./range');
 
+// TODO: be consistent: use "definition" instead of "rule" everywhere
+
 module.exports = {
   parse,
 };
@@ -315,7 +317,7 @@ function parse(syntax, str){
 
         /**
          * Separator is not allowed for range with `end <= 1`
-         * Throw error instead of breaking this section, becase
+         * Throw error instead of breaking this section, because
          * we ensured the separator is present and thus should be parsed
          */
         if(r.isClosedRight() && r.end <= 1)

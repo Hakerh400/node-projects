@@ -1,5 +1,8 @@
 'use strict';
 
+module.exports = null;
+return;
+
 const DEBUG = 0;
 const ENABLE_TRUNC = 0;
 
