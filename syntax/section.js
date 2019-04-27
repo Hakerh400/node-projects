@@ -4,12 +4,9 @@ const fs = require('fs');
 const path = require('path');
 const O = require('../omikron');
 const Pattern = require('./pattern');
-const NamedEntity = require('./named-entity');
 
-class Section extends NamedEntity{
-  constructor(){
-    super();
-  }
+class Section{
+  constructor(){}
 };
 
 class Match extends Section{
@@ -24,19 +21,19 @@ class Match extends Section{
 };
 
 class Include extends Match{
+  static sectName = 'include';
+
   constructor(){
     super();
   }
-
-  static name(){ return 'include'; }
 };
 
 class Exclude extends Match{
+  static sectName = 'exclude';
+
   constructor(){
     super();
   }
-
-  static name(){ return 'exclude'; }
 };
 
 class Code extends Section{
@@ -58,27 +55,27 @@ class Code extends Section{
 };
 
 class Before extends Code{
+  static sectName = 'before';
+
   constructor(){
     super();
   }
-
-  static name(){ return 'before'; }
 };
 
 class Inside extends Code{
+  static sectName = 'inside';
+
   constructor(){
     super();
   }
-
-  static name(){ return 'inside'; }
 };
 
 class After extends Code{
+  static sectName = 'after';
+
   constructor(){
     super();
   }
-
-  static name(){ return 'after'; }
 };
 
 Section.Match = Match;

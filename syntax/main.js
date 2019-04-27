@@ -29,7 +29,18 @@ function main(){
     Syntax.fromStr(src, ctxCtor) :
     Syntax.fromDir(exampleDir, ctxCtor);
 
-  const output = syntax.parse(input, 'expr');
+  const ast = syntax.parse(input, 'script');
+
+  const output = ast.compile({
+    script: d => String(d.fst.fst),
+    expr: d => d.fst.fst,
+    op: d => d.fst.fst,
+    add: d => d.fst.fst + d.elems[2].fst,
+    exp: d => d.fst.fst ** d.elems[2].fst,
+    num: d => +d,
+  });
+
+  log(output);
 
   O.wfs(outputFile, output);
 }

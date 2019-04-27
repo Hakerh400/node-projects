@@ -23,7 +23,7 @@ class Rule{
 
   hasSect(name){ return name in this.sects; }
   hasMainSect(){ return this.hasSect('main'); }
-  addSect(sect){ this.sects[sect.name()] = sect; }
+  addSect(sect){ this.sects[sect.constructor.sectName] = sect; }
   getSect(name){ this.hasSect(name) ? this.sects[name] : null; }
 };
 

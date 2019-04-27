@@ -5,12 +5,9 @@ const path = require('path');
 const O = require('../omikron');
 const Range = require('./range');
 const RangeSet = require('./range-set');
-const NamedEntity = require('./named-entity');
 
-class Element extends NamedEntity{
+class Element{
   constructor(){
-    super();
-
     this.range = new Range(1, 1);
     this.greediness = 1;
     this.sep = null;
@@ -30,8 +27,6 @@ class NonTerminal extends Element{
     this.rule = rule;
     this.ruleRange = new Range();
   }
-
-  static name(){ return 'rule'; }
 };
 
 class String extends Terminal{
@@ -40,8 +35,6 @@ class String extends Terminal{
 
     this.str = '';
   }
-
-  static name(){ return 'string'; }
 };
 
 class CharsRange extends Terminal{
@@ -50,8 +43,6 @@ class CharsRange extends Terminal{
 
     this.set = new RangeSet(range);
   }
-
-  static name(){ return 'charsRange'; }
 
   add(range){ this.set.add(range); }
   has(num){ return this.set.has(nul); }
