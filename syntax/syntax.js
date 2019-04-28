@@ -79,37 +79,37 @@ class Syntax{
     const parsing = O.ca(str.length, () => new Set());
 
     ast.node = parseDef(0, def);
-    log(`\n${'='.repeat(150)}\n`);
+    //log(`\n${'='.repeat(150)}\n`);
     logDef(ast.node);
-    log(`\n${'='.repeat(150)}\n`);
+    //log(`\n${'='.repeat(150)}\n`);
 
     return ast;
 
     function logDef(def){
-      log.inc(`${def.ref.name} ---> ${def.toString()}`);
+      //log.inc(`${def.ref.name} ---> ${def.toString()}`);
 
       for(const elem of def.pat.elems){
         if(!(elem instanceof ASTNterm)) continue;
         logDef(elem.arr[0]);
       }
 
-      log.dec();
+      //log.dec();
     }
 
     function parseDef(index, def){
       if(index === str.length) return createNewNode(index, def);
-      log.inc(`parse (${index}, ${def.name}) {`);
+      //log.inc(`parse (${index}, ${def.name}) {`);
 
       const pSet = parsing[index];
-      log(`stack: [${[...pSet].map(a => a.name).join(', ')}]`);
+      //log(`stack: [${[...pSet].map(a => a.name).join(', ')}]`);
 
       let node = getNodeFromCache(index, def);
       if(node !== null){
-        log(`cache --->  done: ${!!node.done}  len: ${node.len}`);
+        //log(`cache --->  done: ${!!node.done}  len: ${node.len}`);
         if(node.done || pSet.has(def)){
-          log(`nothing to do here`);
-          log.dec();
-          log(`}`);
+          //log(`nothing to do here`);
+          //log.dec();
+          //log(`}`);
           return node;
         }
       }
@@ -130,7 +130,7 @@ class Syntax{
 
         const pp = node.pats;
         node.update();
-        log(`ITER --->  [${pp.map(a => a.len).join(', ')}]  ${prev !== null ? prev.len : -1}  ${node.len}`);
+        //log(`ITER --->  [${pp.map(a => a.len).join(', ')}]  ${prev !== null ? prev.len : -1}  ${node.len}`);
 
         if(prev !== null && node.len <= prev.len){
           node = prev;
@@ -140,8 +140,8 @@ class Syntax{
         cache[index].set(def, node);
       }
 
-      log.dec(`len: ${node.len}`);
-      log(`}`);
+      //log.dec(`len: ${node.len}`);
+      //log(`}`);
 
       pSet.delete(def);
       return node;

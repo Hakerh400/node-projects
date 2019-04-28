@@ -31,16 +31,53 @@ function main(){
 
   const ast = syntax.parse(input, 'script');
 
-  const output = ast.compile({
-    script: d => String(d.fst.fst),
-    expr: d => d.fst.fst,
-    op: d => d.fst.fst,
-    add: d => d.fst.fst + d.elems[2].fst,
-    exp: d => d.fst.fst ** d.elems[2].fst,
-    num: d => +d,
+  const graph = ast.compile({
+    script: d => d.fst.arr,
+    inst: d => d.fst.fst,
+    move: d => d.fst.fst,
+    left: d => 'left',
+    right: d => 'right',
+    upd: d => d.fst.fst,
+    inc: d => 'inc',
+    dec: d => 'dec',
+    io: d => d.fst.fst,
+    in: d => 'in',
+    out: d => 'out',
+    loop: d => d.elems[1].arr,
   });
 
-  log(output);
+  let output;
+
+  {
+    const mem = [];
+    let i = 0;
+
+    const input = [];
+    output = [];
+
+    const exec = inst => {
+      switch(inst){
+        case 'left': i--; break;
+        case 'right': i++; break;
+        case 'inc': mem[i] = -~mem[i] & 255; break;
+        case 'dec': mem[i] = ~-mem[i] & 255; break;
+        case 'in': mem[i] = input.shift() & 255; break;
+        case 'out': output.push(mem[i] & 255); break;
+
+        default:
+          const loop = inst;
+          while((mem[i] & 255) !== 0)
+            for(const inst of loop)
+              exec(inst);
+          break;
+      }
+    };
+
+    for(const inst of graph)
+      exec(inst);
+
+    output = Buffer.from(output);
+  }
 
   O.wfs(outputFile, output);
 }
