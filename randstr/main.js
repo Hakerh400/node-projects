@@ -12,8 +12,6 @@ var strNum = null;
 setTimeout(main);
 
 function main(){
-  O.enhanceRNG();
-  
   aels();
   genRandStr();
 }

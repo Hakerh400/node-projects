@@ -96,7 +96,7 @@ function aels(){
         case 'n': TEST_MODE ? moveTo('Nightcore') : next(); break;
         case 't': TEST_MODE && moveTo('Trance'); break;
         case 'i': TEST_MODE && moveTo('Improvable'); break;
-        case 'o': TEST_MODE && moveTo('Other'); break;
+        case 'o': moveTo('Other'); break;
       }
     }
   });

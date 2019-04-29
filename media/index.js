@@ -6,8 +6,12 @@ const ENABLE_TRUNC = 0;
 const fs = require('fs');
 const path = require('path');
 const cp = require('child_process');
-const nodeCanvas = require('../canvas');
 const O = require('../omikron');
+
+if(!O.isElectron)
+  return module.exports = null;
+
+const nodeCanvas = require('../canvas');
 const logSync = require('../log-sync');
 const logStatus = require('../log-status');
 const format = require('../format');

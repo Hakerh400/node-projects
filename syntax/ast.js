@@ -30,6 +30,7 @@ class ASTNode{
   }
 
   get end(){ return this.index + this.len; }
+  get str(){ return this.toString(); }
 
   reset(){ O.virtual('reset'); }
   update(){ O.virtual('update'); }
