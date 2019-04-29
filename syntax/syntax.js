@@ -15,6 +15,7 @@ const AST = require('./ast');
 
 const FILE_EXTENSION = 'txt';
 
+const {ParseDef, ParsePat, ParseElem, CompileDef, CompileArr} = StackFrame;
 const {ASTNode, ASTDef, ASTPat, ASTElem, ASTNterm, ASTTerm} = AST;
 
 class Syntax{
@@ -66,8 +67,6 @@ class Syntax{
   }
 
   parse(str, def){
-    const N = O.noimpl;
-
     const buf = Buffer.from(str);
     const len = str.length;
 
@@ -78,21 +77,20 @@ class Syntax{
     const ast = new AST(this, str);
     const cache = O.ca(str.length, () => new Map());
     const parsing = O.ca(str.length, () => new Set());
-    const sfDef = new StackFrame.StackFrameDef(null, 0, def);
+    const sfDef = new ParseDef(null, 0, def);
 
     let sf = sfDef;
 
     while(sf !== null){
       switch(sf.constructor){
-        case StackFrame.StackFrameDef: parseDef(); break;
-        case StackFrame.StackFramePat: parsePat(); break;
-        case StackFrame.StackFrameElem: parseElem(); break;
+        case ParseDef: parseDef(); break;
+        case ParsePat: parsePat(); break;
+        case ParseElem: parseElem(); break;
         default: throw new TypeError('....??'); break;
       }
     }
 
     ast.node = sfDef.val;
-
     return ast;
 
     function parseDef(){
@@ -132,7 +130,7 @@ class Syntax{
         sf.i = -1;
       }else{
         if(sf.val === null)
-          return sf = new StackFrame.StackFramePat(sf, index, pats[sf.i]);
+          return sf = new ParsePat(sf, index, pats[sf.i]);
 
         sf.i++;
         node.pats.push(sf.val);
@@ -156,7 +154,7 @@ class Syntax{
       let {node} = sf;
 
       if(sf.val === null)
-        return sf = new StackFrame.StackFrameElem(sf, index, elems[sf.i]);
+        return sf = new ParseElem(sf, index, elems[sf.i]);
 
       sf.i++;
       const elem = sf.val;
@@ -190,7 +188,7 @@ class Syntax{
       if(sf.i === 0){
         if(elem.sep !== null && node.arr.length !== 0){
           if(sf.val === null)
-            return sf = new StackFrame.StackFrameElem(sf, index, elem.sep);
+            return sf = new ParseElem(sf, index, elem.sep);
 
           const sep = sf.val;
           sf.val = null;
@@ -205,7 +203,7 @@ class Syntax{
         if(node instanceof ASTNterm){
           if(!node.ref.ruleRange.isAny()) O.noimpl('!ref.ruleRange.isAny()');
           if(sf.val === null)
-            return sf = new StackFrame.StackFrameDef(sf, index, node.ref.rule['*']);
+            return sf = new ParseDef(sf, index, node.ref.rule['*']);
 
           const def = sf.val;
           sf.val = null;
@@ -294,29 +292,88 @@ class Syntax{
   }
 
   compile(ast, funcs){
-    return processDef(ast.node);
+    const sfDef = new CompileDef(null, ast.node);
+    let sf = sfDef;
 
-    function processDef(def){
-      const name = def.ref.name;
-      if(!O.has(funcs, name)) return null;
-      const func = funcs[name];
-
-      def.pat.elems = processArr(def.pat.elems);
-      return func(def);
+    while(sf !== null){
+      switch(sf.constructor){
+        case CompileDef: compileDef(); break;
+        case CompileArr: compileArr(); break;
+        default: throw new TypeError('....??'); break;
+      }
     }
 
-    function processArr(arr){
-      return arr.map(elem => {
-        if(elem instanceof ASTElem){
-          elem.arr = processArr(elem.arr);
-          elem.seps = processArr(elem.seps);
-        }
+    return sfDef.val;
 
-        if(elem instanceof ASTDef)
-          return processDef(elem);
+    function compileDef(){
+      const {elem: def} = sf;
 
-        return elem;
-      });
+      const name = def.ref.name;
+      if(!O.has(funcs, name)) return ret(null);
+      const func = funcs[name];
+
+      if(sf.val === null)
+        return sf = new CompileArr(sf, def.pat.elems);
+
+      def.pat.elems = sf.val;
+      sf.val = null;
+
+      ret(func(def));
+    }
+
+    function compileArr(){
+      const {elem: arr} = sf;
+
+      if(sf.i === arr.length)
+        return ret(arr);
+
+      const elem = arr[sf.i];
+
+      switch(sf.j){
+        case 0:
+          if(elem instanceof ASTElem){
+            if(sf.val === null)
+              return sf = new CompileArr(sf, elem.arr);
+
+            elem.arr = sf.val;
+            sf.val = null;
+          }
+
+          sf.j = 1;
+          break;
+
+        case 1:
+          if(elem instanceof ASTElem){
+            if(sf.val === null)
+              return sf = new CompileArr(sf, elem.seps);
+
+            elem.seps = sf.val;
+            sf.val = null;
+          }
+
+          sf.j = 2;
+          break;
+
+        case 2:
+          if(elem instanceof ASTDef){
+            if(sf.val === null)
+              return sf = new CompileDef(sf, elem);
+
+            arr[sf.i] = sf.val;
+            sf.val = null;
+          }else{
+            arr[sf.i] = elem;
+          }
+
+          sf.i++;
+          sf.j = 0;
+          break;
+      }
+    }
+
+    function ret(val){
+      sf.ret(val);
+      sf = sf.prev;
     }
   }
 };

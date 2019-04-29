@@ -32,18 +32,12 @@ function main(){
   const ast = syntax.parse(input, 'script');
 
   const graph = ast.compile({
-    script: d => d.fst.arr,
-    inst: d => d.fst.fst,
-    move: d => d.fst.fst,
-    left: d => 'left',
-    right: d => 'right',
-    upd: d => d.fst.fst,
-    inc: d => 'inc',
-    dec: d => 'dec',
-    io: d => d.fst.fst,
-    in: d => 'in',
-    out: d => 'out',
-    loop: d => d.elems[1].arr,
+    script: d => d.fst.fst,
+    expr: d => d.fst.fst,
+    op: d => d.fst.fst,
+    add: d => ['add', d.elems[0].fst, d.elems[2].fst],
+    mul: d => ['mul', d.elems[0].fst, d.elems[2].fst],
+    num: d => ['num', String(d)],
   });
 
   let output;
@@ -56,27 +50,17 @@ function main(){
     output = [];
 
     const exec = inst => {
-      switch(inst){
-        case 'left': i--; break;
-        case 'right': i++; break;
-        case 'inc': mem[i] = -~mem[i] & 255; break;
-        case 'dec': mem[i] = ~-mem[i] & 255; break;
-        case 'in': mem[i] = input.shift() & 255; break;
-        case 'out': output.push(mem[i] & 255); break;
+      const type = inst[0];
+      const args = inst.slice(1);
 
-        default:
-          const loop = inst;
-          while((mem[i] & 255) !== 0)
-            for(const inst of loop)
-              exec(inst);
-          break;
+      switch(type){
+        case 'num': return args[0] | 0; break;
+        case 'add': return exec(args[0]) + exec(args[1]); break;
+        case 'mul': return exec(args[0]) * exec(args[1]); break;
       }
     };
 
-    for(const inst of graph)
-      exec(inst);
-
-    output = Buffer.from(output).toString();
+    output = String(exec(graph));
     log(output);
   }
 

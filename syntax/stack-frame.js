@@ -1,14 +1,11 @@
 'use strict';
 
 class StackFrame{
-  constructor(prev, index, ref){
+  constructor(prev){
     this.prev = prev;
-    this.index = index;
-    this.ref = ref;
-
-    this.node = null;
     this.val = null;
     this.i = 0;
+    this.j = 0;
   }
 
   ret(val){
@@ -18,7 +15,18 @@ class StackFrame{
   }
 };
 
-class StackFrameDef extends StackFrame{
+class Parse extends StackFrame{
+  constructor(prev, index, ref){
+    super(prev);
+
+    this.index = index;
+    this.ref = ref;
+
+    this.node = null;
+  }
+};
+
+class ParseDef extends Parse{
   constructor(prev, index, ref){
     super(prev, index, ref);
 
@@ -26,20 +34,45 @@ class StackFrameDef extends StackFrame{
   }
 };
 
-class StackFramePat extends StackFrame{
+class ParsePat extends Parse{
   constructor(prev, index, ref){
     super(prev, index, ref);
   }
 };
 
-class StackFrameElem extends StackFrame{
+class ParseElem extends Parse{
   constructor(prev, index, ref){
     super(prev, index, ref);
   }
 };
 
-StackFrame.StackFrameDef = StackFrameDef;
-StackFrame.StackFramePat = StackFramePat;
-StackFrame.StackFrameElem = StackFrameElem;
+class Compile extends StackFrame{
+  constructor(prev, elem){
+    super(prev);
+
+    this.elem = elem;
+  }
+};
+
+class CompileDef extends Compile{
+  constructor(prev, elem){
+    super(prev, elem);
+  }
+};
+
+class CompileArr extends Compile{
+  constructor(prev, elem){
+    super(prev, elem);
+  }
+};
+
+StackFrame.Parse = Parse;
+StackFrame.ParseDef = ParseDef;
+StackFrame.ParsePat = ParsePat;
+StackFrame.ParseElem = ParseElem;
+
+StackFrame.Compile = Compile;
+StackFrame.CompileDef = CompileDef;
+StackFrame.CompileArr = CompileArr;
 
 module.exports = StackFrame;
