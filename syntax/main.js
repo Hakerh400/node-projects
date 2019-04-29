@@ -20,7 +20,7 @@ const outputFile = path.join(testDir, 'output.txt');
 setTimeout(main);
 
 function main(){
-  {
+  if(0){
     class A extends O.GraphNode{
       static keys = ['p1', 'p2'];
 
@@ -88,9 +88,10 @@ function main(){
     Syntax.fromStr(src, ctxCtor) :
     Syntax.fromDir(exampleDir, ctxCtor);
 
-  const ast = syntax.parse(input, 'script');
+  const graph = Syntax.createGraph();
+  const ast = syntax.parse(graph, input, 'script');
 
-  const graph = ast.compile({
+  const compiled = ast.compile({
     script: d => ['num', d.fst.fst],
     expr: d => d.fst.fst,
     op: d => d.fst.fst,
@@ -117,7 +118,7 @@ function main(){
       }
     };
 
-    output = String(exec(graph));
+    output = String(exec(compiled));
     log(output);
   }
 

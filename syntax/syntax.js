@@ -18,6 +18,12 @@ const FILE_EXTENSION = 'txt';
 const {ParseDef, ParsePat, ParseElem, CompileDef, CompileArr} = StackFrame;
 const {ASTNode, ASTDef, ASTPat, ASTElem, ASTNterm, ASTTerm} = AST;
 
+const graphCtors = [
+  ParseDef, ParsePat, ParseElem,
+  CompileDef, CompileArr,
+  ASTDef, ASTPat, ASTNterm, ASTTerm,
+];
+
 class Syntax{
   constructor(str, ctxCtor){
     this.rules = ruleParser.parse(this, str);
@@ -66,7 +72,12 @@ class Syntax{
     return new Syntax(str, ctxCtor);
   }
 
-  parse(str, def){
+  static createGraph(maxSize){
+    const graph = new O.Graph(graphCtors, maxSize);
+    return graph;
+  }
+
+  parse(graph, str, def){
     const buf = Buffer.from(str);
     const len = str.length;
 
@@ -74,7 +85,7 @@ class Syntax{
     if(!(def in defs)) throw new TypeError(`Unknown definition ${O.sf(def)}`);
     def = defs[def]['*'];
 
-    const ast = new AST(this, str);
+    const ast = new AST(graph, this, str);
     const cache = O.ca(str.length, () => new Map());
     const parsing = O.ca(str.length, () => new Set());
     const sfDef = new ParseDef(null, 0, def);

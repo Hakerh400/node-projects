@@ -3,14 +3,34 @@
 const fs = require('fs');
 const path = require('path');
 const O = require('../omikron');
+const SG = require('../serializable-graph')
 const Element = require('./element');
 
-class AST{
-  constructor(syntax, str){
-    this.syntax = syntax;
-    this.str = str;
+class AST extends SG.Node{
+  static keys = ['node'];
+
+  constructor(graph, syntax=null, str=null){
+    super(graph);
+
+    if(syntax !== null){
+      this.syntax = syntax;
+      this.str = str;
+      this.size += str.length;
+    }
 
     this.node = null;
+  }
+
+  ser(ser=new O.Serializer()){
+    if(this.syntax === null) ser.write(0);
+    else ser.write(1).writeStr(this.str);
+    return ser;
+  }
+
+  deser(ser){
+    if(!ser.read()) this.str = null;
+    else this.str = ser.readStr();
+    return this;
   }
 
   compile(funcs){
@@ -18,15 +38,30 @@ class AST{
   }
 };
 
-class ASTNode{
-  constructor(ast, index, ref){
+class ASTNode extends SG.Node{
+  static keys = ['ast', 'ref'];
+
+  constructor(ast, index=0, ref=null){
+    super(ast.graph);
+
     this.ast = ast;
     this.index = index
     this.ref = ref;
 
     this.len = -1;
     this.done = 0;
-    this.parent = null;
+  }
+
+  ser(ser=new O.Serializer()){
+    ser.writeUint(this.index).writeInt(this.len).write(this.done);
+    return ser;
+  }
+
+  deser(ser){
+    this.index = ser.readUint();
+    this.len = ser.readInt();
+    this.done = ser.read();
+    return this;
   }
 
   get end(){ return this.index + this.len; }
