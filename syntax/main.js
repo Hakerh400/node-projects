@@ -76,7 +76,8 @@ function main(){
     for(const inst of graph)
       exec(inst);
 
-    output = Buffer.from(output);
+    output = Buffer.from(output).toString();
+    log(output);
   }
 
   O.wfs(outputFile, output);

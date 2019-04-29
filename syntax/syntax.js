@@ -10,6 +10,7 @@ const Element = require('./element');
 const Range = require('./range');
 const Context = require('./context');
 const ruleParser = require('./rule-parser');
+const StackFrame = require('./stack-frame');
 const AST = require('./ast');
 
 const FILE_EXTENSION = 'txt';
@@ -77,144 +78,172 @@ class Syntax{
     const ast = new AST(this, str);
     const cache = O.ca(str.length, () => new Map());
     const parsing = O.ca(str.length, () => new Set());
+    const sfDef = new StackFrame.StackFrameDef(null, 0, def);
 
-    ast.node = parseDef(0, def);
-    //log(`\n${'='.repeat(150)}\n`);
-    logDef(ast.node);
-    //log(`\n${'='.repeat(150)}\n`);
+    let sf = sfDef;
+
+    while(sf !== null){
+      switch(sf.constructor){
+        case StackFrame.StackFrameDef: parseDef(); break;
+        case StackFrame.StackFramePat: parsePat(); break;
+        case StackFrame.StackFrameElem: parseElem(); break;
+        default: throw new TypeError('....??'); break;
+      }
+    }
+
+    ast.node = sfDef.val;
 
     return ast;
 
-    function logDef(def){
-      //log.inc(`${def.ref.name} ---> ${def.toString()}`);
-
-      for(const elem of def.pat.elems){
-        if(!(elem instanceof ASTNterm)) continue;
-        logDef(elem.arr[0]);
-      }
-
-      //log.dec();
-    }
-
-    function parseDef(index, def){
-      if(index === str.length) return createNewNode(index, def);
-      //log.inc(`parse (${index}, ${def.name}) {`);
-
+    function parseDef(){
+      const {index, ref: def} = sf;
       const pSet = parsing[index];
-      //log(`stack: [${[...pSet].map(a => a.name).join(', ')}]`);
 
-      let node = getNodeFromCache(index, def);
-      if(node !== null){
-        //log(`cache --->  done: ${!!node.done}  len: ${node.len}`);
-        if(node.done || pSet.has(def)){
-          //log(`nothing to do here`);
-          //log.dec();
-          //log(`}`);
-          return node;
-        }
+      if(sf.node === null){
+        if(index === str.length) return createNewNode(index, def);
+
+        let node = getNodeFromCache(index, def);
+        if(node !== null && (node.done || pSet.has(def)))
+          return ret(node);
+
+        pSet.add(def);
+        sf.node = node;
+        sf.i = -1;
       }
-
-      pSet.add(def);
-
+      
       const pats = def.sects.include.pats;
-      let prev;
+      let {node, nodePrev: prev} = sf;
 
-      while(1){
-        prev = node;
-        node = createNewNode(index, def, node === null);
-
-        for(let i = 0; i !== pats.length; i++){
-          const pat = parsePat(index, pats[i]);
-          node.pats.push(pat);
-        }
-
+      if(sf.i === -1){
+        sf.nodePrev = prev = node;
+        sf.node = node = createNewNode(index, def, node === null);
+        sf.i = 0;
+      }else if(sf.i === pats.length){
         const pp = node.pats;
         node.update();
-        //log(`ITER --->  [${pp.map(a => a.len).join(', ')}]  ${prev !== null ? prev.len : -1}  ${node.len}`);
 
         if(prev !== null && node.len <= prev.len){
-          node = prev;
-          break;
+          sf.node = node = prev;
+          pSet.delete(def);
+          return ret(node);
         }
 
         cache[index].set(def, node);
+        sf.i = -1;
+      }else{
+        if(sf.val === null)
+          return sf = new StackFrame.StackFramePat(sf, index, pats[sf.i]);
+
+        sf.i++;
+        node.pats.push(sf.val);
+        sf.val = null;
       }
-
-      //log.dec(`len: ${node.len}`);
-      //log(`}`);
-
-      pSet.delete(def);
-      return node;
     }
 
-    function parsePat(index, pat){
-      if(index === str.length) return createNewNode(index, pat);
-      let node = getNodeFromCache(index, pat, 1);
-      if(node.done) return node;
-      node = createNewNode(index, pat);
+    function parsePat(){
+      const {index, ref: pat} = sf;
 
-      const elems = pat.elems;
+      if(sf.node === null){
+        if(index === str.length) return ret(createNewNode(index, pat));
+        let node = getNodeFromCache(index, pat, 1);
+        if(node.done) return ret(node);
+        node = createNewNode(index, pat);
 
-      for(let i = 0; i !== elems.length; i++){
-        const elem = parseElem(index, elems[i]);
-        node.elems.push(elem);
-        if(elem.len === -1) return node.reset();
-        index += elem.len;
+        sf.node = node;
       }
 
-      return node.update();
+      const {elems} = pat;
+      let {node} = sf;
+
+      if(sf.val === null)
+        return sf = new StackFrame.StackFrameElem(sf, index, elems[sf.i]);
+
+      sf.i++;
+      const elem = sf.val;
+      sf.val = null;
+
+      node.elems.push(elem);
+      if(elem.len === -1) return ret(node.reset());
+      sf.index += elem.len;
+      if(sf.i === elems.length) ret(node.update());
     }
 
-    function parseElem(index, elem){
-      if(index === str.length) return createNewNode(index, elem);
-      let node = getNodeFromCache(index, elem, 1);
-      if(node.done) return node;
-      node = createNewNode(index, elem);
+    function parseElem(){
+      const {index, ref: elem} = sf;
+
+      if(sf.node === null){
+        if(index === str.length) return ret(createNewNode(index, elem));
+        let node = getNodeFromCache(index, elem, 1);
+        if(node.done) return ret(node);
+        node = createNewNode(index, elem);
+
+        sf.node = node;
+      }
 
       const lenMin = elem.range.start;
       const lenMax = elem.range.end;
-
+      let {node} = sf;
       if(lenMin === null) throw new TypeError('???');
 
-      while(1){
-        if(node.arr.length === lenMax || index === str.length) break;
+      if(node.arr.length === lenMax || index === str.length) return done();
 
+      if(sf.i === 0){
         if(elem.sep !== null && node.arr.length !== 0){
-          const sep = parseElem(index, elem.sep);
-          if(sep.len === -1) break;
-          node.seps.push(dep);
-          index += sep.len;
+          if(sf.val === null)
+            return sf = new StackFrame.StackFrameElem(sf, index, elem.sep);
+
+          const sep = sf.val;
+          sf.val = null;
+
+          if(sep.len === -1) return done();
+          node.seps.push(sep);
+          sf.index += sep.len;
         }
 
+        sf.i = 1;
+      }else{
         if(node instanceof ASTNterm){
-          const {ref} = node;
-          if(!ref.ruleRange.isAny()) O.noimpl('!ref.ruleRange.isAny()');
+          if(!node.ref.ruleRange.isAny()) O.noimpl('!ref.ruleRange.isAny()');
+          if(sf.val === null)
+            return sf = new StackFrame.StackFrameDef(sf, index, node.ref.rule['*']);
 
-          const def = parseDef(index, ref.rule['*']);
-          if(def.len === -1) break;
+          const def = sf.val;
+          sf.val = null;
+
+          if(def.len === -1) return done();
           node.arr.push(def);
-          index += def.len;
+          sf.index += def.len;
         }else if(node instanceof ASTTerm){
           if(node.ref instanceof Element.String){
             const substr = str.slice(index, index + node.ref.str.length);
-            if(node.ref.str !== substr) break;
+            if(node.ref.str !== substr) return done();
             node.arr.push(substr);
-            index += node.ref.str.length;
+            sf.index += node.ref.str.length;
           }else if(node.ref instanceof Element.CharsRange){
             // TODO: check buffer bounds
-            if(!node.ref.set.has(buf[index])) break;
-            node.arr.push(str[index]);
-            index++;
+            if(!node.ref.set.has(buf[index])) return done();
+            if(node.arr.length === 0) node.arr.push('');
+            node.arr[0] += str[index];
+            sf.index++;
           }else{
             throw new TypeError('Whaat?');
           }
         }else{
           errUnknownAST(node);
         }
+
+        sf.i = 0;
       }
 
-      if(node.arr.length < lenMin) return node.reset();
-      return node.update();
+      function done(){
+        if(node.arr.length < lenMin) return ret(node.reset());
+        return ret(node.update());
+      }
+    }
+
+    function ret(val){
+      sf.ret(val);
+      sf = sf.prev;
     }
 
     function createNewNode(index, ref, addToCache=1){
