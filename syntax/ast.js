@@ -81,11 +81,11 @@ class ASTDef extends ASTNode{
   }
 
   ser(ser=new O.Serializer()){
-    ser.writeUint(this.index).writeInt(this.len).write(this.done);
-    return ser;
+    return super.ser(ser).writeUint(this.index).writeInt(this.len).write(this.done);
   }
 
   deser(ser){
+    super.deser(ser);
     this.index = ser.readUint();
     this.len = ser.readInt();
     this.done = ser.read();

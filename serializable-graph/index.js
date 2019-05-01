@@ -5,8 +5,6 @@ const path = require('path');
 const O = require('../omikron');
 const format = require('../format');
 
-const DEBUG = 0;
-
 const PTR_SIZE = 8;
 
 class SerializableGraph extends O.Serializable{
@@ -68,7 +66,7 @@ class SerializableGraph extends O.Serializable{
 
         if(!(node instanceof Node)){
           if(!this.#refsMap.has(node))
-            throw new TypeError(`[SER] ${getName(node)} is not a valid graph node or external reference`);
+            throw new TypeError(`[SER] ${getName(node, 1)} is not a valid graph node or external reference`);
           ser.write(1).write(this.#refsMap.get(node), lastRefIndex);
           continue;
         }
@@ -197,11 +195,7 @@ class SerializableGraph extends O.Serializable{
   }
 
   gc(){
-    const sizePrev = this.size;
-
-    if(DEBUG){
-      log(this.#nodes);
-    }
+    const sizePrev = this.#size;
 
     const nodes = new global.Set();
     const queue = global.Array.from(this.#persts);
@@ -211,13 +205,18 @@ class SerializableGraph extends O.Serializable{
       const node = queue.shift();
 
       if(typeof node !== 'object')
-        throw new TypeError(`[GC] ${getName(node)} is not an object`);
+        throw new TypeError(`[GC] ${getName(node, 1)} is not an object`);
 
-      if(!(node instanceof Node)){
+      if(node instanceof Node){
+        if(!this.#nodes.has(node))
+          throw new TypeError(`[GC] ${getName(node, 1)} is not in the graph`);
+      }else{
         if(!this.#refsMap.has(node))
-          throw new TypeError(`[GC] ${getName(node)} is not a valid graph node or external reference`);
+          throw new TypeError(`[GC] ${getName(node, 1)} is not a valid graph node or external reference`);
         continue;
       }
+
+      if(nodes.has(node)) continue;
 
       nodes.add(node);
       size += node.size;
@@ -237,26 +236,31 @@ class SerializableGraph extends O.Serializable{
     }
 
     this.#nodes = nodes;
-    this.size = size;
+    this.#size = size;
 
-    if(DEBUG){
-      log();
-      log(this.#nodes);
-    }
+    let ss = 0;
+    for(const n of this.#nodes)
+      ss += n.size;
 
     if(size > sizePrev){
       const difStr = `${format.num(sizePrev)} ---> ${format.num(size)}`;
       throw new TypeError(`[GC] Graph size after GC is larger than before (${difStr})`);
     }
 
-    if(DEBUG){
-      log(`\n${'='.repeat(100)}\n`);
-    }
-
     return this;
   }
 
-  refresh(){ return this.gc().reser(); }
+  refresh(){
+    this.log();
+
+    this.gc();
+    this.log();
+
+    this.reser();
+    this.log();
+
+    return this;
+  }
 
   ca(len, func){
     const arr = new Array(this);
@@ -265,6 +269,13 @@ class SerializableGraph extends O.Serializable{
       arr.push(func(i));
 
     return arr;
+  }
+
+  log(){
+    log();
+    log(this.#nodes.size);
+    log(global.Array.from(this.#nodes).map(a => [getName(a, 0), a.size]));
+    return this;
   }
 };
 
@@ -291,7 +302,10 @@ class Node extends O.Serializable{
   set ptrsNum(num){ this.size -= (this.#ptrsNum - (this.#ptrsNum = num)) * PTR_SIZE | 0; }
 
   get size(){ return this.#size; }
-  set size(size){ this.graph.size -= this.#size - (this.#size = size) | 0; }
+  set size(size){
+    if(!this.graph.nodes.has(this)) throw new Error(`The graph does not contain ${getName(this, 1)}`);
+    this.graph.size -= this.#size - (this.#size = size) | 0;
+  }
 
   persist(){ this.graph.persist(this); return this; }
   unpersist(){ this.graph.unpersist(this); return this; }
@@ -332,20 +346,21 @@ class Array extends Node{
 
   set length(len){
     const prev = this.ptrsNum;
+    const dif = Math.abs(len - prev);
 
     if(len > prev){
       const {graph} = this;
-      for(let i = prev; i !== len; i++)
+      for(let i = 0; i !== dif; i++)
         this.push(Undefined.get(graph));
     }else{
-      for(let i = len; i !== prev; i++)
+      for(let i = 0; i !== dif; i++)
         this.pop();
     }
   }
 
   unshift(val){
     if(typeof val !== 'object')
-      throw new TypeError(`[UNSHIFT] ${getName(val)} is not an object`);
+      throw new TypeError(`[UNSHIFT] ${getName(val, 1)} is not an object`);
 
     const len = this.ptrsNum;
     for(let i = 0; i !== len; i++)
@@ -356,7 +371,7 @@ class Array extends Node{
 
   push(val){
     if(typeof val !== 'object')
-      throw new TypeError(`[PUSH] ${getName(val)} is not an object`);
+      throw new TypeError(`[PUSH] ${getName(val, 1)} is not an object`);
 
     this[this.ptrsNum] = val;
     return ++this.ptrsNum;
@@ -516,7 +531,6 @@ class Map extends Node{
     super(graph);
     if(graph.dsr) return;
 
-    this.map = new global.Map();
     this.arr = new Array(graph);
   }
 
@@ -574,7 +588,7 @@ Object.assign(SerializableGraph, {
 
 module.exports = SerializableGraph;
 
-function getName(val){
+function getName(val, sf=0){
   let str;
 
   if(val === null){
@@ -587,5 +601,6 @@ function getName(val){
     str = global.String(typeof val);
   }
 
-  return O.sf(str);
+  if(sf) str = O.sf(str);
+  return str;
 }

@@ -29,8 +29,7 @@ function main(){
     Syntax.fromStr(src, ctxCtor) :
     Syntax.fromDir(exampleDir, ctxCtor);
 
-  const graph = syntax.createGraph();
-  const ast = syntax.parse(graph, input, 'script');
+  const ast = syntax.parse(input, 'script');
 
   const compiled = syntax.compile(ast, {
     script: d => ['num', d.fst.fst],

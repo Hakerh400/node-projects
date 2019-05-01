@@ -22,8 +22,8 @@ const {ASTNode, ASTDef, ASTPat, ASTElem, ASTNterm, ASTTerm} = AST;
 const graphCtors = [
   SG.String, SG.Array, SG.Set, SG.Map,
 
-  //ParseDef, ParsePat, ParseElem,
-  //CompileDef, CompileArr,
+  ParseDef, ParsePat, ParseElem,
+  CompileDef, CompileArr,
   AST, ASTDef, ASTPat, ASTNterm, ASTTerm,
 ];
 
@@ -50,6 +50,8 @@ class Syntax{
         }
       }
     }
+
+    this.graph = new SG(graphCtors, this.#graphRefs);
   }
 
   static fromStr(str, ctxCtor){
@@ -94,12 +96,9 @@ class Syntax{
     return new Syntax(str, ctxCtor);
   }
 
-  createGraph(maxSize){
-    const graph = new SG(graphCtors, this.#graphRefs, maxSize);
-    return graph;
-  }
+  parse(str, def){
+    const {graph} = this;
 
-  parse(graph, str, def){
     const buf = Buffer.from(str);
     const len = str.length;
 
@@ -108,9 +107,10 @@ class Syntax{
     def = defs[def]['*'];
 
     const ast = new AST(graph, this, new SG.String(graph, str)).persist();
-    const cache = graph.ca(str.length, () => new SG.Map(graph)).persist();
-    const parsing = graph.ca(str.length, () => new SG.Set(graph)).persist();
-    const sfDef = new ParseDef(null, 0, def)//.persist();
+    const cache = graph.ca(len, () => new SG.Map(graph)).persist();
+    graph.refresh();
+    const parsing = graph.ca(len, () => new SG.Set(graph)).persist();
+    const sfDef = new ParseDef(graph, null, 0, def).persist();
 
     let sf = sfDef;
 
@@ -127,7 +127,7 @@ class Syntax{
 
     cache.unpersist();
     parsing.unpersist();
-    //sfDef.unpersist();
+    sfDef.unpersist();
 
     return ast;
 
@@ -167,7 +167,7 @@ class Syntax{
         sf.i = -1;
       }else{
         if(sf.val === null)
-          return sf = new ParsePat(sf, index, pats[sf.i]);
+          return sf = new ParsePat(graph, sf, index, pats[sf.i]);
 
         sf.i++;
         node.pats.push(sf.val);
@@ -191,7 +191,7 @@ class Syntax{
       let {node} = sf;
 
       if(sf.val === null)
-        return sf = new ParseElem(sf, index, elems[sf.i]);
+        return sf = new ParseElem(graph, sf, index, elems[sf.i]);
 
       sf.i++;
       const elem = sf.val;
@@ -240,7 +240,7 @@ class Syntax{
         if(node instanceof ASTNterm){
           if(!node.ref.ruleRange.isAny()) O.noimpl('!ref.ruleRange.isAny()');
           if(sf.val === null)
-            return sf = new ParseDef(sf, index, node.ref.rule['*']);
+            return sf = new ParseDef(graph, sf, index, node.ref.rule['*']);
 
           const def = sf.val;
           sf.val = null;
@@ -329,7 +329,9 @@ class Syntax{
   }
 
   compile(ast, funcs){
-    const sfDef = new CompileDef(null, ast.node);
+    const {graph} = this;
+
+    const sfDef = new CompileDef(graph, null, ast.node);
     let sf = sfDef;
 
     while(sf !== null){
@@ -350,7 +352,7 @@ class Syntax{
       const func = funcs[name];
 
       if(sf.val === null)
-        return sf = new CompileArr(sf, def.pat.elems);
+        return sf = new CompileArr(graph, sf, def.pat.elems);
 
       def.pat.elems = sf.val;
       sf.val = null;
@@ -370,7 +372,7 @@ class Syntax{
         case 0:
           if(elem instanceof ASTElem){
             if(sf.val === null)
-              return sf = new CompileArr(sf, elem.arr);
+              return sf = new CompileArr(graph, sf, elem.arr);
 
             elem.arr = sf.val;
             sf.val = null;
@@ -382,7 +384,7 @@ class Syntax{
         case 1:
           if(elem instanceof ASTElem){
             if(sf.val === null)
-              return sf = new CompileArr(sf, elem.seps);
+              return sf = new CompileArr(graph, sf, elem.seps);
 
             elem.seps = sf.val;
             sf.val = null;
@@ -394,7 +396,7 @@ class Syntax{
         case 2:
           if(elem instanceof ASTDef){
             if(sf.val === null)
-              return sf = new CompileDef(sf, elem);
+              return sf = new CompileDef(graph, sf, elem);
 
             arr[sf.i] = sf.val;
             sf.val = null;
