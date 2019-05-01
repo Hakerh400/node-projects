@@ -169,6 +169,8 @@ class SerializableGraph extends O.Serializable{
     this.#size = size;
   }
 
+  get main(){ return O.first(this.#persts); }
+
   addNode(node){
     const {maxSize} = this;
     const {size} = node;
@@ -251,14 +253,8 @@ class SerializableGraph extends O.Serializable{
   }
 
   refresh(){
-    this.log();
-
     this.gc();
-    this.log();
-
     this.reser();
-    this.log();
-
     return this;
   }
 
@@ -271,15 +267,21 @@ class SerializableGraph extends O.Serializable{
     return arr;
   }
 
-  log(){
+  log(nodes=this.#nodes){
     log();
-    log(this.#nodes.size);
-    log(global.Array.from(this.#nodes).map(a => [getName(a, 0), a.size]));
+    log(nodes.size);
+    log(global.Array.from(nodes).map(node => {
+      return `${`${getName(node, 0)}.${node.id}`.padEnd(20)} ${node.size}`;
+    }).join('\n'));
     return this;
   }
 };
 
 class Node extends O.Serializable{
+  // TODO: delete this
+  static id = 0;
+  id = Node.id++;
+
   static ptrsNum = 0;
 
   persistent = 0;
@@ -303,7 +305,7 @@ class Node extends O.Serializable{
 
   get size(){ return this.#size; }
   set size(size){
-    if(!this.graph.nodes.has(this)) throw new Error(`The graph does not contain ${getName(this, 1)}`);
+    if(!this.graph.nodes.has(this)) throw new Error(`The graph does not contain "${getName(this, 0)}.${this.id}"`);
     this.graph.size -= this.#size - (this.#size = size) | 0;
   }
 

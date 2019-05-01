@@ -92,7 +92,7 @@ class ParseElem extends Parse{
 };
 
 class Compile extends StackFrame{
-  static ptrsNum = 1;
+  static ptrsNum = 3;
 
   constructor(graph, prev, elem){
     super(graph, prev);
@@ -101,7 +101,7 @@ class Compile extends StackFrame{
     this.elem = elem;
   }
 
-  get elem(){ return this[0]; } set elem(a){ this[0] = a; }
+  get elem(){ return this[2]; } set elem(a){ this[2] = a; }
 };
 
 class CompileDef extends Compile{

@@ -107,9 +107,8 @@ class Syntax{
     def = defs[def]['*'];
 
     const ast = new AST(graph, this, new SG.String(graph, str)).persist();
-    const cache = graph.ca(len, () => new SG.Map(graph)).persist();
-    graph.refresh();
-    const parsing = graph.ca(len, () => new SG.Set(graph)).persist();
+    const cache = graph.ca(str.length, () => new SG.Map(graph)).persist();
+    const parsing = graph.ca(str.length, () => new SG.Set(graph)).persist();
     const sfDef = new ParseDef(graph, null, 0, def).persist();
 
     let sf = sfDef;
@@ -167,7 +166,7 @@ class Syntax{
         sf.i = -1;
       }else{
         if(sf.val === null)
-          return sf = new ParsePat(graph, sf, index, pats[sf.i]);
+          return setSf(new ParsePat(graph, sf, index, pats[sf.i]));
 
         sf.i++;
         node.pats.push(sf.val);
@@ -191,7 +190,7 @@ class Syntax{
       let {node} = sf;
 
       if(sf.val === null)
-        return sf = new ParseElem(graph, sf, index, elems[sf.i]);
+        return setSf(new ParseElem(graph, sf, index, elems[sf.i]));
 
       sf.i++;
       const elem = sf.val;
@@ -225,7 +224,7 @@ class Syntax{
       if(sf.i === 0){
         if(elem.sep !== null && node.arr.length !== 0){
           if(sf.val === null)
-            return sf = new ParseElem(sf, index, elem.sep);
+            return setSf(new ParseElem(sf, index, elem.sep));
 
           const sep = sf.val;
           sf.val = null;
@@ -240,7 +239,7 @@ class Syntax{
         if(node instanceof ASTNterm){
           if(!node.ref.ruleRange.isAny()) O.noimpl('!ref.ruleRange.isAny()');
           if(sf.val === null)
-            return sf = new ParseDef(graph, sf, index, node.ref.rule['*']);
+            return setSf(new ParseDef(graph, sf, index, node.ref.rule['*']));
 
           const def = sf.val;
           sf.val = null;
@@ -276,9 +275,15 @@ class Syntax{
       }
     }
 
+    function setSf(sfNew){
+      if(sf !== sfDef) sf.unpersist();
+      sf = sfNew;
+      if(sfNew !== null) sfNew.persist();
+    }
+
     function ret(val){
       sf.ret(val);
-      sf = sf.prev;
+      setSf(sf.prev);
     }
 
     function createNewNode(index, ref, addToCache=1){
