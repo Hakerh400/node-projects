@@ -1,5 +1,10 @@
 'use strict';
 
+const fs = require('fs');
+const path = require('path');
+const O = require('../omikron');
+const SG = require('../serializable-graph');
+
 class StackFrame{
   constructor(prev){
     this.prev = prev;
@@ -66,13 +71,13 @@ class CompileArr extends Compile{
   }
 };
 
-StackFrame.Parse = Parse;
-StackFrame.ParseDef = ParseDef;
-StackFrame.ParsePat = ParsePat;
-StackFrame.ParseElem = ParseElem;
-
-StackFrame.Compile = Compile;
-StackFrame.CompileDef = CompileDef;
-StackFrame.CompileArr = CompileArr;
-
-module.exports = StackFrame;
+module.exports = Object.assign(StackFrame, {
+  Parse,
+  ParseDef,
+  ParsePat,
+  ParseElem,
+  
+  Compile,
+  CompileDef,
+  CompileArr,
+});

@@ -7,6 +7,8 @@ const Pattern = require('./pattern');
 
 class Section{
   constructor(){}
+
+  get sectName(){ return this.constructor.sectName; }
 };
 
 class Match extends Section{

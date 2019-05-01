@@ -6,6 +6,9 @@ const O = require('../omikron');
 const Element = require('./element');
 
 class Pattern{
+  static id = 0;
+  id = Pattern.id++;
+
   constructor(){
     this.elems = [];
   }

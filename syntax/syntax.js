@@ -3,6 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 const O = require('../omikron');
+const SG = require('../serializable-graph');
 const Rule = require('./rule');
 const Section = require('./section');
 const Pattern = require('./pattern');
@@ -19,15 +20,36 @@ const {ParseDef, ParsePat, ParseElem, CompileDef, CompileArr} = StackFrame;
 const {ASTNode, ASTDef, ASTPat, ASTElem, ASTNterm, ASTTerm} = AST;
 
 const graphCtors = [
-  ParseDef, ParsePat, ParseElem,
-  CompileDef, CompileArr,
-  ASTDef, ASTPat, ASTNterm, ASTTerm,
+  SG.String, SG.Array, SG.Set, SG.Map,
+
+  //ParseDef, ParsePat, ParseElem,
+  //CompileDef, CompileArr,
+  AST, ASTDef, ASTPat, ASTNterm, ASTTerm,
 ];
 
 class Syntax{
+  #defs;
+  #ctxCtor;
+  #graphRefs;
+
   constructor(str, ctxCtor){
-    this.rules = ruleParser.parse(this, str);
-    this.ctxCtor = ctxCtor;
+    const defs = this.#defs = ruleParser.parse(this, str);
+    const refs = this.#graphRefs = [this];
+    this.#ctxCtor = ctxCtor;
+
+    for(const defName in defs){
+      const def = defs[defName]['*'];
+      refs.push(def);
+
+      for(const pat of def.sects.include.pats){
+        refs.push(pat);
+
+        for(const elem of pat.elems){
+          refs.push(elem);
+          if(elem.sep !== null) ref.push(elem.sep);
+        }
+      }
+    }
   }
 
   static fromStr(str, ctxCtor){
@@ -72,8 +94,8 @@ class Syntax{
     return new Syntax(str, ctxCtor);
   }
 
-  static createGraph(maxSize){
-    const graph = new O.Graph(graphCtors, maxSize);
+  createGraph(maxSize){
+    const graph = new SG(graphCtors, this.#graphRefs, maxSize);
     return graph;
   }
 
@@ -81,14 +103,14 @@ class Syntax{
     const buf = Buffer.from(str);
     const len = str.length;
 
-    const {rules: defs} = this;
+    const defs = this.#defs;
     if(!(def in defs)) throw new TypeError(`Unknown definition ${O.sf(def)}`);
     def = defs[def]['*'];
 
-    const ast = new AST(graph, this, str);
-    const cache = O.ca(str.length, () => new Map());
-    const parsing = O.ca(str.length, () => new Set());
-    const sfDef = new ParseDef(null, 0, def);
+    const ast = new AST(graph, this, new SG.String(graph, str)).persist();
+    const cache = graph.ca(str.length, () => new SG.Map(graph)).persist();
+    const parsing = graph.ca(str.length, () => new SG.Set(graph)).persist();
+    const sfDef = new ParseDef(null, 0, def)//.persist();
 
     let sf = sfDef;
 
@@ -102,6 +124,11 @@ class Syntax{
     }
 
     ast.node = sfDef.val;
+
+    cache.unpersist();
+    parsing.unpersist();
+    //sfDef.unpersist();
+
     return ast;
 
     function parseDef(){
@@ -128,7 +155,6 @@ class Syntax{
         sf.node = node = createNewNode(index, def, node === null);
         sf.i = 0;
       }else if(sf.i === pats.length){
-        const pp = node.pats;
         node.update();
 
         if(prev !== null && node.len <= prev.len){
@@ -226,13 +252,13 @@ class Syntax{
           if(node.ref instanceof Element.String){
             const substr = str.slice(index, index + node.ref.str.length);
             if(node.ref.str !== substr) return done();
-            node.arr.push(substr);
+            node.arr.push(new SG.String(graph, substr));
             sf.index += node.ref.str.length;
           }else if(node.ref instanceof Element.CharsRange){
             // TODO: check buffer bounds
             if(!node.ref.set.has(buf[index])) return done();
-            if(node.arr.length === 0) node.arr.push('');
-            node.arr[0] += str[index];
+            if(node.arr.length === 0) node.arr.push(new SG.String(graph));
+            node.arr[0].str += str[index];
             sf.index++;
           }else{
             throw new TypeError('Whaat?');
@@ -274,7 +300,7 @@ class Syntax{
         errUnknownRef(ref);
       }
 
-      const node = new ctor(ast, index, ref);
+      const node = new ctor(graph, ast, index, ref);
       if(index === str.length) return node.finalize();
       if(addToCache) cache[index].set(ref, node);
 

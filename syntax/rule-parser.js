@@ -10,6 +10,7 @@ const Element = require('./element');
 const Range = require('./range');
 
 // TODO: be consistent: use "definition" instead of "rule" everywhere
+// TODO: linter: require latest node version
 
 module.exports = {
   parse,

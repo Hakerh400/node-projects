@@ -3,53 +3,81 @@
 const fs = require('fs');
 const path = require('path');
 const O = require('../omikron');
-const SG = require('../serializable-graph')
+const SG = require('../serializable-graph');
 const Element = require('./element');
 
 class AST extends SG.Node{
-  static keys = ['node'];
+  static ptrsNum = 3;
 
-  constructor(graph, syntax=null, str=null){
+  constructor(graph, syntax=null, str=null, node=null){
     super(graph);
+    if(graph.dsr) return;
 
-    if(syntax !== null){
-      this.syntax = syntax;
-      this.str = str;
-      this.size += str.length;
-    }
-
-    this.node = null;
+    this.syntax = syntax;
+    this.str = str;
+    this.node = node;
   }
 
-  ser(ser=new O.Serializer()){
-    if(this.syntax === null) ser.write(0);
-    else ser.write(1).writeStr(this.str);
-    return ser;
-  }
-
-  deser(ser){
-    if(!ser.read()) this.str = null;
-    else this.str = ser.readStr();
-    return this;
-  }
-
-  compile(funcs){
-    return this.syntax.compile(this, funcs);
-  }
+  get syntax(){ return this[0]; } set syntax(a){ this[0] = a; }
+  get str(){ return this[1]; } set str(a){ this[1] = a; }
+  get node(){ return this[2]; } set node(a){ this[2] = a; }
 };
 
 class ASTNode extends SG.Node{
-  static keys = ['ast', 'ref'];
+  static ptrsNum = 2;
 
-  constructor(ast, index=0, ref=null){
-    super(ast.graph);
+  constructor(graph, ast=null, index=0, ref=null){
+    super(graph);
+    if(graph.dsr) return;
 
     this.ast = ast;
-    this.index = index
     this.ref = ref;
-
+    this.index = index
     this.len = -1;
     this.done = 0;
+  }
+
+  ser(ser=new O.Serializer()){
+    return ser.writeUint(this.index).writeInt(this.len).write(this.done);
+  }
+
+  deser(ser){
+    this.index = ser.readUint();
+    this.len = ser.readInt();
+    this.done = ser.read();
+    return this;
+  }
+
+  get ast(){ return this[0]; } set ast(a){ this[0] = a; }
+  get ref(){ return this[1]; } set ref(a){ this[1] = a; }
+
+  get end(){ return this.index + this.len; }
+  get str(){ return this.toString(); }
+
+  reset(){ O.virtual('reset'); }
+  update(){ O.virtual('update'); }
+
+  finalize(){
+    this.done = 1;
+    return this;
+  }
+
+  toString(){
+    return this.ast.str.str.slice(this.index, this.end);
+  }
+};
+
+class ASTDef extends ASTNode{
+  static ptrsNum = 5;
+
+  constructor(graph, ast, index, ref){
+    super(graph, ast, index, ref);
+    if(graph.dsr) return;
+
+    this.pats = new SG.Array(this.graph);
+    this.pat = null;
+    this.elems = null;
+    this.patIndex = 0;
   }
 
   ser(ser=new O.Serializer()){
@@ -64,39 +92,15 @@ class ASTNode extends SG.Node{
     return this;
   }
 
-  get end(){ return this.index + this.len; }
-  get str(){ return this.toString(); }
-
-  reset(){ O.virtual('reset'); }
-  update(){ O.virtual('update'); }
-
-  finalize(){
-    this.done = 1;
-    return this;
-  }
-
-  toString(){
-    return this.ast.str.slice(this.index, this.end);
-  }
-};
-
-class ASTDef extends ASTNode{
-  constructor(ast, index, ref){
-    super(ast, index, ref);
-
-    this.pats = [];
-    this.pat = null;
-    this.patIndex = 0;
-    this.elems = null;
-  }
-
+  get pats(){ return this[2]; } set pats(a){ this[2] = a; }
+  get pat(){ return this[3]; } set pat(a){ this[3] = a; }
+  get elems(){ return this[4]; } set elems(a){ this[4] = a; }
   get fst(){ return this.elems[0]; }
 
   reset(){
     this.pats.length = 0;
     this.pat = null;
     this.patIndex = 0;
-
     return this;
   }
 
@@ -129,12 +133,16 @@ class ASTDef extends ASTNode{
 };
 
 class ASTPat extends ASTNode{
-  constructor(ast, index, ref){
-    super(ast, index, ref);
+  static ptrsNum = 3;
 
-    this.elems = [];
+  constructor(graph, ast, index, ref){
+    super(graph, ast, index, ref);
+    if(graph.dsr) return;
+
+    this.elems = new SG.Array(this.graph);
   }
 
+  get elems(){ return this[2]; } set elems(a){ this[2] = a; }
   get fst(){ return this.elems[0]; }
 
   reset(){
@@ -165,26 +173,31 @@ class ASTPat extends ASTNode{
 };
 
 class ASTElem extends ASTNode{
-  constructor(ast, index, ref){
-    super(ast, index, ref);
+  static ptrsNum = 4;
 
-    this.arr = [];
-    this.seps = [];
+  constructor(graph, ast, index, ref){
+    super(graph, ast, index, ref);
+    if(graph.dsr) return;
+
+    this.arr = new SG.Array(this.graph);
+    this.seps = new SG.Array(this.graph);
   }
 
+  get arr(){ return this[2]; } set arr(a){ this[2] = a; }
+  get seps(){ return this[3]; } set seps(a){ this[3] = a; }
   get fst(){ return this.arr[0]; }
 
   reset(){
     this.arr.length = 0;
     this.seps.length = 0;
-
     return this;
   }
 };
 
 class ASTNterm extends ASTElem{
-  constructor(ast, index, ref){
-    super(ast, index, ref);
+  constructor(graph, ast, index, ref){
+    super(graph, ast, index, ref);
+    if(graph.dsr) return;
   }
 
   update(){
@@ -199,8 +212,9 @@ class ASTNterm extends ASTElem{
 };
 
 class ASTTerm extends ASTElem{
-  constructor(ast, index, ref){
-    super(ast, index, ref);
+  constructor(graph, ast, index, ref){
+    super(graph, ast, index, ref);
+    if(graph.dsr) return;
   }
 
   update(){
@@ -220,4 +234,11 @@ AST.ASTElem = ASTElem;
 AST.ASTNterm = ASTNterm;
 AST.ASTTerm = ASTTerm;
 
-module.exports = AST;
+module.exports = Object.assign(AST, {
+  ASTNode,
+  ASTDef,
+  ASTPat,
+  ASTElem,
+  ASTNterm,
+  ASTTerm,
+});
