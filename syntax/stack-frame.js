@@ -38,59 +38,6 @@ class StackFrame extends SG.Node{
   }
 };
 
-class Parse extends StackFrame{
-  static ptrsNum = 4;
-
-  constructor(graph, prev, index=0, ref=null){
-    super(graph, prev);
-    if(graph.dsr) return;
-
-    this.ref = ref;
-    this.node = null;
-    this.index = index;
-  }
-
-  ser(ser=new O.Serializer()){
-    return super.ser(ser).writeUint(this.index);
-  }
-
-  deser(ser){
-    super.deser(ser);
-    this.index = ser.readUint();
-    return this;
-  }
-
-  get ref(){ return this[2]; } set ref(a){ this[2] = a; }
-  get node(){ return this[3]; } set node(a){ this[3] = a; }
-};
-
-class ParseDef extends Parse{
-  static ptrsNum = 5;
-
-  constructor(graph, prev, index, ref){
-    super(graph, prev, index, ref);
-    if(graph.dsr) return;
-
-    this.nodePrev = null;
-  }
-
-  get nodePrev(){ return this[4]; } set nodePrev(a){ this[4] = a; }
-};
-
-class ParsePat extends Parse{
-  constructor(graph, prev, index, ref){
-    super(graph, prev, index, ref);
-    if(graph.dsr) return;
-  }
-};
-
-class ParseElem extends Parse{
-  constructor(graph, prev, index, ref){
-    super(graph, prev, index, ref);
-    if(graph.dsr) return;
-  }
-};
-
 class Compile extends StackFrame{
   static ptrsNum = 3;
 
@@ -119,11 +66,6 @@ class CompileArr extends Compile{
 };
 
 module.exports = Object.assign(StackFrame, {
-  Parse,
-  ParseDef,
-  ParsePat,
-  ParseElem,
-  
   Compile,
   CompileDef,
   CompileArr,

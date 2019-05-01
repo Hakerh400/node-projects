@@ -12,19 +12,21 @@ const Range = require('./range');
 const Context = require('./context');
 const ruleParser = require('./rule-parser');
 const StackFrame = require('./stack-frame');
+const Parser = require('./parser');
 const AST = require('./ast');
 
 const FILE_EXTENSION = 'txt';
 
-const {ParseDef, ParsePat, ParseElem, CompileDef, CompileArr} = StackFrame;
+const {ParseDef, ParsePat, ParseElem} = Parser;
+const {CompileDef, CompileArr} = StackFrame;
 const {ASTNode, ASTDef, ASTPat, ASTElem, ASTNterm, ASTTerm} = AST;
 
 const graphCtors = [
   SG.String, SG.Array, SG.Set, SG.Map,
 
+  AST, ASTDef, ASTPat, ASTNterm, ASTTerm,
   ParseDef, ParsePat, ParseElem,
   CompileDef, CompileArr,
-  AST, ASTDef, ASTPat, ASTNterm, ASTTerm,
 ];
 
 class Syntax{
