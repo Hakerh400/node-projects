@@ -4,14 +4,16 @@ const fs = require('fs');
 const path = require('path');
 const O = require('../omikron');
 const SG = require('../serializable-graph');
+const PL = require('./programming-language');
 
 class Program extends SG{
-  constructor(lang, maxSize){
-    super(maxSize);
-  }
+  constructor(langName, maxSize){
+    const lang = PL.get(langName);
+    const graphCtors = lang.graphCtors;
+    const graphRefs = lang.graphRefs;
 
-  get lang(){ return this.#lang; }
-  get script(){ return this.#script; }
+    super(graphCtors, graphRefs, maxSize);
+  }
 
   tick(){
 

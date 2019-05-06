@@ -3,65 +3,45 @@
 const fs = require('fs');
 const path = require('path');
 const O = require('../omikron');
-const Syntax = require('.');
-
-const TEST = 1;
-
-const cwd = __dirname;
-const examplesDir = path.join(cwd, 'examples');
-const exampleDir = path.join(examplesDir, 'javascript');
-const ctxFile = path.join(exampleDir, 'context.js');
-
-const testDir = path.join(cwd, 'test');
-const srcFile = path.join(testDir, 'src.txt');
-const inputFile = path.join(testDir, 'input.txt');
-const outputFile = path.join(testDir, 'output.txt');
+const Engine = require('./engine');
 
 setTimeout(main);
 
 function main(){
-  const src = TEST ? O.rfs(srcFile, 1) : null;
-  const ctxCtor = require(ctxFile);
+  const lang = 'Test';
+  const src = '3*3+4*40*2+5';
+  const input = '';
+  const expected = String(new Function(`return ${src}`)());
 
-  const input = O.rfs(inputFile, 1);
+  const eng = new Engine(lang, src);
+  const io = new O.IO(input);
 
-  const syntax = TEST ?
-    Syntax.fromStr(src, ctxCtor) :
-    Syntax.fromDir(exampleDir, ctxCtor);
+  const onRead = (data, len) => {
+    if(len & 7){
+      if(len !== 1)
+        throw new TypeError(`Unsupported data length ${len}`);
+      data[0] = io.read();
+    }else{
+      for(let i = 0; i !== data.length; i++)
+        data[i] = io.read(255);
+    }
+    return io.hasMore;
+  };
 
-  const ast = syntax.parse(input, 'script');
+  const onWrite = (data, len) => {
+    if(len & 7){
+      if(len !== 1)
+        throw new TypeError(`Unsupported data length ${len}`);
+      io.write(data[0]);
+    }else{
+      for(const byte of data)
+        io.write(byte, 255);
+    }
+  };
 
-  const compiled = syntax.compile(ast, {
-    script: d => ['num', d.fst.fst],
-    expr: d => d.fst.fst,
-    op: d => d.fst.fst,
-    add: d => d.elems[0].fst + d.elems[2].fst,
-    mul: d => d.elems[0].fst * d.elems[2].fst,
-    num: d => d.str | 0,
-  });
+  eng.stdout.on('write', onWrite);
+  eng.stderr.on('write', onWrite);
+  eng.stdin.on('read', onRead);
 
-  let output;
-
-  {
-    const mem = [];
-    let i = 0;
-
-    const input = [];
-    output = [];
-
-    const exec = inst => {
-      const type = inst[0];
-      const args = inst.slice(1);
-
-      switch(type){
-        case 'num': return args[0]; break;
-      }
-    };
-
-    output = String(exec(compiled)) | 0;
-  }
-
-  const expected = new Function(`return(${input})`)() | 0;
-  require('assert').strictEqual(output, expected);
-  log('OK');
+  log(io.getOutput().toString());
 }

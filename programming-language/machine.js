@@ -3,6 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 const O = require('../omikron');
+const Program = require('./program');
 
 class Machine{
   #lang;

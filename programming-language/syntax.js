@@ -17,43 +17,10 @@ const AST = require('./ast');
 
 const FILE_EXTENSION = 'txt';
 
-const {ParseDef, ParsePat, ParseElem} = Parser;
-const {CompileDef, CompileArr} = StackFrame;
-const {ASTNode, ASTDef, ASTPat, ASTElem, ASTNterm, ASTTerm} = AST;
-
-const graphCtors = [
-  SG.String, SG.Array, SG.Set, SG.Map,
-
-  AST, ASTDef, ASTPat, ASTNterm, ASTTerm,
-  ParseDef, ParsePat, ParseElem,
-  CompileDef, CompileArr,
-];
-
 class Syntax{
-  #defs;
-  #ctxCtor;
-  #graphRefs;
-
   constructor(str, ctxCtor){
-    const defs = this.#defs = ruleParser.parse(this, str);
-    const refs = this.#graphRefs = [this];
-    this.#ctxCtor = ctxCtor;
-
-    for(const defName in defs){
-      const def = defs[defName]['*'];
-      refs.push(def);
-
-      for(const pat of def.sects.include.pats){
-        refs.push(pat);
-
-        for(const elem of pat.elems){
-          refs.push(elem);
-          if(elem.sep !== null) ref.push(elem.sep);
-        }
-      }
-    }
-
-    this.graph = new SG(graphCtors, this.#graphRefs);
+    this.defs = ruleParser.parse(this, str);
+    this.ctxCtor = ctxCtor;
   }
 
   static fromStr(str, ctxCtor){
@@ -104,7 +71,7 @@ class Syntax{
     const buf = Buffer.from(str);
     const len = str.length;
 
-    const defs = this.#defs;
+    const defs = this.defs;
     if(!(def in defs)) throw new TypeError(`Unknown definition ${O.sf(def)}`);
     def = defs[def]['*'];
 
