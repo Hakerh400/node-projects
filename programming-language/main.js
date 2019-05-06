@@ -2,6 +2,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const assert = require('assert');
 const O = require('../omikron');
 const Engine = require('./engine');
 
@@ -43,5 +44,8 @@ function main(){
   eng.stderr.on('write', onWrite);
   eng.stdin.on('read', onRead);
 
-  log(io.getOutput().toString());
+  const output = io.getOutput().toString();
+  assert.strictEqual(output, expected);
+
+  log('OK');
 }

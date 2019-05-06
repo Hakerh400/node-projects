@@ -92,7 +92,7 @@ function parse(syntax, str){
 
   const is = char => sc(char, 0); // Check for the given char
 
-  // Read char is possible
+  // Read char if possible
   const scm = char => {
     if(!is(char)) return 0;
     sc();
@@ -180,7 +180,7 @@ function parse(syntax, str){
   // Parse pattern element
   const parseElem = (extra=1) => {
     /**
-     * Argument `extra` stands for extra data. If truthy, after parsing elemnt this function
+     * Argument `extra` stands for extra data. If truthy, after parsing element this function
      * will also attempt to parse extra data. It calls `parseElem` recursively
      * with `extra` set to 0 unconditionally
      */
@@ -288,7 +288,7 @@ function parse(syntax, str){
        *   elem?            ---> {0..1}
        *   elem*            ---> {0..*}
        *   elem+            ---> {1..*}
-       * Note that `?` is also used for greediness, so `??` is valid specifier
+       * Note that `?` is also used for greediness, so `??` is a valid specifier
        */
       {
         if(scm('{')){
@@ -430,7 +430,7 @@ function parse(syntax, str){
             pack = idents.join('.');
             break;
 
-          default: err(`Unexpected meta directive "${type}"`);
+          default: err(`Unrecognized meta directive "${type}"`);
         }
 
         sc('}');
