@@ -19,7 +19,7 @@ class Engine{
   }
 
   tick(){
-
+    this.active = 0;
   }
 
   run(ticks=null){

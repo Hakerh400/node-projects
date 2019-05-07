@@ -430,7 +430,7 @@ function parse(syntax, str){
             pack = idents.join('.');
             break;
 
-          default: err(`Unrecognized meta directive "${type}"`);
+          default: err(`Unrecognized meta directive ${O.sf(type)}`);
         }
 
         sc('}');

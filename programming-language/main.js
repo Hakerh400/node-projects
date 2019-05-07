@@ -23,7 +23,8 @@ function main(){
         throw new TypeError(`Unsupported data length ${len}`);
       data[0] = io.read();
     }else{
-      for(let i = 0; i !== data.length; i++)
+      len >>= 3;
+      for(let i = 0; i !== len; i++)
         data[i] = io.read(255);
     }
     return io.hasMore;
@@ -35,14 +36,17 @@ function main(){
         throw new TypeError(`Unsupported data length ${len}`);
       io.write(data[0]);
     }else{
-      for(const byte of data)
-        io.write(byte, 255);
+      len >>= 3;
+      for(let i = 0; i !== len; i++)
+        io.write(data[i], 255);
     }
   };
 
   eng.stdout.on('write', onWrite);
   eng.stderr.on('write', onWrite);
   eng.stdin.on('read', onRead);
+
+  eng.run();
 
   const output = io.getOutput().toString();
   assert.strictEqual(output, expected);
