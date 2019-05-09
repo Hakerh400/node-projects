@@ -13,14 +13,16 @@ class Machine{
   constructor(lang, script, maxSize){
     this.#lang = lang;
     this.#script = script;
-    this.#prog = new Program(lang, maxSize);
+    this.#prog = new Program(lang, script, maxSize);
   }
 
   get lang(){ return this.#lang; }
   get script(){ return this.#script; }
+  get active(){ return this.#prog.active; }
+  get done(){ return this.#prog.done; }
 
   tick(){
-
+    this.#prog.tick();
   }
 };
 

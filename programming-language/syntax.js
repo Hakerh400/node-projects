@@ -11,8 +11,6 @@ const Element = require('./element');
 const Range = require('./range');
 const Context = require('./context');
 const ruleParser = require('./rule-parser');
-const StackFrame = require('./stack-frame');
-const Parser = require('./parser');
 const AST = require('./ast');
 
 const FILE_EXTENSION = 'txt';
@@ -65,247 +63,10 @@ class Syntax{
     return new Syntax(str, ctxCtor);
   }
 
-  parse(str, def){
-    const {graph} = this;
-
-    const buf = Buffer.from(str);
-    const len = str.length;
-
-    const defs = this.defs;
-    if(!(def in defs)) throw new TypeError(`Unknown definition ${O.sf(def)}`);
-    def = defs[def]['*'];
-
-    const ast = new AST(graph, this, new SG.String(graph, str)).persist();
-    const cache = graph.ca(str.length, () => new SG.Map(graph)).persist();
-    const parsing = graph.ca(str.length, () => new SG.Set(graph)).persist();
-    const sfDef = new ParseDef(graph, null, 0, def).persist();
-
-    let sf = sfDef;
-
-    while(sf !== null){
-      switch(sf.constructor){
-        case ParseDef: parseDef(); break;
-        case ParsePat: parsePat(); break;
-        case ParseElem: parseElem(); break;
-        default: throw new TypeError('....??'); break;
-      }
-    }
-
-    ast.node = sfDef.val;
-
-    cache.unpersist();
-    parsing.unpersist();
-    sfDef.unpersist();
-
-    return ast;
-
-    function parseDef(){
-      const {index, ref: def} = sf;
-      const pSet = parsing[index];
-
-      if(sf.node === null){
-        if(index === str.length) return createNewNode(index, def);
-
-        let node = getNodeFromCache(index, def);
-        if(node !== null && (node.done || pSet.has(def)))
-          return ret(node);
-
-        pSet.add(def);
-        sf.node = node;
-        sf.i = -1;
-      }
-      
-      const pats = def.sects.include.pats;
-      let {node, nodePrev: prev} = sf;
-
-      if(sf.i === -1){
-        sf.nodePrev = prev = node;
-        sf.node = node = createNewNode(index, def, node === null);
-        sf.i = 0;
-      }else if(sf.i === pats.length){
-        node.update();
-
-        if(prev !== null && node.len <= prev.len){
-          sf.node = node = prev;
-          pSet.delete(def);
-          return ret(node);
-        }
-
-        cache[index].set(def, node);
-        sf.i = -1;
-      }else{
-        if(sf.val === null)
-          return setSf(new ParsePat(graph, sf, index, pats[sf.i]));
-
-        sf.i++;
-        node.pats.push(sf.val);
-        sf.val = null;
-      }
-    }
-
-    function parsePat(){
-      const {index, ref: pat} = sf;
-
-      if(sf.node === null){
-        if(index === str.length) return ret(createNewNode(index, pat));
-        let node = getNodeFromCache(index, pat, 1);
-        if(node.done) return ret(node);
-        node = createNewNode(index, pat);
-
-        sf.node = node;
-      }
-
-      const {elems} = pat;
-      let {node} = sf;
-
-      if(sf.val === null)
-        return setSf(new ParseElem(graph, sf, index, elems[sf.i]));
-
-      sf.i++;
-      const elem = sf.val;
-      sf.val = null;
-
-      node.elems.push(elem);
-      if(elem.len === -1) return ret(node.reset());
-      sf.index += elem.len;
-      if(sf.i === elems.length) ret(node.update());
-    }
-
-    function parseElem(){
-      const {index, ref: elem} = sf;
-
-      if(sf.node === null){
-        if(index === str.length) return ret(createNewNode(index, elem));
-        let node = getNodeFromCache(index, elem, 1);
-        if(node.done) return ret(node);
-        node = createNewNode(index, elem);
-
-        sf.node = node;
-      }
-
-      const lenMin = elem.range.start;
-      const lenMax = elem.range.end;
-      let {node} = sf;
-      if(lenMin === null) throw new TypeError('???');
-
-      if(node.arr.length === lenMax || index === str.length) return done();
-
-      if(sf.i === 0){
-        if(elem.sep !== null && node.arr.length !== 0){
-          if(sf.val === null)
-            return setSf(new ParseElem(sf, index, elem.sep));
-
-          const sep = sf.val;
-          sf.val = null;
-
-          if(sep.len === -1) return done();
-          node.seps.push(sep);
-          sf.index += sep.len;
-        }
-
-        sf.i = 1;
-      }else{
-        if(node instanceof ASTNterm){
-          if(!node.ref.ruleRange.isAny()) O.noimpl('!ref.ruleRange.isAny()');
-          if(sf.val === null)
-            return setSf(new ParseDef(graph, sf, index, node.ref.rule['*']));
-
-          const def = sf.val;
-          sf.val = null;
-
-          if(def.len === -1) return done();
-          node.arr.push(def);
-          sf.index += def.len;
-        }else if(node instanceof ASTTerm){
-          if(node.ref instanceof Element.String){
-            const substr = str.slice(index, index + node.ref.str.length);
-            if(node.ref.str !== substr) return done();
-            node.arr.push(new SG.String(graph, substr));
-            sf.index += node.ref.str.length;
-          }else if(node.ref instanceof Element.CharsRange){
-            // TODO: check buffer bounds
-            if(!node.ref.set.has(buf[index])) return done();
-            if(node.arr.length === 0) node.arr.push(new SG.String(graph));
-            node.arr[0].str += str[index];
-            sf.index++;
-          }else{
-            throw new TypeError('Whaat?');
-          }
-        }else{
-          errUnknownAST(node);
-        }
-
-        sf.i = 0;
-      }
-
-      function done(){
-        if(node.arr.length < lenMin) return ret(node.reset());
-        return ret(node.update());
-      }
-    }
-
-    function setSf(sfNew){
-      if(sf !== sfDef) sf.unpersist();
-      sf = sfNew;
-      if(sfNew !== null) sfNew.persist();
-    }
-
-    function ret(val){
-      sf.ret(val);
-      setSf(sf.prev);
-    }
-
-    function createNewNode(index, ref, addToCache=1){
-      let ctor;
-
-      if(ref instanceof Rule){
-        ctor = ASTDef;
-      }else if(ref instanceof Pattern){
-        ctor = ASTPat;
-      }else if(ref instanceof Element){
-        if(ref instanceof Element.NonTerminal){
-          ctor = ASTNterm;
-        }else if(ref instanceof Element.Terminal){
-          ctor = ASTTerm;
-        }else{
-          errUnknownRef(ref);
-        }
-      }else{
-        errUnknownRef(ref);
-      }
-
-      const node = new ctor(graph, ast, index, ref);
-      if(index === str.length) return node.finalize();
-      if(addToCache) cache[index].set(ref, node);
-
-      return node;
-    }
-
-    function getNodeFromCache(index, ref, force=0){
-      const map = cache[index];
-
-      if(map.has(ref)) return map.get(ref);
-      if(!force) return null;
-      return createNewNode(index, ref);
-    }
-
-    function errUnknownRef(ref){
-      unknownType('reference', ref.constructor.name);
-    }
-
-    function errUnknownAST(ast){
-      unknownType('AST', ast.constructor.name);
-    }
-
-    function unknownType(type, name){
-      throw new TypeError(`Unknown ${type} type ${O.sf(name)}`);
-    }
-  }
-
   compile(ast, funcs){
     const {graph} = this;
 
-    const sfDef = new CompileDef(graph, null, ast.node);
+    const sfDef = new CompileDef(graph, compiler, null, ast.node);
     let sf = sfDef;
 
     while(sf !== null){
@@ -326,7 +87,7 @@ class Syntax{
       const func = funcs[name];
 
       if(sf.val === null)
-        return sf = new CompileArr(graph, sf, def.pat.elems);
+        return sf = new CompileArr(graph, compiler, sf, def.pat.elems);
 
       def.pat.elems = sf.val;
       sf.val = null;
@@ -346,7 +107,7 @@ class Syntax{
         case 0:
           if(elem instanceof ASTElem){
             if(sf.val === null)
-              return sf = new CompileArr(graph, sf, elem.arr);
+              return sf = new CompileArr(graph, compiler, sf, elem.arr);
 
             elem.arr = sf.val;
             sf.val = null;
@@ -358,7 +119,7 @@ class Syntax{
         case 1:
           if(elem instanceof ASTElem){
             if(sf.val === null)
-              return sf = new CompileArr(graph, sf, elem.seps);
+              return sf = new CompileArr(graph, compiler, sf, elem.seps);
 
             elem.seps = sf.val;
             sf.val = null;
@@ -370,7 +131,7 @@ class Syntax{
         case 2:
           if(elem instanceof ASTDef){
             if(sf.val === null)
-              return sf = new CompileDef(graph, sf, elem);
+              return sf = new CompileDef(graph, compiler, sf, elem);
 
             arr[sf.i] = sf.val;
             sf.val = null;
@@ -391,6 +152,11 @@ class Syntax{
   }
 };
 
-Syntax.Context = Context;
-
-module.exports = Syntax;
+module.exports = Object.assign(Syntax, {
+  Rule,
+  Section,
+  Pattern,
+  Element,
+  Range,
+  Context,
+});

@@ -7,6 +7,8 @@ const format = require('../format');
 
 const PTR_SIZE = 8;
 
+const sizeSym = global.Symbol('size');
+
 class SerializableGraph extends O.Serializable{
   #ctors; #ctorsNum; #ctorsMap;
   #refs; #refsNum; #refsMap;
@@ -173,7 +175,7 @@ class SerializableGraph extends O.Serializable{
 
   addNode(node){
     const {maxSize} = this;
-    const {size} = node;
+    const size = node[sizeSym];
 
     this.#nodes.add(node);
     this.size += size;
@@ -221,7 +223,7 @@ class SerializableGraph extends O.Serializable{
       if(nodes.has(node)) continue;
 
       nodes.add(node);
-      size += node.size;
+      size += node[sizeSym];
 
       const {ptrsNum} = node;
       for(let i = 0; i !== ptrsNum; i++){
@@ -234,7 +236,7 @@ class SerializableGraph extends O.Serializable{
     for(const node of this.#persts){
       if(nodes.has(node)) continue;
       nodes.add(node);
-      size += node.size;
+      size += node[sizeSym];
     }
 
     this.#nodes = nodes;
@@ -242,7 +244,7 @@ class SerializableGraph extends O.Serializable{
 
     let ss = 0;
     for(const n of this.#nodes)
-      ss += n.size;
+      ss += n[sizeSym];
 
     if(size > sizePrev){
       const difStr = `${format.num(sizePrev)} ---> ${format.num(size)}`;
@@ -300,11 +302,13 @@ class Node extends O.Serializable{
   deser(ser){ return this; }
 
   get graph(){ return this.#graph; }
-  get ptrsNum(){ return this.#ptrsNum; }
-  set ptrsNum(num){ this.size -= (this.#ptrsNum - (this.#ptrsNum = num)) * PTR_SIZE | 0; }
+  get g(){ return this.#graph; }
 
-  get size(){ return this.#size; }
-  set size(size){
+  get ptrsNum(){ return this.#ptrsNum; }
+  set ptrsNum(num){ this[sizeSym] -= (this.#ptrsNum - (this.#ptrsNum = num)) * PTR_SIZE | 0; }
+
+  get [sizeSym](){ return this.#size; }
+  set [sizeSym](size){
     if(!this.graph.nodes.has(this)) throw new Error(`The graph does not contain "${getName(this, 0)}.${this.id}"`);
     this.graph.size -= this.#size - (this.#size = size) | 0;
   }
@@ -316,9 +320,9 @@ class Node extends O.Serializable{
 class String extends Node{
   #str = '';
 
-  constructor(graph, str=''){
-    super(graph);
-    if(graph.dsr) return;
+  constructor(g, str=''){
+    super(g);
+    if(g.dsr) return;
 
     this.str = str;
   }
@@ -335,9 +339,9 @@ class String extends Node{
 };
 
 class Array extends Node{
-  constructor(graph, arr=null){
-    super(graph);
-    if(graph.dsr) return;
+  constructor(g, arr=null){
+    super(g);
+    if(g.dsr) return;
 
     if(arr !== null)
       for(const val of arr)
@@ -351,9 +355,9 @@ class Array extends Node{
     const dif = Math.abs(len - prev);
 
     if(len > prev){
-      const {graph} = this;
+      const {g} = this;
       for(let i = 0; i !== dif; i++)
-        this.push(Undefined.get(graph));
+        this.push(Undefined.get(g));
     }else{
       for(let i = 0; i !== dif; i++)
         this.pop();
@@ -415,7 +419,7 @@ class Array extends Node{
 
   map(func){
     const len = this.ptrsNum;
-    const arr = new Array(this.graph);
+    const arr = new Array(this.g);
     for(let i = 0; i !== len; i++)
       arr[i] = func(this[i], i, this);
     return arr;
@@ -486,14 +490,18 @@ class Array extends Node{
 class Set extends Node{
   static ptrsNum = 1;
 
-  constructor(graph){
-    super(graph);
-    if(graph.dsr) return;
+  constructor(g){
+    super(g);
+    if(g.dsr) return;
 
-    this.arr = new Array(graph);
+    this.arr = new Array(g);
   }
 
   get arr(){ return this[0]; } set arr(a){ this[0] = a; }
+
+  get size(){
+    return this.arr.length;
+  }
 
   has(val){
     return this.arr.includes(val);
@@ -529,14 +537,18 @@ class Set extends Node{
 class Map extends Node{
   static ptrsNum = 1;
 
-  constructor(graph){
-    super(graph);
-    if(graph.dsr) return;
+  constructor(g){
+    super(g);
+    if(g.dsr) return;
 
-    this.arr = new Array(graph);
+    this.arr = new Array(g);
   }
 
   get arr(){ return this[0]; } set arr(a){ this[0] = a; }
+
+  get size(){
+    return this.arr.length;
+  }
 
   has(key){
     for(const elem of this.arr)
@@ -556,7 +568,7 @@ class Map extends Node{
         return this;
       }
     }
-    this.arr.push(new Array(this.graph, [key, val]));
+    this.arr.push(new Array(this.g, [key, val]));
     return this;
   }
 
@@ -580,15 +592,15 @@ class Map extends Node{
   [Symbol.iterator](){ return this.arr[Symbol.iterator](); }
 };
 
-Object.assign(SerializableGraph, {
+module.exports = Object.assign(SerializableGraph, {
   Node,
   String,
   Array,
   Set,
   Map,
-});
 
-module.exports = SerializableGraph;
+  sizeSym,
+});
 
 function getName(val, sf=0){
   let str;

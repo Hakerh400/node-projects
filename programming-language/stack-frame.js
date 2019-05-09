@@ -8,15 +8,18 @@ const SG = require('../serializable-graph');
 class StackFrame extends SG.Node{
   static ptrsNum = 2;
 
-  constructor(graph, prev=null){
-    super(graph);
-    if(graph.dsr) return;
+  constructor(g, prev=null){
+    super(g);
+    if(g.dsr) return;
 
     this.prev = prev;
     this.val = null;
     this.i = 0;
     this.j = 0;
   }
+
+  get prev(){ return this[0]; } set prev(a){ this[0] = a; }
+  get val(){ return this[1]; } set val(a){ this[1] = a; }
 
   ser(ser=new O.Serializer()){
     return ser.writeInt(this.i).writeInt(this.j);
@@ -28,45 +31,7 @@ class StackFrame extends SG.Node{
     return this;
   }
 
-  get prev(){ return this[0]; } set prev(a){ this[0] = a; }
-  get val(){ return this[1]; } set val(a){ this[1] = a; }
-
-  ret(val){
-    const {prev} = this;
-    if(prev !== null) prev.val = val;
-    else this.val = val;
-  }
+  tick(intp, th){ O.virtual('tick'); }
 };
 
-class Compile extends StackFrame{
-  static ptrsNum = 3;
-
-  constructor(graph, prev, elem){
-    super(graph, prev);
-    if(graph.dsr) return;
-
-    this.elem = elem;
-  }
-
-  get elem(){ return this[2]; } set elem(a){ this[2] = a; }
-};
-
-class CompileDef extends Compile{
-  constructor(graph, prev, elem){
-    super(graph, prev, elem);
-    if(graph.dsr) return;
-  }
-};
-
-class CompileArr extends Compile{
-  constructor(graph, prev, elem){
-    super(graph, prev, elem);
-    if(graph.dsr) return;
-  }
-};
-
-module.exports = Object.assign(StackFrame, {
-  Compile,
-  CompileDef,
-  CompileArr,
-});
+module.exports = StackFrame;

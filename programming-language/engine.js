@@ -7,7 +7,6 @@ const Machine = require('./machine');
 const StdIO = require('./stdio');
 
 class Engine{
-  active = 1;
   stdin = new StdIO();
   stdout = new StdIO();
   stderr = new StdIO();
@@ -18,8 +17,11 @@ class Engine{
     this.#machine = new Machine(lang, script, maxSize);
   }
 
+  get active(){ return this.#machine.active; }
+  get done(){ return this.#machine.done; }
+
   tick(){
-    this.active = 0;
+    this.#machine.tick();
   }
 
   run(ticks=null){

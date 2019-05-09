@@ -29,10 +29,10 @@ const namesList = getNamesList();
 const cache = O.obj();
 
 class ProgrammingLanguage{
-  constructor(syntax, comp, intp){
+  constructor(syntax, Compiler, Interpreter){
     this.syntax = syntax;
-    this.comp = comp;
-    this.inpt = intp;
+    this.Compiler = Compiler;
+    this.Interpreter = Interpreter;
 
     const ctors = this.graphCtors = baseGraphCtors.slice();
 
@@ -64,10 +64,10 @@ class ProgrammingLanguage{
 
     const dir = path.join(langsDir, lang);
     const syntax = Syntax.fromDir(path.join(dir, 'syntax'));
-    const comp = require(path.join(dir, 'compiler'));
-    const intp = require(path.join(dir, 'interpreter'));
+    const Compiler = require(path.join(dir, 'compiler'));
+    const Interpreter = require(path.join(dir, 'interpreter'));
 
-    const langInstance = new PL(syntax, comp, intp);
+    const langInstance = new PL(syntax, Compiler, Interpreter);
     cache[lang] = langInstance;
 
     return langInstance;

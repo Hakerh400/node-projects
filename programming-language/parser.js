@@ -4,23 +4,34 @@ const fs = require('fs');
 const path = require('path');
 const O = require('../omikron');
 const SG = require('../serializable-graph');
-const StackFrame = require('./stack-frame');
+const SF = require('./stack-frame');
+const Rule = require('./rule');
+const Section = require('./section');
+const Pattern = require('./pattern');
+const Element = require('./element');
+const Range = require('./range');
+const Context = require('./context');
+const ruleParser = require('./rule-parser');
 const AST = require('./ast');
+
+const MAIN_DEF = 'script';
 
 const {ASTNode, ASTDef, ASTPat, ASTElem, ASTNterm, ASTTerm} = AST;
 
-class Parser extends StackFrame{
+class Parser extends SF{
   static ptrsNum = 7;
 
-  constructor(graph, syntax=null){
-    super(graph);
-    if(graph.dsr) return;
+  constructor(g, str){
+    super(g);
+    if(g.dsr) return;
 
-    this.ast = new AST(graph, syntax, new SG.String(graph, str));
-    this.cache = graph.ca(str.length, () => new SG.Map(graph));
-    this.parsing = graph.ca(str.length, () => new SG.Set(graph));
-    this.sfDef = new ParseDef(graph, null, 0, def);
-    this.sf = this.sfDef;
+    const {syntax} = g.lang;
+
+    // TODO: allocate maps and sets lazily
+    this.ast = new AST(g, syntax, str);
+    this.cache = g.ca(str.length, () => new SG.Map(g));
+    this.parsing = g.ca(str.length, () => new SG.Set(g));
+    this.sfDef = new ParseDef(g, this, 0, syntax.defs[MAIN_DEF]['*']);
   }
 
   get ast(){ return this[2]; } set ast(a){ this[2] = a; }
@@ -28,19 +39,60 @@ class Parser extends StackFrame{
   get parsing(){ return this[4]; } set parsing(a){ this[4] = a; }
   get sfDef(){ return this[5]; } set sfDef(a){ this[5] = a; }
   get sf(){ return this[6]; } set sf(a){ this[6] = a; }
+
+  tick(intp, th){
+    if(this.i++ === 0) th.call(this.sfDef);
+    else th.call(new this.constructor.Compiler(this.g, this.ast), 1);
+  }
+
+  createNewNode(index, ref, addToCache=1){
+    const {g, ast, cache} = this;
+    let ctor;
+
+    if(ref instanceof Rule){
+      ctor = ASTDef;
+    }else if(ref instanceof Pattern){
+      ctor = ASTPat;
+    }else if(ref instanceof Element){
+      if(ref instanceof Element.NonTerminal){
+        ctor = ASTNterm;
+      }else if(ref instanceof Element.Terminal){
+        ctor = ASTTerm;
+      }
+    }
+
+    const node = new ctor(g, ast, index, ref);
+    if(index === ast.str.length) return node.finalize();
+    if(addToCache) cache[index].set(ref, node);
+
+    return node;
+  }
+
+  getNodeFromCache(index, ref, force=0){
+    const map = this.cache[index];
+
+    if(map.has(ref)) return map.get(ref);
+    if(!force) return null;
+    return this.createNewNode(index, ref);
+  }
 }
 
-class Parse extends StackFrame{
-  static ptrsNum = 4;
+class Parse extends SF{
+  static ptrsNum = 5;
 
-  constructor(graph, prev, index=0, ref=null){
-    super(graph, prev);
-    if(graph.dsr) return;
+  constructor(g, parser, index=0, ref=null){
+    super(g);
+    if(g.dsr) return;
 
+    this.parser = parser;
     this.ref = ref;
     this.node = null;
     this.index = index;
   }
+
+  get parser(){ return this[2]; } set parser(a){ this[2] = a; }
+  get ref(){ return this[3]; } set ref(a){ this[3] = a; }
+  get node(){ return this[4]; } set node(a){ this[4] = a; }
 
   ser(ser=new O.Serializer()){
     return super.ser(ser).writeUint(this.index);
@@ -51,35 +103,176 @@ class Parse extends StackFrame{
     this.index = ser.readUint();
     return this;
   }
-
-  get ref(){ return this[2]; } set ref(a){ this[2] = a; }
-  get node(){ return this[3]; } set node(a){ this[3] = a; }
 };
 
 class ParseDef extends Parse{
-  static ptrsNum = 5;
+  static ptrsNum = 6;
 
-  constructor(graph, prev, index, ref){
-    super(graph, prev, index, ref);
-    if(graph.dsr) return;
+  constructor(g, parser, index, ref){
+    super(g, parser, index, ref);
+    if(g.dsr) return;
 
     this.nodePrev = null;
   }
 
-  get nodePrev(){ return this[4]; } set nodePrev(a){ this[4] = a; }
+  get nodePrev(){ return this[5]; } set nodePrev(a){ this[5] = a; }
+
+  tick(intp, th){
+    const {g, parser, index, ref: def} = this;
+    const {str} = parser.ast.str;
+    const pSet = parser.parsing[index];
+
+    if(this.node === null){
+      if(index === str.length) return parser.createNewNode(index, def);
+
+      let node = parser.getNodeFromCache(index, def);
+      if(node !== null && (node.done || pSet.has(def)))
+        return th.ret(node);
+
+      pSet.add(def);
+      this.node = node;
+      this.i = -1;
+    }
+    
+    const pats = def.sects.include.pats;
+    let {node, nodePrev: prev} = this;
+
+    if(this.i === -1){
+      this.nodePrev = prev = node;
+      this.node = node = parser.createNewNode(index, def, node === null);
+      this.i = 0;
+    }else if(this.i === pats.length){
+      node.update();
+
+      if(prev !== null && node.len <= prev.len){
+        this.node = node = prev;
+        pSet.delete(def);
+        return th.ret(node);
+      }
+
+      parser.cache[index].set(def, node);
+      this.i = -1;
+    }else{
+      if(this.val === null)
+        return th.call(new ParsePat(g, parser, index, pats[this.i]));
+
+      this.i++;
+      node.pats.push(this.val);
+      this.val = null;
+    }
+  }
 };
 
 class ParsePat extends Parse{
-  constructor(graph, prev, index, ref){
-    super(graph, prev, index, ref);
-    if(graph.dsr) return;
+  constructor(g, parser, index, ref){
+    super(g, parser, index, ref);
+    if(g.dsr) return;
+  }
+
+  tick(intp, th){
+    const {g, parser, index, ref: pat} = this;
+    const {str} = parser.ast.str;
+
+    if(this.node === null){
+      if(index === str.length) return th.ret(parser.createNewNode(index, pat));
+      let node = parser.getNodeFromCache(index, pat, 1);
+      if(node.done) return th.ret(node);
+      node = parser.createNewNode(index, pat);
+
+      this.node = node;
+    }
+
+    const {elems} = pat;
+    let {node} = this;
+
+    if(this.val === null)
+      return th.call(new ParseElem(g, parser, index, elems[this.i]));
+
+    this.i++;
+    const elem = this.val;
+    this.val = null;
+
+    node.elems.push(elem);
+    if(elem.len === -1) return th.ret(node.reset());
+    this.index += elem.len;
+    if(this.i === elems.length) th.ret(node.update());
   }
 };
 
 class ParseElem extends Parse{
-  constructor(graph, prev, index, ref){
-    super(graph, prev, index, ref);
-    if(graph.dsr) return;
+  constructor(g, parser, index, ref){
+    super(g, parser, index, ref);
+    if(g.dsr) return;
+  }
+
+  tick(intp, th){
+    const {g, parser, index, ref: elem} = this;
+    const {str} = parser.ast.str;
+
+    if(this.node === null){
+      if(index === str.length) return th.ret(parser.createNewNode(index, elem));
+      let node = parser.getNodeFromCache(index, elem, 1);
+      if(node.done) return th.ret(node);
+      node = parser.createNewNode(index, elem);
+
+      this.node = node;
+    }
+
+    const lenMin = elem.range.start;
+    const lenMax = elem.range.end;
+    let {node} = this;
+
+    const done = () => th.ret(
+      node.arr.length < lenMin ?
+      node.reset() :
+      node.update()
+    );
+
+    if(node.arr.length === lenMax || index === str.length) return done();
+
+    if(this.i === 0){
+      if(elem.sep !== null && node.arr.length !== 0){
+        if(this.val === null)
+          return th.call(new ParseElem(g, parser, index, elem.sep));
+
+        const sep = this.val;
+        this.val = null;
+
+        if(sep.len === -1) return done();
+        node.seps.push(sep);
+        this.index += sep.len;
+      }
+
+      this.i = 1;
+    }else{
+      if(node instanceof ASTNterm){
+        if(!node.ref.ruleRange.isAny()) O.noimpl('!ref.ruleRange.isAny()');
+        if(this.val === null)
+          return th.call(new ParseDef(g, parser, index, node.ref.rule['*']));
+
+        const def = this.val;
+        this.val = null;
+
+        if(def.len === -1) return done();
+        node.arr.push(def);
+        this.index += def.len;
+      }else if(node instanceof ASTTerm){
+        if(node.ref instanceof Element.String){
+          const substr = str.slice(index, index + node.ref.str.length);
+          if(node.ref.str !== substr) return done();
+          node.arr.push(new SG.String(g, substr));
+          this.index += node.ref.str.length;
+        }else if(node.ref instanceof Element.CharsRange){
+          // TODO: check buffer bounds
+          if(!node.ref.set.has(O.cc(str, index))) return done();
+          if(node.arr.length === 0) node.arr.push(new SG.String(g));
+          node.arr[0].str += str[index];
+          this.index++;
+        }
+      }
+
+      this.i = 0;
+    }
   }
 };
 

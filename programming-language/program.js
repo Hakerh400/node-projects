@@ -7,16 +7,24 @@ const SG = require('../serializable-graph');
 const PL = require('./programming-language');
 
 class Program extends SG{
-  constructor(langName, maxSize){
-    const lang = PL.get(langName);
-    const graphCtors = lang.graphCtors;
-    const graphRefs = lang.graphRefs;
+  #lang;
+  #intp;
 
-    super(graphCtors, graphRefs, maxSize);
+  constructor(langName, script, maxSize){
+    const lang = PL.get(langName);
+    super(lang.graphCtors, lang.graphRefs, maxSize);
+
+    this.#lang = lang;
+    this.#intp = new lang.Interpreter(this, script).persist();
   }
 
-  tick(){
+  get lang(){ return this.#lang; }
+  get intp(){ return this.#intp; }
+  get active(){ return this.#intp.active; }
+  get done(){ return this.#intp.done; }
 
+  tick(){
+    this.#intp.tick();
   }
 };
 
