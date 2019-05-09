@@ -394,7 +394,7 @@ class Array extends Node{
   }
 
   pop(){
-    const len = this.ptrsNum;
+    const len = this.ptrsNum - 1;
     const val = this[len];
     delete this[len];
     this.ptrsNum--;

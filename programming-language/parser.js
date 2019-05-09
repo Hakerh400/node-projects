@@ -41,8 +41,9 @@ class Parser extends SF{
   get sf(){ return this[6]; } set sf(a){ this[6] = a; }
 
   tick(intp, th){
-    if(this.i++ === 0) th.call(this.sfDef);
-    else th.call(new this.constructor.Compiler(this.g, this.ast), 1);
+    if(this.i++ === 0) return th.call(this.sfDef);
+    this.ast.node = this.val;
+    th.call(new this.constructor.Compiler(this.g, this.ast), 1);
   }
 
   createNewNode(index, ref, addToCache=1){

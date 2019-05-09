@@ -15,31 +15,15 @@ function main(){
   const expected = String(new Function(`return ${src}`)());
 
   const eng = new Engine(lang, src);
-  const io = new O.IO(input);
+  const bufs = [];
 
-  const onRead = (data, len) => {
-    if(len & 7){
-      if(len !== 1)
-        throw new TypeError(`Unsupported data length ${len}`);
-      data[0] = io.read();
-    }else{
-      len >>= 3;
-      for(let i = 0; i !== len; i++)
-        data[i] = io.read(255);
-    }
-    return io.hasMore;
+  const onRead = (buf, len) => {
+    buf.fill(0);
+    return 0;
   };
 
-  const onWrite = (data, len) => {
-    if(len & 7){
-      if(len !== 1)
-        throw new TypeError(`Unsupported data length ${len}`);
-      io.write(data[0]);
-    }else{
-      len >>= 3;
-      for(let i = 0; i !== len; i++)
-        io.write(data[i], 255);
-    }
+  const onWrite = (buf, len) => {
+    bufs.push(buf);
   };
 
   eng.stdout.on('write', onWrite);
@@ -48,7 +32,7 @@ function main(){
 
   eng.run();
 
-  const output = io.getOutput().toString();
+  const output = Buffer.concat(bufs).toString();
   assert.strictEqual(output, expected);
 
   log('OK');

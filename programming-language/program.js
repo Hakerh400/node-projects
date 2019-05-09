@@ -5,8 +5,13 @@ const path = require('path');
 const O = require('../omikron');
 const SG = require('../serializable-graph');
 const PL = require('./programming-language');
+const StdIO = require('./stdio');
 
 class Program extends SG{
+  stdin = new StdIO();
+  stdout = new StdIO();
+  stderr = new StdIO();
+
   #lang;
   #intp;
 

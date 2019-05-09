@@ -4,18 +4,17 @@ const fs = require('fs');
 const path = require('path');
 const O = require('../omikron');
 const Machine = require('./machine');
-const StdIO = require('./stdio');
 
 class Engine{
-  stdin = new StdIO();
-  stdout = new StdIO();
-  stderr = new StdIO();
-
   #machine;
 
   constructor(lang, script, maxSize){
     this.#machine = new Machine(lang, script, maxSize);
   }
+
+  get stdin(){ return this.#machine.stdin; }
+  get stdout(){ return this.#machine.stdout; }
+  get stderr(){ return this.#machine.stderr; }
 
   get active(){ return this.#machine.active; }
   get done(){ return this.#machine.done; }
