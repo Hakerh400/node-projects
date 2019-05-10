@@ -6,7 +6,7 @@ const O = require('../omikron');
 const SG = require('../serializable-graph');
 
 class Thread extends SG.Node{
-  static ptrsNum = 1;
+  static ptrsNum = this.keys(['sf']);
 
   constructor(graph, sf=null, index=-1){
     super(graph);
@@ -16,19 +16,11 @@ class Thread extends SG.Node{
     this.index = index;
   }
 
-  get sf(){ return this[0]; } set sf(a){ this[0] = a; }
-
   get active(){ return this.sf !== null; }
   get done(){ return this.sf === null; }
 
-  ser(ser=new O.Serializer()){
-    return ser.writeInt(this.index);
-  }
-
-  deser(ser){
-    this.index = ser.readInt();
-    return this;
-  }
+  ser(s){ s.writeInt(this.index); }
+  deser(s){ this.index = s.readInt(); }
 
   tick(intp){
     this.sf.tick(intp, this);
@@ -42,7 +34,11 @@ class Thread extends SG.Node{
 
   ret(val=null){
     const sf = this.sf = this.sf.prev;
-    if(sf !== null) sf.val = val;
+
+    if(sf !== null){
+      sf.rval = val;
+      sf.hval = 1;
+    }
   }
 };
 

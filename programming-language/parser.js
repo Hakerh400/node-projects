@@ -19,7 +19,7 @@ const MAIN_DEF = 'script';
 const {ASTNode, ASTDef, ASTPat, ASTElem, ASTNterm, ASTTerm} = AST;
 
 class Parser extends SF{
-  static ptrsNum = 7;
+  static ptrsNum = this.keys(['ast', 'cache', 'parsing', 'sfDef']);
 
   constructor(g, str){
     super(g);
@@ -34,15 +34,9 @@ class Parser extends SF{
     this.sfDef = new ParseDef(g, this, 0, syntax.defs[MAIN_DEF]['*']);
   }
 
-  get ast(){ return this[2]; } set ast(a){ this[2] = a; }
-  get cache(){ return this[3]; } set cache(a){ this[3] = a; }
-  get parsing(){ return this[4]; } set parsing(a){ this[4] = a; }
-  get sfDef(){ return this[5]; } set sfDef(a){ this[5] = a; }
-  get sf(){ return this[6]; } set sf(a){ this[6] = a; }
-
   tick(intp, th){
     if(this.i++ === 0) return th.call(this.sfDef);
-    this.ast.node = this.val;
+    this.ast.node = this.rval;
     th.call(new this.constructor.Compiler(this.g, this.ast), 1);
   }
 
@@ -76,10 +70,11 @@ class Parser extends SF{
     if(!force) return null;
     return this.createNewNode(index, ref);
   }
-}
+};
 
+debugger;
 class Parse extends SF{
-  static ptrsNum = 5;
+  static ptrsNum = this.keys(['parser', 'ref', 'node']);
 
   constructor(g, parser, index=0, ref=null){
     super(g);
@@ -91,23 +86,12 @@ class Parse extends SF{
     this.index = index;
   }
 
-  get parser(){ return this[2]; } set parser(a){ this[2] = a; }
-  get ref(){ return this[3]; } set ref(a){ this[3] = a; }
-  get node(){ return this[4]; } set node(a){ this[4] = a; }
-
-  ser(ser=new O.Serializer()){
-    return super.ser(ser).writeUint(this.index);
-  }
-
-  deser(ser){
-    super.deser(ser);
-    this.index = ser.readUint();
-    return this;
-  }
+  ser(s){ super.ser(s).writeUint(this.index); }
+  deser(s){ super.deser(s); this.index = s.readUint(); }
 };
 
 class ParseDef extends Parse{
-  static ptrsNum = 6;
+  static ptrsNum = this.keys(['nodePrev']);
 
   constructor(g, parser, index, ref){
     super(g, parser, index, ref);
@@ -115,8 +99,6 @@ class ParseDef extends Parse{
 
     this.nodePrev = null;
   }
-
-  get nodePrev(){ return this[5]; } set nodePrev(a){ this[5] = a; }
 
   tick(intp, th){
     const {g, parser, index, ref: def} = this;
@@ -154,12 +136,12 @@ class ParseDef extends Parse{
       parser.cache[index].set(def, node);
       this.i = -1;
     }else{
-      if(this.val === null)
+      if(this.nval)
         return th.call(new ParsePat(g, parser, index, pats[this.i]));
 
       this.i++;
-      node.pats.push(this.val);
-      this.val = null;
+      node.pats.push(this.rval);
+      this.rval = null;
     }
   }
 };
@@ -186,12 +168,12 @@ class ParsePat extends Parse{
     const {elems} = pat;
     let {node} = this;
 
-    if(this.val === null)
+    if(this.nval)
       return th.call(new ParseElem(g, parser, index, elems[this.i]));
 
     this.i++;
-    const elem = this.val;
-    this.val = null;
+    const elem = this.rval;
+    this.rval = null;
 
     node.elems.push(elem);
     if(elem.len === -1) return th.ret(node.reset());
@@ -233,11 +215,11 @@ class ParseElem extends Parse{
 
     if(this.i === 0){
       if(elem.sep !== null && node.arr.length !== 0){
-        if(this.val === null)
+        if(this.nval)
           return th.call(new ParseElem(g, parser, index, elem.sep));
 
-        const sep = this.val;
-        this.val = null;
+        const sep = this.rval;
+        this.rval = null;
 
         if(sep.len === -1) return done();
         node.seps.push(sep);
@@ -248,11 +230,11 @@ class ParseElem extends Parse{
     }else{
       if(node instanceof ASTNterm){
         if(!node.ref.ruleRange.isAny()) O.noimpl('!ref.ruleRange.isAny()');
-        if(this.val === null)
+        if(this.nval)
           return th.call(new ParseDef(g, parser, index, node.ref.rule['*']));
 
-        const def = this.val;
-        this.val = null;
+        const def = this.rval;
+        this.rval = null;
 
         if(def.len === -1) return done();
         node.arr.push(def);

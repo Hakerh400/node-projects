@@ -18,7 +18,7 @@ class SerializableGraph extends O.Serializable{
   dsr = 0;
   #size = 0;
 
-  constructor(ctors, refs=[], maxSize=null){
+  constructor(ctors, refs=[]){
     super();
 
     this.#ctors = ctors;
@@ -35,7 +35,6 @@ class SerializableGraph extends O.Serializable{
       this.#refsMap.set(ref, index);
     });
 
-    this.maxSize = maxSize;
     this.#nodes = new global.Set();
     this.#persts = new global.Set();
   }
@@ -161,20 +160,11 @@ class SerializableGraph extends O.Serializable{
   get persts(){ return this.#persts; }
 
   get size(){ return this.#size; }
-
-  set size(size){
-    const {maxSize} = this;
-
-    if(maxSize !== null && size > maxSize)
-      throw new RangeError('Maximum graph size exceeded');
-
-    this.#size = size;
-  }
+  set size(size){ this.#size = size; }
 
   get main(){ return O.first(this.#persts); }
 
   addNode(node){
-    const {maxSize} = this;
     const size = node[sizeSym];
 
     this.#nodes.add(node);
@@ -208,9 +198,6 @@ class SerializableGraph extends O.Serializable{
     while(queue.length !== 0){
       const node = queue.shift();
 
-      if(typeof node !== 'object')
-        throw new TypeError(`[GC] ${getName(node, 1)} is not an object`);
-
       if(node instanceof Node){
         if(!this.#nodes.has(node))
           throw new TypeError(`[GC] ${getName(node, 1)} is not in the graph`);
@@ -229,6 +216,12 @@ class SerializableGraph extends O.Serializable{
       for(let i = 0; i !== ptrsNum; i++){
         const next = node[i];
         if(next === null || nodes.has(next)) continue;
+
+        if(typeof next !== 'object'){
+          log(node, i);
+          throw new TypeError(`[GC] ${getName(next, 1)} is not an object`);
+        }
+
         queue.push(next);
       }
     }
@@ -279,7 +272,7 @@ class SerializableGraph extends O.Serializable{
   }
 };
 
-class Node extends O.Serializable{
+class Node{
   // TODO: delete this
   static id = 0;
   id = Node.id++;
@@ -292,14 +285,28 @@ class Node extends O.Serializable{
   #graph;
 
   constructor(graph){
-    super();
-
     this.#graph = graph;
     graph.addNode(this);
   }
 
-  ser(ser=new O.Serializer()){ return ser; }
-  deser(ser){ return this; }
+  static keys(keys){
+    const proto = this.prototype;
+    let index = this.ptrsNum;
+
+    for(const key of keys){
+      const i = index++;
+      
+      Object.defineProperty(proto, key, {
+        get(){ return this[i]; },
+        set(a){ return this[i] = a; },
+      });
+    }
+
+    return index;
+  }
+
+  ser(s){}
+  deser(s){}
 
   get graph(){ return this.#graph; }
   get g(){ return this.#graph; }
@@ -327,8 +334,8 @@ class String extends Node{
     this.str = str;
   }
 
-  ser(ser=new O.Serializer()){ return ser.writeStr(this.#str); }
-  deser(ser){ this.str = ser.readStr(); return this; }
+  ser(s){ s.writeStr(this.#str); }
+  deser(s){ this.str = s.readStr(); }
 
   get str(){ return this.#str; }
   set str(str){ this.size -= this.#str.length - (this.#str = str).length | 0; }
@@ -368,19 +375,19 @@ class Array extends Node{
     if(typeof val !== 'object')
       throw new TypeError(`[UNSHIFT] ${getName(val, 1)} is not an object`);
 
-    const len = this.ptrsNum;
+    const len = this.ptrsNum++;
     for(let i = 0; i !== len; i++)
       this[i + 1] = this[i];
     this[0] = val;
-    return ++this.ptrsNum;
+    return this.ptrsNum;
   }
 
   push(val){
     if(typeof val !== 'object')
       throw new TypeError(`[PUSH] ${getName(val, 1)} is not an object`);
 
-    this[this.ptrsNum] = val;
-    return ++this.ptrsNum;
+    this[this.ptrsNum++] = val;
+    return this.ptrsNum;
   }
 
   shift(){
@@ -488,7 +495,7 @@ class Array extends Node{
 };
 
 class Set extends Node{
-  static ptrsNum = 1;
+  static ptrsNum = this.keys(['arr']);
 
   constructor(g){
     super(g);
@@ -496,8 +503,6 @@ class Set extends Node{
 
     this.arr = new Array(g);
   }
-
-  get arr(){ return this[0]; } set arr(a){ this[0] = a; }
 
   get size(){
     return this.arr.length;
@@ -535,7 +540,7 @@ class Set extends Node{
 };
 
 class Map extends Node{
-  static ptrsNum = 1;
+  static ptrsNum = this.keys(['arr']);
 
   constructor(g){
     super(g);
@@ -543,8 +548,6 @@ class Map extends Node{
 
     this.arr = new Array(g);
   }
-
-  get arr(){ return this[0]; } set arr(a){ this[0] = a; }
 
   get size(){
     return this.arr.length;

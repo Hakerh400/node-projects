@@ -7,7 +7,7 @@ const SG = require('../serializable-graph');
 const Thread = require('./thread');
 
 class Interpreter extends SG.Node{
-  static ptrsNum = 1;
+  static ptrsNum = this.keys(['threads']);
 
   constructor(g, script=null){
     super(g);
@@ -23,16 +23,8 @@ class Interpreter extends SG.Node{
     }
   }
 
-  get threads(){ return this[0]; } set threads(a){ this[0] = a; }
-
-  ser(ser=new O.Serializer()){
-    return ser.writeInt(this.threadIndex);
-  }
-
-  deser(ser){
-    this.threadIndex = ser.readInt();
-    return this;
-  }
+  ser(s){ s.writeInt(this.threadIndex); }
+  deser(s){ this.threadIndex = s.readInt(); }
 
   get len(){ return this.threads.length; }
   get active(){ return this.len !== 0; }

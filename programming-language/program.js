@@ -12,17 +12,23 @@ class Program extends SG{
   stdout = new StdIO();
   stderr = new StdIO();
 
+  #maxSize;
   #lang;
   #intp;
 
-  constructor(langName, script, maxSize){
+  constructor(langName, script, maxSize=null){
     const lang = PL.get(langName);
-    super(lang.graphCtors, lang.graphRefs, maxSize);
+    super(lang.graphCtors, lang.graphRefs);
+
+    this.#maxSize = maxSize;
 
     this.#lang = lang;
     this.#intp = new lang.Interpreter(this, script).persist();
+
+    this.checkSize();
   }
 
+  get maxSize(){ return this.#maxSize; }
   get lang(){ return this.#lang; }
   get intp(){ return this.#intp; }
   get active(){ return this.#intp.active; }
@@ -30,6 +36,20 @@ class Program extends SG{
 
   tick(){
     this.#intp.tick();
+    this.checkSize();
+  }
+
+  checkSize(){
+    const max = this.#maxSize;
+    if(max === null || this.size <= max) return;
+
+    const {size} = this;
+    this.gc();
+
+    if(this.size > max)
+      throw new RangeError('Out of memory');
+
+    log(`[GC] ${size} ---> ${this.size} (${this.size - size})`);
   }
 };
 

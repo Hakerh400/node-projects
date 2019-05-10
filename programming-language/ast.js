@@ -7,7 +7,7 @@ const SG = require('../serializable-graph');
 const Element = require('./element');
 
 class AST extends SG.Node{
-  static ptrsNum = 3;
+  static ptrsNum = this.keys(['syntax', 'str', 'node']);
 
   constructor(graph, syntax=null, str=null, node=null){
     super(graph);
@@ -17,14 +17,10 @@ class AST extends SG.Node{
     this.str = str;
     this.node = node;
   }
-
-  get syntax(){ return this[0]; } set syntax(a){ this[0] = a; }
-  get str(){ return this[1]; } set str(a){ this[1] = a; }
-  get node(){ return this[2]; } set node(a){ this[2] = a; }
 };
 
 class ASTNode extends SG.Node{
-  static ptrsNum = 2;
+  static ptrsNum = this.keys(['ast', 'ref']);
 
   constructor(graph, ast=null, index=0, ref=null){
     super(graph);
@@ -37,19 +33,12 @@ class ASTNode extends SG.Node{
     this.done = 0;
   }
 
-  ser(ser=new O.Serializer()){
-    return ser.writeUint(this.index).writeInt(this.len).write(this.done);
+  ser(s){ s.writeUint(this.index).writeInt(this.len).write(this.done); }
+  deser(s){
+    this.index = s.readUint();
+    this.len = s.readInt();
+    this.done = s.read();
   }
-
-  deser(ser){
-    this.index = ser.readUint();
-    this.len = ser.readInt();
-    this.done = ser.read();
-    return this;
-  }
-
-  get ast(){ return this[0]; } set ast(a){ this[0] = a; }
-  get ref(){ return this[1]; } set ref(a){ this[1] = a; }
 
   get end(){ return this.index + this.len; }
   get str(){ return this.toString(); }
@@ -68,7 +57,7 @@ class ASTNode extends SG.Node{
 };
 
 class ASTDef extends ASTNode{
-  static ptrsNum = 5;
+  static ptrsNum = this.keys(['pats', 'pat', 'elems']);
 
   constructor(graph, ast, index, ref){
     super(graph, ast, index, ref);
@@ -80,21 +69,14 @@ class ASTDef extends ASTNode{
     this.patIndex = 0;
   }
 
-  ser(ser=new O.Serializer()){
-    return super.ser(ser).writeUint(this.index).writeInt(this.len).write(this.done);
+  ser(s){ super.ser(s); s.writeUint(this.index).writeInt(this.len).write(this.done); }
+  deser(s){
+    super.deser(s);
+    this.index = s.readUint();
+    this.len = s.readInt();
+    this.done = s.read();
   }
 
-  deser(ser){
-    super.deser(ser);
-    this.index = ser.readUint();
-    this.len = ser.readInt();
-    this.done = ser.read();
-    return this;
-  }
-
-  get pats(){ return this[2]; } set pats(a){ this[2] = a; }
-  get pat(){ return this[3]; } set pat(a){ this[3] = a; }
-  get elems(){ return this[4]; } set elems(a){ this[4] = a; }
   get fst(){ return this.elems[0]; }
 
   reset(){
@@ -133,7 +115,7 @@ class ASTDef extends ASTNode{
 };
 
 class ASTPat extends ASTNode{
-  static ptrsNum = 3;
+  static ptrsNum = this.keys(['elems']);
 
   constructor(graph, ast, index, ref){
     super(graph, ast, index, ref);
@@ -142,7 +124,6 @@ class ASTPat extends ASTNode{
     this.elems = new SG.Array(this.graph);
   }
 
-  get elems(){ return this[2]; } set elems(a){ this[2] = a; }
   get fst(){ return this.elems[0]; }
 
   reset(){
@@ -173,7 +154,7 @@ class ASTPat extends ASTNode{
 };
 
 class ASTElem extends ASTNode{
-  static ptrsNum = 4;
+  static ptrsNum = this.keys(['arr', 'seps']);
 
   constructor(graph, ast, index, ref){
     super(graph, ast, index, ref);
@@ -183,8 +164,6 @@ class ASTElem extends ASTNode{
     this.seps = new SG.Array(this.graph);
   }
 
-  get arr(){ return this[2]; } set arr(a){ this[2] = a; }
-  get seps(){ return this[3]; } set seps(a){ this[3] = a; }
   get fst(){ return this.arr[0]; }
 
   reset(){

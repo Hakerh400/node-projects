@@ -36,7 +36,7 @@ class ProgrammingLanguage{
 
     const ctors = this.graphCtors = baseGraphCtors.slice();
 
-    const refs = this.graphRefs = [this];
+    const refs = this.graphRefs = [this, syntax];
     const {defs} = syntax;
 
     for(const defName in defs){

@@ -6,30 +6,32 @@ const O = require('../omikron');
 const SG = require('../serializable-graph');
 
 class StackFrame extends SG.Node{
-  static ptrsNum = 2;
+  static ptrsNum = this.keys(['prev', 'rval']);
+
+  #hval = 0;
 
   constructor(g, prev=null){
     super(g);
     if(g.dsr) return;
 
     this.prev = prev;
-    this.val = null;
+    this.rval = null;
+
     this.i = 0;
     this.j = 0;
   }
 
-  get prev(){ return this[0]; } set prev(a){ this[0] = a; }
-  get val(){ return this[1]; } set val(a){ this[1] = a; }
-
-  ser(ser=new O.Serializer()){
-    return ser.writeInt(this.i).writeInt(this.j);
+  ser(s){ s.write(this.#hval).writeInt(this.i).writeInt(this.j); }
+  deser(s){
+    this.#hval = s.read();
+    this.i = s.readInt();
+    this.j = s.readInt();
   }
 
-  deser(ser){
-    this.i = ser.readInt();
-    this.j = ser.readInt();
-    return this;
-  }
+  get hval(){ const hv = this.#hval; this.#hval = 0; return hv; }
+  set hval(hv){ this.#hval = hv; }
+
+  get nval(){ const hv = this.#hval; this.#hval = 0; return !hv; }
 
   tick(intp, th){ O.virtual('tick'); }
 };

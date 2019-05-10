@@ -3,41 +3,52 @@
 const fs = require('fs');
 const path = require('path');
 const O = require('../omikron');
-const finder = require('.');
+const finder = require('./finder');
 const skipList = require('./skip-list');
 
-const SAVE_OUTPUT = 0;
+const strToFind = process.argv.slice(2).join(' ').toLowerCase();
 
 const cwd = __dirname;
-const outputFile = path.join(cwd, 'output.txt');
+const mainDir = path.join(cwd, '..');
 
-var dirs = [
-  O.dirs.node,
-  O.dirs.wamp,
+const dirs = [
+  mainDir,
 ];
 
-var exts = [
+const codeExts = [
+  'bat',
   'js',
+  'php',
+  'sql',
 ];
+
+const textExts = codeExts.concat([
+  'txt',
+  'md',
+  'json',
+  'htm',
+  'css',
+  'xml',
+  'yml',
+]);
 
 setTimeout(main);
 
 function main(){
-  var output = finder.find(dirs, exts, func);
-  var str = output.join('\n');
+  const output = finder.find(dirs, textExts, func);
 
-  if(SAVE_OUTPUT) fs.writeFileSync(outputFile, str);
-  else log(str);
+  if(output.length !== 0)
+    log(output.join('\n'));
 }
 
 function func(file, src){
-  var dirs = file.split(/[\/\\]/);
+  const dirs = file.split(/[\/\\]/);
   if(dirs.some(dir => skipList.includes(dir))) return;
 
-  var lines = O.sanl(src);
+  const lines = O.sanl(src);
 
-  var index = lines.findIndex(line => {
-    return /Math\.(?:random)/.test(line);
+  const index = lines.findIndex(line => {
+    return line.toLowerCase().includes(strToFind);
   });
 
   return index + 1;
