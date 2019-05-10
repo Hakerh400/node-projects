@@ -21,8 +21,9 @@ class StackFrame extends SG.Node{
     this.j = 0;
   }
 
-  ser(s){ s.write(this.#hval).writeInt(this.i).writeInt(this.j); }
+  ser(s){ super.ser(s); s.write(this.#hval).writeInt(this.i).writeInt(this.j); }
   deser(s){
+    super.deser(s);
     this.#hval = s.read();
     this.i = s.readInt();
     this.j = s.readInt();

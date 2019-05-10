@@ -33,8 +33,9 @@ class ASTNode extends SG.Node{
     this.done = 0;
   }
 
-  ser(s){ s.writeUint(this.index).writeInt(this.len).write(this.done); }
+  ser(s){ super.ser(s); s.writeUint(this.index).writeInt(this.len).write(this.done); }
   deser(s){
+    super.deser(s);
     this.index = s.readUint();
     this.len = s.readInt();
     this.done = s.read();

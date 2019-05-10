@@ -27,10 +27,9 @@ class Parser extends SF{
 
     const {syntax} = g.lang;
 
-    // TODO: allocate maps and sets lazily
     this.ast = new AST(g, syntax, str);
-    this.cache = g.ca(str.length, () => new SG.Map(g));
-    this.parsing = g.ca(str.length, () => new SG.Set(g));
+    this.cache = new SG.Array(g);
+    this.parsing = new SG.Array(g);
     this.sfDef = new ParseDef(g, this, 0, syntax.defs[MAIN_DEF]['*']);
   }
 
@@ -58,21 +57,35 @@ class Parser extends SF{
 
     const node = new ctor(g, ast, index, ref);
     if(index === ast.str.length) return node.finalize();
-    if(addToCache) cache[index].set(ref, node);
+
+    if(addToCache)
+      this.prepareCacheIndex(index).set(ref, node);
 
     return node;
   }
 
   getNodeFromCache(index, ref, force=0){
-    const map = this.cache[index];
-
+    const map = this.prepareCacheIndex(index);
     if(map.has(ref)) return map.get(ref);
     if(!force) return null;
     return this.createNewNode(index, ref);
   }
+
+  prepareCacheIndex(index){
+    const {g, cache} = this;
+    if(index >= cache.length) cache.length = index + 1;
+    if(cache[index] === SG.Undefined.get(g)) cache[index] = new SG.Map(g);
+    return cache[index];
+  }
+
+  prepareParsingIndex(index){
+    const {g, parsing} = this;
+    if(index >= parsing.length) parsing.length = index + 1;
+    if(parsing[index] === SG.Undefined.get(g)) parsing[index] = new SG.Set(g);
+    return parsing[index];
+  }
 };
 
-debugger;
 class Parse extends SF{
   static ptrsNum = this.keys(['parser', 'ref', 'node']);
 
@@ -103,7 +116,7 @@ class ParseDef extends Parse{
   tick(intp, th){
     const {g, parser, index, ref: def} = this;
     const {str} = parser.ast.str;
-    const pSet = parser.parsing[index];
+    const pSet = parser.prepareParsingIndex(index);
 
     if(this.node === null){
       if(index === str.length) return parser.createNewNode(index, def);

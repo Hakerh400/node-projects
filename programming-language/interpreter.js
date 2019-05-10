@@ -23,8 +23,8 @@ class Interpreter extends SG.Node{
     }
   }
 
-  ser(s){ s.writeInt(this.threadIndex); }
-  deser(s){ this.threadIndex = s.readInt(); }
+  ser(s){ super.ser(s); s.writeInt(this.threadIndex); }
+  deser(s){ super.deser(s); this.threadIndex = s.readInt(); }
 
   get len(){ return this.threads.length; }
   get active(){ return this.len !== 0; }

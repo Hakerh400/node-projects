@@ -19,8 +19,8 @@ class Thread extends SG.Node{
   get active(){ return this.sf !== null; }
   get done(){ return this.sf === null; }
 
-  ser(s){ s.writeInt(this.index); }
-  deser(s){ this.index = s.readInt(); }
+  ser(s){ super.ser(s); s.writeInt(this.index); }
+  deser(s){ super.deser(s); this.index = s.readInt(); }
 
   tick(intp){
     this.sf.tick(intp, this);

@@ -324,6 +324,25 @@ class Node{
   unpersist(){ this.graph.unpersist(this); return this; }
 };
 
+class Undefined extends Node{
+  static #instances = new WeakMap();
+  static #ctorSym = Symbol('constructor');
+
+  constructor(g, ctorSym){
+    super(g);
+    if(g.dsr) return;
+
+    if(ctorSym !== Undefined.#ctorSym)
+      throw new TypeError('Undefined should not be instantiated explicitly');
+  }
+
+  static get(g){
+    const insts = Undefined.#instances;
+    if(!insts.has(g)) insts.set(g, new Undefined(g, Undefined.#ctorSym));
+    return insts.get(g);
+  }
+};
+
 class String extends Node{
   #str = '';
 
@@ -334,8 +353,8 @@ class String extends Node{
     this.str = str;
   }
 
-  ser(s){ s.writeStr(this.#str); }
-  deser(s){ this.str = s.readStr(); }
+  ser(s){ super.ser(s); s.writeStr(this.#str); }
+  deser(s){ super.deser(s); this.str = s.readStr(); }
 
   get str(){ return this.#str; }
   set str(str){ this.size -= this.#str.length - (this.#str = str).length | 0; }
@@ -596,13 +615,14 @@ class Map extends Node{
 };
 
 module.exports = Object.assign(SerializableGraph, {
+  sizeSym,
+
   Node,
+  Undefined,
   String,
   Array,
   Set,
   Map,
-
-  sizeSym,
 });
 
 function getName(val, sf=0){
