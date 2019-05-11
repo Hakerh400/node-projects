@@ -83,6 +83,9 @@ class SerializableGraph extends O.Serializable{
         all.delete(node);
         done.set(node, index);
 
+        if(!this.#ctorsMap.has(node.constructor))
+          throw new TypeError(`[SER] ${getName(node, 1)} has unrecognized constructor`);
+
         ser.write(this.#ctorsMap.get(node.constructor), lastCtorIndex);
         ser.write(node.persistent);
         node.ser(ser);
@@ -158,11 +161,11 @@ class SerializableGraph extends O.Serializable{
   get refs(){ return this.#refs; }
   get nodes(){ return this.#nodes; }
   get persts(){ return this.#persts; }
-
   get size(){ return this.#size; }
   set size(size){ this.#size = size; }
-
   get main(){ return O.first(this.#persts); }
+
+  has(node){ return this.#nodes.has(node); }
 
   addNode(node){
     const size = node[sizeSym];
@@ -266,7 +269,7 @@ class SerializableGraph extends O.Serializable{
     log();
     log(nodes.size);
     log(global.Array.from(nodes).map(node => {
-      return `${`${getName(node, 0)}.${node.id}`.padEnd(20)} ${node.size}`;
+      return `${`${getName(node, 0)}.${node.id}`.padEnd(20)} ${node[sizeSym]}`;
     }).join('\n'));
     return this;
   }
@@ -287,6 +290,8 @@ class Node{
   constructor(graph){
     this.#graph = graph;
     graph.addNode(this);
+
+    // if(this.id === 6) throw new Error;
   }
 
   static keys(keys){
@@ -338,7 +343,10 @@ class Undefined extends Node{
 
   static get(g){
     const insts = Undefined.#instances;
-    if(!insts.has(g)) insts.set(g, new Undefined(g, Undefined.#ctorSym));
+
+    if(!(insts.has(g) && g.has(insts.get(g))))
+      insts.set(g, new Undefined(g, Undefined.#ctorSym));
+
     return insts.get(g);
   }
 };
@@ -357,7 +365,7 @@ class String extends Node{
   deser(s){ super.deser(s); this.str = s.readStr(); }
 
   get str(){ return this.#str; }
-  set str(str){ this.size -= this.#str.length - (this.#str = str).length | 0; }
+  set str(str){ this[sizeSym] -= this.#str.length - (this.#str = str).length | 0; }
 
   get length(){ return this.#str.length; }
 
@@ -614,15 +622,21 @@ class Map extends Node{
   [Symbol.iterator](){ return this.arr[Symbol.iterator](); }
 };
 
-module.exports = Object.assign(SerializableGraph, {
-  sizeSym,
-
-  Node,
+const ctors = [
   Undefined,
   String,
   Array,
   Set,
   Map,
+];
+
+for(const ctor of ctors)
+  SerializableGraph[ctor.name] = ctor;
+
+module.exports = Object.assign(SerializableGraph, {
+  sizeSym,
+  Node,
+  ctors,
 });
 
 function getName(val, sf=0){

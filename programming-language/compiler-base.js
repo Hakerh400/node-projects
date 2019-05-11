@@ -9,7 +9,7 @@ const AST = require('./ast');
 
 const {ASTNode, ASTDef, ASTPat, ASTElem, ASTNterm, ASTTerm} = AST;
 
-class Compiler extends SF{
+class CompilerBase extends SF{
   static ptrsNum = this.keys(['ast']);
 
   constructor(g, ast){
@@ -115,7 +115,7 @@ class CompileArr extends Compile{
   }
 };
 
-module.exports = Object.assign(Compiler, {
+module.exports = Object.assign(CompilerBase, {
   Compile,
   CompileDef,
   CompileArr,

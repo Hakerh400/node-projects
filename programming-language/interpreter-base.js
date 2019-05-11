@@ -6,7 +6,7 @@ const O = require('../omikron');
 const SG = require('../serializable-graph');
 const Thread = require('./thread');
 
-class Interpreter extends SG.Node{
+class InterpreterBase extends SG.Node{
   static ptrsNum = this.keys(['threads']);
 
   constructor(g, script=null){
@@ -60,4 +60,4 @@ class Interpreter extends SG.Node{
   }
 };
 
-module.exports = Interpreter;
+module.exports = InterpreterBase;

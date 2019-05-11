@@ -7,20 +7,21 @@ const SG = require('../serializable-graph');
 const Syntax = require('./syntax');
 const langsList = require('./langs-list');
 const StackFrame = require('./stack-frame');
-const Parser = require('./parser');
+const ParserBase = require('./parser-base');
+const CompilerBase = require('./compiler-base');
+const Thread = require('./thread');
 const AST = require('./ast');
 
-const {ParseDef, ParsePat, ParseElem} = Parser;
-const {CompileDef, CompileArr} = StackFrame;
+const {ParseDef, ParsePat, ParseElem} = ParserBase;
+const {CompileDef, CompileArr} = CompilerBase;
 const {ASTNode, ASTDef, ASTPat, ASTElem, ASTNterm, ASTTerm} = AST;
 
-const baseGraphCtors = [
-  SG.String, SG.Array, SG.Set, SG.Map,
-
-  AST, ASTDef, ASTPat, ASTNterm, ASTTerm,
+const baseGraphCtors = SG.ctors.concat([
   ParseDef, ParsePat, ParseElem,
   CompileDef, CompileArr,
-];
+  Thread,
+  AST, ASTDef, ASTPat, ASTNterm, ASTTerm,
+]);
 
 const cwd = __dirname;
 const langsDir = path.join(cwd, 'langs');
@@ -29,12 +30,14 @@ const namesList = getNamesList();
 const cache = O.obj();
 
 class ProgrammingLanguage{
-  constructor(syntax, Compiler, Interpreter){
+  constructor(syntax, Parser, Compiler, Interpreter){
     this.syntax = syntax;
-    this.Compiler = Compiler;
-    this.Interpreter = Interpreter;
 
-    const ctors = this.graphCtors = baseGraphCtors.slice();
+    const ctors = this.graphCtors = baseGraphCtors.concat([
+      this.Parser = Parser,
+      this.Compiler = Compiler,
+      this.Interpreter = Interpreter,
+    ]).concat(Interpreter.ctorsArr);
 
     const refs = this.graphRefs = [this, syntax];
     const {defs} = syntax;
@@ -64,10 +67,11 @@ class ProgrammingLanguage{
 
     const dir = path.join(langsDir, lang);
     const syntax = Syntax.fromDir(path.join(dir, 'syntax'));
+    const Parser = require(path.join(dir, 'parser'));
     const Compiler = require(path.join(dir, 'compiler'));
     const Interpreter = require(path.join(dir, 'interpreter'));
 
-    const langInstance = new PL(syntax, Compiler, Interpreter);
+    const langInstance = new PL(syntax, Parser, Compiler, Interpreter);
     cache[lang] = langInstance;
 
     return langInstance;

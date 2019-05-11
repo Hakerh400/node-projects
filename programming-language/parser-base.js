@@ -18,7 +18,7 @@ const MAIN_DEF = 'script';
 
 const {ASTNode, ASTDef, ASTPat, ASTElem, ASTNterm, ASTTerm} = AST;
 
-class Parser extends SF{
+class ParserBase extends SF{
   static ptrsNum = this.keys(['ast', 'cache', 'parsing', 'sfDef']);
 
   constructor(g, str){
@@ -99,7 +99,7 @@ class Parse extends SF{
     this.index = index;
   }
 
-  ser(s){ super.ser(s).writeUint(this.index); }
+  ser(s){ super.ser(s); s.writeUint(this.index); }
   deser(s){ super.deser(s); this.index = s.readUint(); }
 };
 
@@ -272,7 +272,7 @@ class ParseElem extends Parse{
   }
 };
 
-module.exports = Object.assign(Parser, {
+module.exports = Object.assign(ParserBase, {
   Parse,
   ParseDef,
   ParsePat,

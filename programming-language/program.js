@@ -39,12 +39,18 @@ class Program extends SG{
     this.checkSize();
   }
 
+  deser(ser){
+    super.deser(ser);
+    this.#intp = this.main;
+    return this;
+  }
+
   checkSize(){
     const max = this.#maxSize;
     if(max === null || this.size <= max) return;
 
     const {size} = this;
-    this.gc();
+    this.refresh();
 
     if(this.size > max)
       throw new RangeError('Out of memory');
