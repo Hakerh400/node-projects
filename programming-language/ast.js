@@ -5,6 +5,7 @@ const path = require('path');
 const O = require('../omikron');
 const SG = require('../serializable-graph');
 const Element = require('./element');
+const cgs = require('./common-graph-nodes');
 
 class AST extends SG.Node{
   static ptrsNum = this.keys(['syntax', 'str', 'node']);
@@ -64,7 +65,7 @@ class ASTDef extends ASTNode{
     super(graph, ast, index, ref);
     if(graph.dsr) return;
 
-    this.pats = new SG.Array(this.graph);
+    this.pats = new cgs.Array(this.graph);
     this.pat = null;
     this.elems = null;
     this.patIndex = 0;
@@ -122,7 +123,7 @@ class ASTPat extends ASTNode{
     super(graph, ast, index, ref);
     if(graph.dsr) return;
 
-    this.elems = new SG.Array(this.graph);
+    this.elems = new cgs.Array(this.graph);
   }
 
   get fst(){ return this.elems[0]; }
@@ -161,8 +162,8 @@ class ASTElem extends ASTNode{
     super(graph, ast, index, ref);
     if(graph.dsr) return;
 
-    this.arr = new SG.Array(this.graph);
-    this.seps = new SG.Array(this.graph);
+    this.arr = new cgs.Array(this.graph);
+    this.seps = new cgs.Array(this.graph);
   }
 
   get fst(){ return this.arr[0]; }

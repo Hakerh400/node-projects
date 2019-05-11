@@ -5,6 +5,7 @@ const path = require('path');
 const O = require('../omikron');
 const SG = require('../serializable-graph');
 const Thread = require('./thread');
+const cgs = require('./common-graph-nodes');
 
 class InterpreterBase extends SG.Node{
   static ptrsNum = this.keys(['threads']);
@@ -13,12 +14,12 @@ class InterpreterBase extends SG.Node{
     super(g);
     if(g.dsr) return;
 
-    this.threads = new SG.Array(g);
+    this.threads = new cgs.Array(g);
     this.threadIndex = -1;
 
     if(script !== null){
-      const str = new SG.String(g, script);
-      const parser = new this.constructor.Parser(g, str);
+      const str = new cgs.String(g, script);
+      const parser = new this.constructor.Parser(g, str, 1);
       this.createThread(parser);
     }
   }

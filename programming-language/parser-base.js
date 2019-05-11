@@ -13,6 +13,7 @@ const Range = require('./range');
 const Context = require('./context');
 const ruleParser = require('./rule-parser');
 const AST = require('./ast');
+const cgs = require('./common-graph-nodes');
 
 const MAIN_DEF = 'script';
 
@@ -21,22 +22,32 @@ const {ASTNode, ASTDef, ASTPat, ASTElem, ASTNterm, ASTTerm} = AST;
 class ParserBase extends SF{
   static ptrsNum = this.keys(['ast', 'cache', 'parsing', 'sfDef']);
 
-  constructor(g, str){
+  constructor(g, str, exec=0){
     super(g);
     if(g.dsr) return;
 
     const {syntax} = g.lang;
 
     this.ast = new AST(g, syntax, str);
-    this.cache = new SG.Array(g);
-    this.parsing = new SG.Array(g);
+    this.cache = new cgs.Array(g);
+    this.parsing = new cgs.Array(g);
     this.sfDef = new ParseDef(g, this, 0, syntax.defs[MAIN_DEF]['*']);
+
+    this.exec = exec;
   }
 
+  ser(s){ super.ser(s); s.write(this.exec); }
+  deser(s){ super.deser(s); this.exec = s.read(); }
+
   tick(intp, th){
+    const {ast} = this;
+
     if(this.i++ === 0) return th.call(this.sfDef);
-    this.ast.node = this.rval;
-    th.call(new this.constructor.Compiler(this.g, this.ast), 1);
+
+    ast.node = this.rval;
+    if(!this.exec) return th.ret(ast);
+
+    th.call(new this.constructor.Compiler(this.g, ast), 1);
   }
 
   createNewNode(index, ref, addToCache=1){
@@ -74,14 +85,14 @@ class ParserBase extends SF{
   prepareCacheIndex(index){
     const {g, cache} = this;
     if(index >= cache.length) cache.length = index + 1;
-    if(cache[index] === SG.Undefined.get(g)) cache[index] = new SG.Map(g);
+    if(cache[index] === cgs.Undefined.get(g)) cache[index] = new cgs.Map(g);
     return cache[index];
   }
 
   prepareParsingIndex(index){
     const {g, parsing} = this;
     if(index >= parsing.length) parsing.length = index + 1;
-    if(parsing[index] === SG.Undefined.get(g)) parsing[index] = new SG.Set(g);
+    if(parsing[index] === cgs.Undefined.get(g)) parsing[index] = new cgs.Set(g);
     return parsing[index];
   }
 };
@@ -256,12 +267,12 @@ class ParseElem extends Parse{
         if(node.ref instanceof Element.String){
           const substr = str.slice(index, index + node.ref.str.length);
           if(node.ref.str !== substr) return done();
-          node.arr.push(new SG.String(g, substr));
+          node.arr.push(new cgs.String(g, substr));
           this.index += node.ref.str.length;
         }else if(node.ref instanceof Element.CharsRange){
           // TODO: check buffer bounds
           if(!node.ref.set.has(O.cc(str, index))) return done();
-          if(node.arr.length === 0) node.arr.push(new SG.String(g));
+          if(node.arr.length === 0) node.arr.push(new cgs.String(g));
           node.arr[0].str += str[index];
           this.index++;
         }

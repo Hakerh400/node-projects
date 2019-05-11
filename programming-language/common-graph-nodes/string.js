@@ -1,0 +1,31 @@
+'use strict';
+
+const fs = require('fs');
+const path = require('path');
+const O = require('../../omikron');
+const SG = require('../../serializable-graph');
+
+class String extends SG.Node{
+  #str = '';
+
+  constructor(g, str=''){
+    super(g);
+    if(g.dsr) return;
+
+    this.str = str;
+  }
+
+  ser(s){ super.ser(s); s.writeStr(this.#str); }
+  deser(s){ super.deser(s); this.str = s.readStr(); }
+
+  get str(){ return this.#str; }
+  set str(str){ this[SG.sizeSym] -= this.#str.length - (this.#str = str).length | 0; }
+
+  get length(){ return this.#str.length; }
+
+  toString(){ return this.#str; }
+};
+
+module.exports = String;
+
+const cgs = require('.');

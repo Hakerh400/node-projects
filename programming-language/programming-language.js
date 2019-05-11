@@ -11,17 +11,18 @@ const ParserBase = require('./parser-base');
 const CompilerBase = require('./compiler-base');
 const Thread = require('./thread');
 const AST = require('./ast');
+const cgs = require('./common-graph-nodes');
 
 const {ParseDef, ParsePat, ParseElem} = ParserBase;
 const {CompileDef, CompileArr} = CompilerBase;
 const {ASTNode, ASTDef, ASTPat, ASTElem, ASTNterm, ASTTerm} = AST;
 
-const baseGraphCtors = SG.ctors.concat([
+const baseGraphCtors = [
   ParseDef, ParsePat, ParseElem,
   CompileDef, CompileArr,
   Thread,
   AST, ASTDef, ASTPat, ASTNterm, ASTTerm,
-]);
+].concat(cgs.ctorsArr);
 
 const cwd = __dirname;
 const langsDir = path.join(cwd, 'langs');
