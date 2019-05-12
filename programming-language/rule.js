@@ -25,6 +25,8 @@ class Rule{
   hasMainSect(){ return this.hasSect('main'); }
   addSect(sect){ this.sects[sect.constructor.sectName] = sect; }
   getSect(name){ this.hasSect(name) ? this.sects[name] : null; }
+
+  toString(){ return this.name; }
 }
 
 module.exports = Rule;

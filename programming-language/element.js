@@ -27,6 +27,8 @@ class NonTerminal extends Element{
     this.rule = rule;
     this.ruleRange = new Range();
   }
+
+  toString(){ return this.rule['*'].name; }
 }
 
 class String extends Terminal{
@@ -36,9 +38,7 @@ class String extends Terminal{
     this.str = '';
   }
 
-  toString(){
-    return this.str;
-  }
+  toString(){ return O.sf(this.str); }
 }
 
 class CharsRange extends Terminal{
@@ -52,6 +52,12 @@ class CharsRange extends Terminal{
   has(num){ return this.set.has(nul); }
   overlaps(range){ return this.set.overlaps(range); }
   isEmpty(){ return this.set.isEmpty(); }
+
+  toString(){
+    return `[${this.set.ranges.map(a =>
+      `${O.sfcc(a.start)}-${O.sfcc(a.end)}`
+    ).join('')}]`
+  }
 }
 
 Element.Terminal = Terminal;

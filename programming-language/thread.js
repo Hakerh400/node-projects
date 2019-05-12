@@ -4,6 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const O = require('../omikron');
 const SG = require('../serializable-graph');
+const SF = require('./stack-frame');
 const cgs = require('./common-graph-nodes');
 
 class Thread extends SG.Node{
@@ -53,6 +54,9 @@ class Thread extends SG.Node{
       return;
     }
 
+    if(!(sf instanceof SF))
+      throw new Error(`[TH.TICK] ${SG.getName(sf)} is not a stack frame`);
+
     sf.tick(this);
     if(this.done) intp.removeThread(this);
   }
@@ -76,6 +80,9 @@ class Thread extends SG.Node{
   }
 
   call(sf, tco=0){
+    if(!(sf instanceof SF))
+      throw new Error(`[TH.CALL] ${SG.getName(sf)} is not a stack frame`);
+
     if(tco && this.sf !== null) this.sf = this.sf.prev;
     sf.prev = this.sf;
     this.sf = sf;

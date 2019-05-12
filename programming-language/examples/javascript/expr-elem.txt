@@ -1,9 +1,0 @@
-elem{
-  ident    |
-  string   |
-  regex    |
-  number   |
-  array    |
-  object   |
-  funcExpr |
-}

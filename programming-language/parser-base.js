@@ -45,8 +45,11 @@ class ParserBase extends SF{
 
     const node = this.rval;
     if(node.len !== ast.str.length){
-
+      const und = cgs.Undefined.get(g);
+      
       this.srcPos = this.cache.reduce((pos, map) => {
+        if(map === und) return pos;
+
         return map.arr.reduce((pos, elem) => {
           return Math.max(elem[1].end, pos);
         }, pos);
@@ -77,7 +80,8 @@ class ParserBase extends SF{
     }
 
     const node = new ctor(g, ast, index, ref);
-    if(index === ast.str.length) return node.finalize();
+    if(index > ast.str.length)
+      throw new RangeError('Cache array out of bounds');
 
     if(addToCache)
       this.prepareCacheIndex(index).set(ref, node);
@@ -140,8 +144,6 @@ class ParseDef extends Parse{
     const pSet = parser.prepareParsingIndex(index);
 
     if(this.node === null){
-      if(index === str.length) return parser.createNewNode(index, def);
-
       let node = parser.getNodeFromCache(index, def);
       if(node !== null && (node.done || pSet.has(def)))
         return th.ret(node);
@@ -164,6 +166,7 @@ class ParseDef extends Parse{
       if(prev !== null && node.len <= prev.len){
         this.node = node = prev;
         pSet.delete(def);
+
         return th.ret(node);
       }
 
@@ -191,7 +194,6 @@ class ParsePat extends Parse{
     const {str} = parser.ast.str;
 
     if(this.node === null){
-      if(index === str.length) return th.ret(parser.createNewNode(index, pat));
       let node = parser.getNodeFromCache(index, pat, 1);
       if(node.done) return th.ret(node);
       node = parser.createNewNode(index, pat);
@@ -227,7 +229,6 @@ class ParseElem extends Parse{
     const {str} = parser.ast.str;
 
     if(this.node === null){
-      if(index === str.length) return th.ret(parser.createNewNode(index, elem));
       let node = parser.getNodeFromCache(index, elem, 1);
       if(node.done) return th.ret(node);
       node = parser.createNewNode(index, elem);
@@ -239,13 +240,15 @@ class ParseElem extends Parse{
     const lenMax = elem.range.end;
     let {node} = this;
 
-    const done = () => th.ret(
-      node.arr.length < lenMin ?
-      node.reset() :
-      node.update()
-    );
+    const done = () => {
+      th.ret(
+        node.arr.length >= lenMin ?
+        node.update() :
+        node.reset()
+      );
+    }
 
-    if(node.arr.length === lenMax || index === str.length) return done();
+    if(node.arr.length === lenMax) return done();
 
     if(this.i === 0){
       if(elem.sep !== null && node.arr.length !== 0){
@@ -280,8 +283,7 @@ class ParseElem extends Parse{
           node.arr.push(new cgs.String(g, substr));
           this.index += node.ref.str.length;
         }else if(node.ref instanceof Element.CharsRange){
-          // TODO: check buffer bounds
-          if(!node.ref.set.has(O.cc(str, index))) return done();
+          if(index === str.length || !node.ref.set.has(O.cc(str, index))) return done();
           if(node.arr.length === 0) node.arr.push(new cgs.String(g));
           node.arr[0].str += str[index];
           this.index++;

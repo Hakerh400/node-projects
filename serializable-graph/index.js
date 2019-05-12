@@ -41,6 +41,27 @@ class SerializableGraph extends O.Serializable{
     this.#persts = new Set();
   }
 
+  static getName(val, sf=0){
+    let str;
+
+    if(val === null){
+      str = 'null';
+    }else if(typeof val === 'object'){
+      if(Array.isArray(val)){
+        str = '[]';
+      }else{
+        const ctor = val.constructor;
+        if(ctor) str = ctor.name;
+        else str = String(val);
+      }
+    }else{
+      str = String(typeof val);
+    }
+
+    if(sf) str = O.sf(str);
+    return str;
+  }
+
   ser(ser=new O.Serializer()){
     const lastCtorIndex = this.#ctorsNum - 1;
     const lastRefIndex = this.#refsNum - 1;
@@ -69,7 +90,7 @@ class SerializableGraph extends O.Serializable{
 
         if(!(node instanceof Node)){
           if(!this.#refsMap.has(node))
-            throw new TypeError(`[SER] ${getName(node, 1)} is not a valid graph node or external reference`);
+            throw new TypeError(`[SER] ${SG.getName(node, 1)} is not a valid graph node or external reference`);
           ser.write(1).write(this.#refsMap.get(node), lastRefIndex);
           continue;
         }
@@ -87,7 +108,7 @@ class SerializableGraph extends O.Serializable{
 
         const ctor = node.constructor;
         if(!this.#ctorsMap.has(ctor))
-          throw new TypeError(`[SER] ${getName(node, 1)} has unrecognized constructor`);
+          throw new TypeError(`[SER] ${SG.getName(node, 1)} has unrecognized constructor`);
 
         ser.write(this.#ctorsMap.get(ctor), lastCtorIndex);
         ser.write(node.persistent);
@@ -222,12 +243,12 @@ class SerializableGraph extends O.Serializable{
         if(next instanceof Node){
           if(!this.#nodes.has(next)){
             log(node, i);
-            throw new TypeError(`[GC] ${getName(next, 1)} is not in the graph`);
+            throw new TypeError(`[GC] ${SG.getName(next, 1)} is not in the graph`);
           }
         }else{
           if(!this.#refsMap.has(next)){
             log(node, i);
-            throw new TypeError(`[GC] ${getName(next, 1)} is not a valid graph node or external reference`);
+            throw new TypeError(`[GC] ${SG.getName(next, 1)} is not a valid graph node or external reference`);
           }
         }
 
@@ -275,7 +296,7 @@ class SerializableGraph extends O.Serializable{
     log();
     log(nodes.size);
     log(Array.from(nodes).map(node => {
-      return `${`${getName(node, 0)}.${node.id}`.padEnd(20)} ${node[sizeSym]}`;
+      return `${`${SG.getName(node, 0)}.${node.id}`.padEnd(20)} ${node[sizeSym]}`;
     }).join('\n'));
     return this;
   }
@@ -327,7 +348,7 @@ class Node{
 
   get [sizeSym](){ return this.#size; }
   set [sizeSym](size){
-    if(!this.graph.nodes.has(this)) throw new Error(`The graph does not contain "${getName(this, 0)}.${this.id}"`);
+    if(!this.graph.nodes.has(this)) throw new Error(`The graph does not contain "${SG.getName(this, 0)}.${this.id}"`);
     this.graph.size -= this.#size - (this.#size = size) | 0;
   }
 
@@ -339,24 +360,3 @@ module.exports = Object.assign(SerializableGraph, {
   sizeSym,
   Node,
 });
-
-function getName(val, sf=0){
-  let str;
-
-  if(val === null){
-    str = 'null';
-  }else if(typeof val === 'object'){
-    if(Array.isArray(val)){
-      str = '[]';
-    }else{
-      const ctor = val.constructor;
-      if(ctor) str = ctor.name;
-      else str = String(val);
-    }
-  }else{
-    str = String(typeof val);
-  }
-
-  if(sf) str = O.sf(str);
-  return str;
-}

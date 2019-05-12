@@ -4,17 +4,18 @@ const fs = require('fs');
 const path = require('path');
 const assert = require('assert');
 const O = require('../omikron');
+const format = require('../format');
 const Engine = require('./engine');
 
 setTimeout(main);
 
 function main(){
-  const lang = 'Test';
-  const src = '1+2+3+4+5+6+123+8+9';
+  const lang = 'Functional()';
+  const src = O.rfs(format.path('-dw/1.txt'), 1);
   const input = '';
-  // const expected = String(new Function(`return ${src}`)());
 
-  const eng = new Engine(lang, src, 30e3, 25e3);
+  const maxSize = 1e5;
+  const eng = new Engine(lang, src, maxSize, maxSize - 1e3);
   const bufs = [];
 
   const onRead = (buf, len) => {
@@ -34,8 +35,4 @@ function main(){
 
   const output = Buffer.concat(bufs).toString();
   log(output);
-  return;
-  assert.strictEqual(output, expected);
-
-  log('OK');
 }

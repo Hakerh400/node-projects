@@ -3,10 +3,14 @@
 const fs = require('fs');
 const path = require('path');
 const O = require('../omikron');
+const format = require('../format');
 const SG = require('../serializable-graph');
 const PL = require('./programming-language');
 const StdIO = require('./stdio');
 const cgs = require('./common-graph-nodes');
+
+const DEBUG = 0;
+const REFRESH = 0;
 
 const DEFAULT_FILE_NAME = 'script.txt';
 
@@ -60,9 +64,10 @@ class Program extends SG{
     if(max === null || this.size <= max) return;
 
     const {size} = this;
-    this.gc();
+    if(REFRESH) this.refresh();
+    else this.gc();
 
-    // log(`[GC] ${size} ---> ${this.size} (${this.size - size})`);
+    if(DEBUG) log(`[GC] ${format.num(size)} ---> ${format.num(this.size)} (${format.num(this.size - size)})`);
 
     if(this.size > max)
       throw new RangeError('Out of memory');

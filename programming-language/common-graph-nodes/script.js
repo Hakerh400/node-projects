@@ -19,19 +19,10 @@ class Script extends SG.Node{
   }
 
   // TODO: reduce duplication
-  getLine(pos){
+  getLine(lineNum){
     const {str} = this.source;
     const lines = str.match(/.*?(?:\r\n|\r|\n)|.+/gs) || [];
-
-    let lineNum = 0;
-
-    for(const line of lines){
-      if(pos < line.length) break;
-      lineNum++;
-      pos -= line.length;
-    }
-
-    return lineNum < lines.length ? lines[lineNum] : '';
+    return lineNum <= lines.length ? lines[lineNum - 1] : '';
   }
 
   getLineNumber(pos){

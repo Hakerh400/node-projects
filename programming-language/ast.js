@@ -30,8 +30,8 @@ class ASTNode extends SG.Node{
     this.ast = ast;
     this.ref = ref;
     this.index = index
-    this.done = 0;
     this.len = -1;
+    this.done = 0;
   }
 
   ser(s){
@@ -191,7 +191,7 @@ class ASTNterm extends ASTElem{
     const {arr, seps} = this;
     const fDone = e => e.done;
 
-    this.len = arr.reduce((n, e) => n + e.len, 0);
+    this.len = arr.reduce((n, e) => n + e.len, 0) + seps.reduce((n, e) => n + e.len, 0);
     this.done = arr.every(fDone) && seps.every(fDone);
 
     return this;

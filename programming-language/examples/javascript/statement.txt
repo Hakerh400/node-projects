@@ -1,7 +1,0 @@
-stat{
-  expr
-}
-
-statSeps{ sn* statSep+statSepSep sn* }
-statSep{ ";" | newLine }
-statSepSep{ sn* }

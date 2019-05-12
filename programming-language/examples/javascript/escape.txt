@@ -1,6 +1,0 @@
-strEscape{ "\\" escapeSequence }
-escapeSequence{ escapedChar | escapeOctal | escapeHex | escapeUnicode }
-escapedChar{ strBoundary | "r" | "n" | "t" }
-escapeOctal{ digit{1..3} }
-escapeHex{ [xX] hex{2} }
-escapeUnicode{ [uU] hex{4} }

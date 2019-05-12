@@ -27,7 +27,6 @@ const baseGraphCtors = [
 const cwd = __dirname;
 const langsDir = path.join(cwd, 'langs');
 
-const namesList = getNamesList();
 const cache = O.obj();
 
 class ProgrammingLanguage{
@@ -59,10 +58,10 @@ class ProgrammingLanguage{
   }
 
   static get(langName){
-    if(!O.has(namesList, langName))
+    if(!O.has(langsList, langName))
       throw new TypeError(`Unknown programming language ${O.sf(langName)}`);
 
-    const lang = namesList[langName];
+    const lang = langsList[langName];
     if(O.has(cache, lang))
       return cache[lang];
 
@@ -82,12 +81,3 @@ class ProgrammingLanguage{
 const PL = ProgrammingLanguage;
 
 module.exports = PL;
-
-function getNamesList(){
-  const list = O.obj();
-
-  for(const lang in langsList)
-    list[langsList[lang]] = lang;
-
-  return list;
-}

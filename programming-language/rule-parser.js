@@ -336,6 +336,7 @@ function parse(syntax, str){
   // Parse match section
   const parseMatchSect = (rule, ctor) => {
     sc('{');
+    // TODO: allow empty patterns, remove this check and make sure empty patterns work properly
     if(is('|')) err('Match section cannot start with delimiter');
     if(is('}')) err('Match cannot be empty');
 
@@ -499,6 +500,7 @@ function parse(syntax, str){
     }
   }
 
+  // TODO: throw error if some referenced definition does not exist
   // Replace rule names by real rules in non-terminal elements
   for(const nterm of nterms)
     nterm.rule = rules[nterm.rule];

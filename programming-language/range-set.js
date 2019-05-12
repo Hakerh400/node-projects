@@ -12,6 +12,8 @@ class RangeSet{
     if(range !== null) this.add(range);
   }
 
+  get size(){ return this.ranges.length; }
+
   add(range){ this.ranges.push(range); }
   has(num){ return this.ranges.some(r => r.has(num)); }
   overlaps(range){ return this.ranges.some(r => r.overlaps(range)); }

@@ -46,15 +46,17 @@ class CompileDef extends Compile{
   tick(th){
     const {g, compiler, elem: def} = this;
     const name = def.ref.name;
-    const func = compiler[`[${name}]`];
 
-    if(this.rval === null)
+    const funcName = `[${name}]`;
+    const func = funcName in compiler ? compiler[funcName] : null;
+
+    if(this.nval)
       return th.call(new CompileArr(g, compiler, def.pat.elems));
 
     def.pat.elems = this.rval;
     this.rval = null;
 
-    const compiled = func(def, th);
+    const compiled = func !== null ? func.call(compiler, def, th) : null;
     if(compiled !== null) compiled.srcPos = def.index;
     th.ret(compiled);
   }
@@ -77,7 +79,7 @@ class CompileArr extends Compile{
     switch(this.j){
       case 0:
         if(elem instanceof ASTElem){
-          if(this.rval === null)
+          if(this.nval)
             return th.call(new CompileArr(g, compiler, elem.arr));
 
           elem.arr = this.rval;
@@ -89,7 +91,7 @@ class CompileArr extends Compile{
 
       case 1:
         if(elem instanceof ASTElem){
-          if(this.rval === null)
+          if(this.nval)
             return th.call(new CompileArr(g, compiler, elem.seps));
 
           elem.seps = this.rval;
@@ -101,7 +103,7 @@ class CompileArr extends Compile{
 
       case 2:
         if(elem instanceof ASTDef){
-          if(this.rval === null)
+          if(this.nval)
             return th.call(new CompileDef(g, compiler, elem));
 
           arr[this.i] = this.rval;
