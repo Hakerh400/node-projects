@@ -16,6 +16,6 @@ class RangeSet{
   has(num){ return this.ranges.some(r => r.has(num)); }
   overlaps(range){ return this.ranges.some(r => r.overlaps(range)); }
   isEmpty(){ return this.ranges.length === 0; }
-};
+}
 
 module.exports = RangeSet;

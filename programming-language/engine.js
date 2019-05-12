@@ -8,8 +8,8 @@ const Machine = require('./machine');
 class Engine{
   #machine;
 
-  constructor(lang, script, maxSize){
-    this.#machine = new Machine(lang, script, maxSize);
+  constructor(lang, script, maxSize, criticalSize){
+    this.#machine = new Machine(lang, script, maxSize, criticalSize);
   }
 
   get stdin(){ return this.#machine.stdin; }
@@ -29,6 +29,6 @@ class Engine{
       this.tick();
     }
   }
-};
+}
 
 module.exports = Engine;

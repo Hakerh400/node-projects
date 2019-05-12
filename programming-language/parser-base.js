@@ -22,13 +22,13 @@ const {ASTNode, ASTDef, ASTPat, ASTElem, ASTNterm, ASTTerm} = AST;
 class ParserBase extends SF{
   static ptrsNum = this.keys(['ast', 'cache', 'parsing', 'sfDef']);
 
-  constructor(g, str, exec=0){
+  constructor(g, script, exec=0){
     super(g);
     if(g.dsr) return;
 
     const {syntax} = g.lang;
 
-    this.ast = new AST(g, syntax, str);
+    this.ast = new AST(g, syntax, script.source);
     this.cache = new cgs.Array(g);
     this.parsing = new cgs.Array(g);
     this.sfDef = new ParseDef(g, this, 0, syntax.defs[MAIN_DEF]['*']);
@@ -39,7 +39,7 @@ class ParserBase extends SF{
   ser(s){ super.ser(s); s.write(this.exec); }
   deser(s){ super.deser(s); this.exec = s.read(); }
 
-  tick(intp, th){
+  tick(th, intp){
     const {ast} = this;
 
     if(this.i++ === 0) return th.call(this.sfDef);
@@ -95,7 +95,7 @@ class ParserBase extends SF{
     if(parsing[index] === cgs.Undefined.get(g)) parsing[index] = new cgs.Set(g);
     return parsing[index];
   }
-};
+}
 
 class Parse extends SF{
   static ptrsNum = this.keys(['parser', 'ref', 'node']);
@@ -112,7 +112,7 @@ class Parse extends SF{
 
   ser(s){ super.ser(s); s.writeUint(this.index); }
   deser(s){ super.deser(s); this.index = s.readUint(); }
-};
+}
 
 class ParseDef extends Parse{
   static ptrsNum = this.keys(['nodePrev']);
@@ -124,7 +124,7 @@ class ParseDef extends Parse{
     this.nodePrev = null;
   }
 
-  tick(intp, th){
+  tick(th, intp){
     const {g, parser, index, ref: def} = this;
     const {str} = parser.ast.str;
     const pSet = parser.prepareParsingIndex(index);
@@ -168,7 +168,7 @@ class ParseDef extends Parse{
       this.rval = null;
     }
   }
-};
+}
 
 class ParsePat extends Parse{
   constructor(g, parser, index, ref){
@@ -176,7 +176,7 @@ class ParsePat extends Parse{
     if(g.dsr) return;
   }
 
-  tick(intp, th){
+  tick(th, intp){
     const {g, parser, index, ref: pat} = this;
     const {str} = parser.ast.str;
 
@@ -204,7 +204,7 @@ class ParsePat extends Parse{
     this.index += elem.len;
     if(this.i === elems.length) th.ret(node.update());
   }
-};
+}
 
 class ParseElem extends Parse{
   constructor(g, parser, index, ref){
@@ -212,7 +212,7 @@ class ParseElem extends Parse{
     if(g.dsr) return;
   }
 
-  tick(intp, th){
+  tick(th, intp){
     const {g, parser, index, ref: elem} = this;
     const {str} = parser.ast.str;
 
@@ -281,7 +281,7 @@ class ParseElem extends Parse{
       this.i = 0;
     }
   }
-};
+}
 
 module.exports = Object.assign(ParserBase, {
   Parse,

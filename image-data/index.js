@@ -138,6 +138,6 @@ class ImageData{
   iterate(func, includeAlpha){
     this.iter(func, includeAlpha);
   }
-};
+}
 
 module.exports = ImageData;

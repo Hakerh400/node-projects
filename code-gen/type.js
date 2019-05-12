@@ -37,6 +37,6 @@ class Type{
   isScope(){ return 1; }
 
   toString(){ throw new TypeError('Type should not be stringified'); }
-};
+}
 
 module.exports = Type;

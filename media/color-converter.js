@@ -10,7 +10,7 @@ module.exports = {
   rgb2col,
   normalize,
   color,
-};
+}
 
 function col2rgb(col){
   g.fillStyle = '#000000';

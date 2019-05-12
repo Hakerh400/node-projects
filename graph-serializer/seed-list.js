@@ -43,6 +43,6 @@ class SeedList{
 
   hasMore(){ return this.arr.length !== 0; }
   isEmpty(){ return this.arr.length === 0; }
-};
+}
 
 module.exports = SeedList;

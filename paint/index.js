@@ -203,14 +203,14 @@ class Paint{
       }
     }
   }
-};
+}
 
 class Tile{
   constructor(col, done=0){
     this.col = col;
     this.done = done;
   }
-};
+}
 
 class ColorsCollection{
   constructor(){
@@ -275,7 +275,7 @@ class ColorsCollection{
 
     return cols;
   }
-};
+}
 
 Paint.evts = evts;
 Paint.Tile = Tile;

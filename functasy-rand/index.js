@@ -22,7 +22,7 @@ const OUTPUTS_NUM = 3;
 
 module.exports = {
   gen,
-};
+}
 
 function gen(includeOuts=0){
   var n = 0;

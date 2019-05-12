@@ -34,6 +34,6 @@ class Class extends Entity{
       this.methods.map(a => `\n${j}${a.toString(j)}`)
     }\n${i}};`;
   }
-};
+}
 
 module.exports = Class;

@@ -24,7 +24,7 @@ class String extends SG.Node{
   get length(){ return this.#str.length; }
 
   toString(){ return this.#str; }
-};
+}
 
 module.exports = String;
 

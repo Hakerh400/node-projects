@@ -21,4 +21,4 @@ function fTime(t){
     return str;
 
   return `${years}y ${months}m ${days}d ${str}`;
-};
+}

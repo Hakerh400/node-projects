@@ -162,7 +162,7 @@ class BitBuffer{
     if(this.useMem)
       this.mem.dispose();
   }
-};
+}
 
 BitBuffer.Memory = Memory;
 

@@ -19,7 +19,7 @@ class Function extends Entity{
   addArg(r){ this.args.push(r); }
   isMethod(){ return 0; }
   isFunc(){ return 1; }
-};
+}
 
 class Method extends Function{
   constructor(cs, name, args=[], ret=null){
@@ -31,7 +31,7 @@ class Method extends Function{
 
   isCtor(){ return 0; }
   isMethod(){ return 1; }
-};
+}
 
 class Constructor extends Method{
   constructor(cs, name, args){
@@ -39,10 +39,10 @@ class Constructor extends Method{
   }
 
   isCtor(){ return 0; }
-};
+}
 
 module.exports = {
   Function,
   Method,
   Constructor,
-};
+}

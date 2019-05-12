@@ -8,6 +8,10 @@ const SG = require('../../serializable-graph');
 const cwd = __dirname;
 
 const nodes = [
+  'script',
+  'function',
+  'execute',
+
   'undefined',
   'string',
   'array',

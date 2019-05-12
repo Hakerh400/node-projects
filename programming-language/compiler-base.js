@@ -19,7 +19,7 @@ class CompilerBase extends SF{
     this.ast = ast;
   }
 
-  tick(intp, th){
+  tick(th, intp){
     if(this.i++ === 0) return th.call(new CompileDef(this.g, this, this.ast.node));
     th.call(this.rval, 1);
   }
@@ -35,7 +35,7 @@ class Compile extends SF{
     this.compiler = compiler;
     this.elem = elem;
   }
-};
+}
 
 class CompileDef extends Compile{
   constructor(g, compiler, elem){
@@ -43,7 +43,7 @@ class CompileDef extends Compile{
     if(g.dsr) return;
   }
 
-  tick(intp, th){
+  tick(th, intp){
     const {g, compiler, elem: def} = this;
     const name = def.ref.name;
     const func = compiler[`[${name}]`];
@@ -54,9 +54,9 @@ class CompileDef extends Compile{
     def.pat.elems = this.rval;
     this.rval = null;
 
-    th.ret(func(def, intp, th));
+    th.ret(func(def, th, intp));
   }
-};
+}
 
 class CompileArr extends Compile{
   constructor(g, compiler, elem){
@@ -64,7 +64,7 @@ class CompileArr extends Compile{
     if(g.dsr) return;
   }
 
-  tick(intp, th){
+  tick(th, intp){
     const {g, compiler, elem: arr} = this;
 
     if(this.i === arr.length)
@@ -113,7 +113,7 @@ class CompileArr extends Compile{
         break;
     }
   }
-};
+}
 
 module.exports = Object.assign(CompilerBase, {
   Compile,

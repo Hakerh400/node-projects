@@ -82,6 +82,6 @@ class Range{
   isSingleton(){ return this.size() === 1; }
   isUnit(){ return this.start === 1 && this.end === 1; }
   isAny(){ return this.isOpenLeft() && this.isOpenRight(); }
-};
+}
 
 module.exports = Range;

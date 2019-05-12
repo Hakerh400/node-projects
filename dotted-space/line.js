@@ -11,6 +11,6 @@ class Line{
     this.col = col;
     this.active = 1;
   }
-};
+}
 
 module.exports = Line;

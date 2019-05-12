@@ -48,7 +48,7 @@ class Set extends SG.Node{
   }
 
   [Symbol.iterator](){ return this.arr[Symbol.iterator](); }
-};
+}
 
 module.exports = Set;
 

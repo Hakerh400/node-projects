@@ -13,6 +13,6 @@ class Engine{
   run(){
     return this.input;
   }
-};
+}
 
 module.exports = Engine;

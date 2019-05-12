@@ -26,6 +26,6 @@ class Scope extends Entity{
   }
 
   isScope(){ return 1; }
-};
+}
 
 module.exports = Scope;

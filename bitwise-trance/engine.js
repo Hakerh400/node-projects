@@ -81,7 +81,7 @@ class Engine extends EventEmitter{
   write(bit){
     this.emit('write', bit);
   }
-};
+}
 
 class Reader{
   constructor(mem){
@@ -112,6 +112,6 @@ class Reader{
 
     return addr.push(1).dec();
   }
-};
+}
 
 module.exports = Engine;

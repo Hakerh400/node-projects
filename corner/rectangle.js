@@ -18,6 +18,6 @@ class Rectangle{
   has(x, y){
     return x >= this.x && y >= this.y && x < this.x1 && y < this.y1;
   }
-};
+}
 
 module.exports = Rectangle;

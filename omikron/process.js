@@ -20,7 +20,7 @@ class Process extends EventEmitter{
   exit(code){
     this.proc.exit(code);
   }
-};
+}
 
 class Stdin extends EventEmitter{
   constructor(proc, stdin){
@@ -66,7 +66,7 @@ class Stdin extends EventEmitter{
   onEnd(){
     this.emit('end');
   }
-};
+}
 
 Process.Stdin = Stdin;
 

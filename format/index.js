@@ -11,4 +11,4 @@ module.exports = {
   num: fNum,
   time: fTime,
   path: fPath,
-};
+}

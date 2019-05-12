@@ -132,6 +132,6 @@ class DottedSpace{
   reset(){
     this.clear();
   }
-};
+}
 
 module.exports = DottedSpace;

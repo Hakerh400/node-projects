@@ -10,15 +10,15 @@ vi.comb = (key1, key2) => {
   vi.kdown(key1);
   vi.key(key2);
   vi.kup(key1);
-};
+}
 
 vi.shift = key => {
   vi.comb(0x10, key);
-};
+}
 
 vi.ctrl = key => {
   vi.comb(0x11, key);
-};
+}
 
 vi.char = c => {
   const k = vi.key;
@@ -41,22 +41,22 @@ vi.char = c => {
   if(i !== -1) return s(i + 48);
 
   log(JSON.stringify(c));
-};
+}
 
 vi.str = str => {
   str = str.replace(/\r\n|\r|\n/g, '\n');
 
   for(const char of str)
     vi.char(char);
-};
+}
 
 vi.dir = dir => {
   vi.key([0x26, 0x27, 0x28, 0x25][dir]);
-};
+}
 
 vi.nav = dir => {
   vi.dir(dir);
-};
+}
 
 vi.code = async (str, lang=null, tMin=20, tMax=120) => {
   str = str
@@ -129,6 +129,6 @@ vi.code = async (str, lang=null, tMin=20, tMax=120) => {
     scopes.pop();
     vi.nav(1);
   }
-};
+}
 
 module.exports = vi;

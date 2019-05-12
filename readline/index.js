@@ -10,7 +10,7 @@ const logSync = require('../log-sync');
 module.exports = {
   createInterface,
   rl: createInterface,
-};
+}
 
 function createInterface(input, output){
   return new ReadlineInterface(input, output);
@@ -165,4 +165,4 @@ class ReadlineInterface extends EventEmitter{
     lines.push(buf.toString());
     ebuf.reset();
   }
-};
+}

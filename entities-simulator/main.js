@@ -141,7 +141,7 @@ class Entity{
   onWrite(bit){
     this.gen.next(bit);
   }
-};
+}
 
 function getOutputFile(vid=0){
   if(vid || !HD) return '-vid/1.mp4';

@@ -25,6 +25,6 @@ class ExpandableBuffer{
   getBuf(){
     return Buffer.from(this.buf.slice(0, this.len));
   }
-};
+}
 
 module.exports = ExpandableBuffer;

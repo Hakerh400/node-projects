@@ -29,6 +29,6 @@ class JSContext extends Context{
 
     return ctx;
   }
-};
+}
 
 module.exports = JSContext;

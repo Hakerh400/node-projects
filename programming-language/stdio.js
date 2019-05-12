@@ -20,6 +20,6 @@ class StdIO extends O.EventEmitter{
   write(data, len=data.length << 3){
     this.emit('write', data, len);
   }
-};
+}
 
 module.exports = StdIO;

@@ -82,7 +82,7 @@ class Segmentator{
 
     return index;
   }
-};
+}
 
 class Segment{
   constructor(len, min, max){
@@ -140,7 +140,7 @@ class Segment{
   round(){
     this.iterate(val => Math.round(val));
   }
-};
+}
 
 Segmentator.Segment = Segment;
 

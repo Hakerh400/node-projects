@@ -90,7 +90,7 @@ class Video{
       return fs.existsSync(path.join(dir, file));
     });
   }
-};
+}
 
 module.exports = Video;
 

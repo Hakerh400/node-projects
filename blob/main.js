@@ -130,7 +130,7 @@ class Layer{
   constructor(entsNum){
     this.ents = createEnts(entsNum);
   }
-};
+}
 
 class Entity{
   constructor(x, y, r, col){
@@ -139,7 +139,7 @@ class Entity{
     this.r = r;
     this.col = col;
   }
-};
+}
 
 function randCol(){
   return O.ca(3, () => O.rand(256));

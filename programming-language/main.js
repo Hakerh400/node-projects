@@ -14,7 +14,7 @@ function main(){
   const input = '';
   const expected = String(new Function(`return ${src}`)());
 
-  const eng = new Engine(lang, src, 30e3);
+  const eng = new Engine(lang, src, 30e3, 25e3);
   const bufs = [];
 
   const onRead = (buf, len) => {

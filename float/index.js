@@ -176,7 +176,7 @@ class Float{
   log(){
     return this.m.log();
   }
-};
+}
 
 class Uint{
   constructor(s, f=f0){
@@ -477,9 +477,9 @@ class Uint{
       .join('')
     }`);
   }
-};
+}
 
 module.exports = {
   Float,
   Uint,
-};
+}

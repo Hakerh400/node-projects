@@ -183,6 +183,6 @@ class Memory{
 
     this.active = 0;
   }
-};
+}
 
 module.exports = Memory;

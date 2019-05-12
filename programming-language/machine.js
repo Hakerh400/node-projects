@@ -10,10 +10,10 @@ class Machine{
   #script;
   #prog;
 
-  constructor(lang, script, maxSize){
+  constructor(lang, script, maxSize, criticalSize){
     this.#lang = lang;
     this.#script = script;
-    this.#prog = new Program(lang, script, maxSize);
+    this.#prog = new Program(lang, script, maxSize, criticalSize);
   }
 
   get lang(){ return this.#lang; }
@@ -29,6 +29,6 @@ class Machine{
   tick(){
     this.#prog.tick();
   }
-};
+}
 
 module.exports = Machine;

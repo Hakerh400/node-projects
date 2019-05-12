@@ -19,7 +19,7 @@ const freqArr = getFreqArr();
 
 module.exports = {
   render,
-};
+}
 
 function getFreqArr(){
   return O.keys(frequencies).sort((a, b) => {

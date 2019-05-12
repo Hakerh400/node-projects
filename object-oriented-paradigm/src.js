@@ -11,7 +11,7 @@ var main = () => {
   list.iter(byte => {
     byte.iter(bit => io.write(bit));
   });
-};
+}
 
 var I = a => a;
 
@@ -27,17 +27,17 @@ class Bit extends Base{
   nif(f){ return this.not().if(f); }
   nife(f, g){ return this.ife(g, f); }
   not(){ return this.choose(B0, B1); }
-};
+}
 
 class Bit0 extends Bit{
   constructor(){ super(); }
   choose(f, g){ return g; }
-};
+}
 
 class Bit1 extends Bit{
   constructor(){ super(); }
   choose(f, g){ return f; }
-};
+}
 
 var B0 = new Bit0();
 var B1 = new Bit1();
@@ -47,7 +47,7 @@ var loop = (cond, func) => {
     func();
     loop(cond, func);
   });
-};
+}
 
 class Primitive extends Bit{
   constructor(){ super(); }
@@ -56,11 +56,11 @@ class Primitive extends Bit{
   copy(){}
 
   ife(f, g){ return this.toBit().ife(f, g); }
-};
+}
 
 class Object extends Bit1{
   constructor(){ super(); }
-};
+}
 
 class IO extends Object{
   constructor(){
@@ -95,7 +95,7 @@ class IO extends Object{
       func(this.read());
     });
   }
-};
+}
 
 var io = new IO();
 
@@ -104,7 +104,7 @@ class Reference extends Object{
     super();
     this.v = v;
   }
-};
+}
 
 class NodeBase extends Object{
   constructor(p, n){
@@ -147,14 +147,14 @@ class NodeBase extends Object{
     p.if(() => p.n = n);
     n.if(() => n.p = p);
   }
-};
+}
 
 class Node extends NodeBase{
   constructor(v, p, n){
     super(p, n);
     this.v = v;
   }
-};
+}
 
 class List extends Object{
   constructor(){
@@ -248,7 +248,7 @@ class List extends Object{
 
     return this;
   }
-};
+}
 
 class TinyUint extends Primitive{
   constructor(){
@@ -286,7 +286,7 @@ class TinyUint extends Primitive{
 
     return this;
   }
-};
+}
 
 class SmallUint extends Primitive{
   constructor(){
@@ -397,25 +397,25 @@ class CompleteTree extends Object{
 
     return this;
   }
-};
+}
 
 class Integer extends CompleteTree{
   constructor(depth, func){
     super(depth, func);
   }
-};
+}
 
 class SignedInteger extends Integer{
   constructor(depth, func){
     super(depth, func);
   }
-};
+}
 
 class UnsignedInteger extends Integer{
   constructor(depth, func){
     super(depth, func);
   }
-};
+}
 
 var tinyUint3 = new TinyUint().inc().inc().inc();
 
@@ -423,6 +423,6 @@ class Byte extends UnsignedInteger{
   constructor(func){
     super(tinyUint3, func);
   }
-};
+}
 
 main();

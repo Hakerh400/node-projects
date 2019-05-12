@@ -12,13 +12,13 @@ class Element{
     this.greediness = 1;
     this.sep = null;
   }
-};
+}
 
 class Terminal extends Element{
   constructor(){
     super();
   }
-};
+}
 
 class NonTerminal extends Element{
   constructor(rule=null){
@@ -27,7 +27,7 @@ class NonTerminal extends Element{
     this.rule = rule;
     this.ruleRange = new Range();
   }
-};
+}
 
 class String extends Terminal{
   constructor(str=''){
@@ -35,7 +35,7 @@ class String extends Terminal{
 
     this.str = '';
   }
-};
+}
 
 class CharsRange extends Terminal{
   constructor(range=null){
@@ -48,7 +48,7 @@ class CharsRange extends Terminal{
   has(num){ return this.set.has(nul); }
   overlaps(range){ return this.set.overlaps(range); }
   isEmpty(){ return this.set.isEmpty(); }
-};
+}
 
 Element.Terminal = Terminal;
 Element.NonTerminal = NonTerminal;

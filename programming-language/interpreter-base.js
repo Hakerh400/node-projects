@@ -18,9 +18,8 @@ class InterpreterBase extends SG.Node{
     this.threadIndex = -1;
 
     if(script !== null){
-      const str = new cgs.String(g, script);
-      const parser = new this.constructor.Parser(g, str, 1);
-      this.createThread(parser);
+      const execute = new cgs.Execute(g, script);
+      this.createThread(execute);
     }
   }
 
@@ -60,9 +59,9 @@ class InterpreterBase extends SG.Node{
     }
   }
 
-  catch(th, err){
+  catch(err, th){
     O.noimpl('catch');
   }
-};
+}
 
 module.exports = InterpreterBase;

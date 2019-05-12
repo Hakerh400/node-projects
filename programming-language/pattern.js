@@ -12,6 +12,6 @@ class Pattern{
 
   addElem(elem){ this.elems.push(elem); }
   len(){ this.elems.length; }
-};
+}
 
 module.exports = Pattern;

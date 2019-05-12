@@ -9,7 +9,7 @@ class Section{
   constructor(){}
 
   get sectName(){ return this.constructor.sectName; }
-};
+}
 
 class Match extends Section{
   constructor(){
@@ -20,7 +20,7 @@ class Match extends Section{
 
   addPat(pat){ this.pats.push(pat); }
   len(){ return this.path.length; }
-};
+}
 
 class Include extends Match{
   static sectName = 'include';
@@ -28,7 +28,7 @@ class Include extends Match{
   constructor(){
     super();
   }
-};
+}
 
 class Exclude extends Match{
   static sectName = 'exclude';
@@ -36,7 +36,7 @@ class Exclude extends Match{
   constructor(){
     super();
   }
-};
+}
 
 class Code extends Section{
   constructor(){
@@ -54,7 +54,7 @@ class Code extends Section{
     const func = new Function(args.join(', '), code);
     this.func = func;
   }
-};
+}
 
 class Before extends Code{
   static sectName = 'before';
@@ -62,7 +62,7 @@ class Before extends Code{
   constructor(){
     super();
   }
-};
+}
 
 class Inside extends Code{
   static sectName = 'inside';
@@ -70,7 +70,7 @@ class Inside extends Code{
   constructor(){
     super();
   }
-};
+}
 
 class After extends Code{
   static sectName = 'after';
@@ -78,7 +78,7 @@ class After extends Code{
   constructor(){
     super();
   }
-};
+}
 
 Section.Match = Match;
 Section.Include = Include;

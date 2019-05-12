@@ -7,7 +7,7 @@ const fsRec = require('../fs-rec');
 
 module.exports = {
   find,
-};
+}
 
 function find(dirs, exts, func){
   const arr = [];
@@ -40,4 +40,4 @@ class Element{
   toString(){
     return `${this.filePath}:${this.line}`;
   }
-};
+}

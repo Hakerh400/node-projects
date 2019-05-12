@@ -77,7 +77,7 @@ class ProgrammingLanguage{
 
     return langInstance;
   }
-};
+}
 
 const PL = ProgrammingLanguage;
 

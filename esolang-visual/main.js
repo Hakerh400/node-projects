@@ -8,7 +8,7 @@ const flags = {
   SERIALIZED: 0,
   NORMALIZED: 0,
   WAIT_AFTER_END: 1,
-};
+}
 
 const fs = require('fs');
 const path = require('path');
@@ -41,7 +41,7 @@ const cols = {
   text: new O.Color(192, 192, 192),
   h1: new O.Color(255, 255, 0),
   h2: new O.Color(0, 255, 0),
-};
+}
 
 setTimeout(() => main().catch(log));
 

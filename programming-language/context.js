@@ -14,6 +14,6 @@ class Context extends O.Serializable{
   constructor(){
     this.modified = 0;
   }
-};
+}
 
 module.exports = Context;

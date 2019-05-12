@@ -62,7 +62,7 @@ class Syntax{
 
     return new Syntax(str, ctxCtor);
   }
-};
+}
 
 module.exports = Object.assign(Syntax, {
   Rule,

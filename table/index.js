@@ -118,6 +118,6 @@ class Table{
 
     return str;
   }
-};
+}
 
 module.exports = Table;

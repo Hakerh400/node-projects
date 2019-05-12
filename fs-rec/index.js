@@ -28,7 +28,7 @@ class FileQueueElem{
     var {fullPath, relativePath, depth, name, isDir, processed} = elem;
     return new FileQueueElem(fullPath, relativePath, depth, name, isDir, processed);
   }
-};
+}
 
 module.exports = {
   FileQueueElem,
@@ -41,7 +41,7 @@ module.exports = {
   createDir,
   createDirSync,
   resetDirSync,
-};
+}
 
 function processFiles(filePath, func, cb=O.nop){
   processElem(0, [new FileQueueElem(formatPath(filePath))], func, cb);

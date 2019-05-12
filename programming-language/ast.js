@@ -18,7 +18,7 @@ class AST extends SG.Node{
     this.str = str;
     this.node = node;
   }
-};
+}
 
 class ASTNode extends SG.Node{
   static ptrsNum = this.keys(['ast', 'ref']);
@@ -56,7 +56,7 @@ class ASTNode extends SG.Node{
   toString(){
     return this.ast.str.str.slice(this.index, this.end);
   }
-};
+}
 
 class ASTDef extends ASTNode{
   static ptrsNum = this.keys(['pats', 'pat', 'elems']);
@@ -114,7 +114,7 @@ class ASTDef extends ASTNode{
 
     return this;
   }
-};
+}
 
 class ASTPat extends ASTNode{
   static ptrsNum = this.keys(['elems']);
@@ -153,7 +153,7 @@ class ASTPat extends ASTNode{
 
     return this;
   }
-};
+}
 
 class ASTElem extends ASTNode{
   static ptrsNum = this.keys(['arr', 'seps']);
@@ -173,7 +173,7 @@ class ASTElem extends ASTNode{
     this.seps.length = 0;
     return this;
   }
-};
+}
 
 class ASTNterm extends ASTElem{
   constructor(graph, ast, index, ref){
@@ -190,7 +190,7 @@ class ASTNterm extends ASTElem{
 
     return this;
   }
-};
+}
 
 class ASTTerm extends ASTElem{
   constructor(graph, ast, index, ref){
@@ -206,7 +206,7 @@ class ASTTerm extends ASTElem{
 
     return this;
   }
-};
+}
 
 AST.ASTNode = ASTNode;
 AST.ASTDef = ASTDef;

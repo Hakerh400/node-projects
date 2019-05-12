@@ -190,6 +190,6 @@ class Engine{
   dispose(){
     this.mem.dispose();
   }
-};
+}
 
 module.exports = Engine;

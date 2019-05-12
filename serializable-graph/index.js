@@ -18,8 +18,10 @@ class SerializableGraph extends O.Serializable{
   dsr = 0;
   #size = 0;
 
-  constructor(ctors, refs=[]){
+  constructor(ctors, refs=[], maxSize=null){
     super();
+
+    this.maxSize = maxSize;
 
     this.#ctors = ctors;
     this.#ctorsNum = ctors.length;
@@ -162,9 +164,15 @@ class SerializableGraph extends O.Serializable{
   get refs(){ return this.#refs; }
   get nodes(){ return this.#nodes; }
   get persts(){ return this.#persts; }
-  get size(){ return this.#size; }
-  set size(size){ this.#size = size; }
   get main(){ return O.first(this.#persts); }
+  get size(){ return this.#size; }
+  
+  set size(size){
+    if(size > this.maxSize)
+      throw new Error('Maximum graph size exceeded');
+
+    this.#size = size;
+  }
 
   has(node){ return this.#nodes.has(node); }
 
@@ -271,7 +279,7 @@ class SerializableGraph extends O.Serializable{
     }).join('\n'));
     return this;
   }
-};
+}
 
 class Node{
   // TODO: delete this
@@ -325,7 +333,7 @@ class Node{
 
   persist(){ this.graph.persist(this); return this; }
   unpersist(){ this.graph.unpersist(this); return this; }
-};
+}
 
 module.exports = Object.assign(SerializableGraph, {
   sizeSym,

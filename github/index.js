@@ -26,7 +26,7 @@ const licenseFileName = 'license.md';
 
 module.exports = {
   push
-};
+}
 
 async function push(repoName, cb=O.nop){
   var gitInit = path.join(cwd, 'git-init.bat');

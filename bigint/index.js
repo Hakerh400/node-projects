@@ -411,7 +411,7 @@ class BigInt{
   toString(){
     return this.toJSBigInt().toString();
   }
-};
+}
 
 BigInt.prototype.lbs = BigInt.prototype.lowestBits;
 

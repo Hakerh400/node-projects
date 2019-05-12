@@ -16,7 +16,7 @@ class Variable extends Entity{
   isAttrib(){ return 0; }
   isArg(){ return 0; }
   isVar(){ return 1; }
-};
+}
 
 class Attribute extends Variable{
   constructor(cs, name, type){
@@ -26,7 +26,7 @@ class Attribute extends Variable{
 
   isThis(){ return 0; }
   isAttrib(){ return 1; }
-};
+}
 
 class This extends Attribute{
   constructor(cs){
@@ -34,7 +34,7 @@ class This extends Attribute{
   }
 
   isThis(){ return 1; }
-};
+}
 
 class Argument extends Variable{
   constructor(func, name, type){
@@ -43,11 +43,11 @@ class Argument extends Variable{
   }
 
   isArg(){ return 1; }
-};
+}
 
 module.exports = {
   Variable,
   Attribute,
   This,
   Argument,
-};
+}

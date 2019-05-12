@@ -152,7 +152,7 @@ class Array extends SG.Node{
     for(let i = 0; i !== len; i++)
       yield this[i];
   }
-};
+}
 
 module.exports = Array;
 

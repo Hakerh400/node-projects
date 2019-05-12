@@ -19,6 +19,6 @@ class Entity{
   isVar(){ return 0; }
 
   toString(){ throw new TypeError('Entity.prototype.toString is virtual'); }
-};
+}
 
 module.exports = Entity;

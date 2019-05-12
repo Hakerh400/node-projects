@@ -122,6 +122,6 @@ class Sequence{
 
     return generator;
   }
-};
+}
 
 module.exports = Sequence;

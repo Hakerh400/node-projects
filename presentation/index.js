@@ -139,6 +139,6 @@ class Presentation{
     await this.wait(wait);
     await this.fadeOut(fade);
   }
-};
+}
 
 module.exports = Presentation;

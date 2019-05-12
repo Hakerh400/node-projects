@@ -159,7 +159,7 @@ class Task{
     log(...args);
     err(`[${this.name}] Invalid syntax`);
   }
-};
+}
 
 function projName(name){
   return O.projectToName(name);

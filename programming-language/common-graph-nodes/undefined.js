@@ -25,7 +25,7 @@ class Undefined extends SG.Node{
 
     return insts.get(g);
   }
-};
+}
 
 module.exports = Undefined;
 

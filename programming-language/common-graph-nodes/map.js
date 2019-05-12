@@ -59,7 +59,7 @@ class Map extends SG.Node{
   }
 
   [Symbol.iterator](){ return this.arr[Symbol.iterator](); }
-};
+}
 
 module.exports = Map;
 

@@ -9,6 +9,6 @@ class Demo{
     this.name = name;
     this.func = func;
   }
-};
+}
 
 module.exports = Demo;

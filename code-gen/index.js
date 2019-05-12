@@ -23,6 +23,6 @@ class CodeGenerator{
   addVar(v){ this.scope.addVar(v); }
 
   getCode(){ return this.scope.toString(); }
-};
+}
 
 module.exports = CodeGenerator;

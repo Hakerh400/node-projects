@@ -16,7 +16,7 @@ class EventTarget extends EventEmitter{
   addEventListener(type, func){
     this.on(type, func);
   }
-};
+}
 
 class Window extends EventTarget{
   constructor(w, h, url = null){
@@ -89,7 +89,7 @@ class Window extends EventTarget{
   toString(){
     return '[object Window]';
   }
-};
+}
 
 class Document{
   constructor(window){
@@ -114,7 +114,7 @@ class Document{
   querySelector(selector){
     return new Node(this, 'div');
   }
-};
+}
 
 class Node extends EventTarget{
   constructor(document, tagName){
@@ -134,11 +134,11 @@ class Node extends EventTarget{
   remove(){
     /**/
   }
-};
+}
 
 class CSSStyleDeclaration{
   constructor(){}
-};
+}
 
 class DOMTokenList{
   constructor(){
@@ -159,19 +159,19 @@ class DOMTokenList{
     var index = this.classNames.indexOf(className);
     if(index !== -1) this.classNames.splice(index, 1);
   }
-};
+}
 
 class Text{
   constructor(text){
     this.textContent = text;
   }
-};
+}
 
 class Location{
   constructor(url){
     this.href = resolveUrl(url);
   }
-};
+}
 
 class WindowEvent{
   constructor(func, type, details = {}){
@@ -184,17 +184,17 @@ class WindowEvent{
   preventDefault(){
     this.preventedDefault = 1;
   }
-};
+}
 
 class Navigator{
   constructor(){
     this.vendor = 'Google Inc.';
   }
-};
+}
 
 module.exports = {
   Window,
-};
+}
 
 function loadPage(window, url, cb=O.nop){
   window._ready = 0;

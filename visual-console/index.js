@@ -124,6 +124,6 @@ class VisualConsole{
     g.fillStyle = this.bgCol;
     g.fillRect(0, h - sy, w, sy);
   }
-};
+}
 
 module.exports = VisualConsole;
