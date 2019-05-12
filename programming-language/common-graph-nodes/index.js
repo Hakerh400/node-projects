@@ -14,6 +14,10 @@ const nodes = [
   'execute',
 
   'error',
+  'syntax-error',
+  'reference-error',
+  'type-error',
+  'range-error',
 
   'undefined',
   'string',

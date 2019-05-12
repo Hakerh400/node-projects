@@ -54,7 +54,9 @@ class CompileDef extends Compile{
     def.pat.elems = this.rval;
     this.rval = null;
 
-    th.ret(func(def, th));
+    const compiled = func(def, th);
+    if(compiled !== null) compiled.srcPos = def.index;
+    th.ret(compiled);
   }
 }
 

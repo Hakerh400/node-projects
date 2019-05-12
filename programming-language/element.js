@@ -35,6 +35,10 @@ class String extends Terminal{
 
     this.str = '';
   }
+
+  toString(){
+    return this.str;
+  }
 }
 
 class CharsRange extends Terminal{

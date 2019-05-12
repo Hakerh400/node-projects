@@ -30,11 +30,17 @@ class ASTNode extends SG.Node{
     this.ast = ast;
     this.ref = ref;
     this.index = index
-    this.len = -1;
     this.done = 0;
+    this.len = -1;
   }
 
-  ser(s){ super.ser(s); s.writeUint(this.index).writeInt(this.len).write(this.done); }
+  ser(s){
+    super.ser(s);
+    s.writeUint(this.index);
+    s.writeInt(this.len);
+    s.write(this.done);
+  }
+
   deser(s){
     super.deser(s);
     this.index = s.readUint();

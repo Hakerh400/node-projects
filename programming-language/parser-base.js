@@ -40,13 +40,23 @@ class ParserBase extends SF{
   deser(s){ super.deser(s); this.exec = s.read(); }
 
   tick(th){
-    const {ast} = this;
-
+    const {g, ast} = this;
     if(this.i++ === 0) return th.call(this.sfDef);
 
-    ast.node = this.rval;
-    if(!this.exec) return th.ret(ast);
+    const node = this.rval;
+    if(node.len !== ast.str.length){
 
+      this.srcPos = this.cache.reduce((pos, map) => {
+        return map.arr.reduce((pos, elem) => {
+          return Math.max(elem[1].end, pos);
+        }, pos);
+      }, 0);
+
+      return th.throw(new cgs.SyntaxError(g, 'Invalid syntax'));
+    }
+
+    ast.node = node;
+    if(!this.exec) return th.ret(ast);
     th.call(new this.constructor.Compiler(this.g, ast), 1);
   }
 

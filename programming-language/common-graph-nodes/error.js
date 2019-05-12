@@ -16,11 +16,12 @@ class Error extends SG.Node{
   static ptrsNum = this.keys(['message', 'stack', 'script']);
   static errName = 'Error';
 
-  constructor(g, th, message){
+  constructor(g, message){
     super(g);
     if(g.dsr) return;
 
-    const sf = th.sf;
+    const {th} = g.intp;
+    const {sf} = th;
     const funcs = th.getFuncs();
     const func = funcs.length !== 0 ? funcs[0] : null;
     const script = func !== null ? func.script : null;
