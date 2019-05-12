@@ -39,7 +39,7 @@ class ParserBase extends SF{
   ser(s){ super.ser(s); s.write(this.exec); }
   deser(s){ super.deser(s); this.exec = s.read(); }
 
-  tick(th, intp){
+  tick(th){
     const {ast} = this;
 
     if(this.i++ === 0) return th.call(this.sfDef);
@@ -124,7 +124,7 @@ class ParseDef extends Parse{
     this.nodePrev = null;
   }
 
-  tick(th, intp){
+  tick(th){
     const {g, parser, index, ref: def} = this;
     const {str} = parser.ast.str;
     const pSet = parser.prepareParsingIndex(index);
@@ -176,7 +176,7 @@ class ParsePat extends Parse{
     if(g.dsr) return;
   }
 
-  tick(th, intp){
+  tick(th){
     const {g, parser, index, ref: pat} = this;
     const {str} = parser.ast.str;
 
@@ -212,7 +212,7 @@ class ParseElem extends Parse{
     if(g.dsr) return;
   }
 
-  tick(th, intp){
+  tick(th){
     const {g, parser, index, ref: elem} = this;
     const {str} = parser.ast.str;
 

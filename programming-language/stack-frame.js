@@ -17,7 +17,7 @@ class StackFrame extends SG.Node{
     this.prev = null;
     this.rval = null;
 
-    this.srcPos = -1;
+    this.srcPos = 0;
     this.i = 0;
     this.j = 0;
   }
@@ -25,7 +25,7 @@ class StackFrame extends SG.Node{
   ser(s){
     super.ser(s);
     s.write(this.#hval);
-    s.writeInt(this.srcPos);
+    s.writeUint(this.srcPos);
     s.writeInt(this.i);
     s.writeInt(this.j);
   }
@@ -33,7 +33,7 @@ class StackFrame extends SG.Node{
   deser(s){
     super.deser(s);
     this.#hval = s.read();
-    this.srcPos = s.readInt();
+    this.srcPos = s.readUint();
     this.i = s.readInt();
     this.j = s.readInt();
   }
@@ -43,8 +43,8 @@ class StackFrame extends SG.Node{
   set hval(hv){ this.#hval = hv; }
   get nval(){ const hv = this.#hval; this.#hval = 0; return !hv; }
 
-  tick(th, intp){ th.ret(this); }
-  catch(err, th, intp){ th.throw(err); }
+  tick(th){ th.ret(this); }
+  catch(err, th){ th.throw(err); }
 }
 
 module.exports = StackFrame;

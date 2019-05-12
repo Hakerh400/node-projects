@@ -8,6 +8,8 @@ const PL = require('./programming-language');
 const StdIO = require('./stdio');
 const cgs = require('./common-graph-nodes');
 
+const DEFAULT_FILE_NAME = 'script.txt';
+
 class Program extends SG{
   stdin = new StdIO();
   stdout = new StdIO();
@@ -29,7 +31,8 @@ class Program extends SG{
     this.#lang = lang;
 
     const srcStr = new cgs.String(this, source);
-    const script = new cgs.Script(this, srcStr);
+    const fileName = cgs.str(this, DEFAULT_FILE_NAME);
+    const script = new cgs.Script(this, srcStr, fileName);
     this.#intp = new lang.Interpreter(this, script).persist();
 
     this.checkSize();
@@ -37,6 +40,7 @@ class Program extends SG{
 
   get lang(){ return this.#lang; }
   get intp(){ return this.#intp; }
+  get th(){ return this.#intp.th; }
   get active(){ return this.#intp.active; }
   get done(){ return this.#intp.done; }
 
@@ -56,9 +60,9 @@ class Program extends SG{
     if(max === null || this.size <= max) return;
 
     const {size} = this;
-    this.refresh();
+    this.gc();
 
-    log(`[GC] ${size} ---> ${this.size} (${this.size - size})`);
+    // log(`[GC] ${size} ---> ${this.size} (${this.size - size})`);
 
     if(this.size > max)
       throw new RangeError('Out of memory');

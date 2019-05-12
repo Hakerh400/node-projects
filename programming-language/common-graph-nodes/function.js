@@ -5,22 +5,21 @@ const path = require('path');
 const O = require('../../omikron');
 const SG = require('../../serializable-graph');
 const SF = require('../stack-frame');
+const cgs = require('.');
 
 class Function extends SF{
-  static ptrsNum = this.keys(['script', 'name', 'prevFunc']);
+  static ptrsNum = this.keys(['script', 'funcName', 'funcPrev']);
 
-  constructor(g, script=null, name=null){
+  constructor(g, script=null, funcName=null){
     super(g);
     if(g.dsr) return;
 
     this.script = script;
-    this.name = name;
-    this.prevFunc = null;
+    this.funcName = funcName;
+    this.funcPrev = null;
   }
 
   get isFunc(){ return 1; }
 }
 
 module.exports = Function;
-
-const cgs = require('.');

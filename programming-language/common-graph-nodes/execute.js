@@ -13,7 +13,7 @@ class Execute extends cgs.Function{
     if(g.dsr) return;
   }
 
-  tick(th, intp){
+  tick(th){
     const {g, script} = this;
     if(this.nval) return th.call(new g.Parser(g, script, 1));
     th.ret(this);

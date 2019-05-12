@@ -4,6 +4,8 @@ const fs = require('fs');
 const path = require('path');
 const O = require('../../omikron');
 const SG = require('../../serializable-graph');
+const SF = require('../stack-frame');
+const cgs = require('.');
 
 class Set extends SG.Node{
   static ptrsNum = this.keys(['arr']);
@@ -51,5 +53,3 @@ class Set extends SG.Node{
 }
 
 module.exports = Set;
-
-const cgs = require('.');

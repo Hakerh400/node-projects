@@ -27,11 +27,12 @@ class InterpreterBase extends SG.Node{
   deser(s){ super.deser(s); this.threadIndex = s.readInt(); }
 
   get len(){ return this.threads.length; }
+  get th(){ return this.threads[this.threadIndex]; }
   get active(){ return this.len !== 0; }
   get done(){ return this.len === 0; }
 
   tick(){
-    this.threads[this.threadIndex].tick(this);
+    this.th.tick(this);
     if(this.active) this.threadIndex = (this.threadIndex + 1) % this.len;
   }
 
@@ -60,7 +61,8 @@ class InterpreterBase extends SG.Node{
   }
 
   catch(err, th){
-    O.noimpl('catch');
+    this.g.stderr.write(err.toString());
+    this.removeThread(th);
   }
 }
 

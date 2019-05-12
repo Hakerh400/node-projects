@@ -4,6 +4,8 @@ const fs = require('fs');
 const path = require('path');
 const O = require('../../omikron');
 const SG = require('../../serializable-graph');
+const SF = require('../stack-frame');
+const cgs = require('.');
 
 class Undefined extends SG.Node{
   static #instances = new WeakMap();
@@ -28,5 +30,3 @@ class Undefined extends SG.Node{
 }
 
 module.exports = Undefined;
-
-const cgs = require('.');

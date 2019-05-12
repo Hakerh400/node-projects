@@ -4,6 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const O = require('../../omikron');
 const SG = require('../../serializable-graph');
+const SF = require('../stack-frame');
 
 const cwd = __dirname;
 
@@ -11,6 +12,8 @@ const nodes = [
   'script',
   'function',
   'execute',
+
+  'error',
 
   'undefined',
   'string',
@@ -20,12 +23,21 @@ const nodes = [
 ];
 
 const ctorsArr = [];
-const ctorsObj = {ctorsArr};
 
-module.exports = ctorsObj;
+const cgs = {
+  ctorsArr,
+  str,
+};
+
+module.exports = cgs;
 
 for(let i = 0; i !== nodes.length; i++){
   const ctor = require(path.join(cwd, nodes[i]));
   ctorsArr.push(ctor);
-  ctorsObj[ctor.name] = ctor;
+  cgs[ctor.name] = ctor;
+}
+
+function str(g, str){
+  if(str === null) return null;
+  return new cgs.String(g, str);
 }

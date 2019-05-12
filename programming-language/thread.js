@@ -23,8 +23,8 @@ class Thread extends SG.Node{
     if(sf.isFunc) this.addFunc(sf);
   }
 
-  get active(){ return this.sf !== null; }
-  get done(){ return this.sf === null; }
+  get active(){ return this.sf !== null || this.hasErr; }
+  get done(){ return !this.active; }
 
   ser(s){
     super.ser(s);
@@ -38,7 +38,8 @@ class Thread extends SG.Node{
     this.hasErr = s.read();
   }
 
-  tick(intp){
+  tick(){
+    const {intp} = this.g;
     const {sf} = this;
 
     if(this.hasErr){
@@ -47,28 +48,36 @@ class Thread extends SG.Node{
       this.err = null;
       this.hasErr = 0;
 
-      if(sf !== null) sf.catch(err, this, intp);
+      if(sf !== null) sf.catch(err, this);
       else intp.catch(err, this);
       return;
     }
 
-    sf.tick(this, intp);
+    sf.tick(this);
     if(this.done) intp.removeThread(this);
   }
 
   addFunc(func){
-    func.prevFunc = this.func;
+    func.funcPrev = this.func;
     this.func = func;
   }
 
   removeFunc(){
     const {func} = this;
-    this.func = func.prevFunc;
-    func.prevFunc = null;
+    this.func = func.funcPrev;
+    func.funcPrev = null;
+  }
+
+  getFuncs(){
+    const funcs = [];
+    for(let {func} = this; func !== null; func = func.funcPrev)
+      funcs.push(func);
+    return funcs;
   }
 
   call(sf, tco=0){
-    sf.prev = tco ? null : this.sf;
+    if(tco && this.sf !== null) this.sf = this.sf.prev;
+    sf.prev = this.sf;
     this.sf = sf;
     if(sf.isFunc) this.addFunc(sf);
   }
