@@ -7,7 +7,7 @@ const O = require('../omikron');
 module.exports = {
   arr,
   id,
-}
+};
 
 function arr(vals, id, dir=1){
   const n = BigInt(vals.length);

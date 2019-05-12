@@ -41,7 +41,7 @@ module.exports = {
   createDir,
   createDirSync,
   resetDirSync,
-}
+};
 
 function processFiles(filePath, func, cb=O.nop){
   processElem(0, [new FileQueueElem(formatPath(filePath))], func, cb);

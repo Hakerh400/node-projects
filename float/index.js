@@ -482,4 +482,4 @@ class Uint{
 module.exports = {
   Float,
   Uint,
-}
+};

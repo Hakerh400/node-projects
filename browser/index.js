@@ -194,7 +194,7 @@ class Navigator{
 
 module.exports = {
   Window,
-}
+};
 
 function loadPage(window, url, cb=O.nop){
   window._ready = 0;

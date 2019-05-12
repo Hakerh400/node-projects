@@ -7,7 +7,7 @@ const O = require('../omikron');
 module.exports = {
   Canvas,
   createCanvas,
-}
+};
 
 function Canvas(w, h){
   return createCanvas(w, h);

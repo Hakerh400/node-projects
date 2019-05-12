@@ -7,7 +7,7 @@ const O = require('../omikron');
 module.exports = {
   encode,
   decode,
-}
+};
 
 function encode(data){
   const buf = Buffer.from(data);

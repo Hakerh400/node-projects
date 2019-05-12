@@ -8,7 +8,7 @@ const tempDir = require('../temp-dir')(__filename);
 
 module.exports = {
   bisect,
-}
+};
 
 function bisect(repo, firstCommit, nextCommit, checkFunc, cb=O.nop){
   var repoPath = `https://github.com/${repo}.git`;

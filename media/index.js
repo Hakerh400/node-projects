@@ -180,7 +180,7 @@ module.exports = {
   color,
 
   setPriority: setPriorityForNewProcs,
-}
+};
 
 function init(){
   aels();

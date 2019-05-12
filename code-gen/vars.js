@@ -50,4 +50,4 @@ module.exports = {
   Attribute,
   This,
   Argument,
-}
+};

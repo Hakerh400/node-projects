@@ -9,4 +9,4 @@ const BitBuffer = require('./bit-buffer');
 module.exports = {
   Engine,
   BitBuffer,
-}
+};

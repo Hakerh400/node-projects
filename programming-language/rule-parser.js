@@ -15,7 +15,7 @@ const Range = require('./range');
 
 module.exports = {
   parse,
-}
+};
 
 function parse(syntax, str){
   str = str.replace(/\r\n|\r|\n/g, '\n');
