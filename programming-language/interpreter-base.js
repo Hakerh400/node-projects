@@ -59,6 +59,10 @@ class InterpreterBase extends SG.Node{
       threads[index] = last;
     }
   }
+
+  catch(th, err){
+    O.noimpl('catch');
+  }
 };
 
 module.exports = InterpreterBase;

@@ -31,10 +31,10 @@ class StackFrame extends SG.Node{
 
   get hval(){ const hv = this.#hval; this.#hval = 0; return hv; }
   set hval(hv){ this.#hval = hv; }
-
   get nval(){ const hv = this.#hval; this.#hval = 0; return !hv; }
 
-  tick(intp, th){ O.virtual('tick'); }
+  tick(intp, th){ th.ret(this); }
+  catch(intp, th, err){ th.throw(err); }
 };
 
 module.exports = StackFrame;
