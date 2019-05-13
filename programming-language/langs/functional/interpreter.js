@@ -63,7 +63,7 @@ class Chain extends SF{
       this.args = this.rval;
       this.j = 1;
     }else{
-      if(this.nval) return th.call(new Call(this.g, this.val, this.args));
+      if(this.nval) return th.call(this);
       this.val = this.rval;
       this.i++; this.j = 0;
     }
