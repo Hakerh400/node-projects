@@ -11,7 +11,6 @@ const Pattern = require('./pattern');
 const Element = require('./element');
 const Range = require('./range');
 const Context = require('./context');
-const ruleParser = require('./rule-parser');
 const AST = require('./ast');
 const cgs = require('./common-graph-nodes');
 

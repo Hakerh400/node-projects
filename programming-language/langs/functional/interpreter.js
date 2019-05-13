@@ -84,24 +84,6 @@ class Identifier extends SF{
   deser(s){ super.deser(); this.num = s.readUint(); }
 }
 
-class Call extends SF{
-  static ptrsNum = this.keys(['func', 'args']);
-  
-  constructor(g, func, args){
-    super(g);
-    if(g.dsr) return;
-
-    this.func = func;
-    this.args = args;
-  }
-
-  tick(th){
-    log(this.func.num);
-    log([...this.args].map(a => a.num));
-    O.proc.exit();
-  }
-}
-
 const ctorsArr = [
   List,
   Chain,

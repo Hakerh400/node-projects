@@ -318,7 +318,7 @@ class Node{
     this.#graph = graph;
     graph.addNode(this);
 
-    // if(this.id === 6) throw new Error;
+    // if(this.id === 6) throw new Error();
   }
 
   static keys(keys){
