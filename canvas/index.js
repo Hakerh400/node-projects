@@ -5,5 +5,5 @@ const path = require('path');
 const O = require('../omikron');
 
 module.exports = require(
-  O.isElectron ? './electron-canvas' : 'canvas'
+  O.isElectron ? './electron-canvas' : './canvas'
 );

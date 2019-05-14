@@ -8,9 +8,6 @@ const path = require('path');
 const cp = require('child_process');
 const O = require('../omikron');
 
-if(!O.isElectron)
-  return module.exports = null;
-
 const nodeCanvas = require('../canvas');
 const logSync = require('../log-sync');
 const logStatus = require('../log-status');
