@@ -22,8 +22,10 @@ class String extends SG.Node{
 
   get str(){ return this.#str; }
   set str(str){ this[SG.sizeSym] -= this.#str.length - (this.#str = str).length | 0; }
+  get length(){ return this.str.length; }
 
-  get length(){ return this.#str.length; }
+  eq(str){ return this.str === str.str; }
+  neq(str){ return this.str !== str.str; }
 
   toString(){ return this.#str; }
 }

@@ -11,20 +11,20 @@ setTimeout(main);
 
 function main(){
   const lang = 'Functional()';
-  const src = O.rfs(format.path('-dw/1.txt'), 1);
-  const input = '';
+  const src = O.rfs(path.join(__dirname, 'src.txt'), 1);
+  const input = 'abcde';
 
-  const maxSize = 1e5;
+  const maxSize = 1e6;
   const eng = new Engine(lang, src, maxSize, maxSize - 1e3);
-  const bufs = [];
+  const io = new O.IO(input);
 
   const onRead = (buf, len) => {
-    buf.fill(0);
-    return 0;
+    buf[0] = io.read();
+    return io.hasMore();
   };
 
   const onWrite = (buf, len) => {
-    bufs.push(buf);
+    io.write(buf[0]);
   };
 
   eng.stdout.on('write', onWrite);
@@ -33,6 +33,6 @@ function main(){
 
   eng.run();
 
-  const output = Buffer.concat(bufs).toString();
+  const output = io.getOutput().toString();
   log(output);
 }

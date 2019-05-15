@@ -55,7 +55,7 @@ class Thread extends SG.Node{
     }
 
     if(!(sf instanceof SF))
-      throw new Error(`[TH.TICK] ${SG.getName(sf)} is not a stack frame`);
+      throw new Error(`[TH.TICK] ${SG.getName(sf, 1)} is not a stack frame`);
 
     sf.tick(this);
     if(this.done) intp.removeThread(this);
@@ -72,25 +72,40 @@ class Thread extends SG.Node{
     func.funcPrev = null;
   }
 
-  getFuncs(){
-    const funcs = [];
-    for(let {func} = this; func !== null; func = func.funcPrev)
-      funcs.push(func);
-    return funcs;
+  *getSfsGen(){
+    for(let {sf} = this; sf !== null; sf = sf.prev)
+      yield sf;
   }
+
+  *getFuncsGen(){
+    for(let {func} = this; func !== null; func = func.funcPrev)
+      yield func;
+  }
+
+  get sfs(){ return this.getSfsGen(); }
+  get funcs(){ return this.getFuncsGen(); }
+  getSfs(){ return Array.from(this.sfs); }
+  getFuncs(){ return Array.from(this.funcs); }
 
   call(sf, tco=0){
     if(!(sf instanceof SF))
-      throw new Error(`[TH.CALL] ${SG.getName(sf)} is not a stack frame`);
+      throw new Error(`[TH.CALL] ${SG.getName(sf, 1)} is not a stack frame`);
 
-    if(tco && this.sf !== null) this.sf = this.sf.prev;
+    if(tco && this.sf !== null){
+      if(this.sf.isFunc) this.func = this.func.funcPrev;
+      this.sf = this.sf.prev;
+    }
+
     sf.prev = this.sf;
     this.sf = sf;
     if(sf.isFunc) this.addFunc(sf);
   }
 
-  ret(val=null){
+  ret(val){
     let {sf} = this;
+
+    if(typeof val !== 'object')
+      throw new TypeError(`[TH.RET] ${SG.getName(val, 1)} is not an object or null`);
 
     if(sf.isFunc) this.removeFunc();
     sf = this.sf = sf.prev;

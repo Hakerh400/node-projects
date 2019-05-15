@@ -13,7 +13,7 @@ class StdIO extends O.EventEmitter{
 
   read(len){
     const data = O.Buffer.alloc(Math.ceil(len / 8));
-    this.emit('read', data, len);
+    if(!this.emit('read', data, len)) this.hasMore = 0;
     return data;
   }
 

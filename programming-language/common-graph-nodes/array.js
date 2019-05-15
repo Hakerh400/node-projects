@@ -17,6 +17,16 @@ class Array extends SG.Node{
         this.push(val);
   }
 
+  static from(g, from){
+    const arr = new Array(g);
+    const len = from.length;
+
+    for(let i = 0; i !== len; i++)
+      arr.push(from[i]);
+
+    return arr;
+  }
+
   get length(){ return this.ptrsNum; }
 
   set length(len){

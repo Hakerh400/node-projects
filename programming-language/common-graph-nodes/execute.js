@@ -15,7 +15,7 @@ class Execute extends cgs.Function{
 
   tick(th){
     const {g, script} = this;
-    if(this.nval) return th.call(new g.Parser(g, script, 1));
+    if(this.nval) return th.call(new g.Parser(g, script, 1), 1);
     th.ret(this);
   }
 }

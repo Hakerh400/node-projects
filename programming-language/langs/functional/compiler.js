@@ -9,31 +9,12 @@ const cgs = require('../../common-graph-nodes');
 const CompilerBase = require('../../compiler-base');
 
 class Compiler extends CompilerBase{
-  static ptrsNum = this.keys(['idents']);
-
   constructor(g, ast){
     super(g, ast);
     if(g.dsr) return;
-
-    this.idents = new cgs.Array(g);
-  }
-
-  getIdent(identName){
-    const {g, idents} = this;
-
-    const id = idents.findIndex(s => s[0].str === identName);
-    if(id !== -1) return idents[id][1];
-
-    const keyVal = new cgs.Array(this.g);
-    keyVal.push(new cgs.String(this.g, identName));
-    keyVal.push(new cs.Identifier(g, idents.length));
-    idents.push(keyVal);
-
-    return keyVal[1];
   }
 
   ['[script]'](e){
-    this.idents = null;
     return e.elems[1].fst;
   }
 
@@ -42,16 +23,20 @@ class Compiler extends CompilerBase{
   }
 
   ['[chain]'](e){
-    return new cs.Chain(e.g, e.fst.arr);
+    return new cs.Chain(e.g, e.fst.fst, e.elems[2].arr);
   }
 
   ['[arg]'](e){
-    if(e.patIndex === 0) return e.fst.fst;
+    const {g} = this;
+    if(e.patIndex === 0)
+      return new cs.List(g, cgs.Array.from(g, [e.fst.fst]));
     return e.elems[2].fst;
   }
 
   ['[ident]'](e){
-    return this.getIdent(e.str);
+    const {g} = this;
+    const str = new cgs.String(g, String(e));
+    return new cs.Identifier(g, str);
   }
 }
 

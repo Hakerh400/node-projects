@@ -356,6 +356,8 @@ class Node{
   unpersist(){ this.graph.unpersist(this); return this; }
 }
 
+const SG = SerializableGraph;
+
 module.exports = Object.assign(SerializableGraph, {
   sizeSym,
   Node,

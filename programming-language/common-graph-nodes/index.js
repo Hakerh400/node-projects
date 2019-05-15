@@ -24,6 +24,7 @@ const nodes = [
   'array',
   'set',
   'map',
+  'object',
 ];
 
 const ctorsArr = [];

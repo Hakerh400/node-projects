@@ -38,12 +38,15 @@ class StackFrame extends SG.Node{
     this.j = s.readInt();
   }
 
+  get intp(){ return this.g.intp; }
   get isFunc(){ return 0; }
+
   get hval(){ const hv = this.#hval; this.#hval = 0; return hv; }
   set hval(hv){ this.#hval = hv; }
   get nval(){ const hv = this.#hval; this.#hval = 0; return !hv; }
+  get gval(){ const v = this.rval; this.rval = null; return v; }
 
-  tick(th){ th.ret(this); }
+  tick(th){ O.virtual('tick'); }
   catch(err, th){ th.throw(err); }
 }
 

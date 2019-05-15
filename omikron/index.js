@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const Process = require('./process');
 const dirs = require('./dirs.json');
-const passwords = require('./passwords.json');
+// const passwords = require('./passwords.json');
 
 const isElectron = 'navigator' in global;
 
@@ -51,8 +51,8 @@ function getFramework(){
   O.init(0);
 
   O.dirs = dirs;
-  O.passwords = passwords;
-  O.password = passwords[0];
+  // O.passwords = passwords;
+  // O.password = passwords[0];
 
   init(O);
 
