@@ -14,7 +14,7 @@ function main(){
   const src = O.rfs(path.join(__dirname, 'src.txt'), 1);
   const input = 'abcde';
 
-  const maxSize = 1e6;
+  const maxSize = 1e7;
   const eng = new Engine(lang, src, maxSize, maxSize - 1e3);
   const io = new O.IO(input);
 

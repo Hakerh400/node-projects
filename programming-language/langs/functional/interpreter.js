@@ -44,8 +44,9 @@ class Interpreter extends InterpreterBase{
     return idents.arr[index][1];
   }
 
-  createLocal(str, val){
-    const {func} = this.th;
+  createLocal(str, val, skipFirst=0){
+    let {func} = this.th;
+    if(skipFirst) func = func.parent;
     if(func instanceof Function) func.setIdent(str, val);
     else this.idents.set(str, val);
   }
@@ -58,8 +59,11 @@ class Interpreter extends InterpreterBase{
     return this.zero;
   }
 
-  setLocal(str){
-    O.noimpl('setLocal');
+  setLocal(str, val){
+    for(let {func} = this.th; func instanceof Function; func = func.parent)
+      if(func.hasIdent(str)) return func.getIdent(str, val);
+
+    return this.idents.set(str, val);
   }
 
   get zero(){
@@ -71,7 +75,7 @@ class List extends SF{
   static ptrsNum = this.keys(['chains', 'evald']);
   
   constructor(g, chains){
-    super(g, chains);
+    super(g);
     if(g.dsr) return;
 
     this.chains = chains;
@@ -84,9 +88,11 @@ class List extends SF{
     if(evald.length === chains.length)
       return th.ret(this);
 
-    if(this.nval) return th.call(chains[evald.length]);
+    if(this.nval) return th.call(chains[evald.length].clone());
     evald.push(this.gval);
   }
+
+  clone(){ return new this.constructor(this.g, this.chains); }
 
   get length(){ return this.chains.length; }
   get(index){ return this.evald.get(index); }
@@ -114,7 +120,7 @@ class Chain extends SF{
   static ptrsNum = this.keys(['val', 'lists']);
   
   constructor(g, val, lists){
-    super(g, val);
+    super(g);
     if(g.dsr) return;
 
     this.val = val;
@@ -135,11 +141,12 @@ class Chain extends SF{
       return this.i = 0;
     }
 
-    if(this.nval) return th.call(val.invoke(lists[i]));
+    if(this.nval) return th.call(val.invoke(lists[i].clone()));
     this.val = this.gval;
     this.i++;
   }
 
+  clone(){ return new this.constructor(this.g, this.val, this.lists); }
   get length(){ return this.lists.length; }
 
   getIdent(){
@@ -150,20 +157,20 @@ class Chain extends SF{
 }
 
 class Identifier extends SF{
-  static ptrsNum = this.keys(['name']);
+  static ptrsNum = this.keys(['identName']);
   
-  constructor(g, name){
-    super(g, name);
+  constructor(g, identName){
+    super(g, identName);
     if(g.dsr) return;
 
-    this.name = name;
+    this.identName = identName;
   }
 
   tick(th){
     th.ret(this.intp.getLocal(this.str));
   }
 
-  get str(){ return this.name.str; }
+  get str(){ return this.identName.str; }
 }
 
 class Function extends cgs.Function{
@@ -250,7 +257,7 @@ class Assignment extends Function{
       return th.ret(intp.zero);
 
     const val = args.get(1);
-    intp.setLocalIdent(ident.str, val);
+    intp.setLocal(ident.str, val);
     th.ret(val);
   }
 }
@@ -275,7 +282,7 @@ class Variable extends Function{
       return th.ret(intp.zero);
 
     const val = args.get(1);
-    intp.createLocal(ident.str, val);
+    intp.createLocal(ident.str, val, 1);
     th.ret(val);
   }
 }
@@ -358,10 +365,11 @@ class UserlandFunction extends Function{
 
         if(len === 0) return th.ret(this.intp.zero);
 
-        const chain = body.chains[j];
-        this.j++;
+        if(this.nval) return th.call(body.chains[j].clone());
+        const result = this.gval;
 
-        th.call(chain, j === len - 1);
+        if(++this.j === len)
+          th.ret(result);
         break;
       }
     }
@@ -396,6 +404,7 @@ class Eof extends Function{
     if(this.nval) return th.call(this.args);
     const args = this.gval;
 
+    log('EOF', this.g.stdout.hasMore ? 0 : 1);
     th.ret(this.intp.getGlobalIndex(this.g.stdout.hasMore ? 0 : 1));
   }
 }
