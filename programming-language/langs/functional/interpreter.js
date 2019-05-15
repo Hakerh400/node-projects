@@ -21,7 +21,7 @@ class Interpreter extends InterpreterBase{
       '==': new Equality(g),
       '=': new Assignment(g),
       'var': new Variable(g),
-      '[]': new NewFunction(g),
+      '[]': new UserlandFunction(g),
       'read': new Read(g),
       'write': new Write(g),
       'eof': new Eof(g),
@@ -46,13 +46,13 @@ class Interpreter extends InterpreterBase{
 
   createLocal(str, val){
     const {func} = this.th;
-    if(func !== null) func.setIdent(str, val);
+    if(func instanceof Function) func.setIdent(str, val);
     else this.idents.set(str, val);
   }
 
   getLocal(str){
-    for(const func of this.th.funcs)
-      if(func.hasIdent(str)) return func.getIdent();
+    for(let {func} = this.th; func instanceof Function; func = func.parent)
+      if(func.hasIdent(str)) return func.getIdent(str);
 
     if(this.idents.has(str)) return this.idents.get(str);
     return this.zero;
@@ -71,7 +71,7 @@ class List extends SF{
   static ptrsNum = this.keys(['chains', 'evald']);
   
   constructor(g, chains){
-    super(g);
+    super(g, chains);
     if(g.dsr) return;
 
     this.chains = chains;
@@ -91,22 +91,10 @@ class List extends SF{
   get length(){ return this.chains.length; }
   get(index){ return this.evald.get(index); }
 
-  getLval(index){
+  getIdent(index){
     const {chains} = this;
     if(index >= chains.length) return null;
-    return chains[index].getLval();
-  }
-
-  getLvals(){
-    const lvals = new cgs.Array(this.g);
-
-    for(const chain of this.chains){
-      const lval = chain.getLval();
-      if(lval === null) return null;
-      lvals.push(lval);
-    }
-
-    return lvals;
+    return chains[index].getIdent();
   }
 }
 
@@ -126,7 +114,7 @@ class Chain extends SF{
   static ptrsNum = this.keys(['val', 'lists']);
   
   constructor(g, val, lists){
-    super(g);
+    super(g, val);
     if(g.dsr) return;
 
     this.val = val;
@@ -154,7 +142,7 @@ class Chain extends SF{
 
   get length(){ return this.lists.length; }
 
-  getLval(){
+  getIdent(){
     if(this.i !== -1) throw new TypeError('Cannot get left-value of an evaluated chain');
     if(this.lists.length !== 0) return null;
     return this.val;
@@ -162,33 +150,36 @@ class Chain extends SF{
 }
 
 class Identifier extends SF{
-  static ptrsNum = this.keys(['str']);
+  static ptrsNum = this.keys(['name']);
   
-  constructor(g, str){
-    super(g);
+  constructor(g, name){
+    super(g, name);
     if(g.dsr) return;
 
-    this.str = str;
+    this.name = name;
   }
 
   tick(th){
-    th.ret(this.intp.getLocal(this.str.str));
+    th.ret(this.intp.getLocal(this.str));
   }
+
+  get str(){ return this.name.str; }
 }
 
 class Function extends cgs.Function{
-  static ptrsNum = this.keys(['idents', 'args']);
+  static ptrsNum = this.keys(['idents', 'args', 'parent']);
   
   constructor(g, args=null){
-    super(g);
+    super(g, g.th.func.script, null, args);
     if(g.dsr) return;
 
     this.idents = null;
     this.args = args;
+    this.parent = g.th.func instanceof Function ? g.th.func : null;
   }
 
   invoke(args){
-    return new this.constructor(this.g, args);
+    return new this.constructor(this.g, args, this);
   }
 
   hasIdent(str){
@@ -246,7 +237,7 @@ class Assignment extends Function{
     super(g, args);
     if(g.dsr) return;
 
-    this.ident = args !== null ? args.getLval(0) : null;
+    this.ident = args !== null ? args.getIdent(0) : null;
   }
 
   tick(th){
@@ -271,7 +262,7 @@ class Variable extends Function{
     super(g, args);
     if(g.dsr) return;
 
-    this.ident = args !== null ? args.getLval(0) : null;
+    this.ident = args !== null ? args.getIdent(0) : null;
   }
 
   tick(th){
@@ -289,22 +280,92 @@ class Variable extends Function{
   }
 }
 
-class NewFunction extends Function{
-  tick(th){
-    const {args} = this;
+class UserlandFunction extends Function{
+  static ptrsNum = this.keys(['formalArgs', 'body']);
 
-    const lvals = args.getLvals();
-    if(lvals === null){
-      if(this.nval) return th.call(this.args);
-      return this.intp.zero;
+  constructor(g, args=null, parent=null){
+    super(g, args);
+    if(g.dsr) return;
+
+    if(parent === null){
+      this.formalArgs = null;
+      this.body = null;
+      return;
     }
 
-    th.ret(new FunctionTemplate(this.g, lvals));
-  }
-}
+    if(parent !== null){
+      const {i} = parent;
+      this.i = i + 1;
 
-class FunctionTemplate extends Function{
-  static ptrsNum = this.keys(['idents']);
+      if(i === 0){
+        this.formalArgs = args;
+        return;
+      }
+
+      this.formalArgs = parent.formalArgs;
+
+      if(i === 1){
+        this.body = args;
+        return;
+      }
+
+      this.body = parent.body;
+    }
+  }
+
+  tick(th){
+    const {formalArgs: fa, body, args} = this;
+
+    switch(this.i){
+      case 1:
+        for(let i = 0; i !== args.length; i++){
+          if(args.getIdent(i)) continue;
+          if(this.nval) return th.call(this.args);
+          return th.ret(this.intp.zero);
+        }
+
+        th.ret(this);
+        break;
+
+      case 2:
+        th.ret(this);
+        break;
+
+      case 3: {
+        const {j} = this;
+        const len = fa.length;
+
+        if(j === len){
+          this.j = 0;
+          this.i++;
+          return;
+        }
+
+        if(j < args.length){
+          if(this.nval) return th.call(args.chains[j]);
+          this.setIdent(fa.chains[j].val.str, this.gval);
+        }else{
+          this.setIdent(fa.chains[j].val.str, this.intp.zero);
+        }
+
+        this.j++;
+        break;
+      }
+
+      case 4: {
+        const {j} = this;
+        const len = body.length;
+
+        if(len === 0) return th.ret(this.intp.zero);
+
+        const chain = body.chains[j];
+        this.j++;
+
+        th.call(chain, j === len - 1);
+        break;
+      }
+    }
+  }
 }
 
 class Read extends Function{
@@ -350,7 +411,7 @@ const ctorsArr = [
   Equality,
   Assignment,
   Variable,
-  NewFunction,
+  UserlandFunction,
   Read,
   Write,
   Eof,

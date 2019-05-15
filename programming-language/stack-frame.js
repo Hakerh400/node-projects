@@ -10,14 +10,15 @@ class StackFrame extends SG.Node{
 
   #hval = 0;
 
-  constructor(g){
+  constructor(g, sf=null){
     super(g);
     if(g.dsr) return;
 
     this.prev = null;
     this.rval = null;
 
-    this.srcPos = 0;
+    this.srcPos = sf !== null ? sf.srcPos : 0;
+
     this.i = 0;
     this.j = 0;
   }

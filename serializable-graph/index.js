@@ -354,6 +354,8 @@ class Node{
 
   persist(){ this.graph.persist(this); return this; }
   unpersist(){ this.graph.unpersist(this); return this; }
+
+  get name(){ return this.constructor.name; }
 }
 
 const SG = SerializableGraph;

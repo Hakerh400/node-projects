@@ -18,7 +18,7 @@ class Array extends SG.Node{
   }
 
   static from(g, from){
-    const arr = new Array(g);
+    const arr = new this(g);
     const len = from.length;
 
     for(let i = 0; i !== len; i++)

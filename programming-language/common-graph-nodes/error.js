@@ -16,7 +16,7 @@ class Error extends SG.Node{
   static ptrsNum = this.keys(['message', 'stack', 'script']);
   static errName = 'Error';
 
-  constructor(g, message){
+  constructor(g, message=null){
     super(g);
     if(g.dsr) return;
 
@@ -41,6 +41,7 @@ class Error extends SG.Node{
         const {fileName} = script;
         const lineNumber = sfLast !== null ? script.getLineNumber(sfLast.srcPos) : 1;
         const linePos = sfLast !== null ? script.getLinePos(sfLast.srcPos) : 1;
+
         scriptData = `${fileName}:${lineNumber}:${linePos}`;
       }
 

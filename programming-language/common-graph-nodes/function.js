@@ -10,8 +10,8 @@ const cgs = require('.');
 class Function extends SF{
   static ptrsNum = this.keys(['script', 'funcName', 'funcPrev']);
 
-  constructor(g, script=null, funcName=null){
-    super(g);
+  constructor(g, script=null, funcName=null, sf=null){
+    super(g, sf);
     if(g.dsr) return;
 
     this.script = script;

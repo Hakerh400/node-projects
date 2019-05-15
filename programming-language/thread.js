@@ -117,9 +117,16 @@ class Thread extends SG.Node{
   }
 
   throw(err){
-    this.ret();
+    this.ret(null);
     this.err = err;
     this.hasErr = 1;
+  }
+
+  debug(sf){
+    const {g} = this;
+
+    this.call(sf);
+    this.throw(new cgs.Error(g));
   }
 }
 

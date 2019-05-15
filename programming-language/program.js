@@ -19,8 +19,8 @@ class Program extends SG{
   stdout = new StdIO();
   stderr = new StdIO();
 
-  #lang;
-  #intp;
+  #lang = null;
+  #intp = null;
 
   constructor(langName, source, maxSize, criticalSize=null){
     const lang = PL.get(langName);
@@ -40,6 +40,11 @@ class Program extends SG{
     this.#intp = new lang.Interpreter(this, script).persist();
 
     this.checkSize();
+  }
+
+  setIntp(intp){
+    if(this.#intp !== null) return;
+    this.#intp = intp;
   }
 
   get lang(){ return this.#lang; }

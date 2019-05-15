@@ -18,7 +18,7 @@ class Object extends SG.Node{
   }
 
   static from(g, from){
-    const obj = new Object(g);
+    const obj = new this(g);
 
     for(const key of O.keys(from))
       obj.set(key, from[key]);

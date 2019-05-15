@@ -28,8 +28,11 @@ function main(){
   };
 
   eng.stdout.on('write', onWrite);
-  eng.stderr.on('write', onWrite);
   eng.stdin.on('read', onRead);
+
+  eng.stderr.on('write', (buf, len) => {
+    log(buf.toString());
+  });
 
   eng.run();
 

@@ -13,6 +13,7 @@ class InterpreterBase extends SG.Node{
   constructor(g, script=null){
     super(g);
     if(g.dsr) return;
+    g.setIntp(this);
 
     this.threads = new cgs.Array(g);
     this.threadIndex = -1;
