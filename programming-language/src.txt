@@ -2,13 +2,13 @@
 ==, =, var, [],
 read, write, eof,
 
-var(a, [](a)(
+var(x, [](m)(
   [](b)(
-    a(b)
+    m(b)
   )
 )),
 
-=(a, a(write)),
+=(a, x(write)),
 
 a(1), a(0), a(1), a(0),
 a(1), a(1), a(0), a(0)
