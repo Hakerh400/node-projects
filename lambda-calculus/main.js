@@ -15,48 +15,56 @@ const E = G(F(0, 0), F(P, B0, G(0, 0)));
 setTimeout(main);
 
 function main(){
-  {
-    const e1 = F(F(0), F(0, 0), F(0), F(0, 0));
-    const e2 = F(F(0), F(0), F(0, 0));
+  const io = new O.IO('abcde');
 
-    log(L.cmp(e1, e2, 1) ? 'Equal' : 'Different');
+  const S = getInput(io);
+  const C = getSrc();
+  const R = G(C, S);
+
+  let e = L.reduce(R, 0, 0);
+  let i = 0;
+
+  while(1){
+    const bit = L.reduce(G(e, B0), 0, 0);
+    const isZero = L.cmp(bit, B0);
+    const isOne = L.cmp(bit, B1);
+    if(!(isZero || isOne)) throw new TypeError('Unknown value');
+
+    if((i++ & 1) === 0){
+      if(isZero) break;
+    }else{
+      io.write(isOne);
+    }
+
+    e = L.reduce(G(e, B1), 0, 0);
   }
-  return;
 
-  const S = G(P, B1, G(P, B1, G(P, B1, G(P, B1, G(P, B1, G(P, B0, G(P, B1, G(P, B1, E))))))));
-  const C = getCode();
-  const e = G(C, S);
-
-  const bit = (e, n) => {
-    const expr = G(e);
-
-    while(n--) expr.push(B1);
-    expr.push(B0);
-
-    const isZero = L.cmp(expr, B0);
-    const isOne = L.cmp(expr, B1);
-
-    return isZero ? '0' : isOne ? '1' : '?';
-  };
-
-  const expected = '1110111100';
-
-  const actual = O.ca(expected.length, i => {
-    return bit(e, i);
-  }).join('');
-
-  log(expected);
-  log(actual);
+  log(io.getOutput().toString());
 }
 
-function getCode(){
+function getInput(io){
+  const s = G(P);
+  let e = s;
+
+  while(io.hasMore)
+    e.push(B1, G(P, io.read() ? B1 : B0, e = G(P)));
+
+  e.push(B0, E);
+  return s;
+}
+
+function getSrc(){
   return G(
-    F(F(1, 1, 0, E)), F(F(F(
-      1, B0, G(
-        2, 2,
-        G(1, B1, B1),
-        G(P, B1, G(P, G(1, B1, B0), 0))
-      ), 0
-    )))
-  );
+    F(F(
+      1, G(1, 0),
+    )), G(
+      F(F(1, 1, 0, E)), F(F(F(
+        1, B0, G(
+          2, 2,
+          G(1, B1, B1),
+          G(P, B1, G(P, G(1, B1, B0), 0)),
+        ), 0,
+      )))
+    )
+  )
 }

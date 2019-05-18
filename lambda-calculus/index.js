@@ -41,12 +41,12 @@ function expand(expr){
   return expr;
 }
 
-function reduce(expr, clever=0){
+function reduce(expr, greedy=1, clever=1){
   expr = prepare(expr);
 
   const history = clever ? [copy(expr)] : null;
 
-  while(reduceStep(expr)){
+  while(reduceStep(expr, greedy)){
     if(clever){
       for(const h of history){
         if(expr.length < h.length) continue;
@@ -60,13 +60,17 @@ function reduce(expr, clever=0){
   return expr;
 }
 
-function reduceStep(expr){
+function reduceStep(expr, greedy=1){
   while(!expr[0].a) expand(expr);
 
-  while(expr.length === 1){
-    expr = expr[0];
-    if(!vec(expr[0])) return 0;
-    while(!expr[0].a) expand(expr);
+  if(greedy){
+    while(expr.length === 1){
+      expr = expr[0];
+      if(!vec(expr[0])) return 0;
+      while(!expr[0].a) expand(expr);
+    }
+  }else{
+    if(expr.length === 1) return 0;
   }
 
   const func = expr.shift();
@@ -89,13 +93,15 @@ function reduceStep(expr){
   return 1;
 }
 
-function cmp(expr1, expr2, clever=0){
-  {
-    const e1 = reduce(expr1, clever);
-    const e2 = reduce(expr2, clever);
+function cmp(expr1, expr2, greedy=1, clever=1){
+  if(!clever){
+    const e1 = reduce(expr1, greedy, 0);
+    const e2 = reduce(expr2, greedy, 0);
 
     if(e1 !== null && e2 !== null) return cmpRaw(e1, e2);
     if(e1 !== null || e2 !== null) return 0;
+
+    throw new TypeError('Unable to determine the equivalence without the "clever" flag');
   }
 
   expr1 = prepare(expr1);
@@ -104,15 +110,23 @@ function cmp(expr1, expr2, clever=0){
   const history1 = [copy(expr1)];
   const history2 = [copy(expr2)];
 
-  while(1){
-    reduceStep(expr1);
-    reduceStep(expr2);
+  let done1 = 0;
+  let done2 = 0;
 
-    history1.push(copy(expr1));
-    history2.push(copy(expr2));
+  while(1){
+    let donePrev1 = done1;
+    let donePrev2 = done2;
+
+    if(!donePrev1) done1 = !reduceStep(expr1, greedy);
+    if(!donePrev2) done2 = !reduceStep(expr2, greedy);
+
+    if(!donePrev1) history1.push(copy(expr1));
+    if(!donePrev2) history2.push(copy(expr2));
 
     if(history1.some(h => cmpRaw(h, expr2))) return 1;
     if(history2.some(h => cmpRaw(h, expr1))) return 1;
+
+    if(donePrev1 && donePrev2) break;
   }
 
   return cmpRaw(expr1, expr2);
