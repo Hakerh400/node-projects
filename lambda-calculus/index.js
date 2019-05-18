@@ -4,16 +4,25 @@ const fs = require('fs');
 const path = require('path');
 const O = require('../omikron');
 
+const G = (...a) => (a.a = 0, a);
+const F = (...a) => (a.a = 1, a);
+
 module.exports = {
+  G, F,
+
   reduce,
+  cmp,
 
   map,
+  vec,
+
   str,
+  show,
 };
 
 function reduce(expr){
-  expr = slice(expr);
-
+  if(expr.a) expr = G(expr);
+  else expr = slice(expr);
 
   while(!(expr.length === 1 && expr[0].a)){
     if(!expr[0].a){
@@ -25,13 +34,11 @@ function reduce(expr){
       continue;
     }
 
-    log(str(expr));
-
     const func = expr.shift();
     const arg = expr.shift();
 
     const subst = (nest, e) => {
-      if(!Array.isArray(e)){
+      if(!vec(e)){
         if(e === nest) return arg;
         return e;
       }
@@ -45,7 +52,21 @@ function reduce(expr){
       expr.unshift(subst(0, func[i]));
   }
 
-  log(str(expr));
+  return expr;
+}
+
+function cmp(expr1, expr2){
+  const e1 = reduce(expr1);
+  const e2 = reduce(expr2);
+
+  const cmp = (e1, e2) => {
+    if(!(vec(e1) && vec(e2))) return e1 === e2;
+    return e1.length === e2.length && e1.every((e, i) => {
+      return cmp(e, e2[i]);
+    });
+  };
+
+  return cmp(e1, e2);
 }
 
 function slice(expr){
@@ -60,8 +81,16 @@ function map(expr, func){
   return m;
 }
 
+function vec(e){
+  return Array.isArray(e);
+}
+
 function str(expr, top=1){
-  if(!Array.isArray(expr)) return String(expr);
+  if(!vec(expr)) return String(expr);
   const p = expr.a || !(top || expr.length === 1) ? expr.a ? ['(', ')'] : ['[', ']'] : ['', ''];
   return `${p[0]}${expr.map(e => str(e, expr.a)).join(' ')}${p[1]}`;
+}
+
+function show(expr){
+  log(str(expr));
 }
