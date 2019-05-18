@@ -15,6 +15,14 @@ const E = G(F(0, 0), F(P, B0, G(0, 0)));
 setTimeout(main);
 
 function main(){
+  {
+    const e1 = F(F(0), F(0, 0), F(0), F(0, 0));
+    const e2 = F(F(0), F(0), F(0, 0));
+
+    log(L.cmp(e1, e2, 1) ? 'Equal' : 'Different');
+  }
+  return;
+
   const S = G(P, B1, G(P, B1, G(P, B1, G(P, B1, G(P, B1, G(P, B0, G(P, B1, G(P, B1, E))))))));
   const C = getCode();
   const e = G(C, S);

@@ -10,9 +10,15 @@ const F = (...a) => (a.a = 1, a);
 module.exports = {
   G, F,
 
-  reduce,
-  cmp,
+  prepare,
+  expand,
 
+  reduce,
+  reduceStep,
+  cmp,
+  cmpRaw,
+
+  copy,
   map,
   vec,
 
@@ -20,59 +26,110 @@ module.exports = {
   show,
 };
 
-function reduce(expr){
+function prepare(expr){
+  expr = copy(expr);
   if(expr.a) expr = G(expr);
-  else expr = slice(expr);
+  return expr;
+}
 
-  while(!(expr.length === 1 && expr[0].a)){
-    if(!expr[0].a){
-      const group = expr.shift();
+function expand(expr){
+  const group = expr.shift();
 
-      for(let i = group.length - 1; i !== -1; i--)
-        expr.unshift(group[i]);
+  for(let i = group.length - 1; i !== -1; i--)
+    expr.unshift(group[i]);
 
-      continue;
-    }
+  return expr;
+}
 
-    const func = expr.shift();
-    const arg = expr.shift();
+function reduce(expr, clever=0){
+  expr = prepare(expr);
 
-    const subst = (nest, e) => {
-      if(!vec(e)){
-        if(e === nest) return arg;
-        return e;
+  const history = clever ? [copy(expr)] : null;
+
+  while(reduceStep(expr)){
+    if(clever){
+      for(const h of history){
+        if(expr.length < h.length) continue;
+        if(expr.every((e, i) => cmpRaw(e, h[i]))) return null;
       }
 
-      nest += e.a;
-
-      return map(e, e => subst(nest, e));
-    };
-
-    for(let i = func.length - 1; i !== -1; i--)
-      expr.unshift(subst(0, func[i]));
+      history.push(copy(expr));
+    }
   }
 
   return expr;
 }
 
-function cmp(expr1, expr2){
-  const e1 = reduce(expr1);
-  const e2 = reduce(expr2);
+function reduceStep(expr){
+  while(!expr[0].a) expand(expr);
 
-  const cmp = (e1, e2) => {
-    if(!(vec(e1) && vec(e2))) return e1 === e2;
-    return e1.length === e2.length && e1.every((e, i) => {
-      return cmp(e, e2[i]);
-    });
+  while(expr.length === 1){
+    expr = expr[0];
+    if(!vec(expr[0])) return 0;
+    while(!expr[0].a) expand(expr);
+  }
+
+  const func = expr.shift();
+  const arg = expr.shift();
+
+  const subst = (nest, e) => {
+    if(!vec(e)){
+      if(e === nest) return arg;
+      return e;
+    }
+
+    nest += e.a;
+
+    return map(e, e => subst(nest, e));
   };
 
-  return cmp(e1, e2);
+  for(let i = func.length - 1; i !== -1; i--)
+    expr.unshift(subst(0, func[i]));
+
+  return 1;
 }
 
-function slice(expr){
-  const s = expr.slice();
-  s.a = expr.a;
-  return s;
+function cmp(expr1, expr2, clever=0){
+  {
+    const e1 = reduce(expr1, clever);
+    const e2 = reduce(expr2, clever);
+
+    if(e1 !== null && e2 !== null) return cmpRaw(e1, e2);
+    if(e1 !== null || e2 !== null) return 0;
+  }
+
+  expr1 = prepare(expr1);
+  expr2 = prepare(expr2);
+
+  const history1 = [copy(expr1)];
+  const history2 = [copy(expr2)];
+
+  while(1){
+    reduceStep(expr1);
+    reduceStep(expr2);
+
+    history1.push(copy(expr1));
+    history2.push(copy(expr2));
+
+    if(history1.some(h => cmpRaw(h, expr2))) return 1;
+    if(history2.some(h => cmpRaw(h, expr1))) return 1;
+  }
+
+  return cmpRaw(expr1, expr2);
+}
+
+function cmpRaw(e1, e2){
+  if(!(vec(e1) && vec(e2))) return e1 === e2;
+  return e1.length === e2.length && e1.every((e, i) => {
+    return cmpRaw(e, e2[i]);
+  });
+}
+
+function copy(expr){
+  if(!vec(expr)) return expr;
+  const map = expr.map(copy);
+  map.a = expr.a;
+  return map;
 }
 
 function map(expr, func){
@@ -85,7 +142,7 @@ function vec(e){
   return Array.isArray(e);
 }
 
-function str(expr, top=1){
+function str(expr, top=0){
   if(!vec(expr)) return String(expr);
   const p = expr.a || !(top || expr.length === 1) ? expr.a ? ['(', ')'] : ['[', ']'] : ['', ''];
   return `${p[0]}${expr.map(e => str(e, expr.a)).join(' ')}${p[1]}`;
