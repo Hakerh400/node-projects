@@ -44,10 +44,9 @@ class ParserBase extends SF{
 
     const node = this.rval;
     if(node.len !== ast.str.length){
-      const und = cgs.Undefined.get(g);
-      
+
       this.srcPos = this.cache.reduce((pos, map) => {
-        if(map === und) return pos;
+        if(map === null) return pos;
 
         return map.arr.reduce((pos, elem) => {
           return Math.max(elem[1].end, pos);
@@ -98,14 +97,14 @@ class ParserBase extends SF{
   prepareCacheIndex(index){
     const {g, cache} = this;
     if(index >= cache.length) cache.length = index + 1;
-    if(cache[index] === cgs.Undefined.get(g)) cache[index] = new cgs.Map(g);
+    if(cache[index] === null) cache[index] = new cgs.Map(g);
     return cache[index];
   }
 
   prepareParsingIndex(index){
     const {g, parsing} = this;
     if(index >= parsing.length) parsing.length = index + 1;
-    if(parsing[index] === cgs.Undefined.get(g)) parsing[index] = new cgs.Set(g);
+    if(parsing[index] === null) parsing[index] = new cgs.Set(g);
     return parsing[index];
   }
 }
@@ -151,7 +150,7 @@ class ParseDef extends Parse{
       this.node = node;
       this.i = -1;
     }
-    
+
     const pats = def.sects.include.pats;
     let {node, nodePrev: prev} = this;
 

@@ -2,7 +2,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const O = require('../omikron');
+const O = require('../../../../omikron');
 const L = require('.');
 
 const {G, F} = L;
@@ -12,13 +12,13 @@ const B1 = F(F(1));
 const P = F(F(F(0, 1, 2)));
 const E = G(F(0, 0), F(P, B0, G(0, 0)));
 
-setTimeout(main);
+module.exports = invoke;
 
-function main(){
-  const io = new O.IO('abcde');
+function invoke(src, input){
+  const io = new O.IO(input);
 
   const S = getInput(io);
-  const C = getSrc();
+  const C = src;
   const R = G(C, S);
 
   let e = L.reduce(R, 0, 0);
@@ -26,8 +26,17 @@ function main(){
 
   while(1){
     const bit = L.reduce(G(e, B0), 0, 0);
-    const isZero = L.cmp(bit, B0);
-    const isOne = L.cmp(bit, B1);
+
+    let isZero, isOne;
+
+    try{
+      isZero = L.cmp(bit, B0, 0, 0);
+      isOne = L.cmp(bit, B1, 0, 0);
+    }catch{
+      isZero = L.cmp(bit, B0);
+      isOne = L.cmp(bit, B1);
+    }
+
     if(!(isZero || isOne)) throw new TypeError('Unknown value');
 
     if((i++ & 1) === 0){
@@ -39,7 +48,7 @@ function main(){
     e = L.reduce(G(e, B1), 0, 0);
   }
 
-  log(io.getOutput().toString());
+  return io.getOutput();
 }
 
 function getInput(io){
@@ -51,20 +60,4 @@ function getInput(io){
 
   e.push(B0, E);
   return s;
-}
-
-function getSrc(){
-  return G(
-    F(F(
-      1, G(1, 0),
-    )), G(
-      F(F(1, 1, 0, E)), F(F(F(
-        1, B0, G(
-          2, 2,
-          G(1, B1, B1),
-          G(P, B1, G(P, G(1, B1, B0), 0)),
-        ), 0,
-      )))
-    )
-  )
 }

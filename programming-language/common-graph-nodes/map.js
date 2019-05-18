@@ -23,13 +23,14 @@ class Map extends SG.Node{
 
   has(key){
     for(const elem of this.arr)
-      if(elem[0] === key) return true;
-    return false;
+      if(elem[0] === key) return 1;
+    return 0;
   }
 
   get(key, val){
     for(const elem of this.arr)
       if(elem[0] === key) return elem[1];
+    return null;
   }
 
   set(key, val){
@@ -54,10 +55,10 @@ class Map extends SG.Node{
       if(len !== 1) arr[i] = arr[len - 1];
       arr.length = len - 1;
 
-      return true;
+      return 1;
     }
 
-    return false;
+    return 0;
   }
 
   [Symbol.iterator](){ return this.arr[Symbol.iterator](); }

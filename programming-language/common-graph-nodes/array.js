@@ -36,7 +36,7 @@ class Array extends SG.Node{
     if(len > prev){
       const {g} = this;
       for(let i = 0; i !== dif; i++)
-        this.push(cgs.Undefined.get(g));
+        this.push(null);
     }else{
       for(let i = 0; i !== dif; i++)
         this.pop();

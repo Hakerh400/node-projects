@@ -10,9 +10,9 @@ const Engine = require('./engine');
 setTimeout(main);
 
 function main(){
-  const lang = 'Functional()';
-  const src = O.rfs(format.path('-dw/1.txt'), 1);
-  const input = 'abcde';
+  const lang = 'Examinable Invocation Vector';
+  const src = O.rfs(format.path('-dw/src.txt'), 1);
+  const input = O.rfs(format.path('-dw/input.txt'));
 
   const maxSize = 1e7;
   const eng = new Engine(lang, src, maxSize, maxSize - 1e3);

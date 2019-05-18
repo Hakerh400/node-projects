@@ -7,7 +7,7 @@ const O = require('../omikron');
 class StdIO extends O.EventEmitter{
   constructor(hasMore=1){
     super();
-    
+
     this.hasMore = hasMore;
   }
 

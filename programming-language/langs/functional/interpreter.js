@@ -54,37 +54,37 @@ class Argument extends SG.Node{
   copy(list){ list.list = this.list; list.next = this.next; return list; }
 }
 
-class Invocation extends cgs.Function{
-  static ptrsNum = this.keys(['closure', 'args']);
+class Invocation extends SF{
+  static ptrsNum = this.keys(['parent', 'idents']);
 
-  constructor(g, closure=null, args=null){
+  constructor(g, parent=null, idents=null){
     super(g, ident);
     if(g.dsr) return;
 
-    this.closure = closure;
-    this.args = args;
-    this.idents = null;
-
-    this.keepAll = keepAll;
-    this.evald === args === null;
+    this.parent = parent;
+    this.idents = idents;
   }
 
-  ser(s){
-    super.ser(s);
-    s.write(this.evald);
-  }
+  getIdent(ident){
+    for(let inv = this; inv !== null; inv = inv.parent){
+      const {idents} = inv;
 
-  deser(s){
-    super.deser(s);
-    this.evald = s.read();
-  }
-
-  tick(th){
-    const {closure} = this;
-
-    if(!this.evald){
-      return;
+      if(idents !== null && idents.has(ident))
+        return idents.get(ident);
     }
+
+    return this.intp.zero;
+  }
+
+  setIdent(ident, val){
+    for(let inv = this; inv !== null; inv = inv.parent){
+      const {idents} = inv;
+
+      if(idents !== null && idents.has(ident))
+        return idents.set(ident, val);
+    }
+
+    return this.intp.globInv.createIdent(ident, val);
   }
 }
 

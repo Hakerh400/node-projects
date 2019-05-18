@@ -2,7 +2,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const O = require('../omikron');
+const O = require('../../../../omikron');
 
 const G = (...a) => (a.a = 0, a);
 const F = (...a) => (a.a = 1, a);
@@ -25,6 +25,9 @@ module.exports = {
   str,
   show,
 };
+
+const invoke = require('./invoke');
+module.exports.invoke = invoke;
 
 function prepare(expr){
   expr = copy(expr);

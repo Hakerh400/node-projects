@@ -187,10 +187,10 @@ class SerializableGraph extends O.Serializable{
   get persts(){ return this.#persts; }
   get main(){ return O.first(this.#persts); }
   get size(){ return this.#size; }
-  
+
   set size(size){
     if(size > this.maxSize)
-      throw new Error('Maximum graph size exceeded');
+      throw new RangeError('Maximum graph size exceeded');
 
     this.#size = size;
   }
@@ -327,7 +327,7 @@ class Node{
 
     for(const key of keys){
       const i = index++;
-      
+
       Object.defineProperty(proto, key, {
         get(){ return this[i]; },
         set(a){ return this[i] = a; },
@@ -348,7 +348,7 @@ class Node{
 
   get [sizeSym](){ return this.#size; }
   set [sizeSym](size){
-    if(!this.graph.nodes.has(this)) throw new Error(`The graph does not contain "${SG.getName(this, 0)}.${this.id}"`);
+    if(!this.graph.nodes.has(this)) throw new TypeError(`The graph does not contain "${SG.getName(this, 0)}.${this.id}"`);
     this.graph.size -= this.#size - (this.#size = size) | 0;
   }
 
@@ -360,7 +360,7 @@ class Node{
 
 const SG = SerializableGraph;
 
-module.exports = Object.assign(SerializableGraph, {
+module.exports = Object.assign(SG, {
   sizeSym,
   Node,
 });

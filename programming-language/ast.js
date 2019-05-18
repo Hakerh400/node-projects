@@ -214,13 +214,6 @@ class ASTTerm extends ASTElem{
   }
 }
 
-AST.ASTNode = ASTNode;
-AST.ASTDef = ASTDef;
-AST.ASTPat = ASTPat;
-AST.ASTElem = ASTElem;
-AST.ASTNterm = ASTNterm;
-AST.ASTTerm = ASTTerm;
-
 module.exports = Object.assign(AST, {
   ASTNode,
   ASTDef,

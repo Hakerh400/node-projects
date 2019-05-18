@@ -43,10 +43,10 @@ class Set extends SG.Node{
       if(len !== 1) arr[i] = arr[len - 1];
       arr.length = len - 1;
 
-      return true;
+      return 1;
     }
 
-    return false;
+    return 0;
   }
 
   [Symbol.iterator](){ return this.arr[Symbol.iterator](); }
