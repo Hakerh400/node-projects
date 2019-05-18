@@ -11,7 +11,7 @@ setTimeout(main);
 
 function main(){
   const lang = 'Functional()';
-  const src = O.rfs(path.join(__dirname, 'src.txt'), 1);
+  const src = O.rfs(format.path('-dw/1.txt'), 1);
   const input = 'abcde';
 
   const maxSize = 1e7;
