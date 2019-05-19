@@ -24,7 +24,7 @@ class Compiler extends CompilerBase{
 
   ['[script]'](e, th){
     const expr = proc(e.elems[1].fst);
-    const input = Buffer.from([0xAC, 0xCC]);//O.rfs(format.path('-dw/input.txt'));
+    const input = O.rfs(format.path('-dw/input.txt'));
     const output = L.invoke(expr, input);
 
     log(output.toString());
