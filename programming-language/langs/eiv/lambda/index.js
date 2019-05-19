@@ -36,7 +36,7 @@ function normalize(expr){
 
   if(!expr.a){
     if(expr.length === 1)
-      expr = expr[0];
+      return normalize(expr[0]);
   }else{
     while(vec(expr[0]) && !expr[0].a)
       expr = expr[0].concat(expr.slice(1));
@@ -56,8 +56,8 @@ function prepare(expr){
 function expand(expr){
   const group = expr.shift();
 
-  if(typeof group !== 'object')
-    throw new TypeError('Group must be an object');
+  if(!vec(group))
+    throw new TypeError('Group must be a vector');
 
   for(let i = group.length - 1; i !== -1; i--)
     expr.unshift(group[i]);
@@ -111,6 +111,9 @@ function reduceStep(expr, greedy=1){
     return map(e, e => subst(nest, e));
   };
 
+  if(!vec(func))
+    throw new TypeError('Function must be a vector');
+
   for(let i = func.length - 1; i !== -1; i--)
     expr.unshift(subst(0, func[i]));
 
@@ -163,11 +166,19 @@ function cmpRaw(e1, e2){
   });
 }
 
-function copy(expr){
+function copy(expr, map=new Map()){
   if(!vec(expr)) return expr;
-  const map = expr.map(copy);
-  map.a = expr.a;
-  return map;
+  if(map.has(expr)) return map.get(expr);
+
+  const c = expr.slice();
+
+  c.a = expr.a;
+  map.set(expr, c);
+
+  for(let i = 0; i !== c.length; i++)
+    c[i] = copy(c[i], map);
+
+  return c;
 }
 
 function map(expr, func){

@@ -62,8 +62,7 @@ class Compiler extends CompilerBase{
   ['[list]'](e){
     let args = e.fst.arr;
     if(args.length !== 0) args = args[0];
-    const list = [args, e.elems[2].arr];
-    return list;
+    return [args, e.elems[2].arr];
   }
 
   ['[args]'](e){
