@@ -19,8 +19,50 @@ class Compiler extends CompilerBase{
   }
 
   ['[script]'](e){
+    const {g} = e;
+
     const list = e.elems[1].fst;
-    return new cs.ClosureInvocation(e.g, null, null, list);
+    const idents = new cgs.Map(g);
+    
+    const arr = this.idents;
+    const len = Math.min(arr.length, Interpreter.identsNum);
+    this.idents = null;
+
+    initIdents: {
+      let i = 0;
+
+      if(len === i) break initIdents;
+      idents.set(arr[i++], new cs.Zero(g));
+
+      if(len === i) break initIdents;
+      idents.set(arr[i++], new cs.One(g));
+
+      if(len === i) break initIdents;
+      idents.set(arr[i++], new cs.Equality(g));
+
+      if(len === i) break initIdents;
+      idents.set(arr[i++], new cs.Assign(g));
+
+      if(len === i) break initIdents;
+      idents.set(arr[i++], new cs.Variable(g));
+
+      if(len === i) break initIdents;
+      idents.set(arr[i++], new cs.NewFunction(g));
+
+      if(len === i) break initIdents;
+      idents.set(arr[i++], new cs.Read(g));
+
+      if(len === i) break initIdents;
+      idents.set(arr[i++], new cs.Write(g));
+
+      if(len === i) break initIdents;
+      idents.set(arr[i++], new cs.Eof(g));
+    }
+
+    const inv = new cs.GlobalInvocation(g, idents, list);
+    this.intp.globInv = inv;
+
+    return inv;
   }
 
   ['[list]'](e){

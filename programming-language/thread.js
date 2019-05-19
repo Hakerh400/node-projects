@@ -7,6 +7,9 @@ const SG = require('../serializable-graph');
 const SF = require('./stack-frame');
 const cgs = require('./common-graph-nodes');
 
+const DEBUG = 1;
+const SF_ONLY = !DEBUG;
+
 class Thread extends SG.Node{
   static ptrsNum = this.keys(['sf', 'func', 'err']);
 
@@ -54,7 +57,7 @@ class Thread extends SG.Node{
       return;
     }
 
-    if(!(sf instanceof SF))
+    if(SF_ONLY && !(sf instanceof SF))
       throw new Error(`[TH.TICK] ${SG.getName(sf, 1)} is not a stack frame`);
 
     sf.tick(this);
@@ -88,7 +91,7 @@ class Thread extends SG.Node{
   getFuncs(){ return Array.from(this.funcs); }
 
   call(sf, tco=0){
-    if(!(sf instanceof SF))
+    if(SF_ONLY && !(sf instanceof SF))
       throw new Error(`[TH.CALL] ${SG.getName(sf, 1)} is not a stack frame`);
 
     if(tco && this.sf !== null){

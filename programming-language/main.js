@@ -10,17 +10,17 @@ const Engine = require('./engine');
 setTimeout(main);
 
 function main(){
-  const lang = 'Examinable Invocation Vector';
+  const lang = 'Functional()';
   const src = O.rfs(format.path('-dw/src.txt'), 1);
-  const input = O.rfs(format.path('-dw/input.txt'));
+  const input = O.rfs(format.path('-dw/input.txt'), 1);
 
-  const maxSize = 1e7;
+  const maxSize = 1e8;
   const eng = new Engine(lang, src, maxSize, maxSize - 1e3);
   const io = new O.IO(input);
 
   const onRead = (buf, len) => {
     buf[0] = io.read();
-    return io.hasMore();
+    return io.hasMore;
   };
 
   const onWrite = (buf, len) => {

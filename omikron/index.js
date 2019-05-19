@@ -3,8 +3,8 @@
 const fs = require('fs');
 const path = require('path');
 const Process = require('./process');
-const dirs = require('./dirs.json');
-const passwords = require('./passwords.json');
+const dirs = require('./dirs');
+const passwords = require('./passwords');
 
 const isElectron = 'navigator' in global;
 
