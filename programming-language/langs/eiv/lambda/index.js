@@ -10,6 +10,7 @@ const F = (...a) => (a.a = 1, a);
 module.exports = {
   G, F,
 
+  normalize,
   prepare,
   expand,
 
@@ -29,6 +30,23 @@ module.exports = {
 const invoke = require('./invoke');
 module.exports.invoke = invoke;
 
+function normalize(expr){
+  if(!vec(expr)) return expr;
+  const {a} = expr;
+
+  if(!expr.a){
+    if(expr.length === 1)
+      expr = expr[0];
+  }else{
+    while(vec(expr[0]) && !expr[0].a)
+      expr = expr[0].concat(expr.slice(1));
+  }
+
+  const m = expr.map(normalize);
+  m.a = a;
+  return m;
+}
+
 function prepare(expr){
   expr = copy(expr);
   if(expr.a) expr = G(expr);
@@ -37,6 +55,9 @@ function prepare(expr){
 
 function expand(expr){
   const group = expr.shift();
+
+  if(typeof group !== 'object')
+    throw new TypeError('Group must be an object');
 
   for(let i = group.length - 1; i !== -1; i--)
     expr.unshift(group[i]);
@@ -64,13 +85,13 @@ function reduce(expr, greedy=1, clever=1){
 }
 
 function reduceStep(expr, greedy=1){
-  while(!expr[0].a) expand(expr);
+  while(vec(expr[0]) && !expr[0].a) expand(expr);
 
   if(greedy){
     while(expr.length === 1){
       expr = expr[0];
+      while(vec(expr[0]) && !expr[0].a) expand(expr);
       if(!vec(expr[0])) return 0;
-      while(!expr[0].a) expand(expr);
     }
   }else{
     if(expr.length === 1) return 0;
@@ -96,15 +117,15 @@ function reduceStep(expr, greedy=1){
   return 1;
 }
 
-function cmp(expr1, expr2, greedy=1, clever=1){
+function cmp(expr1, expr2, clever=0){
   if(!clever){
-    const e1 = reduce(expr1, greedy, 0);
-    const e2 = reduce(expr2, greedy, 0);
+    const e1 = reduce(expr1, 1, 0);
+    const e2 = reduce(expr2, 1, 0);
 
     if(e1 !== null && e2 !== null) return cmpRaw(e1, e2);
     if(e1 !== null || e2 !== null) return 0;
 
-    throw new TypeError('Unable to determine the equivalence without the "clever" flag');
+    return cmp(expr1, expr2, 1);
   }
 
   expr1 = prepare(expr1);
@@ -120,8 +141,8 @@ function cmp(expr1, expr2, greedy=1, clever=1){
     let donePrev1 = done1;
     let donePrev2 = done2;
 
-    if(!donePrev1) done1 = !reduceStep(expr1, greedy);
-    if(!donePrev2) done2 = !reduceStep(expr2, greedy);
+    if(!donePrev1) done1 = !reduceStep(expr1);
+    if(!donePrev2) done2 = !reduceStep(expr2);
 
     if(!donePrev1) history1.push(copy(expr1));
     if(!donePrev2) history2.push(copy(expr2));
@@ -161,10 +182,12 @@ function vec(e){
 
 function str(expr, top=0){
   if(!vec(expr)) return String(expr);
-  const p = expr.a || !(top || expr.length === 1) ? expr.a ? ['(', ')'] : ['[', ']'] : ['', ''];
+
+  const p = expr.a || expr.length !== 1 ? expr.a ? ['(', ')'] : ['[', ']'] : ['', ''];
   return `${p[0]}${expr.map(e => str(e, expr.a)).join(' ')}${p[1]}`;
 }
 
 function show(expr){
   log(str(expr));
+  return expr;
 }

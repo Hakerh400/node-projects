@@ -15,6 +15,8 @@ const E = G(F(0, 0), F(P, B0, G(0, 0)));
 module.exports = invoke;
 
 function invoke(src, input){
+  src = L.normalize(src);
+  
   const io = new O.IO(input);
 
   const S = getInput(io);
@@ -27,15 +29,8 @@ function invoke(src, input){
   while(1){
     const bit = L.reduce(G(e, B0), 0, 0);
 
-    let isZero, isOne;
-
-    try{
-      isZero = L.cmp(bit, B0, 0, 0);
-      isOne = L.cmp(bit, B1, 0, 0);
-    }catch{
-      isZero = L.cmp(bit, B0);
-      isOne = L.cmp(bit, B1);
-    }
+    const isZero = L.cmp(bit, B0);
+    const isOne = L.cmp(bit, B1);
 
     if(!(isZero || isOne)) throw new TypeError('Unknown value');
 
