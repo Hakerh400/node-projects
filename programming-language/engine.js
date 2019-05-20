@@ -3,6 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 const O = require('../omikron');
+const format = require('../format');
 const Machine = require('./machine');
 
 class Engine{
@@ -24,10 +25,18 @@ class Engine{
   }
 
   run(ticks=null){
+    const t = Date.now();
+    let n = 0n;
+
     while(this.active){
       if(ticks !== null && ticks-- === 0) break;
       this.tick();
+      n++;
     }
+
+    log(`Time: ${format.time((Date.now() - t) / 1e3 + .5 | 0)}`);
+    log(`Instructions: ${format.num(n)}`);
+    log();
   }
 }
 

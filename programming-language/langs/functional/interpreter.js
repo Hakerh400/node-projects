@@ -383,7 +383,11 @@ class UserlandFunction extends NativeInvocation{
       for(let i = 0; i !== fa.length; i++)
         this.createIdent(fa[i], es.get(i));
 
-      if(this.elem !== null) this.elem.ident = this.getIdent(this.elem.ident);
+      const {elem} = this;
+      if(elem !== null)
+        elem.ident = this.getIdent(elem.ident);
+
+      this.tryToDropPrev();
     }
 
     const {elem} = this;
@@ -397,10 +401,20 @@ class UserlandFunction extends NativeInvocation{
       return;
     }
 
-    const tco = elem.next === null && elem.arg.next === null & 0;
-    if(this.nval) return th.call(elem.val.invoke(elem.arg), tco);
+    if(this.nval) return th.call(elem.val.invoke(elem.arg));
     elem.val = this.gval;
     elem.arg = elem.arg.next;
+  }
+
+  canBeDropped(){
+    const {elem} = this;
+
+    if(elem === null) return 1;
+    if(elem.next !== null) return 0;
+    if(elem.arg === null) return 1;
+    if(elem.arg.next !== null) return 0;
+
+    return 1;
   }
 }
 

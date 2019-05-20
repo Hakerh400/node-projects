@@ -39,6 +39,28 @@ class StackFrame extends SG.Node{
     this.j = s.readInt();
   }
 
+  canBeDropped(){ return 0; }
+
+  drop(){
+    const {prev} = this;
+    this.prev = null;
+    return prev;
+  }
+
+  dropPrev(){
+    const {prev} = this;
+    if(prev === null) return this;
+    this.prev = prev.drop();
+    return this;
+  }
+
+  tryToDropPrev(){
+    const {prev} = this;
+    if(prev === null || !prev.canBeDropped()) return this;
+    this.prev = prev.drop();
+    return this;
+  }
+
   get intp(){ return this.g.intp; }
   get isFunc(){ return 0; }
 
