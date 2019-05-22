@@ -385,7 +385,7 @@ class UserlandFunction extends NativeInvocation{
 
       const {elem} = this;
       if(elem !== null)
-        elem.ident = this.getIdent(elem.ident);
+        elem.val = this.getIdent(elem.ident);
 
       this.tryToDropPrev();
     }

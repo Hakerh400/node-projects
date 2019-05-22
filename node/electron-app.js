@@ -6,7 +6,7 @@ const fs = require('fs');
 const path = require('path');
 const electron = require('electron');
 
-const s = 500;
+const size = 500;
 
 const cwd = process.cwd();
 const mainFile = path.join(cwd, process.argv[2]);
@@ -22,8 +22,8 @@ function main(){
   ipc.on('logRaw', (evt, data) => logRaw(data));
 
   const win = new electron.BrowserWindow({
-    width: s,
-    height: s,
+    width: size,
+    height: size,
     show: false,
     webPreferences: {
       nodeIntegration: true,
@@ -34,8 +34,8 @@ function main(){
     win.webContents.openDevTools();
 
     win.on('ready-to-show', () => {
-      //win.maximize();
-      //win.show();
+      win.maximize();
+      win.show();
     });
   }
 
