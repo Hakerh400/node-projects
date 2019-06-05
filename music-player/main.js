@@ -95,7 +95,7 @@ function aels(){
         case 'p': TEST_MODE ? moveTo('Priority') : prev(); break;
         case 'n': TEST_MODE ? moveTo('Nightcore') : next(); break;
         case 't': TEST_MODE && moveTo('Trance'); break;
-        case 'i': TEST_MODE && moveTo('Improvable'); break;
+        case 'i': moveTo('Improvable'); break;
         case 'o': moveTo('Other'); break;
       }
     }

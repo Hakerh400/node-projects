@@ -124,7 +124,7 @@ class ImageData{
       for(var y = 0, i = 0; y < h; y++){
         for(var x = 0; x < w; x++, i += 4){
           var col = func(x | 0, y | 0, d[i | 0] | 0, d[(i | 0) + 1 | 0] | 0, d[(i | 0) + 2 | 0] | 0);
-          
+
           if(col){
             d[i | 0] = col[0] | 0;
             d[(i | 0) + 1 | 0] = col[1] | 0;

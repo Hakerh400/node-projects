@@ -2,4 +2,4 @@
 cls
 
 cd GIT^_EXCLUDE
-call psi.bat
+call p.bat

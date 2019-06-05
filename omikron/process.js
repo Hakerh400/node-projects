@@ -3,10 +3,14 @@
 const EventEmitter = require('events');
 const Ebuf = require('../ebuf');
 
+let O = null;
+
 class Process extends EventEmitter{
-  constructor(proc){
+  constructor(_O, proc){
     super();
-    
+
+    O = _O;
+
     this.proc = proc;
     this.stdin = new Stdin(this, proc.stdin);
 
@@ -18,7 +22,8 @@ class Process extends EventEmitter{
   }
 
   exit(code){
-    this.proc.exit(code);
+    if(O.isElectron) setTimeout(() => window.close(), 500);
+    else this.proc.exit(code);
   }
 }
 
@@ -39,12 +44,12 @@ class Stdin extends EventEmitter{
   }
 
   ref(){
-    if(this.refs++ === 0)
+    if(this.refs++ === 0 && !O.isElectron)
       this.stdin.ref();
   }
 
   unref(){
-    if(--this.refs === 0)
+    if(--this.refs === 0 && !O.isElectron)
       this.stdin.unref();
   }
 

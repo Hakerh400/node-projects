@@ -8,7 +8,7 @@ module.exports = {
   Canvas: class{
     getContext(){
       const canvas = this;
-      
+
       return new class{
         canvas = canvas;
         fillRect(){}

@@ -15,11 +15,11 @@ logStatus.reset = reset;
 module.exports = logStatus;
 
 function logStatus(f, n=null, type='frame'){
-  if(startTime === null)
-    startTime = Date.now();
+  const now = O.now;
+  if(startTime === null) startTime = now;
 
   const isSizeKnown = n !== null;
-  const dt = Date.now() - startTime;
+  const dt = now - startTime;
   const eta = calcTime(dt, f, n);
 
   const msgs = [

@@ -75,9 +75,9 @@ class ReadlineInterface extends EventEmitter{
       return;
 
     const {lines, ebuf} = this;
-    let {cr} = this;
+    var {cr} = this;
 
-    for(let byte of data){
+    for(var byte of data){
       if(byte === 0x0D){ // CR
         if(cr) this.push();
         else cr = 1;
@@ -128,7 +128,7 @@ class ReadlineInterface extends EventEmitter{
     this.paused = !this.active;
     if(this.paused) return;
 
-    for(let line of this.lines)
+    for(var line of this.lines)
       this.onLine(line);
     this.lines.length = 0;
 
@@ -160,8 +160,8 @@ class ReadlineInterface extends EventEmitter{
 
   push(){
     const {lines, ebuf} = this;
-    
-    const buf = ebuf.getBuf();
+
+    var buf = ebuf.getBuf();
     lines.push(buf.toString());
     ebuf.reset();
   }
