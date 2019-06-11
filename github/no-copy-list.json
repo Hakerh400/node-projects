@@ -3,7 +3,9 @@
   "passwords.json",
 
   "input.txt",
+  "input.js",
   "output.txt",
+  "output.js",
   
   "git-init-temp.bat"
 ]
