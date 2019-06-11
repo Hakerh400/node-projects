@@ -2,4 +2,4 @@
 cls
 
 title Node.js
-call node ./repl/main.js && exit
+call node ./node/main.js && exit
