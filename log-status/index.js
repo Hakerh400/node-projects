@@ -15,7 +15,7 @@ logStatus.reset = reset;
 module.exports = logStatus;
 
 function logStatus(f, n=null, type='frame'){
-  const now = O.now;
+  const now = Date.now();
   if(startTime === null) startTime = now;
 
   const isSizeKnown = n !== null;

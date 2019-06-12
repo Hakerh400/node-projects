@@ -1,12 +1,12 @@
 'use strict';
 
-const HD = 0;
-
 const fs = require('fs');
 const path = require('path');
 const O = require('../omikron');
 const media = require('../media');
 const blank = require('.');
+
+const HD = 0;
 
 const w = HD ? 1920 : 640;
 const h = HD ? 1080 : 480;
@@ -32,7 +32,6 @@ async function main(){
 
   media.renderVideo(outputFile, w, h, fps, fast, (w, h, g, f) => {
     media.logStatus(f, framesNum);
-
     if(f === 1) init(g);
 
     return f !== framesNum;

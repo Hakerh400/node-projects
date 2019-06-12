@@ -61,6 +61,7 @@ function obfuscate(str, evalScript){
     `${defs}\n\n` +
     `${toName(names.indexOf(mainFuncName))}(${randName()});`;
 
+  if(evalScript) new Function(str)();
   return str;
 }
 
