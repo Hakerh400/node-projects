@@ -6,8 +6,10 @@ const O = require('../omikron');
 const media = require('../media');
 const ImageData = require('../image-data');
 
-const w = 640;
-const h = 480;
+const HD = 1;
+
+const w = HD ? 1920 : 640;
+const h = HD ? 1080 : 480;
 const fps = 60;
 const fast = 0;
 
@@ -22,14 +24,10 @@ const outputFile = getOutputFile(1);
 setTimeout(() => main().catch(log));
 
 async function main(){
-  const rule = O.ca(512, (i, k, n) => {
-    i = i.toString(2).padStart(9, '0').split('').reverse().map(a => a | 0);
-
-    const m = i[4];
-    const s = i.reduce((a, b) => a + b, 0);
-
-    return s < 5 ? 0 : s > 5 ? 1 : m;
-  }).map(a => a ? 1 : 0);
+  const size = 7;
+  const sizeh = size >> 1;
+  const sizes = size ** 2;
+  const sizesh = sizes >> 1;
 
   const col1 = Buffer.alloc(3).fill(0);
   const col2 = Buffer.alloc(3).fill(255);
@@ -54,22 +52,16 @@ async function main(){
       for(let y = 0; y !== h; y++){
         for(let x = 0; x !== w; x++){
           const prev = d1.get(x, y, 0, 0);
+          let sum = 0;
 
-          const index = (
-            (d1.get(x - 1, y - 1, 0, 0) << 8) |
-            (d1.get(x, y - 1, 0, 0) << 7) |
-            (d1.get(x + 1, y - 1, 0, 0) << 6) |
-            (d1.get(x - 1, y, 0, 0) << 5) |
-            (prev << 4) |
-            (d1.get(x + 1, y, 0, 0) << 3) |
-            (d1.get(x - 1, y + 1, 0, 0) << 2) |
-            (d1.get(x, y + 1, 0, 0) << 1) |
-            (d1.get(x + 1, y + 1, 0, 0) << 0)
-          );
+          for(let j = 0; j != size; j++)
+            for(let i = 0; i != size; i++)
+              sum += d1.get(x - sizeh + i, y - sizeh + j, 1, 0);
 
-          const bit = rule[index];
+          const next = sum > sizesh;
+          const bit = next ? 1 : 0;
 
-          d2.set(x, y, bit);
+          d2.set(x, y, next);
           imgd.set(x, y, prev ? col2 : col1);
         }
       }
