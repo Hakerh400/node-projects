@@ -7,7 +7,6 @@ const fs = require('fs');
 const path = require('path');
 const cp = require('child_process');
 const O = require('../omikron');
-if(!O.isElectron) return;
 
 const config = require('../config');
 const nodeCanvas = require('../canvas');
