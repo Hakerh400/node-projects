@@ -9,10 +9,12 @@ const skipList = require('./skip-list');
 const strToFind = process.argv.slice(2).join(' ').toLowerCase();
 
 const cwd = __dirname;
-const mainDir = path.join(cwd, '..');
+const nodeDir = path.join(cwd, '..');
+const wampDir = O.dirs.wamp;
 
 const dirs = [
-  mainDir,
+  nodeDir,
+  wampDir,
 ];
 
 const codeExts = [
