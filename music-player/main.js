@@ -8,7 +8,6 @@ const readline = require('../readline');
 const fsRec = require('../fs-rec');
 const setPriority = require('../set-priority');
 
-const TEST_MODE = 0;
 const SUB_FOLDERS = 0;
 const SHUFFLE = 1;
 const SORT = !SHUFFLE;
@@ -16,6 +15,8 @@ const SORT = !SHUFFLE;
 const mainDir = 'D:/Music';
 
 const rl = readline.rl();
+
+let testMode = 0;
 
 let index = 0;
 let playing = 1;
@@ -36,7 +37,10 @@ async function main(){
   const dirs = O.sanl(fs.readFileSync(path.join(mainDir, 'playlist.txt'), 'utf8'));
   const files = [];
 
-  dirs.forEach(dir => {
+  for(const dir of dirs){
+    if(/\btest\b/i.test(dir))
+      testMode = 1;
+
     if(SUB_FOLDERS){
       fsRec.processFilesSync(dir, d => {
         if(d.processed) return;
@@ -54,7 +58,7 @@ async function main(){
           files.push(fp);
       }
     }
-  });
+  }
 
   if(SORT) O.sortAsc(files);
   if(SHUFFLE) O.shuffle(files);
@@ -92,9 +96,9 @@ function aels(){
         case 'r': restart(); break;
         case 'q': exit(); break;
 
-        case 'p': TEST_MODE ? moveTo('Priority') : prev(); break;
-        case 'n': TEST_MODE ? moveTo('Nightcore') : next(); break;
-        case 't': TEST_MODE && moveTo('Trance'); break;
+        case 'p': testMode ? moveTo('Priority') : prev(); break;
+        case 'n': testMode ? moveTo('Nightcore') : next(); break;
+        case 't': testMode && moveTo('Trance'); break;
         case 'i': moveTo('Improvable'); break;
         case 'o': moveTo('Other'); break;
       }
@@ -133,7 +137,7 @@ function play(){
       }
 
       proc = null;
-      waiting = TEST_MODE && !(wasPaused || wasRestarted || shouldExit);
+      waiting = testMode && !(wasPaused || wasRestarted || shouldExit);
 
       O.while(() => waiting).then(() => {
         waiting = 0;
