@@ -4,16 +4,8 @@ const fs = require('fs');
 const path = require('path');
 const Process = require('./process');
 
-const VERSION = '12.0.0';
-
 const isElectron = 'navigator' in global;
 if(isElectron) initElectron();
-
-const ver = process.version.slice(1);
-if(ver !== VERSION){
-  console.log(`Process version must be ${VERSION} (found ${ver})`);
-  throw '';
-}
 
 const cwd = __dirname;
 const omikronScript = path.join(cwd, '../../../wamp/www/framework.js');

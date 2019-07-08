@@ -22,6 +22,11 @@ const codeExts = [
   'js',
   'php',
   'sql',
+  'c',
+  'cc',
+  'cpp',
+  'h',
+  'hh',
 ];
 
 const textExts = codeExts.concat([
