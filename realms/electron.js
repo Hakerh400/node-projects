@@ -32,8 +32,8 @@ function main(){
 
     O.time = f / fps * 1e3;
     O.animFrame();
+    
     return f !== framesNum;
-
   }, () => O.exit(), {canvas});
 }
 
