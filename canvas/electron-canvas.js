@@ -19,8 +19,5 @@ function createCanvas(w, h){
   canvas.width = w;
   canvas.height = h;
 
-  const g = canvas.getContext('2d');
-  canvas.toBuffer = () => Buffer.from(g.getImageData(0, 0, w, h).data);
-
   return canvas;
 }

@@ -268,7 +268,7 @@ function renderImage(output, w, h, frameFunc=O.nop, exitCb=O.nop){
 
   frameFunc(w, h, g);
 
-  end(proc, canvas.toBuffer('raw'));
+  end(proc, toBuffer(g));
 }
 
 function editImage(input, output, frameFunc=O.nop, exitCb=O.nop){
@@ -291,16 +291,18 @@ function editImage(input, output, frameFunc=O.nop, exitCb=O.nop){
         putBuffer(g, buff);
         frameFunc(w, h, g, proc2 !== null ? proc2.stdout : null);
 
-        if(proc2 !== null) end(proc2, canvas.toBuffer('raw'));
+        if(proc2 !== null) end(proc2, toBuffer(g));
       }
     });
   });
 }
 
-function renderVideo(output, w, h, fps, fast, frameFunc=O.nop, exitCb=O.nop, vflip=0){
+function renderVideo(output, w, h, fps, fast, frameFunc=O.nop, exitCb=O.nop, options={}){
   output = format.path(output);
 
-  var canvas = createCanvas(w, h);
+  const vflip = O.has(options, 'vflip') ? options.vflip : 0;
+  const canvas = O.has(options, 'canvas') ? options.canvas : createCanvas(w, h);
+
   var g = canvas.getContext('2d');
   var f = 0;
 
@@ -326,7 +328,7 @@ function renderVideo(output, w, h, fps, fast, frameFunc=O.nop, exitCb=O.nop, vfl
       end(proc);
       return;
     }else{
-      buf = canvas.toBuffer('raw');
+      buf = toBuffer(g);
     }
 
     if(value) write(proc, buf, frame);
@@ -367,7 +369,7 @@ function editVideo(input, output, w2, h2, fps, fast, frameFunc=O.nop, exitCb=O.n
         buff = Buffer.alloc(0);
         frameFunc(w1, h1, w2, h2, g1, g2, ++f, framesNum, proc2.stdout);
 
-        write(proc2, g2.canvas.toBuffer('raw'), () => proc1.stdout.resume());
+        write(proc2, g2.toBuffer(g), () => proc1.stdout.resume());
       }
 
       if(b !== null) buff = b;
@@ -425,7 +427,7 @@ function presentation(output, w, h, fps, fast, exitCb=O.nop){
       var buff;
 
       if(value instanceof Buffer) buff = value;
-      else if(value === true) buff = canvas.toBuffer('raw');
+      else if(value === true) buff = toBuffer(g);
 
       if(value) write(proc, buff, r);
       else end(proc, buff, r);
@@ -790,4 +792,13 @@ function color(col){
 
 function setPriorityForNewProcs(pr=1){
   priority = pr;
+}
+
+function toBuffer(g){
+  const {canvas} = g;
+
+  const w = canvas.width;
+  const h = canvas.height;
+
+  return Buffer.from(g.getImageData(0, 0, w, h).data.buffer);
 }
