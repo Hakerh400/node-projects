@@ -5,6 +5,6 @@ const path = require('path');
 const O = require('../omikron');
 const blank = require('.');
 
-setTimeout(main);
+main();
 
 function main(){}

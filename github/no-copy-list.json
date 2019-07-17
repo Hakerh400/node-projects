@@ -2,6 +2,10 @@
   "package-lock.json",
   "passwords.json",
 
+  "source.txt",
+  "source.js",
+  "src.txt",
+  "src.js",
   "input.txt",
   "input.js",
   "output.txt",

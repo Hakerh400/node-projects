@@ -12,9 +12,9 @@ class Engine{
 
   run(){
     const {src, input} = this;
+    const io = new O.IO(input, 0, 1);
 
     const reg = /[01\?]*(?:\.[01\?]*){2}|[01\?]*\.[01\?]*(?:\s*\()?|\)|[01\?]+/g;
-    const io = new O.IO(input, 0, 1);
     const insts = [[]];
 
     const f = a => a !== '' ? [`0${a.slice(0, a.length - 1)}`, O.last(a)] : ['', '0'];
