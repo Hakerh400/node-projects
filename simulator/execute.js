@@ -74,7 +74,6 @@ function execute(bot, inp, out, ticks){
 
       const [x, y, z] = getCoords(inp);
 
-      // if(x||y||z)debugger;
       out.push(0);
       out.push(bot.canSee(x, y, z));
 
