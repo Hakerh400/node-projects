@@ -30,16 +30,14 @@ class Engine{
 
     const classes = [];
 
-    let type, str, gs;
-
-    const err = msg => {
+    const err = (str, msg) => {
       O.exit(`${str}\n^\n\nSyntaxError: ${msg}`);
     };
 
-    for([type, str, gs] of O.tokenize(src, tokens)){
+    for(const [type, str, gs] of O.tokenize(src, tokens)){
       switch(type){
         case 'classDef':
-          if(scopes.class) err('Nested classes are not allowed');
+          if(scopes.class) err(str, 'Nested classes are not allowed');
           classes.push({
             name: gs[0],
             extends: gs[1],
@@ -48,13 +46,13 @@ class Engine{
           break;
 
         case 'method':
-          if(!scopes.class) err('Method must be defined inside a class');
-          if(scopes.method) err('Nested methods are not allowed');
+          if(!scopes.class) err(str, 'Method must be defined inside a class');
+          if(scopes.method) err(str, 'Nested methods are not allowed');
           scopes.method = 1;
           break;
 
         case 'if':
-          if(!scopes.method) err('If statement can appear only inside a method');
+          if(!scopes.method) err(str, 'If statement can appear only inside of a method');
           log(gs);
           scopes.if++;
           break;
@@ -67,7 +65,7 @@ class Engine{
           }else if(scopes.class){
             scopes.class = 0;
           }else{
-            err('Unmatched closed brace');
+            err(str, 'Unmatched closed brace');
           }
           break;
       }
