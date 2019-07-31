@@ -101,6 +101,7 @@ function aels(){
         case 't': testMode && moveTo('Trance'); break;
         case 'i': moveTo('Improvable'); break;
         case 'o': moveTo('Other'); break;
+        case 's': moveTo('Spam'); break;
       }
     }
   });

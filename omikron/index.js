@@ -8,7 +8,7 @@ const isElectron = 'navigator' in global;
 if(isElectron) initElectron();
 
 const cwd = __dirname;
-const omikronScript = path.join(cwd, '../../../wamp/www/framework.js');
+const omikronScript = path.join(cwd, '../../../wamp/www/omikron.js');
 
 const dirs = {
   omikron: omikronScript,
