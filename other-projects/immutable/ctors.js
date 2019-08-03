@@ -4,6 +4,12 @@ const fs = require('fs');
 const path = require('path');
 const O = require('../../omikron');
 
+const valTypes = O.enum([
+  'ATTRIBUTE',
+  'METHOD',
+  'CONSTRUCTOR',
+]);
+
 class Class{
   constructor(name, ext=null){
     this.name = name;
@@ -58,18 +64,20 @@ class Method{
     this.isNative = 0;
     this.nativeFunc = null;
 
-    this.stats = [];
+    this.idents = O.arr2obj(args.map(a => a.name), null);
   }
 
   setNativeFunc(func){
     this.isNative = 1;
     this.nativeFunc = func;
   }
-}
 
-class IfStatement{
-  constructor(method, ident){
+  hasIdent(name){
+    return name in this.idents;
+  }
 
+  setIdent(name, val){
+    this.idents[name] = val;
   }
 }
 
@@ -88,6 +96,8 @@ class Object{
 }
 
 module.exports = {
+  valTypes,
+
   Class,
   Method,
   Identifier,
