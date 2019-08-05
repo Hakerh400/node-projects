@@ -19,7 +19,7 @@ class Engine{
 
     const keywords = [
       'class', 'extends', 'static', 'new',
-      'return', 'this', 'super',
+      'return', 'this', 'super', 'is',
     ];
 
     const keywordsObj = O.arr2obj(keywords);

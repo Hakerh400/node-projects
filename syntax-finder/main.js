@@ -9,12 +9,11 @@ const skipList = require('./skip-list');
 const strToFind = process.argv.slice(2).join(' ').toLowerCase();
 
 const cwd = __dirname;
-const nodeDir = path.join(cwd, '..');
-const wampDir = O.dirs.wamp;
 
 const dirs = [
-  nodeDir,
-  wampDir,
+  path.join(cwd, '..'),
+  O.dirs.wamp,
+  path.join(cwd, '../../Esolangs'),
 ];
 
 const codeExts = [

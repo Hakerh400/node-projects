@@ -5,90 +5,83 @@
     "node": {
       "name": "node-projects",
       "src": "C:/Projects/JavaScript",
-      "dest": "C:/Github/node-projects"
+      "dest": "C:/GitHub/node-projects"
     },
 
     "wamp": {
       "name": "browser-projects",
       "src": "C:/wamp/www",
-      "dest": "C:/Github/browser-projects"
+      "dest": "C:/GitHub/browser-projects"
     },
 
     "cpp": {
       "name": "cpp-projects",
       "src": "C:/Projects/C++",
-      "dest": "C:/Github/cpp-projects"
-    },
-
-    "O": {
-      "name": "omikron",
-      "src": "C:/Projects/Omikron",
-      "dest": "C:/Github/omikron",
-      "includeAll": true
+      "dest": "C:/GitHub/cpp-projects"
     },
 
     "io": {
       "name": "%user%.github.io",
       "src": "C:/wamp/www",
-      "dest": "C:/Github/%user%.github.io"
+      "dest": "C:/GitHub/%user%.github.io"
     },
 
     "func": {
       "name": "functional",
       "src": "C:/Projects/Esolang/functional",
-      "dest": "C:/Github/functional"
+      "dest": "C:/GitHub/functional"
     },
 
     "fsy": {
       "name": "functasy",
       "src": "C:/Projects/Functasy",
-      "dest": "C:/Github/functasy",
+      "dest": "C:/GitHub/functasy",
       "includeAll": true
     },
 
     "bt": {
       "name": "bitwise-trance",
       "src": "C:/Projects/Bitwise Trance",
-      "dest": "C:/Github/bt",
+      "dest": "C:/GitHub/bt",
       "includeAll": true
     },
 
     "tasks": {
       "name": "tasks",
       "src": "C:/Projects/Tasks",
-      "dest": "C:/Github/tasks",
+      "dest": "C:/GitHub/tasks",
       "newLine": true
     },
 
     "land": {
       "name": "land",
       "src": "C:/Users/Thomas/eclipse-workspace/land/src/land",
-      "dest": "C:/Github/land"
+      "dest": "C:/GitHub/land"
     },
 
     "ublock": {
       "name": "ultra-block",
       "src": "C:/Extensions/Ultra Block",
-      "dest": "C:/Github/ultra-block"
+      "dest": "C:/GitHub/ultra-block"
     },
 
     "e8": {
       "name": "e8kkzbh",
       "src": "C:/Projects/e8kkzbh",
-      "dest": "C:/Github/e8kkzbh"
+      "dest": "C:/GitHub/e8kkzbh"
     },
 
     "e8io": {
       "owner": "e8kkzbh",
       "name": "e8kkzbh.github.io",
       "src": "C:/Projects/e8kkzbh.github.io",
-      "dest": "C:/Github/e8kkzbh.github.io"
+      "dest": "C:/GitHub/e8kkzbh.github.io"
     },
 
     "test": {
       "name": "test",
       "src": "C:/Projects/Test",
-      "dest": "C:/Github/test"
+      "dest": "C:/GitHub/test"
     }
   }
 }
