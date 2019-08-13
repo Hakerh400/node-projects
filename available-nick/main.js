@@ -21,13 +21,13 @@ const debug = require('../debug');
 (async () => {
   const chars = O.chars('a', 26) + O.chars('0', 10) + '-';
   const num = (chars.length + 1) ** 4;
-  const start = 1211;
+  const start = 1958;
 
   for(let i = start; i <= num; i++){
     const nick = arrOrder.str(chars, i);
     if(/^\-|\-$|\-\-/.test(nick)) continue;
 
-    media.logStatus(i - start + 1, num - start + 1, `nick[${i}] (${nick})`);
+    media.logStatus(i - start + 1, num - start + 1, `nick ${i} (${nick})`);
 
     const found = await new Promise((resolve, reject) => {
       https.get(`https://github.com/${nick}`, res => {
