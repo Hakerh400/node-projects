@@ -4,12 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const O = require('../omikron');
 
-module.exports = {
-  arr,
-  id,
-};
-
-function arr(vals, id, dir=0){
+const arr = (vals, id, dir=0) => {
   const n = BigInt(vals.length);
   const arr = [];
 
@@ -24,9 +19,26 @@ function arr(vals, id, dir=0){
   }
 
   return arr;
-}
+};
 
-function id(vals, arr, dir=0){
+const str = (chars, id, dir=0) => {
+  const n = BigInt(chars.length);
+  let str = '';
+
+  id = BigInt(id);
+
+  while(id !== 0n){
+    let val = chars[--id % n];
+    id /= n;
+
+    if(dir) str += val;
+    else str = val + str;
+  }
+
+  return str;
+};
+
+const id = (vals, arr, dir=0) => {
   const n = BigInt(vals.length);
   const len = arr.length;
   const map = new Map();
@@ -47,4 +59,10 @@ function id(vals, arr, dir=0){
   }
 
   return id;
-}
+};
+
+module.exports = {
+  arr,
+  str,
+  id,
+};

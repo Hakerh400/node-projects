@@ -11,8 +11,9 @@ const strToFind = process.argv.slice(2).join(' ').toLowerCase();
 const cwd = __dirname;
 
 const dirs = [
-  path.join(cwd, '..'),
   O.dirs.wamp,
+  path.join(cwd, '..'),
+  path.join(cwd, '../../Omikron'),
   path.join(cwd, '../../Esolangs'),
 ];
 
