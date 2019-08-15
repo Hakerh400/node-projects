@@ -21,7 +21,7 @@ const debug = require('../debug');
 (async () => {
   const chars = O.chars('a', 26) + O.chars('0', 10) + '-';
   const num = (chars.length + 1) ** 4;
-  const start = 1958;
+  const start = 2328;
 
   for(let i = start; i <= num; i++){
     const nick = arrOrder.str(chars, i);
