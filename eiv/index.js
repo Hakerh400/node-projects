@@ -298,7 +298,7 @@ class Engine{
     let flag = 0;
 
     while(1){
-      if(0) simpleReduce: while(1){
+      simpleReduce: while(1){
         if(isEtaRedex(mainExpr)){
           mainExpr = etaReduce(mainExpr);
           continue;
@@ -375,7 +375,7 @@ class Engine{
       }
 
       mainExpr = [2, mainExpr, copy(one)];
-      
+
       const b0 = isZero(bit);
       const b1 = isOne(bit);
       if(!(b0 || b1)) throw new TypeError('Invalid output');

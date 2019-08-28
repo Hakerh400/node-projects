@@ -13,7 +13,10 @@ const DISPLAY_SIGINT = 1;
 const KILL_ON_SECOND_SIGINT = 1;
 const ELECTRON_NIGHTLY = 1;
 
-const NODE_FLAGS = ['--expose-gc'];
+const NODE_FLAGS = [
+  '--expose-gc',
+  '--experimental-report',
+];
 
 const cwd = __dirname;
 const electronAppScript = path.join(cwd, 'electron-app.js');
