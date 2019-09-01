@@ -11,8 +11,6 @@ class Engine{
   }
 
   run(){
-    O.obj = () => ({});
-
     const src = this.src.toString();
     const io = new O.IO(this.input, 0, 1);
 
