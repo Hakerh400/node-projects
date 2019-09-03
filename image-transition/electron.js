@@ -2,6 +2,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const electron = require('electron');
 const O = require('../omikron');
 const media = require('../media');
 
@@ -9,10 +10,11 @@ const SPACE_SIZE = 200;
 const OFFSET = 20;
 
 const images = [
-  '-dw/grid/images/01/01.png',
-  '-dw/grid/images/01/02.png',
-  '-dw/grid/images/01/03.png',
+  '-dw/grid/images/03/1.png',
+  '-dw/grid/images/03/2.png',
 ];
+
+const outputFile = '-dw/grid/images/connect-internal-shapes-1.png';
 
 setTimeout(() => main().catch(log));
 
@@ -26,7 +28,7 @@ async function main(){
   const h = Math.max(imgs.reduce((h, img) => Math.max(h, img.height), 0) + OFFSET * 2, SPACE_SIZE);
   const [wh, hh] = [w, h].map(a => a / 2);
 
-  media.renderImage('-img/1.png', w, h, (w, h, g) => {
+  media.renderImage(outputFile, w, h, (w, h, g) => {
     g.fillStyle = '#fff';
     g.fillRect(0, 0, w, h);
 

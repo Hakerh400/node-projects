@@ -4,6 +4,7 @@ const HD = 0;
 
 const fs = require('fs');
 const path = require('path');
+const electron = require('electron');
 const O = require('../omikron');
 const media = require('../media');
 const format = require('../format');
