@@ -16,7 +16,13 @@ setTimeout(main);
 function main(){
   const src = O.rfs(srcFile);
   const input = O.rfs(inputFile);
-  const output = esolang(src, input);
+  // const output = esolang(src, input);
 
-  O.wfs(outputFile, output);
+  for(let i = 0; i !== 256; i++){
+    const j = esolang(src, Buffer.from([i]))[0];
+    log(String(parseInt(O.rev(i.toString(2).padStart(8, '0')), 2)).padEnd(5), j);
+  }
+
+  // log(output.toString());
+  // O.wfs(outputFile, output);
 }
