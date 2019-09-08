@@ -6,7 +6,7 @@ const O = require('../omikron');
 const Memory = require('./memory');
 
 const run = (src, input) => {
-  src = src.toString();
+  src = src.toString().replace(/\/\/[^\r\n]*/g, ' ');
 
   const err = msg => {
     O.exit(`ERROR: ${msg}`);
@@ -21,7 +21,7 @@ const run = (src, input) => {
   O.tokenize(src, [
     /\s+/, O.nop,
 
-    /(\<?[01]*\>?)\s*\-\s*([01]*);?/, (str, gs) => {
+    /(\<?[01]*\>?)\s*\-\s*([01]*)\s*;?/, (str, gs) => {
       const find = gs[0];
       const replace = gs[1];
 
@@ -40,8 +40,8 @@ const run = (src, input) => {
 
   const io = new O.IO(input, 0, 1);
   const inputBits = [0, 0];
-  // while(io.read()) inputBits.push(io.read());
-  for(const bit of input) inputBits.push(bit & 1);
+  // for(const bit of input) inputBits.push(bit & 1);
+  while(io.read()) inputBits.push(io.read());
 
   const mem = new Memory(inputBits);
   mem.replace(transfs);
@@ -53,8 +53,8 @@ const run = (src, input) => {
   for(const bit of mem)
     io.write(bit);
 
-  // return io.getOutput();
-  return mem.toString();;
+  // return mem.toString();;
+  return io.getOutput();
 };
 
 module.exports = run;

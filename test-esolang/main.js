@@ -16,36 +16,40 @@ setTimeout(main);
 function main(){
   const src = O.rfs(srcFile);
   const input = O.rfs(inputFile);
-  // const output = esolang(src, input);
+  const output = esolang(src, input);
 
-  const tests = [
-    '', '0', '1',
-    '00', '01', '10', '11',
-    '000', '001', '010', '011',
-    '100', '101', '110', '111',
-  ].concat(O.ca(20, () => {
-    return O.ca(O.randInt(5, .7), () => O.rand(2)).join('');
-  }));
+  const ok = output.toString('binary') === O.lf(src.toString('binary'));
+  if(ok) log(`OK`);
+  else log(output.toString());
 
-  const func = test => {
-    return test.replace(/[01]/g, a => a ^ 1);
-  };
+  // const tests = [
+  //   '', '0', '1',
+  //   '00', '01', '10', '11',
+  //   '000', '001', '010', '011',
+  //   '100', '101', '110', '111',
+  // ].concat(O.ca(20, () => {
+  //   return O.ca(O.randInt(10, .9), () => O.rand(2)).join('');
+  // }));
 
-  for(const test of tests){
-    const expected = func(test);
-    const actual = esolang(src, test).toString();
+  // const func = test => {
+  //   return test;
+  // };
+
+  // for(const test of tests){
+  //   const expected = func(test);
+  //   const actual = esolang(src, test).toString();
     
-    if(actual !== expected){
-      log([
-        ['Input', test],
-        ['Expected', expected],
-        ['Actual', actual],
-      ].map(([a, b]) => {
-        return `${`${a}:`.padEnd(10)} ${b}`;
-      }).join('\n'))
-      break;
-    }
-  }
+  //   if(actual !== expected){
+  //     log([
+  //       ['Input', test],
+  //       ['Expected', expected],
+  //       ['Actual', actual],
+  //     ].map(([a, b]) => {
+  //       return `${`${a}:`.padEnd(10)} ${b}`;
+  //     }).join('\n'))
+  //     break;
+  //   }
+  // }
 
   // log(output.toString());
   // O.wfs(outputFile, output);
