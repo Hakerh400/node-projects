@@ -40,8 +40,8 @@ const run = (src, input) => {
 
   const io = new O.IO(input, 0, 1);
   const inputBits = [0, 0];
-  // for(const bit of input) inputBits.push(bit & 1);
-  while(io.read()) inputBits.push(io.read());
+  for(const bit of input) inputBits.push(bit & 1);
+  // while(io.read()) inputBits.push(io.read());
 
   const mem = new Memory(inputBits);
   mem.replace(transfs);
@@ -53,8 +53,8 @@ const run = (src, input) => {
   for(const bit of mem)
     io.write(bit);
 
-  // return mem.toString();;
-  return io.getOutput();
+  return mem.toString();
+  // return io.getOutput();
 };
 
 module.exports = run;
