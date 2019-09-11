@@ -243,8 +243,9 @@ function spawnProc(name, args=[], options=O.obj(), opts=O.obj()){
       return;
     }
 
-    if(data.toString('utf8').includes('Terminate batch job (Y/N)?'))
-      return;
+    const str = data.toString('utf8');
+    if(str.includes('Terminate batch job (Y/N)?')) return;
+    if(str.includes('Building the projects in this solution one at a time.')) return;
 
     logSync(data);
   }
