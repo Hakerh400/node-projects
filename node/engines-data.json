@@ -15,6 +15,9 @@
     }, {
       "name": "python",
       "ext": "py"
+    }, {
+      "name": "haskell",
+      "ext": "hs"
     }
   ]
 }

@@ -5,6 +5,7 @@
     "php": "C:/wamp/bin/php/php7.2.4/php.exe",
     "mysql": "C:/wamp/bin/mysql/mysql5.7.21/bin/mysql.exe",
     "python": "%userprofile%/AppData/Local/Programs/Python/Python37/python.exe",
+    "haskell": "C:/Program Files/Haskell Platform/8.6.5/bin/ghc.exe",
     "ffmpeg": "C:/Program Files/FFmpeg/bin/original/ffmpeg.exe"
   },
 

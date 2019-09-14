@@ -64,6 +64,8 @@ async function processInput(str){
       await spawn('node');
     }else if(files.includes(engs.python.script)){
       await spawn('python');
+    }else if(files.includes(engs.haskell.script)){
+      await spawn('haskell');
     }else{
       str = 't';
       break loadScript;
@@ -193,7 +195,7 @@ function onInput(str){
   })().catch(log);
 }
 
-function spawnProc(name, args=[], options=O.obj(), opts=O.obj()){
+function spawnProc(file, args=[], options=O.obj(), opts=O.obj(), cb=null){
   opts = Object.assign({
     skipFirst: 0,
     killOnSigint: 0,
@@ -201,7 +203,7 @@ function spawnProc(name, args=[], options=O.obj(), opts=O.obj()){
     ignore: 0,
   }, opts);
 
-  const proc = cp.spawn(name, args, {
+  const proc = cp.spawn(file, args, {
     cwd: currDir,
     ...options,
   });
@@ -272,7 +274,7 @@ function spawnProc(name, args=[], options=O.obj(), opts=O.obj()){
     O.proc.stdin.removeListener('end', onEnd);
     O.proc.stdin.unref();
 
-    onProcExit(exitCode);
+    onProcExit(exitCode, cb);
   }
 
   function write(buf){
@@ -282,9 +284,9 @@ function spawnProc(name, args=[], options=O.obj(), opts=O.obj()){
   }
 }
 
-async function onProcExit(code=null){
-  if(code !== null && DISPLAY_EXIT_CODE)
-    log(code);
+function onProcExit(code=null, cb=null){
+  if(cb !== null) cb(code);
+  else if(code !== null && DISPLAY_EXIT_CODE) log(code);
 
   proc = null;
   askForInput();
