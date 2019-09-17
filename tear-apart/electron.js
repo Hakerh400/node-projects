@@ -60,7 +60,7 @@ function main(){
       let len = 0;
       let dir = -1;
 
-      const force = Math.atan2(y - hh, x - wh) - O.pih;
+      const force = Math.atan2(y - hh, x - wh) - pih;
       const fdir = ((force - pi34 + O.randf(pi)) / pi2 % 1 + 1) % 1 * 4 | 0;
 
       if(grid.get(x, y - 1) === 0){
