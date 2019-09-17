@@ -1,6 +1,6 @@
 'use strict';
 
-const HD = 1;
+const HD = 0;
 
 const fs = require('fs');
 const path = require('path');
@@ -15,7 +15,7 @@ const fast = !HD;
 
 const [wh, hh] = [w, h].map(a => a >> 1);
 
-const duration = 60 * 10;
+const duration = 10;
 const framesNum = fps * duration;
 
 const outputFile = getOutputFile();
