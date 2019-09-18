@@ -11,7 +11,7 @@ const media = require('../media');
 const {abs, atan2} = Math;
 const {pi4, pih, pi, pi34, pi2} = O;
 
-const SIZE = 175;
+const SIZE = HD ? 175 : 75;
 
 const w = HD ? 1920 : 640;
 const h = HD ? 1080 : 480;
@@ -20,7 +20,7 @@ const fast = !HD;
 
 const [wh, hh] = [w, h].map(a => a >> 1);
 
-const duration = 60 * 10;
+const duration = HD ? 60 * 20 : 60 * 2;
 const framesNum = fps * duration;
 
 const outputFile = getOutputFile();
@@ -29,13 +29,13 @@ function main(){
   const ents = [];
 
   const grid = new O.Grid(w, h, (x, y) => {
-    const dist = O.dist(x, y, SIZE, hh);
-    const b = dist < SIZE;
+    const dist = O.dist(x, y, SIZE * 1.5, hh);
+    const a = abs((atan2(y - hh, x - SIZE) / pi2 + .5) * 10 % 2 - 1);
+
+    const b = dist < SIZE * (a * .5 + 1);
     if(!b) return 0;
 
-    const c1 = dist / SIZE;
-    const c2 = abs((atan2(y - hh, x - SIZE) / pi2 + .5) * 10 % 2 - 1);
-    const col = O.hsv((c1 + c2) / 2);
+    const col = O.hsv((dist / SIZE + a) / 2);
     const ent = new Entity(x, y, col);
     ents.push(ent);
     return ent;
@@ -64,8 +64,8 @@ function main(){
       let len = 0;
       let dir = -1;
 
-      const force = Math.atan2(y - hh, x - wh) - pih;
-      const fdir = ((force - pi4 * .5 + O.randf(pi) - pih) / pi2 % 1 + 1) % 1 * 4 | 0;
+      const force = Math.atan2(y - hh, x - wh) + (f / (fps * 60) % 1 < (1 - 10 / 60) ? 0 : pi);
+      const fdir = ((force - pi34 + O.randf(pi)) / pi2 % 1 + 1) % 1 * 4 | 0;
 
       if(grid.get(x, y - 1) === 0){
         dirs[len++] = 0;
