@@ -8,8 +8,10 @@ const electron = require('electron');
 const O = require('../omikron');
 const media = require('../media');
 
-const {atan2} = Math;
+const {abs, atan2} = Math;
 const {pi4, pih, pi, pi34, pi2} = O;
+
+const SIZE = 175;
 
 const w = HD ? 1920 : 640;
 const h = HD ? 1080 : 480;
@@ -27,11 +29,13 @@ function main(){
   const ents = [];
 
   const grid = new O.Grid(w, h, (x, y) => {
-    const dist = O.dist(x, y, 100, hh);
-    const b = dist < 100;
+    const dist = O.dist(x, y, SIZE, hh);
+    const b = dist < SIZE;
     if(!b) return 0;
 
-    const col = O.hsv(dist / 100);
+    const c1 = dist / SIZE;
+    const c2 = abs((atan2(y - hh, x - SIZE) / pi2 + .5) * 10 % 2 - 1);
+    const col = O.hsv((c1 + c2) / 2);
     const ent = new Entity(x, y, col);
     ents.push(ent);
     return ent;
@@ -61,7 +65,7 @@ function main(){
       let dir = -1;
 
       const force = Math.atan2(y - hh, x - wh) - pih;
-      const fdir = ((force - pi34 + O.randf(pi)) / pi2 % 1 + 1) % 1 * 4 | 0;
+      const fdir = ((force - pi4 * .5 + O.randf(pi) - pih) / pi2 % 1 + 1) % 1 * 4 | 0;
 
       if(grid.get(x, y - 1) === 0){
         dirs[len++] = 0;
