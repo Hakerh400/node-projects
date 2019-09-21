@@ -5,7 +5,7 @@ const path = require('path');
 const O = require('../omikron');
 const obfuscate = require('./obfuscate');
 
-const EVAL = 0;
+const EVAL = 1;
 
 const cwd = __dirname;
 const fin = path.join(cwd, 'input.js');
@@ -15,7 +15,8 @@ setTimeout(main);
 
 function main(){
   const input = O.rfs(fin, 1);
-  const output = obfuscate(input, EVAL);
+  const output = obfuscate(input);
 
   O.wfs(fout, output);
+  if(EVAL) new Function(output)();
 }

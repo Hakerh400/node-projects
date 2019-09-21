@@ -9,7 +9,7 @@ const identChars = O.chars('a', 26, 1).concat(O.chars('A', 26, 1));
 
 module.exports = obfuscate;
 
-function obfuscate(str, evalScript){
+function obfuscate(str){
   str = str.replace(/ +/g, '');
 
   let defs = O.sanl(str).filter(a => a.length !== 0);
@@ -40,28 +40,30 @@ function obfuscate(str, evalScript){
   const toName = id => getName(idStart + id);
   const randName = () => toName(O.rand(len));
 
-  defs = defs.map((def, i) => {
-    def = def.replace(/\(\)/g, () => {
+  defs = defs.map((def) => {
+    return def.replace(/\(\)/g, () => {
       return `(${randName()})`;
     });
-
-    def += i !== len - 1 ? ',' : ';';
-
-    return def;
   });
-
-  defs = defs.join('\n');
 
   names.forEach((name, i) => {
-    defs = defs.split(name).join(toName(i));
+    defs.forEach((def, j) => {
+      defs[j] = def.split(name).join(toName(i));
+    });
   });
+
+  defs = `${O.shuffle(defs).sort((def1, def2) => {
+    const len1 = def1.length;
+    const len2 = def2.length;
+    if(len2 < len1) return 1;
+    return -1;
+  }).join(',\n')};`;
 
   str = `'use strict';\n\n` +
     `const\n` +
     `${defs}\n\n` +
     `${toName(names.indexOf(mainFuncName))}(${randName()});`;
 
-  if(evalScript) new Function(str)();
   return str;
 }
 

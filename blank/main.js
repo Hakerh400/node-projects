@@ -5,8 +5,6 @@ const path = require('path');
 const O = require('../omikron');
 const blank = require('.');
 
-const main = () => {
-  
-};
+const main = () => {};
 
 main();
