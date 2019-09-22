@@ -30,31 +30,30 @@ const gen = () => {
   const prog = new Program();
 
   const base = new Class('Base');
-  {
-    const ctor = new Constructor(base);
-    ctor.addArg(new Argument('arg1', base.toType()));
-    ctor.addArg(new Argument('arg2', base.toType()));
-    base.addCtor(ctor);
-  }
+  base.addDefCtor();
   prog.addClass(base);
 
-  const main = new Class('Main', base.toType());
+  const main = new Class('Main', [], base.toType());
+  const T = new GenericType('T');
   {
-    const gtype = new GenericType('T');
-    main.addGeneric(gtype);
+    main.addGeneric(T);
     const ctor = new Constructor(main);
     ctor.addArg(new Argument('abc', main.toType([base.toType()])));
     ctor.addArg(new Argument('ddd', base.toType()));
-    ctor.addArg(new Argument('test', main.toType([main.toType([gtype])])));
+    ctor.addArg(new Argument('test', main.toType([main.toType([T])])));
     main.addCtor(ctor);
+    ctor.addStat(new SuperConstructor());
   }
   prog.addClass(main);
 
-  const gtype = new GenericType('X');
-  const test = new Class('Test', main.toType([gtype]));
-  test.addGeneric(gtype);
+  const X = new GenericType('X');
+  const test = new Class('Test', [], main.toType([X]));
+  test.addGeneric(X);
   test.addDefCtor();
   prog.addClass(test);
+
+  main.addAttrib(new Attribute('attr1', T));
+  main.addAttrib(new Attribute('attr2', test.toType([T])));
 
   return prog;
 };
@@ -93,13 +92,13 @@ class Program extends Element{
 }
 
 class Class extends Element{
-  constructor(name, ext=null){
+  constructor(name, generics=[], ext=null){
     super();
 
     this.name = name;
     this.ext = check(ext, Type, 1);
 
-    this.generics = [];
+    this.generics = checkArr(generics, GenericType);
     this.attribs = [];
     this.ctor = null;
     this.methods = [];
@@ -111,12 +110,29 @@ class Class extends Element{
   get hasCtor(){ return this.ctor !== null; }
 
   addGeneric(generic){
-    this.generics.push(check(generic, Type));
+    this.generics.push(check(generic, GenericType));
+    return this;
+  }
+
+  addExt(ext){
+    eq(this.ext, null);
+    check(ext, Type);
+
+    let {cref} = ext;
+
+    while(1){
+      ok(cref !== this);
+      const {ext} = cref;
+      if(ext === null) break;
+      cref = ext.cref;
+    }
+
+    this.ext = ext;
     return this;
   }
 
   addAttrib(attrib){
-    this.attribs.push(checkStr(attrib));
+    this.attribs.push(check(attrib, Attribute));
     return this;
   }
 
@@ -142,7 +158,7 @@ class Class extends Element{
       for(const arg of cref.ctor.args)
         ctor.addArg(new Argument(arg.name, arg.type.template(generics, templates)));
 
-      ctor.block.addStat(new SuperConstructor(ctor.args.map(arg => new Identifier(arg.name))));
+      ctor.addStat(new SuperConstructor(ctor.args.map(arg => new Identifier(arg.name))));
     }
 
     return this.addCtor(ctor);
@@ -233,6 +249,20 @@ class GenericType extends Type{
 
   toString(src){
     return src.add(this.name);
+  }
+}
+
+class Attribute extends Element{
+  constructor(name, type){
+    super();
+
+    this.name = checkStr(name);
+    this.type = check(type, Type);
+  }
+
+  toString(src){
+    const {name, type} = this;
+    return src.add(type).add(' ').add(name).add(';');
   }
 }
 
