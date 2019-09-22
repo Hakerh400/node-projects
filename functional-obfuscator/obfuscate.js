@@ -40,7 +40,7 @@ function obfuscate(str){
   const toName = id => getName(idStart + id);
   const randName = () => toName(O.rand(len));
 
-  defs = defs.map((def) => {
+  defs = defs.map(def => {
     return def.replace(/\(\)/g, () => {
       return `(${randName()})`;
     });

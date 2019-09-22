@@ -4,6 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const O = require('../omikron');
 const randOop = require('.');
+const Source = require('./source');
 
 const LANG = 'java';
 
@@ -13,7 +14,7 @@ const srcFile = path.join(testDir, `src.${LANG}`);
 
 const main = () => {
   const prog = randOop.gen();
-  const src = prog.toString(LANG);
+  const src = prog.toString(new Source(LANG));
   O.wfs(srcFile, src);
 };
 
