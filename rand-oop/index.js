@@ -31,7 +31,7 @@ const gen = () => {
 
   const base = new Class('Base');
   {
-    const ctor = new Constructor('Base', base.toType());
+    const ctor = new Constructor(base);
     ctor.addArg(new Argument('arg1', base.toType()));
     ctor.addArg(new Argument('arg2', base.toType()));
     base.addCtor(ctor);
@@ -42,7 +42,7 @@ const gen = () => {
   {
     const gtype = new GenericType('T');
     main.addGeneric(gtype);
-    const ctor = new Constructor('Main', main.toType([gtype]));
+    const ctor = new Constructor(main);
     ctor.addArg(new Argument('abc', main.toType([base.toType()])));
     ctor.addArg(new Argument('ddd', base.toType()));
     ctor.addArg(new Argument('test', main.toType([main.toType([gtype])])));
@@ -59,8 +59,20 @@ const gen = () => {
   return prog;
 };
 
-class Program{
+class Element{
+  eq(elem){
+    if(O.proto(this) !== O.proto(elem)) return 0;
+    const lang = 'java';
+    return new Source(lang).add(this).toString() === new Source(lang).add(elem).toString();
+  }
+
+  toString(src){ O.virtual('toString'); }
+}
+
+class Program extends Element{
   constructor(){
+    super();
+
     this.classes = [];
   }
 
@@ -80,8 +92,10 @@ class Program{
   }
 }
 
-class Class{
+class Class extends Element{
   constructor(name, ext=null){
+    super();
+
     this.name = name;
     this.ext = check(ext, Type, 1);
 
@@ -119,8 +133,7 @@ class Class{
 
   addDefCtor(){
     const {name, ext} = this;
-
-    const ctor = new Constructor(name, this.toTemplateType());
+    const ctor = new Constructor(this);
 
     if(this.isExt){
       const {cref, templates} = ext;
@@ -128,9 +141,9 @@ class Class{
 
       for(const arg of cref.ctor.args)
         ctor.addArg(new Argument(arg.name, arg.type.template(generics, templates)));
-    }
 
-    ctor.block.addStat(new SuperConstructor(ctor.args.map(arg => new Identifier(arg.name))));
+      ctor.block.addStat(new SuperConstructor(ctor.args.map(arg => new Identifier(arg.name))));
+    }
 
     return this.addCtor(ctor);
   }
@@ -174,9 +187,8 @@ class Class{
   }
 }
 
-class Type{
+class Type extends Element{
   template(generics, templates){ O.virtual('template'); }
-  toString(src){ O.virtual('toString'); }
 }
 
 class ClassType extends Type{
@@ -224,8 +236,11 @@ class GenericType extends Type{
   }
 }
 
-class Method{
-  constructor(name, ret=null, args=[]){
+class Method extends Element{
+  constructor(cref, name, ret=null, args=[]){
+    super();
+
+    this.cref = cref;
     this.name = checkStr(name);
     this.args = checkArr(args, Argument);
     this.ret = check(ret, Type, 1);
@@ -237,6 +252,11 @@ class Method{
   get isGetter(){ return 0; }
   get isSetter(){ return 0; }
   get isSetterOrSetter(){ return this.isGetter || this.isSetter; }
+
+  addStat(stat){
+    if(stat instanceof SuperConstructor) ok(this.isCtor);
+    this.block.addStat(stat);
+  }
 
   addArg(arg){
     this.args.push(check(arg, Argument));
@@ -263,16 +283,28 @@ class Method{
 }
 
 class Constructor extends Method{
-  constructor(name, ret){
-    ok(ret !== null);
-    super(name, ret);
+  constructor(cref){
+    super(cref, cref.name, cref.toTemplateType());
+
+    this.superCtor = null;
+  }
+
+  addStat(stat){
+    if(stat instanceof SuperConstructor){
+      ok(this.superCtor === null);
+      this.superCtor = stat;
+    }
+
+    super.addStat(stat);
   }
 
   get isCtor(){ return 1; }
 }
 
-class Argument{
+class Argument extends Element{
   constructor(name, type){
+    super();
+
     this.name = checkStr(name);
     this.type = check(type, Type);
   }
@@ -283,8 +315,10 @@ class Argument{
   }
 }
 
-class Blobk{
+class Blobk extends Element{
   constructor(forceBraces=0, ifEmpty='{}'){
+    super();
+
     this.stats = [];
     this.forceBraces = forceBraces;
     this.ifEmpty = ifEmpty;
@@ -322,9 +356,8 @@ class Blobk{
   }
 }
 
-class Statement{
+class Statement extends Element{
   watsSpace(){ return 0; }
-  toString(src){ O.virtual('toString'); }
 }
 
 class SuperConstructor extends Statement{
@@ -352,8 +385,10 @@ class SuperConstructor extends Statement{
   }
 }
 
-class Identifier{
+class Identifier extends Element{
   constructor(name){
+    super();
+
     this.name = checkStr(name);
   }
 
