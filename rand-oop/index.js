@@ -200,6 +200,8 @@ class ClassType extends Type{
     eq(this.templates.len, cref.generics.len);
   }
 
+  get name(){ return this.cref.name; }
+
   template(generics, templates){
     return new ClassType(this.cref, this.templates.map(type => type.template(generics, templates)));
   }
@@ -259,7 +261,7 @@ class Method extends Element{
     this.name = check.str(name);
     this.args = new Collection(args, Argument);
     this.ret = check.elem(ret, Type, 1);
-    this.block = new Blobk(1);
+    this.block = new Block(1);
   }
 
   get isVoid(){ return this.ret === null; }
@@ -330,11 +332,11 @@ class Argument extends Element{
   }
 }
 
-class Blobk extends Element{
+class Block extends Element{
   constructor(forceBraces=0, ifEmpty='{}'){
     super();
 
-    this.stats = new Collection(Statement);
+    this.stats = new Collection([], Statement, 0);
     this.forceBraces = forceBraces;
     this.ifEmpty = ifEmpty;
   }
