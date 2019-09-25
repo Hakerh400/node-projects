@@ -4,27 +4,12 @@ const fs = require('fs');
 const path = require('path');
 const assert = require('assert');
 const O = require('../omikron');
+const check = require('./check');
 const Source = require('./source');
+const Collection = require('./collection');
 
 const ok = assert.ok;
 const eq = assert.strictEqual;
-
-const check = (obj, type, allowNull=0) => {
-  if(allowNull && obj === null) return obj;
-  ok(obj instanceof type);
-  return obj;
-};
-
-const checkStr = obj => {
-  ok(typeof obj === 'string');
-  return obj;
-};
-
-const checkArr = (arr, type) => {
-  ok(Array.isArray(arr));
-  for(const obj of arr) check(obj, type);
-  return arr;
-};
 
 const gen = () => {
   const prog = new Program();
@@ -72,20 +57,20 @@ class Program extends Element{
   constructor(){
     super();
 
-    this.classes = [];
+    this.classes = new Collection(Class);
   }
 
   addClass(cref){
-    this.classes.push(check(cref, Class));
+    this.classes.add(cref);
   }
 
   toString(src){
     const {classes} = this;
 
-    for(let i = 0; i !== classes.length; i++){
+    classes.forEach((cref, i) => {
       if(i !== 0) src.add('\n\n');
-      src.add(classes[i]);
-    }
+      src.add(cref);
+    });
 
     return src;
   }
@@ -96,27 +81,27 @@ class Class extends Element{
     super();
 
     this.name = name;
-    this.ext = check(ext, Type, 1);
+    this.ext = check.elem(ext, Type, 1);
 
-    this.generics = checkArr(generics, GenericType);
-    this.attribs = [];
+    this.generics = new Collection(generics, GenericType);
+    this.attribs = new Collection(Attribute);
     this.ctor = null;
-    this.methods = [];
+    this.methods = new Collection(Method);
   }
 
   get isBase(){ return this.ext === null; }
   get isExt(){ return this.ext !== null; }
-  get isGeneric(){ return this.generics.length !== 0; }
+  get isGeneric(){ return this.generics.len !== 0; }
   get hasCtor(){ return this.ctor !== null; }
 
   addGeneric(generic){
-    this.generics.push(check(generic, GenericType));
+    this.generics.add(generic);
     return this;
   }
 
   addExt(ext){
     eq(this.ext, null);
-    check(ext, Type);
+    check.elem(ext, Type);
 
     let {cref} = ext;
 
@@ -132,7 +117,7 @@ class Class extends Element{
   }
 
   addAttrib(attrib){
-    this.attribs.push(check(attrib, Attribute));
+    this.attribs.add(attrib);
     return this;
   }
 
@@ -143,7 +128,7 @@ class Class extends Element{
     eq(ctor.name, this.name);
     eq(ctor.ret.cref, this);
     
-    this.ctor = check(ctor, Method);
+    this.ctor = check.elem(ctor, Method);
     return this;
   }
 
@@ -166,7 +151,7 @@ class Class extends Element{
 
   addMethod(method){
     ok(!method.isCtor);
-    this.methods.push(check(method, Method));
+    this.methods.add(method);
     return this;
   }
 
@@ -194,7 +179,7 @@ class Class extends Element{
     src.add('{').inc().add('\n');
 
     for(const attrib of attribs) src.add(attrib).add('\n');
-    if(attribs.length !== 0) src.add('\n');
+    if(attribs.len !== 0) src.add('\n');
 
     src.add(ctor).add('\n');
     for(const method of methods) src.add('\n').add(method).add('\n');
@@ -210,9 +195,9 @@ class Type extends Element{
 class ClassType extends Type{
   constructor(cref, templates=[]){
     super();
-    this.cref = check(cref, Class);
-    this.templates = checkArr(templates, Type);
-    eq(templates.length, cref.generics.length);
+    this.cref = check.elem(cref, Class);
+    this.templates = new Collection(templates, Type);
+    eq(this.templates.len, cref.generics.len);
   }
 
   template(generics, templates){
@@ -236,7 +221,7 @@ class ClassType extends Type{
 class GenericType extends Type{
   constructor(name){
     super();
-    this.name = checkStr(name);
+    this.name = check.str(name);
   }
 
   template(generics, templates){
@@ -244,7 +229,7 @@ class GenericType extends Type{
     const index = generics.findIndex(gen => gen.name === name);
 
     if(index === -1) return new GenericType(name);
-    return templates[index].template(generics, templates);
+    return templates.get(index).template(generics, templates);
   }
 
   toString(src){
@@ -256,8 +241,8 @@ class Attribute extends Element{
   constructor(name, type){
     super();
 
-    this.name = checkStr(name);
-    this.type = check(type, Type);
+    this.name = check.str(name);
+    this.type = check.elem(type, Type);
   }
 
   toString(src){
@@ -271,9 +256,9 @@ class Method extends Element{
     super();
 
     this.cref = cref;
-    this.name = checkStr(name);
-    this.args = checkArr(args, Argument);
-    this.ret = check(ret, Type, 1);
+    this.name = check.str(name);
+    this.args = new Collection(args, Argument);
+    this.ret = check.elem(ret, Type, 1);
     this.block = new Blobk(1);
   }
 
@@ -289,7 +274,7 @@ class Method extends Element{
   }
 
   addArg(arg){
-    this.args.push(check(arg, Argument));
+    this.args.add(arg);
     return this;
   }
 
@@ -303,10 +288,10 @@ class Method extends Element{
 
     src.add(name).add('(');
 
-    for(let i = 0; i !== args.length; i++){
+    args.forEach((arg, i) => {
       if(i !== 0) src.add(', ');
-      src.add(args[i]);
-    }
+      src.add(arg);
+    });
 
     return src.add(')').add(block);
   }
@@ -335,8 +320,8 @@ class Argument extends Element{
   constructor(name, type){
     super();
 
-    this.name = checkStr(name);
-    this.type = check(type, Type);
+    this.name = check.str(name);
+    this.type = check.elem(type, Type);
   }
 
   toString(src){
@@ -349,17 +334,17 @@ class Blobk extends Element{
   constructor(forceBraces=0, ifEmpty='{}'){
     super();
 
-    this.stats = [];
+    this.stats = new Collection(Statement);
     this.forceBraces = forceBraces;
     this.ifEmpty = ifEmpty;
   }
 
-  get isEmpty(){ return this.stats.length === 0; }
-  get isSngl(){ return this.stats.length === 1; }
-  get isMult(){ return this.stats.length > 1; }
+  get isEmpty(){ return this.stats.len === 0; }
+  get isSngl(){ return this.stats.len === 1; }
+  get isMult(){ return this.stats.len > 1; }
 
   addStat(stat){
-    this.stats.push(check(stat, Statement));
+    this.stats.add(stat);
   }
 
   toString(src){
@@ -378,7 +363,7 @@ class Blobk extends Element{
       }
 
       src.add(stat);
-      if(i !== stats.length - 1 && wantsSpace) src.add('\n');
+      if(i !== stats.len - 1 && wantsSpace) src.add('\n');
     });
 
     if(braces) src.dec().add('\n}');
@@ -393,11 +378,11 @@ class Statement extends Element{
 class SuperConstructor extends Statement{
   constructor(args=[]){
     super();
-    this.args = checkArr(args, Identifier);
+    this.args = new Collection(args, Identifier);
   }
 
   addArg(arg){
-    this.args.push(check(arg, Identifier));
+    this.args.add(arg);
     return this;
   }
 
@@ -419,7 +404,7 @@ class Identifier extends Element{
   constructor(name){
     super();
 
-    this.name = checkStr(name);
+    this.name = check.str(name);
   }
 
   toString(src){
