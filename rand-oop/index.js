@@ -7,6 +7,8 @@ const O = require('../omikron');
 const check = require('./check');
 const Source = require('./source');
 const Collection = require('./collection');
+const rand = require('./rand');
+const names = require('./names');
 
 const ok = assert.ok;
 const eq = assert.strictEqual;
@@ -14,31 +16,51 @@ const eq = assert.strictEqual;
 const gen = () => {
   const prog = new Program();
 
-  const base = new Class('Base');
-  base.addDefCtor();
-  prog.addClass(base);
+  const baseClass = new Class('Base');
+  baseClass.addDefCtor();
+  prog.addClass(baseClass);
 
-  const main = new Class('Main', [], base.toType());
-  const T = new GenericType('T');
-  {
-    main.addGeneric(T);
-    const ctor = new Constructor(main);
-    ctor.addArg(new Argument('abc', main.toType([base.toType()])));
-    ctor.addArg(new Argument('ddd', base.toType()));
-    ctor.addArg(new Argument('test', main.toType([main.toType([T])])));
-    main.addCtor(ctor);
-    ctor.addStat(new SuperConstructor());
+  const toType = (cref, gens=0, iter=1) => {
+    return cref.toType(O.ca(cref.generics.len, () => {
+      while(1){
+        if(gens.len !== 0 && rand.pickGeneric) return gens.randElem();
+
+        const cref = prog.classes.randElem();
+        if(iter === 1 && cref.generics.len !== 0) continue;
+
+        return toType(cref, gens, iter + 1);
+      }
+    }));
+  };
+
+  for(const i of O.repeatg(rand.classesNum)){
+    const gensArr = O.ca(rand.genericsNum, i => new GenericType(names.generic(i)));
+    const cref = new Class(names.class(i), gensArr);
+    const gens = cref.generics;
+
+    const ext = toType(prog.classes.randElem(), cref.generics);
+    cref.addExt(ext);
+
+    const randType = () => {
+      if(gens.len !== 0 && rand.pickGeneric) return gens.randElem();
+      return toType(prog.classes.randElem(), cref.generics)
+    };
+
+    if(ext.templates.len === 0 && O.rand(2)){
+      const ctor = new Constructor(cref);
+
+      for(const i of O.repeatg(rand.argsNum))
+        ctor.addArg(new Argument(names.arg(i), randType()));
+
+      ctor.addStat(new InlineComment('Non-default'));
+      // ctor.addStat(new SuperConstructor());
+      cref.addCtor(ctor);
+    }else{
+      cref.addDefCtor();
+    }
+
+    prog.addClass(cref);
   }
-  prog.addClass(main);
-
-  const X = new GenericType('X');
-  const test = new Class('Test', [], main.toType([X]));
-  test.addGeneric(X);
-  test.addDefCtor();
-  prog.addClass(test);
-
-  main.addAttrib(new Attribute('attr1', T));
-  main.addAttrib(new Attribute('attr2', test.toType([T])));
 
   return prog;
 };
@@ -171,7 +193,10 @@ class Class extends Element{
 
     if(this.isGeneric){
       src.add('<');
-      for(const generic of generics) src.add(generic);
+      generics.forEach((generic, i) => {
+        if(i !== 0) src.add(', ');
+        src.add(generic);
+      });
       src.add('>');
     }
 
@@ -189,6 +214,7 @@ class Class extends Element{
 }
 
 class Type extends Element{
+  get isGeneric(){ return 0; }
   template(generics, templates){ O.virtual('template'); }
 }
 
@@ -196,11 +222,9 @@ class ClassType extends Type{
   constructor(cref, templates=[]){
     super();
     this.cref = check.elem(cref, Class);
-    this.templates = new Collection(templates, Type);
+    this.templates = new Collection(templates, Type, 0);
     eq(this.templates.len, cref.generics.len);
   }
-
-  get name(){ return this.cref.name; }
 
   template(generics, templates){
     return new ClassType(this.cref, this.templates.map(type => type.template(generics, templates)));
@@ -212,7 +236,10 @@ class ClassType extends Type{
 
     if(cref.isGeneric){
       src.add('<');
-      for(const template of templates) src.add(template);
+      templates.forEach((template, i) => {
+        if(i !== 0) src.add(', ');
+        src.add(template);
+      });
       src.add('>');
     }
 
@@ -226,12 +253,18 @@ class GenericType extends Type{
     this.name = check.str(name);
   }
 
+  get isGeneric(){ return 1; }
+
   template(generics, templates){
     const {name} = this;
     const index = generics.findIndex(gen => gen.name === name);
 
     if(index === -1) return new GenericType(name);
-    return templates.get(index).template(generics, templates);
+
+    const template = templates.get(index);
+    if(template.isGeneric) return new GenericType(template.name)
+
+    return template.template(generics, templates);
   }
 
   toString(src){
@@ -375,6 +408,41 @@ class Block extends Element{
 
 class Statement extends Element{
   watsSpace(){ return 0; }
+}
+
+class Comment extends Statement{
+  constructor(text){
+    super();
+    this.text = text;
+  }
+}
+
+class InlineComment extends Comment{
+  constructor(text){
+    super(text);
+  }
+
+  toString(src){
+    const {text} = this;
+    return src.add('// ').add(text);
+  }
+}
+
+class MultilineComment extends Comment{
+  constructor(text){
+    super(text);
+  }
+
+  toString(src){
+    const {text} = this;
+    if(text === '') return src.add('/**/');
+
+    src.add('/*\n').inc();
+    for(const line of O.sanl(text)) src.add(line).add('\n');
+    src.dec().add('*/');
+
+    return src;
+  }
 }
 
 class SuperConstructor extends Statement{

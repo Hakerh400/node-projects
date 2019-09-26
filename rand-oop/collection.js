@@ -58,6 +58,11 @@ class Collection{
     return this;
   }
 
+  randElem(){
+    ok(this.len !== 0);
+    return O.randElem(this.arr);
+  }
+
   toArr(){
     return this.arr.slice();
   }
