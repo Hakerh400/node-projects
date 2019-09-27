@@ -43,7 +43,7 @@ const gen = () => {
 
     const randType = () => {
       if(gens.len !== 0 && rand.pickGeneric) return gens.randElem();
-      return toType(prog.classes.randElem(), cref.generics)
+      return toType(prog.classes.randElem(), cref.generics);
     };
 
     if(ext.templates.len === 0 && O.rand(2)){
