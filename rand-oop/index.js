@@ -53,7 +53,6 @@ const gen = () => {
         ctor.addArg(new Argument(names.arg(i), randType()));
 
       ctor.addStat(new InlineComment('Non-default'));
-      // ctor.addStat(new SuperConstructor());
       cref.addCtor(ctor);
     }else{
       cref.addDefCtor();
