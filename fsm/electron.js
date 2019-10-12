@@ -9,26 +9,30 @@ const fsm = require('.');
 const Node = require('./node');
 
 const w = 1920;
-const h = 1080;
+const h = 937;
 
 const main = () => {
   O.iw = w;
   O.ih = h;
 
-  const ns = O.ca(8, () => new Node());
+  const ns = O.ca(20, () => new Node());
 
-  ns[1].set(ns[1], ns[3]);
-  ns[2].set(ns[7], ns[4]).final = 1;
-  ns[3].set(ns[6], ns[5]);
-  ns[4].set(ns[1], ns[4]).final = 1;
-  ns[5].set(ns[1], ns[4]);
-  ns[6].set(ns[7], ns[6]).final = 1;
-  ns[7].set(ns[7], ns[3]);
+  ns[0].set(...[1, 4].map(a => ns[a])).final = 0;
+  ns[1].set(...[4, 2].map(a => ns[a])).final = 0;
+  ns[2].set(...[4, 3].map(a => ns[a])).final = 0;
+  ns[3].set(...[4, 4].map(a => ns[a])).final = 1;
+  ns[4].set(...[4, 4].map(a => ns[a])).final = 0;
+  ns[5].set(...[0, 6].map(a => ns[a])).final = 0;
+  ns[6].set(...[0, 7].map(a => ns[a])).final = 0;
+  ns[7].set(...[0, 8].map(a => ns[a])).final = 0;
+  ns[8].set(...[0, 9].map(a => ns[a])).final = 0;
+  ns[9].set(...[0, 9].map(a => ns[a])).final = 0;
 
-  const a = fsm.reduce(ns[1]);
-  a[1].name = 'C';
-  a[1][1].name = 'D';
-  a[1][0].name = 'B';
+  ns[3].epsilons.push(...[0].map(a => ns[a]));
+
+  const a = fsm.norm(ns[0]);
+
+  log(fsm.genStr(a));
 
   O.glob.graph = a;
 
@@ -41,4 +45,5 @@ const main = () => {
     then(() => O.exit()).catch(log);
 }
 
-main();
+try{ main(); }
+catch(err){ O.exit(err); }
