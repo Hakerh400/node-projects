@@ -15,24 +15,35 @@ const main = () => {
   O.iw = w;
   O.ih = h;
 
-  const ns = O.ca(20, () => new Node());
+  const reg = /ABC|DE/;
 
-  ns[0].set(...[1, 4].map(a => ns[a])).final = 0;
-  ns[1].set(...[4, 2].map(a => ns[a])).final = 0;
-  ns[2].set(...[4, 3].map(a => ns[a])).final = 0;
-  ns[3].set(...[4, 4].map(a => ns[a])).final = 1;
-  ns[4].set(...[4, 4].map(a => ns[a])).final = 0;
-  ns[5].set(...[0, 6].map(a => ns[a])).final = 0;
-  ns[6].set(...[0, 7].map(a => ns[a])).final = 0;
-  ns[7].set(...[0, 8].map(a => ns[a])).final = 0;
-  ns[8].set(...[0, 9].map(a => ns[a])).final = 0;
-  ns[9].set(...[0, 9].map(a => ns[a])).final = 0;
+  // const ns = O.ca(100, () => new Node());
 
-  ns[3].epsilons.push(...[0].map(a => ns[a]));
+  // ns[0].set(...[1, 3].map(a => ns[a])).final = 0;
+  // ns[1].set(...[2, 2].map(a => ns[a])).final = 0;
+  // ns[2].set(...[3, 3].map(a => ns[a])).final = 0;
+  // ns[3].set(...[3, 3].map(a => ns[a])).final = 1;
+  // ns[4].set(...[9, 5].map(a => ns[a])).final = 0;
+  // ns[5].set(...[9, 6].map(a => ns[a])).final = 0;
+  // ns[6].set(...[7, 9].map(a => ns[a])).final = 0;
+  // ns[7].set(...[8, 9].map(a => ns[a])).final = 0;
+  // ns[8].set(...[9, 9].map(a => ns[a])).final = 0;
+  // ns[9].set(...[9, 9].map(a => ns[a])).final = 0;
 
-  const a = fsm.norm(ns[0]);
+  // ns[20].set(...[9, 9].map(a => ns[a])).final = 0;
+  // ns[21].set(...[9, 9].map(a => ns[a])).final = 0;
+  // ns[22].set(...[9, 9].map(a => ns[a])).final = 0;
+  // ns[23].set(...[9, 9].map(a => ns[a])).final = 0;
+  // ns[24].set(...[4, 9].map(a => ns[a])).final = 0;
 
-  log(fsm.genStr(a));
+  // ns[3].epsilons.push(...[20].map(a => ns[a]));
+
+  // const a = fsm.norm(ns[0]);
+
+  const a = fsm.reg(reg);
+
+  for(const i of O.repeatg(20))
+    log(fsm.genStr(a));
 
   O.glob.graph = a;
 

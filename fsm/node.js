@@ -1,14 +1,27 @@
 'use strict';
 
-class Node{
-  constructor(name='', ptr0=null, ptr1=null, epsilons=[], final=0){
-    this.name = name;
+const fs = require('fs');
+const path = require('path');
+const O = require('../omikron');
 
+const er = O.obj();
+er[0] = er[1] = er;
+er.epsilons = [];
+er.final = 0;
+
+class Node{
+  constructor(ptr0=er, ptr1=er, epsilons=[], final=0){
     this[0] = ptr0;
     this[1] = ptr1;
     
+    this.name = '';
     this.epsilons = epsilons;
     this.final = final;
+  }
+
+  setName(name){
+    this.name = name;
+    return this;
   }
 
   set(ptr0=null, ptr1=null){

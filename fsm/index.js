@@ -9,6 +9,8 @@ const Node = require('./node');
 const chars = O.chars('A', 26);
 
 const fsm = {
+  Node,
+
   closure(root){
     const stack = [root];
     const closure = new Set(stack);
@@ -48,7 +50,7 @@ const fsm = {
 
   rename(root){
     const [ns, indices] = fsm.nodes(root);
-    const nsNew = ns.map((n, i) => new Node(O.sfcc(O.cc('A') + i)));
+    const nsNew = ns.map((n, i) => new Node().setName(O.sfcc(O.cc('A') + i)));
 
     ns.forEach((node, i) => {
       const nodeNew = nsNew[i];
@@ -136,17 +138,7 @@ const fsm = {
   },
 
   det(root){
-    const [ns, indices] = fsm.nodes(fsm.rename(root));
-
-    const errNode = new Node();
-    errNode.set(errNode, errNode);
-    ns.push(errNode);
-    indices.set(errNode, ns.length - 1);
-
-    for(const node of ns){
-      if(node[0] === null) node[0] = errNode;
-      if(node[1] === null) node[1] = errNode;
-    }
+    const [ns, indices] = fsm.nodes(root);
 
     const closure = fsm.closure(root);
     const stack = [closure];
@@ -203,14 +195,15 @@ const fsm = {
     return fsm.det(root);
   },
 
-  genStr(root){
+  genBuf(root){
     const [ns, indices] = fsm.nodes(fsm.norm(root));
+    root = ns[0];
 
     const errIndex = ns.findIndex(n => !n.final && n[0] === n && n[1] === n);
     const errNode = errIndex !== -1 ? ns[errIndex] : null;
     if(root === errNode) return null;
 
-    let str = '';
+    const io = new O.IO();
     let node = ns[0];
 
     while(!(node.final && O.rand(2))){
@@ -219,12 +212,20 @@ const fsm = {
       if(!(a0 || a1)) break;
 
       const ptri = !a0 ? 1 : !a1 ? 0 : O.rand(2);
-      str += ptri;
+      io.write(ptri);
       node = node[ptri];
     }
 
-    return str;
+    return io.getOutput();
+  },
+
+  genStr(root){
+    const buf = fsm.genBuf(root);
+    if(buf === null) return null;
+    return buf.toString();
   },
 };
 
 module.exports = fsm;
+
+fsm.reg = require('./regex');
