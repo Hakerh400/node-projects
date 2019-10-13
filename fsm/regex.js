@@ -56,7 +56,7 @@ module.exports = reg => {
         start = new Node().epsilons.push(start, n1);
         end.epsilons.push(endNew);
         n2.epsilons.push(endNew);
-        end = endNew
+        end = endNew;
         break;
     }
   }
