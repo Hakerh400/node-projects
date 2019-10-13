@@ -7,8 +7,8 @@ const O = require('../omikron');
 const {min, max, abs} = Math;
 
 const main = () => {
-  const times = [1, 2, 5, 10];
-  const m = 2;
+  const times = [1, 1, 1, 2, 2, 3, 4, 5, 5, 5];
+  const m = 4;
 
   const [path, cost] = findMinTime(times, m);
 
@@ -25,12 +25,12 @@ const findMinTime = (array, mMain) => {
   const sumMain = array.length;
   const elemsNum = elems.length;
 
-  const f = (path, sum, m) => {
+  const rec1 = (path, sum, m) => {
     const nums = path[path.length - 2];
     const sum1 = sum - m;
     const end = sum1 === 0;
 
-    const rec = (es, sum, remaining, index) => {
+    const rec2 = (es, sum, remaining, index) => {
       let pathBest = null;
       let costBest = null;
 
@@ -68,8 +68,8 @@ const findMinTime = (array, mMain) => {
         const sum2 = sum1 + !end;
         const mMax = min(sum2, mMain);
 
-        for(let m1 = 2; m1 <= mMax; m1++){
-          const [path1, cost1] = f(pathNew, sum2, m1);
+        for(let m1 = min(mMax, 2); m1 <= mMax; m1++){
+          const [path1, cost1] = rec1(pathNew, sum2, m1);
 
           if(pathBest === null || cost1 < costBest){
             pathBest = path1;
@@ -88,7 +88,7 @@ const findMinTime = (array, mMain) => {
         const elemsNew = es.slice();
         elemsNew[index] = n;
 
-        const [pathNew, costNew] = rec(elemsNew, sum - available, remaining - n, index + 1);
+        const [pathNew, costNew] = rec2(elemsNew, sum - available, remaining - n, index + 1);
 
         if(pathBest === null || costNew < costBest){
           pathBest = pathNew;
@@ -99,7 +99,7 @@ const findMinTime = (array, mMain) => {
       return [pathBest, costBest];
     };
 
-    return rec([], sum, m, 0);
+    return rec2([], sum, m, 0);
   };
 
   let path = null;
@@ -107,8 +107,8 @@ const findMinTime = (array, mMain) => {
 
   const mMax = min(sumMain, mMain);
 
-  for(let m1 = 2; m1 <= mMax; m1++){
-    const [path1, cost1] = f([numsMain.slice(), null], sumMain, m1);
+  for(let m1 = min(mMax, 2); m1 <= mMax; m1++){
+    const [path1, cost1] = rec1([numsMain.slice(), null], sumMain, m1);
 
     if(path === null || cost1 < cost){
       path = path1;
