@@ -8,7 +8,9 @@ const {min, max, abs} = Math;
 
 const main = () => {
   const times = [1, 2, 5, 10];
-  const [path, cost] = findMinTime(times, 2);
+  const m = 2;
+
+  const [path, cost] = findMinTime(times, m);
 
   log(`\nTime: ${cost}`);
   log(`\nPath:\n`);
@@ -17,16 +19,15 @@ const main = () => {
     log(`${a.join(' ')}${b !== null ? ` (${b})` : ''}`);
 };
 
-const findMinTime = (array, m) => {
+const findMinTime = (array, mMain) => {
   const elems = O.undupe(array);
   const numsMain = elems.map(a => array.filter(b => b === a).length);
   const sumMain = array.length;
   const elemsNum = elems.length;
 
-  const f = (path, sum) => {
+  const f = (path, sum, m) => {
     const nums = path[path.length - 2];
-    const m1 = min(sum, m);
-    const sum1 = sum - m1;
+    const sum1 = sum - m;
     const end = sum1 === 0;
 
     const rec = (es, sum, remaining, index) => {
@@ -64,8 +65,19 @@ const findMinTime = (array, m) => {
         const costTotal = cost + costRet;
         if(end) return [pathNew, costTotal];
 
-        const [path1, cost1] = f(pathNew, sum1 + !end);
-        return [path1, costTotal + cost1];
+        const sum2 = sum1 + !end;
+        const mMax = min(sum2, mMain);
+
+        for(let m1 = 2; m1 <= mMax; m1++){
+          const [path1, cost1] = f(pathNew, sum2, m1);
+
+          if(pathBest === null || cost1 < costBest){
+            pathBest = path1;
+            costBest = cost1;
+          }
+        }
+
+        return [pathBest, costTotal + costBest];
       }
 
       const available = nums[index];
@@ -87,10 +99,23 @@ const findMinTime = (array, m) => {
       return [pathBest, costBest];
     };
 
-    return rec([], sum, m1, 0);
+    return rec([], sum, m, 0);
   };
 
-  const [path, cost] = f([numsMain.slice(), null], sumMain);
+  let path = null;
+  let cost = null;
+
+  const mMax = min(sumMain, mMain);
+
+  for(let m1 = 2; m1 <= mMax; m1++){
+    const [path1, cost1] = f([numsMain.slice(), null], sumMain, m1);
+
+    if(path === null || cost1 < cost){
+      path = path1;
+      cost = cost1;
+    }
+  }
+
   const transitions = [];
   const nums = numsMain.slice();
 
