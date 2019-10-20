@@ -5,10 +5,12 @@ const path = require('path');
 const O = require('../omikron');
 const format = require('../format');
 
-const input = 'C:/Program Files (x86)/Google/Chrome/Application/74.0.3729.108/resources.pak'
-const output = format.path('-dw/png');
+const input = 'C:/Program Files (x86)/Google/Chrome/Application/74.0.3729.108/resources.pak';
+const output = path.join(format.path('-dw/png'), path.parse(input).base);
 
 const main = () => {
+  if(!fs.existsSync(output)) fs.mkdirSync(output);
+
   const buf = O.rfs(input);
   const start = Buffer.from('89504E470D0A', 'hex');
   const end = Buffer.from('49454E44AE426082', 'hex');
