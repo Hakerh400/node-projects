@@ -16,7 +16,7 @@
 
     "cpp": {
       "name": "cpp-projects",
-      "src": "C:/Projects/C++",
+      "src": "C:/Projects/cpp-projects",
       "dest": "C:/GitHub/cpp-projects"
     },
 
