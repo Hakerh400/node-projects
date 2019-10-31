@@ -11,12 +11,12 @@ const srcFile = path.join(testDir, 'src.txt');
 const inputFile = path.join(testDir, 'input.txt');
 const outputFile = path.join(testDir, 'output.txt');
 
-setTimeout(main);
-
-function main(){
+const main = () => {
   const src = O.rfs(srcFile);
   const input = O.rfs(inputFile);
   const output = esolang(src, input);
 
   O.wfs(outputFile, output);
-}
+};
+
+main();
