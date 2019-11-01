@@ -21,6 +21,7 @@ const main = () => {
 
   const queue = [new Path()];
   const found = O.obj();
+  const t = O.now;
 
   mainLoop: while(1){
     const {state, rules} = queue.shift();
@@ -38,6 +39,8 @@ const main = () => {
       if(lastAdded !== null){
         if(lastAdded.eq(target)){
           if(DEBUG) log('\n');
+          else log('');
+          log(`Found proof in ${((O.now - t) / 1e3).toFixed(3)} seconds\n`);
           log(String(path));
           break mainLoop;
         }
@@ -124,10 +127,11 @@ class Element{
 }
 
 class Path extends Element{
-  constructor(rules=[], state=null){
+  constructor(rules=[], state=null, ruleIndex=rulesNum - 1){
     super();
     this.rules = rules;
     this.state = state === null ? this.apply(new State()) : state;
+    this.ruleIndex = ruleIndex;
   }
 
   get isValid(){ return this.state !== null; }
