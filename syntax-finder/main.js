@@ -6,7 +6,7 @@ const O = require('../omikron');
 const finder = require('./finder');
 const skipList = require('./skip-list');
 
-const strToFind = process.argv.slice(2).join(' ').toLowerCase();
+const args = process.argv.slice(2);
 
 const cwd = __dirname;
 
@@ -39,16 +39,19 @@ const textExts = codeExts.concat([
   'yml',
 ]);
 
-setTimeout(main);
+if(args.length !== 1)
+  O.exit('ERROR: Expected exactly one argument');
 
-function main(){
+const strToFind = process.argv.slice(2).join(' ').toLowerCase();
+
+const main = () => {
   const output = finder.find(dirs, textExts, func);
 
   if(output.length !== 0)
     log(output.join('\n'));
-}
+};
 
-function func(file, src){
+const func = (file, src) => {
   const dirs = file.split(/[\/\\]/);
   if(dirs.some(dir => skipList.includes(dir))) return;
 
@@ -59,4 +62,6 @@ function func(file, src){
   });
 
   return index + 1;
-}
+};
+
+main();
