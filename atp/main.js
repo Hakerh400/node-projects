@@ -5,27 +5,55 @@ const path = require('path');
 const O = require('../omikron');
 const Table = require('../table');
 
+const DEBUG = 0;
+
 const main = () => {
   const target = new Implication(
-    new Identifier(),
-    new Identifier(),
+    new Implication(
+      new Identifier(),
+      new Identifier(),
+    ),
+    new Implication(
+      new Identifier(),
+      new Identifier(),
+    ),
   );
 
-  const a = new Path([
-    0, 0, 2,
-    0, 0, 0, 1, 2,
-    0, 0, 0, 1, 0, 3,
+  const queue = [new Path()];
+  const found = O.obj();
 
-    0, 0, 0, 1, 0, 1, 1,
-    0, 0, 0, 1, 1, 0, 0, 1, 1,
-    4,
+  mainLoop: while(1){
+    const {state, rules} = queue.shift();
 
-    0, 0, 0, 1, 1,
-    0, 0, 1,
-    4,
-  ]);
+    for(let i = rulesNum - 1; i !== -1; i--){
+      const s = rulesArr[i](state.clone());
+      if(s === null) continue;
 
-  log(String(a));
+      const r = rules.slice();
+      r.push(i);
+
+      const path = new Path(r, s);
+      const {lastAdded} = s;
+
+      if(lastAdded !== null){
+        if(lastAdded.eq(target)){
+          if(DEBUG) log('\n');
+          log(String(path));
+          break mainLoop;
+        }
+
+        if(DEBUG){
+          const str = lastAdded.toString();
+          if(!(str in found)){
+            found[str] = 1;
+            log(str);
+          }
+        }
+      }
+
+      queue.push(path);
+    }
+  }
 };
 
 const rulesObj = {
@@ -108,7 +136,7 @@ class Path extends Element{
     if(state === null) return null;
 
     for(const rule of this.rules){
-      state = rulesArr[rule](state.copy());
+      state = rulesArr[rule](state.clone());
       if(state === null) return null;
     }
 
@@ -124,7 +152,7 @@ class Path extends Element{
     let state = new State();
 
     for(const rule of this.rules){
-      state = rulesArr[rule](state.copy());
+      state = rulesArr[rule](state.clone());
       if(state === null) return '(error)';
 
       const {lastAdded} = state;
@@ -155,7 +183,7 @@ class State extends Element{
       stack.every((e, i) => e.eq(stack1[i]));
   }
 
-  copy(){
+  clone(){
     const {exprs, stack, lastAdded} = this;
     return new State(exprs.slice(), stack.slice());
   }
@@ -224,5 +252,6 @@ class Implication extends Operand{
 
 const ruleNames = O.keys(rulesObj);
 const rulesArr = ruleNames.map(name => rulesObj[name]);
+const rulesNum = rulesArr.length;
 
 main();
