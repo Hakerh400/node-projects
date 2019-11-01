@@ -127,11 +127,10 @@ class Element{
 }
 
 class Path extends Element{
-  constructor(rules=[], state=null, ruleIndex=rulesNum - 1){
+  constructor(rules=[], state=null){
     super();
     this.rules = rules;
     this.state = state === null ? this.apply(new State()) : state;
-    this.ruleIndex = ruleIndex;
   }
 
   get isValid(){ return this.state !== null; }
