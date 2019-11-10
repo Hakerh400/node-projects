@@ -26,7 +26,7 @@ const main = () => {
 
     log(`${code}\n`);
     checkCode(code);
-    log('\n');
+    log();
   }
 };
 
