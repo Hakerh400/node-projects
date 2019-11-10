@@ -7,14 +7,92 @@ const O = require('../omikron');
 const esolangs = require('../../esolangs');
 const arrOrder = require('../arr-order');
 
-const CRITICAL_DEPTH = 3;
-const AFTER_LOOP = 3;
-const RANDOM_INPUT = 1;
+const {min, max} = Math;
 
 const LANG = 'Seclusion';
 const TIMEOUT = 3;
+const MUNDANES_OFFSET = 5;
+const MUNDANES_MAX_FACTOR = .5;
+const MIN_INPUT_LEN = 4;
+const SLICE_INDEX = max(MIN_INPUT_LEN - 1) << 1;
+const INPUT_ORDER = 0;
+
+const CRITICAL_DEPTH = 3;
+const AFTER_LOOP = 3;
 
 const main = () => {
+  while(1){
+    const code = genCode();
+
+    log(`${code}\n`);
+    checkCode(code);
+    log('\n');
+  }
+};
+
+const checkCode = code => {
+  const ctx = vm.createContext({
+    run(){
+      this.output = esolangs.run('Seclusion', code, this.input);
+    },
+
+    input: null,
+    output: null,
+  });
+
+  const script = new vm.Script('this.run()');
+
+  const hex = buf => {
+    if(buf === null) return '?';
+    return buf.toString('hex').toUpperCase();
+  };
+
+  const checked = O.obj();
+  let totalNum = 0;
+  let mundanesNum = 0;
+
+  for(const input of genInputs()){
+    ctx.input = input;
+    totalNum++;
+
+    const str1 = hex(ctx.input);
+    if(str1 in checked) continue;
+    checked[str1] = 1;
+
+    ctx.output = null;
+
+    try{
+      script.runInContext(ctx, {
+        timeout: TIMEOUT * 1e3,
+      });
+    }catch{}
+
+    const str2 = hex(ctx.output);
+    const timeout = str2 === '?';
+
+    if(!INPUT_ORDER){
+      const s1 = str1.slice(SLICE_INDEX);
+      const s2 = str2.slice(SLICE_INDEX);
+
+      const isMundane = timeout ||
+        s2 === s1.padEnd(s2.length, '0') ||
+        s1.startsWith(s2);
+
+      if(isMundane){
+        log(timeout ? '?' : '...');
+
+        if(++mundanesNum / (totalNum + MUNDANES_OFFSET) >= MUNDANES_MAX_FACTOR)
+          return;
+
+        continue;
+      }
+    }
+
+    log(`${str1} ---> ${str2}`);
+  }
+};
+
+const genCode = () => {
   let code = '';
 
   const r = () => O.rand(2);
@@ -242,9 +320,9 @@ const main = () => {
                 code += '/';
                 push(['wodd', 0]);
               }
+              hasLoop = 1;
             }
             code += '{';
-            hasLoop = 1;
           }else{
             if(!r()){
               code += '{';
@@ -267,42 +345,13 @@ const main = () => {
     genVal(opType);
   }
 
-  log(`${code}\n`);
-
-  const ctx = vm.createContext({
-    run(){
-      this.output = esolangs.run('Seclusion', code, this.input);
-    },
-
-    input: null,
-    output: null,
-  });
-
-  const script = new vm.Script('this.run()');
-
-  const hex = buf => {
-    if(buf === null) return '?';
-    return buf.toString('hex').toUpperCase();
-  };
-
-  for(const input of genInputs()){
-    ctx.input = input;
-    ctx.output = null;
-
-    try{
-      script.runInContext(ctx, {
-        timeout: TIMEOUT * 1e3,
-      });
-    }catch{}
-
-    log(`${hex(ctx.input)} ---> ${hex(ctx.output)}`);
-  }
+  return code;
 };
 
 const genInputs = function*(){
-  if(RANDOM_INPUT){
+  if(!INPUT_ORDER){
     while(1)
-      yield Buffer.from(O.ca(O.randInt(0, .95), () => O.rand(256)));
+      yield Buffer.from(O.ca(O.randInt(MIN_INPUT_LEN, .95), () => O.rand(256)));
     return;
   }
 
