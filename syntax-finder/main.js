@@ -15,6 +15,7 @@ const dirs = [
   path.join(cwd, '..'),
   path.join(cwd, '../../Omikron'),
   path.join(cwd, '../../Esolangs'),
+  path.join(cwd, '../../../Extensions/Ultra Block'),
 ];
 
 const codeExts = [
