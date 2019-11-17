@@ -256,7 +256,9 @@ function spawnProc(file, args=[], options=O.obj(), opts=O.obj(), cb=null){
     if(DISPLAY_SIGINT)
       logSync('^C');
 
-    if(opts.ignore || opts.killOnSigint || (sigintSent && KILL_ON_SECOND_SIGINT)){
+    const isEsolang = currDir.startsWith('C:\\Projects\\esolangs\\');
+    
+    if(isEsolang || opts.ignore || opts.killOnSigint || (sigintSent && KILL_ON_SECOND_SIGINT)){
       if(opts.killCmd === null) proc.kill();
       else cp.exec(opts.killCmd);
       return;
