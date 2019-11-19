@@ -9,57 +9,83 @@ const gcd = require('../gcd');
 const {ok} = assert;
 
 class Rational{
+  static ZERO = new Rational(0n);
+  static ONE = new Rational(1n);
+
   #a = 0n;
   #b = 1n;
 
   constructor(a=0n, b=1n){
-    this.a = a;
-    this.b = b;
+    this.#a = a;
+    this.#b = b;
+    this.simplify();
   }
 
   slice(){
     return new Rational(this.#a, this.#b);
   }
 
-  get a(){
-    return this.#a;
+  get a(){ return this.#a; }
+  get b(){ return this.#b; }
+
+  get isInt(){
+    return this.#b === 1n;
   }
 
-  set a(a){
-    this.#a = a;
+  neg(){
+    const a = this.#a, b = this.#b;
+
+    this.#a = -a;
+
+    return this.simplify();
+  }
+
+  floor(){
+    const a = this.#a, b = this.#b;
+
+    if(b !== 1n){
+      this.#a = a / b * b;
+      if(a < 0n) this.#a -= b;
+    }
+
+    return this.simplify();
+  }
+
+  ceil(){
+    const a = this.#a, b = this.#b;
+
+    if(b !== 1n){
+      this.#a = (a / b + 1n) * b;
+      if(a < 0n) this.#a -= b;
+    }
+
+    return this.simplify();
+  }
+
+  round(){
+    const aa = this.#a, bb = this.#b;
+
+    this.#a = (aa << 1n) + bb;
+    this.#b = bb << 1n;
     this.simplify();
+
+    const a = this.#a, b = this.#b;
+
+    if(b !== 1n){
+      this.#a = a / b * b;
+      if(a < 0n) this.#a -= b;
+    }
+
+    return this.simplify();
   }
 
-  get b(){
-    return this.#b;
-  }
+  frac(){
+    const a = this.#a, b = this.#b;
 
-  set b(b){
-    this.#b = b;
-    this.simplify();
-  }
+    this.#a = a - a / b * b;
+    if(b !== 1n && a < 0n) this.#a += b;
 
-  simplify(){
-    const a = this.#a;
-    const b = this.#b;
-
-    ok(typeof a === 'bigint');
-    ok(typeof b === 'bigint');
-    ok(b !== 0n);
-
-    if(a === 0n) return this;
-
-    const pos = (a > 0n) === (b > 0n);
-    const aa = a > 0n ? a : -a;
-    const bb = b > 0n ? b : -b;
-
-    const c = gcd(aa, bb);
-    if(c === 1n) return this;
-
-    this.#a = (pos ? aa : -aa) / c;
-    this.#b = bb / c;
-
-    return this;
+    return this.simplify();
   }
 
   eq(r){
@@ -68,7 +94,16 @@ class Rational{
     const a = this.#a, b = this.#b;
     const c = r.#a, d = r.#b;
 
-    return a === c && b === d;
+    return a * d === b * c;
+  }
+
+  neq(r){
+    ok(r instanceof Rational);
+
+    const a = this.#a, b = this.#b;
+    const c = r.#a, d = r.#b;
+
+    return a * d !== b * c;
   }
 
   lt(r){
@@ -95,7 +130,7 @@ class Rational{
     const a = this.#a, b = this.#b;
     const c = r.#a, d = r.#b;
 
-    return a === c && b === d || a * d < b * c;
+    return a * d <= b * c;
   }
 
   gte(r){
@@ -104,7 +139,7 @@ class Rational{
     const a = this.#a, b = this.#b;
     const c = r.#a, d = r.#b;
 
-    return a === c && b === d || a * d > b * c;
+    return a * d >= b * c;
   }
 
   set(r){
@@ -113,7 +148,7 @@ class Rational{
     this.#a = r.#a;
     this.#b = r.#b;
 
-    return this;
+    return this.simplify();
   }
 
   add(r){
@@ -163,6 +198,42 @@ class Rational{
     this.#b = b * c;
 
     return this.simplify();
+  }
+
+  simplify(){
+    const a = this.#a;
+    const b = this.#b;
+
+    ok(typeof a === 'bigint');
+    ok(typeof b === 'bigint');
+    ok(b !== 0n);
+
+    const pos = (a > 0n) === (b > 0n);
+
+    let aNew = a;
+    let bNew = b;
+
+    if(a !== 0n){
+      const aa = a > 0n ? a : -a;
+      const bb = b > 0n ? b : -b;
+
+      const c = gcd(aa, bb);
+
+      if(c !== 1n){
+        aNew = (pos ? aa : -aa) / c;
+        bNew = bb / c;
+      }
+    }else{
+      bNew = 1n;
+    }
+
+    this.#a = pos ?
+      aNew > 0n ? aNew : -aNew :
+      aNew > 0n ? -aNew : aNew;
+
+    this.#b = bNew > 0n ? bNew : -bNew;
+
+    return this;
   }
 
   toFloat(){
