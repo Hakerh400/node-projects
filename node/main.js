@@ -9,7 +9,7 @@ const logSync = require('../log-sync');
 const engs = require('./engines');
 
 const DISPLAY_EXIT_CODE = 0;
-const DISPLAY_SIGINT = 1;
+const DISPLAY_SIGINT = 0;
 const KILL_ON_SECOND_SIGINT = 1;
 const ELECTRON_NIGHTLY = 1;
 
@@ -245,11 +245,14 @@ function spawnProc(file, args=[], options=O.obj(), opts=O.obj(), cb=null){
       return;
     }
 
-    const str = data.toString('utf8');
+    let str = data.toString();
+
     if(str.includes('Terminate batch job (Y/N)?')) return;
     if(str.includes('Building the projects in this solution one at a time.')) return;
 
-    logSync(data);
+    str = str.replace(/\[Object: null prototype\] /g, '');
+
+    logSync(str);
   }
 
   function onSigint(){
@@ -311,7 +314,7 @@ function getFiles(dir=currDir){
 }
 
 async function clear(){
-  await write('\x1bc');
+  await write('\x1B[2J\x1B[0;0H\x1Bc');
 }
 
 function write(str){
