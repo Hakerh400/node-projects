@@ -6,8 +6,6 @@ const assert = require('assert');
 const O = require('../omikron');
 const gcd = require('../gcd');
 
-const {ok} = assert;
-
 class Rational{
   static ZERO = new Rational(0n);
   static ONE = new Rational(1n);
@@ -89,7 +87,7 @@ class Rational{
   }
 
   eq(r){
-    ok(r instanceof Rational);
+    assert(r instanceof Rational);
 
     const a = this.#a, b = this.#b;
     const c = r.#a, d = r.#b;
@@ -98,7 +96,7 @@ class Rational{
   }
 
   neq(r){
-    ok(r instanceof Rational);
+    assert(r instanceof Rational);
 
     const a = this.#a, b = this.#b;
     const c = r.#a, d = r.#b;
@@ -107,7 +105,7 @@ class Rational{
   }
 
   lt(r){
-    ok(r instanceof Rational);
+    assert(r instanceof Rational);
 
     const a = this.#a, b = this.#b;
     const c = r.#a, d = r.#b;
@@ -116,7 +114,7 @@ class Rational{
   }
 
   gt(r){
-    ok(r instanceof Rational);
+    assert(r instanceof Rational);
 
     const a = this.#a, b = this.#b;
     const c = r.#a, d = r.#b;
@@ -125,7 +123,7 @@ class Rational{
   }
 
   lte(r){
-    ok(r instanceof Rational);
+    assert(r instanceof Rational);
 
     const a = this.#a, b = this.#b;
     const c = r.#a, d = r.#b;
@@ -134,7 +132,7 @@ class Rational{
   }
 
   gte(r){
-    ok(r instanceof Rational);
+    assert(r instanceof Rational);
 
     const a = this.#a, b = this.#b;
     const c = r.#a, d = r.#b;
@@ -143,7 +141,7 @@ class Rational{
   }
 
   set(r){
-    ok(r instanceof Rational);
+    assert(r instanceof Rational);
 
     this.#a = r.#a;
     this.#b = r.#b;
@@ -152,7 +150,7 @@ class Rational{
   }
 
   add(r){
-    ok(r instanceof Rational);
+    assert(r instanceof Rational);
 
     const a = this.#a, b = this.#b;
     const c = r.#a, d = r.#b;
@@ -164,7 +162,7 @@ class Rational{
   }
 
   sub(r){
-    ok(r instanceof Rational);
+    assert(r instanceof Rational);
 
     const a = this.#a, b = this.#b;
     const c = r.#a, d = r.#b;
@@ -176,7 +174,7 @@ class Rational{
   }
 
   mul(r){
-    ok(r instanceof Rational);
+    assert(r instanceof Rational);
 
     const a = this.#a, b = this.#b;
     const c = r.#a, d = r.#b;
@@ -188,11 +186,11 @@ class Rational{
   }
 
   div(r){
-    ok(r instanceof Rational);
+    assert(r instanceof Rational);
 
     const a = this.#a, b = this.#b;
     const c = r.#a, d = r.#b;
-    ok(c !== 0n);
+    assert(c !== 0n);
 
     this.#a = a * d;
     this.#b = b * c;
@@ -204,9 +202,9 @@ class Rational{
     const a = this.#a;
     const b = this.#b;
 
-    ok(typeof a === 'bigint');
-    ok(typeof b === 'bigint');
-    ok(b !== 0n);
+    assert(typeof a === 'bigint');
+    assert(typeof b === 'bigint');
+    assert(b !== 0n);
 
     const pos = (a > 0n) === (b > 0n);
 

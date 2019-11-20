@@ -7,8 +7,6 @@ const O = require('omikron');
 const Rational = require('../rational');
 const Table = require('../table');
 
-const {ok} = assert;
-
 class Matrix{
   #d;
 
@@ -27,40 +25,63 @@ class Matrix{
     this.h = h;
     this.idents = idents;
     this.varsNum = this.w - this.h;
+    this.g = w - h - this.varsNum;
 
     this.#d = O.ca(h, () => O.ca(w, () => new Rational()));
   }
 
   get(x, y){
+    const {w, h} = this;
+    assert(x >= 0 && y >= 0 && x < w && y < h);
     return this.#d[y][x];
   }
 
   set(x, y, val){
-    ok(val instanceof Rational);
+    const {w, h} = this;
+
+    assert(x >= 0 && y >= 0 && x < w && y < h);
+    assert(val instanceof Rational);
+
     this.#d[y][x].set(val);
     return this;
   }
 
   add(x, y, val){
-    ok(val instanceof Rational);
+    const {w, h} = this;
+
+    assert(x >= 0 && y >= 0 && x < w && y < h);
+    assert(val instanceof Rational);
+
     this.#d[y][x].add(val);
     return this;
   }
 
   sub(x, y, val){
-    ok(val instanceof Rational);
+    const {w, h} = this;
+
+    assert(x >= 0 && y >= 0 && x < w && y < h);
+    assert(val instanceof Rational);
+
     this.#d[y][x].sub(val);
     return this;
   }
 
   mul(x, y, val){
-    ok(val instanceof Rational);
+    const {w, h} = this;
+
+    assert(x >= 0 && y >= 0 && x < w && y < h);
+    assert(val instanceof Rational);
+
     this.#d[y][x].mul(val);
     return this;
   }
 
   div(x, y, val){
-    ok(val instanceof Rational);
+    const {w, h} = this;
+
+    assert(x >= 0 && y >= 0 && x < w && y < h);
+    assert(val instanceof Rational);
+
     this.#d[y][x].div(val);
     return this;
   }
@@ -82,7 +103,7 @@ class Matrix{
     const h = ++this.h;
     const d = this.#d;
 
-    idents.splice(idents.length - 1, 0, `g${w - h - varsNum + 1}`);
+    idents.splice(idents.length - 1, 0, `g${++this.g}`);
 
     for(const row of d)
       row.splice(row.length - 1, 0, new Rational());
