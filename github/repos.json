@@ -8,7 +8,7 @@
       "dest": "C:/GitHub/node-projects"
     },
 
-    "wamp": {
+    "web": {
       "name": "browser-projects",
       "src": "C:/wamp/www",
       "dest": "C:/GitHub/browser-projects"

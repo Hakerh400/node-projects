@@ -11,7 +11,7 @@ const args = process.argv.slice(2);
 const cwd = __dirname;
 
 const dirs = [
-  O.dirs.wamp,
+  O.dirs.web,
   path.join(cwd, '..'),
   path.join(cwd, '../../Omikron'),
   path.join(cwd, '../../Esolangs'),
