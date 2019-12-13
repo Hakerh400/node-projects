@@ -23,6 +23,8 @@ config.isTravis = IS_TRAVIS;
   }
 }
 
+config.exe.node = process.execPath;
+
 module.exports = config;
 
 function resolveFile(file){

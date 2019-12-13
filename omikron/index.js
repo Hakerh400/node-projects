@@ -8,7 +8,12 @@ const isElectron = 'navigator' in global;
 if(isElectron) initElectron();
 
 const cwd = __dirname;
-const omikronScript = path.join(cwd, '../../../wamp/www/omikron.js');
+
+const omikronScript1 = path.join(cwd, '../../../wamp/www/omikron.js');
+const omikronScript2 = path.join(cwd, '../../browser-projects/omikron.js');
+const omikronScript = fs.existsSync(omikronScript1) ? omikronScript1 : omikronScript2;
+
+const passwordsFile = path.join(cwd, 'passwords.json');
 
 const dirs = {
   omikron: omikronScript,
@@ -48,8 +53,14 @@ function getFramework(){
 
 function init(O){
   O.dirs = require('./dirs');
-  O.password = require('./passwords');
-  O.password = O.password[0];
+
+  if(fs.existsSync(passwordsFile)){
+    O.passwords = JSON.parse(O.rfs(passwordsFile, 1));
+    O.password = O.passwords[0];
+  }else{
+    O.passwords = null;
+  }
+
   O.proc = new Process(O, process);
 }
 
