@@ -40,8 +40,8 @@ const textExts = codeExts.concat([
   'yml',
 ]);
 
-if(args.length !== 1)
-  O.exit('ERROR: Expected exactly one argument');
+if(args.length === 0)
+  O.exit('ERROR: Expected at least one argument');
 
 const strToFind = process.argv.slice(2).join(' ').toLowerCase();
 
