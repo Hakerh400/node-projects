@@ -16,6 +16,7 @@ const ELECTRON_NIGHTLY = 1;
 const NODE_FLAGS = [
   '--expose-gc',
   '--experimental-report',
+  '--max-old-space-size=5000',
 ];
 
 const cwd = __dirname;
@@ -203,6 +204,8 @@ function spawnProc(file, args=[], options=O.obj(), opts=O.obj(), cb=null){
     ignore: 0,
   }, opts);
 
+  let stderrData = '';
+
   const proc = cp.spawn(file, args, {
     cwd: currDir,
     ...options,
@@ -220,8 +223,8 @@ function spawnProc(file, args=[], options=O.obj(), opts=O.obj(), cb=null){
   O.proc.stdin.ref();
 
   if(!opts.ignore){
-    proc.stdout.on('data', onLog);
-    proc.stderr.on('data', onLog);
+    proc.stdout.on('data', buf => onLog(buf, 0));
+    proc.stderr.on('data', buf => onLog(buf, 1));
   }
 
   var refs = opts.ignore ? 1 : 3;
@@ -239,7 +242,7 @@ function spawnProc(file, args=[], options=O.obj(), opts=O.obj(), cb=null){
 
   return proc;
 
-  function onLog(data){
+  function onLog(data, type){
     if(opts.skipFirst && first){
       first = 0;
       return;
@@ -252,7 +255,15 @@ function spawnProc(file, args=[], options=O.obj(), opts=O.obj(), cb=null){
 
     str = str.replace(/\[Object: null prototype\] /g, '');
 
-    logSync(str);
+    if(type === 0){
+      logSync(str);
+      return;
+    }
+
+    if(type === 1){
+      stderrData += str;
+      return;
+    }
   }
 
   function onSigint(){
@@ -279,6 +290,7 @@ function spawnProc(file, args=[], options=O.obj(), opts=O.obj(), cb=null){
     O.proc.stdin.removeListener('end', onEnd);
     O.proc.stdin.unref();
 
+    logSync(stderrData);
     onProcExit(exitCode, cb);
   }
 

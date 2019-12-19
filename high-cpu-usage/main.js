@@ -30,7 +30,7 @@ const {
 } = require('worker_threads');
 
 if(isMainThread){
-  O.repeat(10, () => {
+  O.repeat(3, () => {
     new Worker(__filename);
   });
   return;
