@@ -7,7 +7,6 @@ const SG = require('../serializable-graph');
 const SF = require('./stack-frame');
 const cgs = require('./common-graph-nodes');
 const AST = require('./ast');
-const Wrapper = require('./wrapper');
 
 const {ASTNode, ASTDef, ASTPat, ASTElem, ASTNterm, ASTTerm} = AST;
 
@@ -27,7 +26,7 @@ class CompilerBase extends SF{
 
     if(this.i++ === 0) return th.call(new CompileDef(g, this, this.ast.node));
 
-    g.setRetVal(this.rval.v);
+    g.setRetVal(this.rval);
     th.ret(cgs.Null.get(g));
     g.stage = 2;
   }
@@ -56,7 +55,10 @@ class CompileDef extends Compile{
     const name = def.ref.name;
 
     const funcName = `[${name}]`;
-    const func = funcName in compiler ? compiler[funcName] : null;
+    if(!(funcName in compiler))
+      throw new TypeError(`Missing implementation for syntax rule ${O.sf(name)}`);
+
+    const func = compiler[funcName];
 
     if(this.nval)
       return th.call(new CompileArr(g, compiler, def.pat.elems));
@@ -64,9 +66,9 @@ class CompileDef extends Compile{
     def.pat.elems = this.rval;
     this.rval = null;
 
-    const compiled = func !== null ? func.call(compiler, def, th) : null;
+    const compiled = func.call(compiler, def, th);
     if(compiled instanceof SF) compiled.srcPos = def.index;
-    if(th.sf === this) th.ret(new Wrapper(g, compiled));
+    if(th.sf === this) th.ret(compiled);
   }
 }
 
@@ -102,7 +104,7 @@ class CompileArr extends Compile{
           if(this.nval)
             return th.call(new CompileArr(g, compiler, elem.seps));
 
-          elem.seps = this.rval;
+          elem.seps = this.rval.map(a => a.fst);
           this.rval = null;
         }
 

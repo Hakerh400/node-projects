@@ -11,24 +11,29 @@ const ParserBase = require('./parser-base');
 const CompilerBase = require('./compiler-base');
 const InterpreterBase = require('./interpreter-base');
 
-const parse = (syntax, script, rules) => {
-  const syntaxObj = Syntax.fromStr(syntax);
+const MAIN_DEF = 'script';
+
+const parse = (syntax, script, rules, defName=MAIN_DEF) => {
+  const syntaxObj = Syntax.fromStr(String(syntax));
 
   class Parser extends ParserBase{}
   class Compiler extends CompilerBase{}
   class Interpreter extends InterpreterBase{}
-  Object.assign(Compiler.prototype, rules);
+
+  for(const ruleName of O.keys(rules))
+    Compiler.prototype[`[${ruleName}]`] = rules[ruleName];
 
   const ctors = {Parser, Compiler, Interpreter};
   for(const ctroName in ctors)
     Object.assign(ctors[ctroName], ctors);
 
   const lang = new PL('', syntaxObj, Parser, Compiler, Interpreter);
-  const eng = new Engine(lang, script, 1e8, 1e8 - 1e3);
+  const eng = new Engine(lang, String(script), defName, 1e8, 1e8 - 1e3);
   let err = 0;
 
   eng.stderr.on('write', (buf, len) => {
     log(buf.toString());
+    process.exit(1);
     err = 1;
   });
 

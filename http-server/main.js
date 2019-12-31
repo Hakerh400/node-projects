@@ -20,7 +20,7 @@ const main = () => {
   server.listen(PORT);
 
   rl = readline.rl();
-  rl.on('line', onInput)
+  rl.on('line', onInput);
 };
 
 const onInput = str => {

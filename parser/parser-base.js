@@ -14,23 +14,24 @@ const Context = require('./context');
 const AST = require('./ast');
 const cgs = require('./common-graph-nodes');
 
-const MAIN_DEF = 'script';
-
 const {ASTNode, ASTDef, ASTPat, ASTElem, ASTNterm, ASTTerm} = AST;
 
 class ParserBase extends SF{
   static ptrsNum = this.keys(['ast', 'cache', 'parsing', 'sfDef']);
 
-  constructor(g, script, exec=0){
+  constructor(g, script, defName, exec=0){
     super(g);
     if(g.dsr) return;
 
     const {syntax} = g.lang;
 
+    if(!(defName in syntax.defs))
+      throw new TypeError(`Undefined syntax rule ${O.sf(defName)}`);
+
     this.ast = new AST(g, syntax, script.source);
-    this.cache = new cgs.Array(g);
-    this.parsing = new cgs.Array(g);
-    this.sfDef = new ParseDef(g, this, 0, syntax.defs[MAIN_DEF]['*']);
+    this.cache = [];
+    this.parsing = [];
+    this.sfDef = new ParseDef(g, this, 0, syntax.defs[defName]['*']);
     this.exec = exec;
 
     g.stage = 0;
@@ -49,9 +50,10 @@ class ParserBase extends SF{
       this.srcPos = this.cache.reduce((pos, map) => {
         if(map === null) return pos;
 
-        return map.arr.reduce((pos, elem) => {
-          return Math.max(elem[1].end, pos);
-        }, pos);
+        for(const val of map.values())
+          pos = Math.max(val.end, pos);
+
+        return pos;
       }, 0);
 
       return th.throw(new cgs.SyntaxError(g, 'Invalid syntax'));
@@ -97,15 +99,19 @@ class ParserBase extends SF{
 
   prepareCacheIndex(index){
     const {g, cache} = this;
-    if(index >= cache.length) cache.length = index + 1;
-    if(cache[index] === null) cache[index] = new cgs.Map(g);
+    if(index >= cache.length)
+      while(cache.length <= index)
+        cache.push(null);
+    if(cache[index] === null) cache[index] = new Map();
     return cache[index];
   }
 
   prepareParsingIndex(index){
     const {g, parsing} = this;
-    if(index >= parsing.length) parsing.length = index + 1;
-    if(parsing[index] === null) parsing[index] = new cgs.Set(g);
+    if(index >= parsing.length)
+      while(parsing.length <= index)
+        parsing.push(null);
+    if(parsing[index] === null) parsing[index] = new Set();
     return parsing[index];
   }
 }
@@ -139,7 +145,7 @@ class ParseDef extends Parse{
 
   tick(th){
     const {g, parser, index, ref: def} = this;
-    const {str} = parser.ast.str;
+    const {str} = parser.ast;
     const pSet = parser.prepareParsingIndex(index);
 
     if(this.node === null){
@@ -190,7 +196,7 @@ class ParsePat extends Parse{
 
   tick(th){
     const {g, parser, index, ref: pat} = this;
-    const {str} = parser.ast.str;
+    const {str} = parser.ast;
 
     if(this.node === null){
       let node = parser.getNodeFromCache(index, pat, 1);
@@ -201,51 +207,86 @@ class ParsePat extends Parse{
     }
 
     const {elems} = pat;
-    let {node} = this;
+    const {node} = this;
+    const {indices, lens} = node;
 
     if(this.nval)
       return th.call(new ParseElem(g, parser, index, elems[this.i]));
 
-    this.i++;
     const elem = this.rval;
     this.rval = null;
 
+    if(elem.len === -1){
+      node.elems.pop();
+
+      let iPrev = this.i;
+
+      while(--iPrev !== -1){
+        const elem = elems[iPrev];
+        if(elem.greediness === 0){
+          const len = lens[iPrev] + 1;
+          if(!elem.range.has(len)) continue;
+
+          this.i = iPrev;
+          this.index = indices[iPrev];
+
+          node.elems.length = iPrev;
+          indices.length = iPrev;
+          lens.length = iPrev;
+
+          return th.call(new ParseElem(g, parser, this.index, elem, len));
+        }
+      }
+
+      return th.ret(node.reset());
+    }
+
     node.elems.push(elem);
-    if(elem.len === -1) return th.ret(node.reset());
+    indices.push(this.index);
+    lens.push(elem.getLen());
+
+    this.i++;
     this.index += elem.len;
     if(this.i === elems.length) th.ret(node.update());
   }
 }
 
 class ParseElem extends Parse{
-  constructor(g, parser, index, ref){
+  constructor(g, parser, index, ref, targetLen=ref.range.start){
     super(g, parser, index, ref);
     if(g.dsr) return;
+
+    this.targetLen = targetLen;
   }
 
   tick(th){
-    const {g, parser, index, ref: elem} = this;
-    const {str} = parser.ast.str;
+    const {g, parser, index, targetLen, ref: elem} = this;
+    const {str} = parser.ast;
+
+    const gr = elem.greediness === 1;
+    const ng = elem.greediness === 0;
 
     if(this.node === null){
-      let node = parser.getNodeFromCache(index, elem, 1);
-      if(node.done) return th.ret(node);
-      node = parser.createNewNode(index, elem);
+      if(gr){
+        let node = parser.getNodeFromCache(index, elem, 1);
+        if(node.done) return th.ret(node);
+      }
 
+      let node = parser.createNewNode(index, elem);
       this.node = node;
     }
 
-    const lenMin = elem.range.start;
-    const lenMax = elem.range.end;
+    const lenMin = gr ? elem.range.start : targetLen;
+    const lenMax = gr ? elem.range.end : targetLen;
     let {node} = this;
 
     const done = () => {
       th.ret(
-        node.arr.length >= lenMin ?
+        node.getLen() >= lenMin ?
         node.update() :
         node.reset()
       );
-    }
+    };
 
     if(node.arr.length === lenMax) return done();
 
@@ -265,7 +306,9 @@ class ParseElem extends Parse{
       this.i = 1;
     }else{
       if(node instanceof ASTNterm){
-        if(!node.ref.ruleRange.isAny()) O.noimpl('!ref.ruleRange.isAny()');
+        if(!node.ref.ruleRange.isAny())
+          O.exit(node.ref.rule);
+
         if(this.nval)
           return th.call(new ParseDef(g, parser, index, node.ref.rule['*']));
 
@@ -277,14 +320,16 @@ class ParseElem extends Parse{
         this.index += def.len;
       }else if(node instanceof ASTTerm){
         if(node.ref instanceof Element.String){
-          const substr = str.slice(index, index + node.ref.str.length);
+          let substr = str.slice(index, index + node.ref.str.length);
+          if(node.ref.caseInsensitive) substr = substr.toLowerCase();
+
           if(node.ref.str !== substr) return done();
-          node.arr.push(new cgs.String(g, substr));
+          node.arr.push(substr);
           this.index += node.ref.str.length;
         }else if(node.ref instanceof Element.CharsRange){
-          if(index === str.length || !node.ref.set.has(O.cc(str, index))) return done();
-          if(node.arr.length === 0) node.arr.push(new cgs.String(g));
-          node.arr[0].str += str[index];
+          if(index === str.length || node.getLen() === lenMax || !node.ref.set.has(O.cc(str, index))) return done();
+          if(node.arr.length === 0) node.arr.push('');
+          node.arr[0] += str[index];
           this.index++;
         }
       }

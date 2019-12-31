@@ -12,7 +12,9 @@ const SUB_FOLDERS = 0;
 const SHUFFLE = 1;
 const SORT = !SHUFFLE;
 
-const mainDir = 'D:/Music';
+const MUSIC_DIR = 'D:/Music';
+
+const args = process.argv.slice(2);
 
 const rl = readline.rl();
 
@@ -31,10 +33,11 @@ let wasRestarted = 0;
 let shouldExit = 0;
 let waiting = 0;
 
-setTimeout(() => main().catch(log));
-
 async function main(){
-  const dirs = O.sanl(fs.readFileSync(path.join(mainDir, 'playlist.txt'), 'utf8'));
+  if(args.length !== 1)
+    return err('Expected exactly one argument');
+
+  const dirs = [path.join(MUSIC_DIR, args[0])];
   const files = [];
 
   for(const dir of dirs){
@@ -215,3 +218,13 @@ function exit(){
   rl.close();
   kill();
 }
+
+function err(msg){
+  log(`ERROR: ${msg}`);
+  exit();
+}
+
+main().catch(err => {
+  log(err);
+  exit();
+});

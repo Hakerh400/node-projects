@@ -3,7 +3,6 @@
 const fs = require('fs');
 const path = require('path');
 const O = require('../omikron');
-const format = require('../format');
 const Program = require('./program');
 
 const CATCH_ERRORS = 0;
@@ -13,8 +12,8 @@ class Engine{
 
   paused = 1;
 
-  constructor(lang, script, maxSize, criticalSize){
-    this.#program = new Program(lang, script, maxSize, criticalSize);
+  constructor(lang, script, defName, maxSize, criticalSize){
+    this.#program = new Program(lang, script, defName, maxSize, criticalSize);
   }
 
   getRetVal(){ return this.#program.getRetVal(); }
@@ -38,27 +37,13 @@ class Engine{
 
     this.paused = 0;
 
-    try{
-      while(this.active){
-        if(g.stage === 2 && ticks !== null && ticks-- === 0){
-          ticks++;
-          break;
-        }
-
-        this.tick();
-      }
-    }catch(err){
-      if(!CATCH_ERRORS) throw err;
-      
-      let msg;
-
-      if(err instanceof Error){
-        msg = `${err.name}: ${err.message}`;
-      }else{
-        msg = 'UnknownError';
+    while(this.active){
+      if(g.stage === 2 && ticks !== null && ticks-- === 0){
+        ticks++;
+        break;
       }
 
-      this.stderr.write(msg);
+      this.tick();
     }
 
     this.paused = 1;

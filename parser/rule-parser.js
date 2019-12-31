@@ -208,10 +208,21 @@ function parse(syntax, str){
       // Closed quotation marks
       c(1);
 
+      if(c(0) === 'i'){ // Case-insensitive
+        if(str !== str.toLowerCase())
+          err(`Case-insensitive literal string ${O.sf(str)} must be specified in lower-case`);
+
+        elem.caseInsensitive = 1;
+        c(1);
+      }
+
       elem.str = str;
     }else if(char === '['){ // Characters range
       elem = newElem(Element.CharsRange);
       c();
+
+      const inverted = c(0) === '^';
+      if(inverted) c();
 
       while(c(0) !== ']'){
         const range = new Range();
@@ -253,6 +264,8 @@ function parse(syntax, str){
         elem.add(range);
       }
 
+      if(inverted) elem.invert();
+
       // Closed bracket
       c();
 
@@ -271,6 +284,12 @@ function parse(syntax, str){
         parseRange(elem.ruleRange);
         sc(']');
       }
+    }else if(char === '.'){ // Any character
+      elem = newElem(Element.CharsRange);
+      c();
+
+      const range = new Range(0, 255);
+      elem.add(range);
     }else{
       err('Unexpected token in pattern');
     }
@@ -500,10 +519,40 @@ function parse(syntax, str){
     }
   }
 
-  // TODO: throw error if some referenced definition does not exist
   // Replace rule names by real rules in non-terminal elements
-  for(const nterm of nterms)
-    nterm.rule = rules[nterm.rule];
+  for(const nterm of nterms){
+    if(!(nterm.rule in rules))
+      throw new SyntaxError(`Missing syntax definition for ${O.sf(nterm.rule)}`);
+
+    const rule = rules[nterm.rule];
+
+    if(!('*' in rule)){
+      const indices = O.sortAsc(
+        O.keys(rule)
+          .filter(a => /^\d+$/.test(a))
+          .map(a => a | 0)
+      );
+
+      const newRule = new Rule(syntax, pack, rule.name, rule.greediness, new Range());
+      const sect = new Section.Include();
+
+      for(const index of indices){
+        const pat = new Pattern();
+        const elem = new Element.NonTerminal(rule[index]);
+
+        elem.ruleRange.start = 1;
+        elem.ruleRange.end = 1;
+
+        pat.addElem(elem);
+        sect.addPat(pat);
+      }
+
+      newRule.addSect(sect);
+      rule['*'] = newRule;
+    }
+
+    nterm.rule = rule;
+  }
 
   return rules;
 }

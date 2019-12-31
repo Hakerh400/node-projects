@@ -51,8 +51,19 @@ class ASTNode extends SG.Node{
   get end(){ return this.index + this.len; }
   get str(){ return this.toString(); }
 
+  get am(){
+    const {arr} = this;
+    if(arr.length === 0) return arr;
+    return arr[0];
+  }
+
   reset(){ O.virtual('reset'); }
   update(){ O.virtual('update'); }
+
+  err(msg){
+    const {g} = this;
+    g.th.throw(new cgs.SyntaxError(g, msg));
+  }
 
   finalize(){
     this.done = 1;
@@ -60,18 +71,21 @@ class ASTNode extends SG.Node{
   }
 
   toString(){
-    return this.ast.str.str.slice(this.index, this.end);
+    return this.ast.str.slice(this.index, this.end);
   }
 }
 
 class ASTDef extends ASTNode{
   static ptrsNum = this.keys(['pats', 'pat', 'elems']);
 
+  get es(){ return this.elems; }
+  set es(a){ this.elems = a; }
+
   constructor(graph, ast, index, ref){
     super(graph, ast, index, ref);
     if(graph.dsr) return;
 
-    this.pats = new cgs.Array(this.graph);
+    this.pats = [];
     this.pat = null;
     this.elems = null;
     this.patIndex = 0;
@@ -86,6 +100,7 @@ class ASTDef extends ASTNode{
   }
 
   get fst(){ return this.elems[0]; }
+  get pti(){ return this.patIndex; }
 
   reset(){
     this.pats.length = 0;
@@ -123,19 +138,26 @@ class ASTDef extends ASTNode{
 }
 
 class ASTPat extends ASTNode{
-  static ptrsNum = this.keys(['elems']);
+  static ptrsNum = this.keys(['elems', 'indices', 'lens']);
+
+  get es(){ return this.elems; }
+  set es(a){ this.elems = a; }
 
   constructor(graph, ast, index, ref){
     super(graph, ast, index, ref);
     if(graph.dsr) return;
 
-    this.elems = new cgs.Array(this.graph);
+    this.elems = [];
+    this.indices = [];
+    this.lens = [];
   }
 
   get fst(){ return this.elems[0]; }
 
   reset(){
     this.elems.length = 0;
+    this.indices.length = 0;
+    this.lens.length = 0;
 
     return this;
   }
@@ -168,11 +190,12 @@ class ASTElem extends ASTNode{
     super(graph, ast, index, ref);
     if(graph.dsr) return;
 
-    this.arr = new cgs.Array(this.graph);
-    this.seps = new cgs.Array(this.graph);
+    this.arr = [];
+    this.seps = [];
   }
 
   get fst(){ return this.arr[0]; }
+  getLen(){ O.virtual('getLen'); }
 
   reset(){
     this.arr.length = 0;
@@ -187,9 +210,14 @@ class ASTNterm extends ASTElem{
     if(graph.dsr) return;
   }
 
+  getLen(){ return this.arr.length; }
+
   update(){
     const {arr, seps} = this;
     const fDone = e => e.done;
+
+    if(arr.length !== 0 && arr.length === seps.length)
+      seps.pop();
 
     this.len = arr.reduce((n, e) => n + e.len, 0) + seps.reduce((n, e) => n + e.len, 0);
     this.done = arr.every(fDone) && seps.every(fDone);
@@ -204,10 +232,19 @@ class ASTTerm extends ASTElem{
     if(graph.dsr) return;
   }
 
+  getLen(){
+    const {arr} = this;
+    if(arr.length === 0) return 0;
+    return arr[0].length;
+  }
+
   update(){
     const {arr, seps} = this;
 
-    this.len = arr.reduce((n, s) => n + s.length, 0);
+    if(arr.length !== 0 && arr.length === seps.length)
+      seps.pop();
+
+    this.len = arr.reduce((n, s) => n + s.length, 0) + seps.reduce((n, e) => n + e.len, 0);
     this.done = 1;
 
     return this;

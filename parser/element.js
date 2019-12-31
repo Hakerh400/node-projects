@@ -32,10 +32,11 @@ class NonTerminal extends Element{
 }
 
 class String extends Terminal{
-  constructor(str=''){
+  constructor(str='', caseInsensitive=0){
     super();
 
     this.str = '';
+    this.caseInsensitive = caseInsensitive;
   }
 
   toString(){ return O.sf(this.str); }
@@ -52,6 +53,7 @@ class CharsRange extends Terminal{
   has(num){ return this.set.has(nul); }
   overlaps(range){ return this.set.overlaps(range); }
   isEmpty(){ return this.set.isEmpty(); }
+  invert(){ this.set.invert(); return this; }
 
   toString(){
     return `[${this.set.ranges.map(a =>

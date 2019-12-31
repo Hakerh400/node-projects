@@ -36,7 +36,7 @@ async function main(){
   if(ELECTRON_NIGHTLY){
     engs.electron.exe = engs.electron.exe.replace(
       '/electron/',
-      '/electron-nightly/'
+      '/electron-nightly/',
     );
   }
 
