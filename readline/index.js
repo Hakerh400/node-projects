@@ -37,6 +37,7 @@ class ReadlineInterface extends EventEmitter{
     this.listenWhenPaused = 0;
 
     this.qCb = null;
+    this.isOpen = 1;
 
     this.aels();
   }
@@ -156,6 +157,8 @@ class ReadlineInterface extends EventEmitter{
     O.proc.stdin.removeListener('data', this.onDataB);
     O.proc.stdin.removeListener('end', this.onEndB);
     O.proc.stdin.unref();
+
+    this.isOpen = 0;
   }
 
   push(){

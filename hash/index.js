@@ -7,8 +7,12 @@ const O = require('../omikron');
 
 module.exports = hash;
 
-function hash(data, hashType='sha512'){
+function hash(data, hashType='sha512', encoding=null){
   const hash = crypto.createHash(hashType);
   hash.update(data);
-  return hash.digest();
+
+  let result = hash.digest();
+  if(encoding !== null) result = result.toString(encoding);
+
+  return result;
 }
