@@ -16,7 +16,7 @@ const ELECTRON_NIGHTLY = 1;
 const NODE_FLAGS = [
   '--expose-gc',
   '--experimental-report',
-  '--max-old-space-size=5000',
+  // '--max-old-space-size=5000',
 ];
 
 const cwd = __dirname;
