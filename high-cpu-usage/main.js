@@ -2,43 +2,50 @@
 
 const fs = require('fs');
 const path = require('path');
-const util = require('util');
-const assert = require('assert');
-const vm = require('vm');
-const cp = require('child_process');
-const net = require('net');
-const http = require('http');
-const https = require('https');
-const stream = require('stream');
-const zlib = require('zlib');
-const crypto = require('crypto');
-const readline = require('readline');
-const querystring = require('querystring');
-const worker = require('worker_threads');
+const wts = require('worker_threads');
 const O = require('../omikron');
-const media = require('../media');
-const textRecovery = require('../text-recovery');
-const arrOrder = require('../arr-order');
-const bisect = require('../bisect');
-const hash = require('../hash');
-const format = require('../format');
-const logSync = require('../log-sync');
-const debug = require('../debug');
+const readline = require('../readline');
 
-const {
-  Worker, isMainThread, parentPort, workerData,
-} = require('worker_threads');
+const WORKERS_NUM = 3;
+const TIMEOUT = 100;
 
-if(isMainThread){
-  O.repeat(3, () => {
-    new Worker(__filename);
+const cwd = __dirname;
+const workerScript = path.join(cwd, 'worker.js');
+
+const rl = readline.rl();
+
+const main = () => {
+  const workers = O.ca(WORKERS_NUM, () => null);
+
+  const start = () => {
+    for(let i = 0; i !== WORKERS_NUM; i++)
+      workers[i] = new wts.Worker(workerScript);
+  };
+
+  const kill = () => {
+    for(let i = 0; i !== WORKERS_NUM; i++){
+      const worker = workers[i];
+      worker.terminate();
+      workers[i] = null;
+    }
+  };
+
+  start();
+
+  rl.on('line', () => {
+    kill();
+    rl.pause();
+
+    setTimeout(() => {
+      rl.resume();
+      start();
+    }, TIMEOUT);
   });
-  return;
-}
 
-O.enhanceRNG();
+  rl.on('sigint', () => {
+    kill();
+    rl.close();
+  });
+};
 
-while(1){
-  const a = O.ca(1e3, () => O.rand(256));
-  while(a.length !== 0) a.pop();
-}
+main();
