@@ -9,7 +9,7 @@ const readline = require('../readline');
 const port = require('./port');
 
 const WORKERS_NUM = 3;
-const TIMEOUT = 500;
+const TIMEOUT = 1e3;
 
 const cwd = __dirname;
 const workerScript = path.join(cwd, 'worker.js');
