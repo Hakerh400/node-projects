@@ -1,0 +1,1 @@
+This is collection of our AutoHotkey projects. More projects can be found [here](https://github.com/Hakerh400/autohotkey-projects/releases).

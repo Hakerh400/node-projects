@@ -20,6 +20,12 @@
       "dest": "C:/GitHub/cpp-projects"
     },
 
+    "ahk": {
+      "name": "autohotkey-projects",
+      "src": "C:/Projects/autohotkey-projects",
+      "dest": "C:/GitHub/autohotkey-projects"
+    },
+
     "io": {
       "name": "%user%.github.io",
       "src": "C:/wamp/www",

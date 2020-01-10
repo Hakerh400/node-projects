@@ -8,7 +8,7 @@ const fsRec = require('../fs-rec');
 const tempDir = require('../temp-dir')(__filename);
 
 const repos = require('./repos.json');
-const noCopyList = require('./no-copy-list.json');
+const noCopyList = require('./exclude-list.json');
 const skipList = require('./skip-list.json');
 const supportedExts = require('./supported-exts.json');
 

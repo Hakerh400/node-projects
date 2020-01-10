@@ -42,6 +42,11 @@ class ReadlineInterface extends EventEmitter{
     this.aels();
   }
 
+  emit(...args){
+    if(!this.isOpen) return;
+    super.emit(...args);
+  }
+
   aels(){
     O.proc.on('sigint', this.onSigintB = this.onSigint.bind(this));
     O.proc.stdin.on('data', this.onDataB = this.onData.bind(this));
@@ -115,6 +120,7 @@ class ReadlineInterface extends EventEmitter{
   }
 
   onLine(line){
+    if(!this.isOpen) return;
     const {qCb} = this;
 
     this.emit('line', line);
@@ -131,6 +137,7 @@ class ReadlineInterface extends EventEmitter{
 
     for(var line of this.lines)
       this.onLine(line);
+
     this.lines.length = 0;
 
     if(this.end){
