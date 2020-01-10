@@ -7,7 +7,7 @@ const O = require('../omikron');
 const port = require('./port');
 
 const main = () => {
-  http.get(`http://localhost:${port}`, O.nop);
+  http.get(`http://localhost:${port}/`, O.nop);
 };
 
 main();
