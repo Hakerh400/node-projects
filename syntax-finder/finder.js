@@ -14,7 +14,7 @@ function find(dirs, exts, func){
 
   dirs.forEach(dir => {
     fsRec.processFilesSync(dir, d => {
-      if(d.isDir || d.fullPath.includes('node_modules'))
+      if(d.isDir || d.fullPath.includes('.git') || d.fullPath.includes('node_modules'))
         return;
 
       const ext = path.parse(d.name).ext.substring(1);

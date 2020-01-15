@@ -3,7 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 const http = require('http');
-const worker = require('worker_threads');
+const wts = require('worker_threads');
 const O = require('../omikron');
 const readline = require('../readline');
 const port = require('./port');
@@ -44,7 +44,7 @@ const start = async () => {
   log('start');
   
   for(let i = 0; i !== WORKERS_NUM; i++)
-    workers[i] = new worker.Worker(workerScript);
+    workers[i] = new wts.Worker(workerScript);
 
   mFull.signal();
 };

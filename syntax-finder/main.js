@@ -4,10 +4,8 @@ const fs = require('fs');
 const path = require('path');
 const O = require('../omikron');
 const finder = require('./finder');
-const skipList = require('./skip-list');
 
 const args = process.argv.slice(2);
-
 const cwd = __dirname;
 
 const dirs = [
@@ -41,9 +39,9 @@ const textExts = codeExts.concat([
 ]);
 
 if(args.length === 0)
-  O.exit('ERROR: Expected at least one argument');
+  O.exit('ERROR: Expected a string as argument');
 
-const strToFind = process.argv.slice(2).join(' ').toLowerCase();
+const strToFind = args.join(' ').toLowerCase();
 
 const main = () => {
   const output = finder.find(dirs, textExts, func);
@@ -53,9 +51,6 @@ const main = () => {
 };
 
 const func = (file, src) => {
-  const dirs = file.split(/[\/\\]/);
-  if(dirs.some(dir => skipList.includes(dir))) return;
-
   const lines = O.sanl(src);
 
   const index = lines.findIndex(line => {
