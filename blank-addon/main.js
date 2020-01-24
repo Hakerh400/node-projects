@@ -5,6 +5,6 @@ const path = require('path');
 const O = require('../omikron');
 const addon = require('.');
 
-setTimeout(main);
+const main = () => {};
 
-function main(){}
+main();
