@@ -10,11 +10,11 @@ const SPACE_SIZE = 200;
 const OFFSET = 20;
 
 const images = [
-  '-dw/grid/images/03/1.png',
-  '-dw/grid/images/03/2.png',
+  '-dw/1.png',
+  '-dw/2.png',
 ];
 
-const outputFile = '-dw/grid/images/connect-internal-shapes-1.png';
+const outputFile = '-dw/output.png';
 
 setTimeout(() => main().catch(log));
 

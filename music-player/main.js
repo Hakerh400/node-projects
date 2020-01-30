@@ -34,10 +34,10 @@ let shouldExit = 0;
 let waiting = 0;
 
 async function main(){
-  if(args.length !== 1)
-    return err('Expected exactly one argument');
+  if(args.length === 0)
+    return err('Expected directory as argument');
 
-  const dirs = [path.join(MUSIC_DIR, args[0])];
+  const dirs = [path.join(MUSIC_DIR, args.join(' '))];
   const files = [];
 
   for(const dir of dirs){
