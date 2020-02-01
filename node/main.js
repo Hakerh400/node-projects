@@ -254,6 +254,7 @@ function spawnProc(file, args=[], options=O.obj(), opts=O.obj(), cb=null){
     if(str.includes('Building the projects in this solution one at a time.')) return;
 
     str = str.replace(/\[Object: null prototype\] /g, '');
+    str = str.replace(/\[Object: null prototype\]/g, '[Object]');
 
     if(type === 0){
       logSync(str);
