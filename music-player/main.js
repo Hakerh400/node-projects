@@ -41,7 +41,7 @@ async function main(){
   const files = [];
 
   for(const dir of dirs){
-    if(/\btest\b/i.test(dir))
+    if(dir.endsWith('_'))
       testMode = 1;
 
     if(SUB_FOLDERS){
@@ -102,9 +102,12 @@ function aels(){
         case 'p': testMode ? moveTo('Priority') : prev(); break;
         case 'n': testMode ? moveTo('Nightcore') : next(); break;
         case 't': testMode && moveTo('Trance'); break;
+        case 'R': testMode && moveTo('Popular'); break;
+        case 'm': testMode && moveTo('Mix'); break;
         case 'c': moveTo('Classical'); break;
         case 'i': moveTo('Improvable'); break;
         case 'o': moveTo('Other'); break;
+        case 'w': moveTo('Word'); break;
         case 's': moveTo('Spam'); break;
       }
     }
