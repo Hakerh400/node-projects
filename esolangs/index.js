@@ -3,8 +3,6 @@
 const fs = require('fs');
 const path = require('path');
 const O = require('../omikron');
-const esolangs = require('../esolangs');
+const esolangs = require('../../esolangs');
 
-const TEST_NAME = 'golden-sunrise';
-
-require(`./${TEST_NAME}`);
+module.exports = esolangs

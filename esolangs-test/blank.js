@@ -5,6 +5,6 @@ const path = require('path');
 const O = require('../omikron');
 const esolangs = require('../esolangs');
 
-const TEST_NAME = 'golden-sunrise';
+const main = () => {};
 
-require(`./${TEST_NAME}`);
+main();
