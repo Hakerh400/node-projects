@@ -5,4 +5,6 @@ const path = require('path');
 const O = require('../omikron');
 const esolangs = require('../../esolangs');
 
-module.exports = esolangs
+const main = () => {};
+
+main();

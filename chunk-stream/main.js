@@ -10,7 +10,9 @@ const main = async () => {
   const st = new stream.PassThrough();
 
   const readChunk = () => {
-    chunkStream.read(st).then(onChunk).catch(O.error);
+    setTimeout(() => {
+      chunkStream.read(st).then(onChunk).catch(O.error);
+    }, 1e3);
   };
 
   const onChunk = buf => {
@@ -18,10 +20,11 @@ const main = async () => {
     readChunk();
   };
 
-  readChunk();
-
   chunkStream.write(st, Buffer.from('abc'));
   chunkStream.write(st, Buffer.from('ddxyz'));
+  st.end();
+
+  readChunk();
 };
 
 main().catch(O.error);
