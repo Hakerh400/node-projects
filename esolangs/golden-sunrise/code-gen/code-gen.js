@@ -102,8 +102,6 @@ const codeGen = () => {
     pat[pat.length - 1] = 1;
   }
 
-  // O.exit(str);
-
   return str;
 };
 

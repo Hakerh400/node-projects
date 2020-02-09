@@ -15,7 +15,7 @@ const opts = {
   useBitIO: 1,
 };
 
-const safeOpts = {
+const sbxOpts = {
   timeout: TIMEOUT,
 };
 
@@ -33,7 +33,7 @@ const main = async () => {
       let output = null;
 
       try{
-        const result = await sandbox.run(LANG, src, input, opts, safeOpts);
+        const result = await sandbox.run(LANG, src, input, opts, sbxOpts);
         if(!result[0]) O.error(result[1]);
         output = result[1].toString();
       }catch{}

@@ -55,7 +55,7 @@ const id = (vals, arr, dir=0) => {
 
   for(let index = start; index !== end; index += d){
     let val = arr[index];
-    id = id * n + BigInt(map.get(val)) + 1n;
+    id = id * n + map.get(val) + 1n;
   }
 
   return id;
