@@ -4,9 +4,25 @@ const fs = require('fs');
 const path = require('path');
 const O = require('../omikron');
 
-const read = async st => {
+const listenerTypes = [
+  'end',
+  'finish',
+  'destroy',
+  'error',
+];
+
+const read = async (st, encoding=null) => {
   const read = len => new Promise((res, rej) => {
     let rejected = 0;
+
+    const wrap = func => {
+      return (...args) => {
+        for(const type of listenerTypes)
+          st.removeListener(type, reject);
+
+        return func(...args);
+      };
+    };
 
     const reject = () => {
       if(rejected) return;
@@ -14,9 +30,11 @@ const read = async st => {
       rej(new TypeError('Cannot read chunk because there is not enough data'));
     };
 
-    st.on('finish', reject);
-    st.on('destroy', reject);
-    st.on('error', reject);
+    for(const type of listenerTypes)
+      st.on(type, reject);
+
+    res = wrap(res);
+    rej = wrap(rej);
 
     const tryToRead = () => {
       const buf = st.read(len);
@@ -37,15 +55,18 @@ const read = async st => {
     tryToRead();
   });
 
-  const len = (await read(4)).readUInt32LE();
-  const chunk = await read(len, 1);
 
-  return chunk;
+  const len = (await read(4)).readUInt32LE();
+  const buf = await read(len, 1);
+
+  if(encoding !== null) return buf.toString(encoding);
+  return buf;
 };
 
 const write = (st, buf) => {
   const header = Buffer.alloc(4);
-  
+
+  buf = Buffer.from(buf);
   header.writeUInt32LE(buf.length);
 
   st.write(header);
