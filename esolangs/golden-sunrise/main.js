@@ -11,7 +11,7 @@ const codeGen = require('./code-gen');
 const LANG = 'Golden sunrise';
 
 const DEBUG = 0;
-const TIMEOUT = 20e3;
+const TIMEOUT = 5e3;
 const INDEX_START_RANGE = [1e6, 1e9];
 const TEST_NUM = 5;
 
@@ -35,10 +35,6 @@ const main = async () => {
 
       const src = codeGen();
 
-      const logSrc = () => {
-        
-      };
-      
       if(DEBUG){
         log('\n');
         log(src);
