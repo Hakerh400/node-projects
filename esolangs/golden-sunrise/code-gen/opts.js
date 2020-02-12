@@ -5,14 +5,15 @@ const path = require('path');
 const O = require('../../../omikron');
 
 const opts = {
-  rhsGroupsAllowedOnEnd: 1,
+  rhsGroupsAllowedOnEnd: 0,
+  rhsGroupsMustHaveRest: 1,
 
   probabilities: {
     bit1:             .5,
-    rest:             .33,
+    rest:             .3,
 
-    lhsMore:          .75,
-    rhsMore:          .75,
+    lhsMore:          .7,
+    rhsMore:          .7,
     rhsStartGroup:    .5,
     rhsMoreBitsOnEnd: .5,
   },

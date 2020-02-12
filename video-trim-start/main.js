@@ -11,7 +11,7 @@ const args = process.argv.slice(2);
 
 const main = () => {
   if(args.length === 0)
-    error('Expected folder path as an argument');
+    error('Expected folder path as argument');
 
   const dir = args.join(' ');
   const files = fs.readdirSync(dir);

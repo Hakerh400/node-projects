@@ -48,7 +48,7 @@ const codeGen = () => {
     let hasRest = 0;
 
     while(1){
-      if(!r(ps.rhsMore)){
+      if((!opts.rhsGroupsMustHaveRest || hasRest) && !r(ps.rhsMore)){
         if(stack.length === 1) break;
         stack.pop();
         str += ')';
@@ -68,6 +68,7 @@ const codeGen = () => {
         stack[stack.length - 1]++;
         stack.push(0);
         str += '(';
+        hasRest = 0;
         continue;
       }
 
