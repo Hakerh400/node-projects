@@ -11,7 +11,7 @@ const codeGen = require('./code-gen');
 const LANG = 'Golden sunrise';
 
 const DEBUG = 0;
-const TIMEOUT = 5e3;
+const TIMEOUT = 20e3;
 const INDEX_START_RANGE = [1e6, 1e9];
 const TEST_NUM = 5;
 
@@ -33,15 +33,28 @@ const main = async () => {
       if(DEBUG)
         logStatus(i, null, 'source code');
 
+      const src = codeGen();
+
+      const logSrc = () => {
+        
+      };
+      
+      if(DEBUG){
+        log('\n');
+        log(src);
+        log();
+      }
+
       const start = O.rand(...INDEX_START_RANGE);
       const end = start + TEST_NUM;
-
-      const src = codeGen();
       const ok = await test(src, start, end);
-      if(!ok) continue;
 
-      log(src);
-      log(`\n${'='.repeat(100)}\n`);
+      if(DEBUG){
+        log(`\n${'='.repeat(100)}\n`);
+      }else if(ok){
+        log(src)
+        log(`\n${'='.repeat(100)}\n`);
+      }
     }
   }else{
     const start = O.rand(...INDEX_START_RANGE);
