@@ -10,10 +10,6 @@ const ps = opts.probabilities;
 const codeGen = () => {
   let str = '';
 
-  const add = (...args) => {
-    str += args.jon('');
-  }
-
   const genLhs = base => {
     const lhs = base;
     let more = 1;
