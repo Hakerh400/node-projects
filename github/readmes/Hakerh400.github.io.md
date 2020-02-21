@@ -1,1 +1,0 @@
-Online version of [browser-projects](https://github.com/Hakerh400/browser-projects) repository.

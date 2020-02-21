@@ -8,12 +8,6 @@
       "dest": "C:/GitHub/node-projects"
     },
 
-    "web": {
-      "name": "browser-projects",
-      "src": "C:/wamp/www",
-      "dest": "C:/GitHub/browser-projects"
-    },
-
     "cpp": {
       "name": "cpp-projects",
       "src": "C:/Projects/cpp-projects",
@@ -24,12 +18,6 @@
       "name": "autohotkey-projects",
       "src": "C:/Projects/autohotkey-projects",
       "dest": "C:/GitHub/autohotkey-projects"
-    },
-
-    "io": {
-      "name": "%user%.github.io",
-      "src": "C:/wamp/www",
-      "dest": "C:/GitHub/%user%.github.io"
     },
 
     "func": {
