@@ -198,6 +198,67 @@ function onInput(str){
 }
 
 function spawnProc(file, args=[], options=O.obj(), opts=O.obj(), cb=null){
+  const onLog = (data, type) => {
+    if(opts.skipFirst && first){
+      first = 0;
+      return;
+    }
+
+    let str = data.toString();
+
+    if(str.includes('Terminate batch job (Y/N)?')) return;
+    if(str.includes('Building the projects in this solution one at a time.')) return;
+
+    str = str.replace(/\[Object: null prototype\] /g, '');
+    str = str.replace(/\[Object: null prototype\]/g, '[Object]');
+
+    if(type === 0){
+      logSync(str);
+      return;
+    }
+
+    if(type === 1){
+      stderrData += str;
+      return;
+    }
+  };
+
+  const onSigint = () => {
+    if(DISPLAY_SIGINT)
+      logSync('^C');
+
+    const isEsolang = currDir.startsWith('C:\\Projects\\esolangs\\');
+    
+    if(isEsolang || opts.ignore || opts.killOnSigint || (sigintSent && KILL_ON_SECOND_SIGINT)){
+      if(opts.killCmd === null) proc.kill();
+      else cp.exec(opts.killCmd);
+      return;
+    }
+
+    sigintSent = 1;
+    write(sigintBuf);
+  };
+
+  const onFinish = () => {
+    if(--refs !== 0) return;
+
+    O.proc.removeListener('sigint', onSigint);
+    O.proc.stdin.removeListener('data', onData);
+    O.proc.stdin.removeListener('end', onEnd);
+    O.proc.stdin.unref();
+
+    logSync(stderrData);
+    onProcExit(exitCode, cb);
+  };
+
+  const onError = () => {};
+
+  const write = buf => {
+    try{
+      proc.stdin.write(buf);
+    }catch{}
+  };
+
   opts = Object.assign({
     skipFirst: 0,
     killOnSigint: 0,
@@ -236,71 +297,16 @@ function spawnProc(file, args=[], options=O.obj(), opts=O.obj(), cb=null){
     proc.stderr.on('end', onFinish);
   }
 
+  proc.stdin.on('error', onError);
+  proc.stdout.on('error', onError);
+  proc.stderr.on('error', onError);
+
   proc.on('exit', code => {
     exitCode = code;
     onFinish();
   });
 
   return proc;
-
-  function onLog(data, type){
-    if(opts.skipFirst && first){
-      first = 0;
-      return;
-    }
-
-    let str = data.toString();
-
-    if(str.includes('Terminate batch job (Y/N)?')) return;
-    if(str.includes('Building the projects in this solution one at a time.')) return;
-
-    str = str.replace(/\[Object: null prototype\] /g, '');
-    str = str.replace(/\[Object: null prototype\]/g, '[Object]');
-
-    if(type === 0){
-      logSync(str);
-      return;
-    }
-
-    if(type === 1){
-      stderrData += str;
-      return;
-    }
-  }
-
-  function onSigint(){
-    if(DISPLAY_SIGINT)
-      logSync('^C');
-
-    const isEsolang = currDir.startsWith('C:\\Projects\\esolangs\\');
-    
-    if(isEsolang || opts.ignore || opts.killOnSigint || (sigintSent && KILL_ON_SECOND_SIGINT)){
-      if(opts.killCmd === null) proc.kill();
-      else cp.exec(opts.killCmd);
-      return;
-    }
-
-    sigintSent = 1;
-    write(sigintBuf);
-  }
-
-  function onFinish(){
-    if(--refs !== 0) return;
-
-    O.proc.removeListener('sigint', onSigint);
-    O.proc.stdin.removeListener('data', onData);
-    O.proc.stdin.removeListener('end', onEnd);
-    O.proc.stdin.unref();
-
-    logSync(stderrData);
-    onProcExit(exitCode, cb);
-  }
-
-  function write(buf){
-    try{
-      proc.stdin.write(buf);
-    }catch{}
-  }
 }
 
 function onProcExit(code=null, cb=null){

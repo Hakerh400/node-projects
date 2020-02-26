@@ -37,11 +37,11 @@ async function main(){
   if(args.length === 0)
     return err('Expected directory as argument');
 
-  const dirs = [path.join(MUSIC_DIR, args.join(' '))];
+  const dirs = args.join(' ').split('#').map(a => path.join(MUSIC_DIR, a.trim()));
   const files = [];
 
   for(const dir of dirs){
-    if(dir.endsWith('_'))
+    if(dir.includes('_'))
       testMode = 1;
 
     if(SUB_FOLDERS){
