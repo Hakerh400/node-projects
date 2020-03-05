@@ -2,6 +2,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const assert = require('assert');
 const O = require('../omikron');
 const config = require('./config');
 
@@ -14,7 +15,15 @@ config.isTravis = IS_TRAVIS;
   const {exe} = config;
 
   for(const key of O.keys(exe)){
-    const exePath = exe[key];
+    let exePath = exe[key];
+
+    if(exePath === null){
+      switch(key){
+        case 'node': exePath = process.execPath; break;
+        default: assert.fail(); break;
+      }
+    }
+
     exe[key] = path.normalize(
       IS_TRAVIS ?
       path.parse(exePath).name :

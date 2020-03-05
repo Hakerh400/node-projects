@@ -295,11 +295,11 @@ function spawnProc(file, args=[], options=O.obj(), opts=O.obj(), cb=null){
   if(!opts.ignore){
     proc.stdout.on('end', onFinish);
     proc.stderr.on('end', onFinish);
-  }
 
-  proc.stdin.on('error', onError);
-  proc.stdout.on('error', onError);
-  proc.stderr.on('error', onError);
+    proc.stdin.on('error', onError);
+    proc.stdout.on('error', onError);
+    proc.stderr.on('error', onError);
+  }
 
   proc.on('exit', code => {
     exitCode = code;
