@@ -7,20 +7,24 @@ const pcp = require('.');
 
 const main = () => {
   const dominos = [
-    ['1', '111'],
-    ['10111', '10'],
-    ['10', '0'],
+    /* 1 */ ['ab', 'aba'],
+    /* 2 */ ['aab', 'aa'],
+    /* 3 */ ['abb', 'ba'],
+    /* 4 */ ['bbb', 'ba'],
+    /* 5 */ ['aa', 'baba'],
+    /* 6 */ ['babab', 'ba'],
+    /* 7 */ ['b', 'ab'],
   ];
 
   const sol = pcp.solve(dominos);
 
   if(sol === null){
-    log('null');
+    log('No solution.');
     return;
   }
 
-  log(`Order: ${O.sfa(sol.order)}`);
-  log(`String: ${sol.arr.join('')}`);
+  log(`Order:  ${O.sfa(sol.order.map(a => +a + 1))}`);
+  log(`String: ${sol.str}`);
 };
 
 main();
