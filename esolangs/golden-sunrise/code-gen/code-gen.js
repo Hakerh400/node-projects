@@ -3,6 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 const O = require('../../../omikron');
+const debug = require('../../../debug');
 const opts = require('./opts');
 
 const ps = opts.probabilities;
@@ -81,14 +82,56 @@ const codeGen = () => {
     return str;
   };
 
-  const pat = [0];
+  let pat = [0];
   let first = 1;
 
   mainLoop: while(pat.length !== 0){
     if(first) first = 0;
     else str += '\n';
 
-    str += `${genLhs(pat)} - ${genRhs(0)}`;
+    const patPrev = pat;
+    let row = null;
+
+    while(1){
+      pat = patPrev.slice();
+
+      const lhs = genLhs(pat);
+      const rhs = genRhs(0);
+
+      row = `${lhs} - ${rhs}`;;
+      if(!opts.preventTrivialLoops) break;
+
+      const groups = [];
+      let parens = 0;
+      let group = null;
+
+      for(const char of rhs){
+        if(group === null){
+          if(char !== '(') continue;
+          group = '';
+          parens = 1;
+          continue;
+        }
+
+        if(char === '(') parens++;
+        else if(char === ')') parens--;
+
+        if(parens !== 0){
+          group += char;
+          continue;
+        }
+
+        groups.push(group);
+        group = null;
+      }
+
+      if(groups.some(group => group.startsWith(lhs)))
+        continue;
+
+      break;
+    }
+
+    str += row;
 
     while(O.last(pat) !== 0){
       if(pat.length !== 0) pat.pop();

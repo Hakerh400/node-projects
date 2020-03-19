@@ -17,7 +17,7 @@ const NODE_FLAGS = [
   '--expose-gc',
   '--experimental-report',
   '--trace-warnings',
-  // '--max-old-space-size=5000',
+  '--max-old-space-size=5000',
 ];
 
 const cwd = __dirname;

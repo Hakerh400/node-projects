@@ -7,6 +7,7 @@ const O = require('../../../omikron');
 const opts = {
   rhsGroupsAllowedOnEnd: 0,
   rhsGroupsMustHaveRest: 1,
+  preventTrivialLoops:   1,
 
   probabilities: {
     bit1:             .5,
