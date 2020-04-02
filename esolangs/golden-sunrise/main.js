@@ -53,7 +53,8 @@ const main = async () => {
       }
     }
   }else{
-    const start = O.rand(...INDEX_START_RANGE);
+    // const start = O.rand(...INDEX_START_RANGE);
+    const start = 0;
     await test(TEST, start, O.N);
   }
 
