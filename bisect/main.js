@@ -3,14 +3,29 @@
 const fs = require('fs');
 const path = require('path');
 const O = require('../omikron');
-const bisect = require('.');
+
+const main = () => {
+  const a = O.bisect(i => {
+    try{
+      2n << i;
+      return 0;
+    }catch{
+      return 1;
+    }
+  });
+
+  const n = 1n << a;
+
+  const b = O.bisect(i => {
+    try{
+      n + i;
+      return 0;
+    }catch{
+      return 1;
+    }
+  }) - 1n;
+
+  log(`Max bigint value: 2 ^ ${a}${b !== 0n ? ` + ${b}` : ''}`);
+};
 
 main();
-
-function main(){
-  const i = bisect('in', i => {
-    if(i <= 12345) return 'in';
-    return 'out';
-  });
-  log(i);
-}
