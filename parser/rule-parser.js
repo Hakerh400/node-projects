@@ -522,7 +522,7 @@ function parse(syntax, str){
   // Replace rule names by real rules in non-terminal elements
   for(const nterm of nterms){
     if(!(nterm.rule in rules))
-      throw new SyntaxError(`Missing syntax definition for ${O.sf(nterm.rule)}`);
+      throw new SyntaxError(`Missing syntax definition of ${O.sf(nterm.rule)}`);
 
     const rule = rules[nterm.rule];
 
