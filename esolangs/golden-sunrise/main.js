@@ -35,6 +35,8 @@ const main = async () => {
 
       const src = codeGen();
 
+      O.exit(src);
+
       if(DEBUG){
         log('\n');
         log(src);
