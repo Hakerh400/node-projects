@@ -6,282 +6,131 @@ const assert = require('assert');
 const O = require('../../../omikron');
 const debug = require('../../../debug');
 
-O.enhanceRNG();
-O.randSeed(1);
-
 const r = O.rand;
-const ri = O.randInt;
 
 const codeGen = () => {
-  const rules = O.obj();
-  const pending = O.obj();
-  const stack = [];
+  const lhsArr = [''];
+  const rhsArr = [];
+  const ends = O.obj();
 
-  const hasPrefix = lhs => {
-    for(let i = 0; i !== lhs.length + 1; i++){
-      const prefix = lhs.slice(0, i);
-      if(hasRule(prefix)) return 1;
-      if(has(prefix)) return 1;
-    }
-  };
+  const add = lhs => {
+    if(lhsArr.some(a => a.startsWith(lhs)))
+      return;
 
-  const has = lhs => {
-    return lhs in pending;
-  };
+    const index = lhsArr.findIndex(a => lhs.startsWith(a));
 
-  const get = lhs => {
-    assert(has(lhs));
-    return pending[lhs];
-  };
-
-  const push = (...lhsArr) => {
-    for(const lhs of lhsArr){
-      assert(!hasPrefix(lhs));
-
-      pending[lhs] = stack.length;
-      stack.push(lhs);
-    }
-  };
-
-  const pushAll = lhs => {
-    log('\n\n---> ' + O.sf(lhs));
-    debug();
-
-    for(let i = 0; i !== lhs.length + 1; i++){
-      const prefix = lhs.slice(0, i);
-
-      log('\n\n________________\n\n');
-      log.inc();
-      O.logf({
-        rules,
-        pending: O.keys(pending).join(' '),
-        stack: stack.join(' '),
-      });
-      log.dec();
-      log('\n\n________________\n\n');
-      log(O.sf(lhs), O.sf(prefix));
-      log(hasRule(prefix) | 0, has(prefix) | 0);
-      debug();
-
-      if(hasRule(prefix)){
-        assert(!has(prefix));
-        const rhs = getRule(prefix);
-
-        removeRule(prefix);
-        addRule(`${lhs}0`, rhs);
-
-        break;
-      }else if(has(prefix)){
-        const index = pending[prefix];
-        assert(stack.length > index);
-        assert(stack[index] === prefix);
-
-        const lhsNew = `${lhs}0`;
-
-        stack[index] = lhsNew;
-        delete pending[prefix];
-
-        assert(!has(lhsNew));
-        pending[lhsNew] = index;
-
-        break;
-      }
+    if(index !== -1){
+      lhsArr[index] = lhs;
+      return;
     }
 
-    for(let i = 0; i !== lhs.length + 1; i++){
-      const prefix = lhs.slice(0, i);
-
-      for(const suffix of '01#'){
-        const lhsNew = `${prefix}${suffix}`;
-
-        log('\n\n#################################################\n\n');
-        log.inc();
-        O.logf({
-          rules,
-          pending: O.keys(pending).join(' '),
-          stack: stack.join(' '),
-        });
-        log(lhsNew);
-        log(hasPrefix(lhsNew) ? 'has prefix' : 'does not have prefix');
-        log.dec();
-        log('\n\n#################################################\n\n');
-        debug();
-
-        if(hasPrefix(lhsNew)) continue;
-
-        push(lhsNew);
-      }
-    }
-
-    log('\n\n################# AFTER #########################\n\n');
-    log.inc();
-    O.logf({
-      rules,
-      pending: O.keys(pending).join(' '),
-      stack: stack.join(' '),
-    });
-    log.dec();
-    log('\n\n#################################################\n\n');
-    debug();
+    lhsArr.push(lhs);
   };
 
-  const pop = () => {
-    assert(stack.length !== 0);
+  const addAll = lhs => {
+    for(let i = 0; i !== 2; i++)
+      add(lhs + i);
 
-    const lhs = stack.pop();
-    remove(lhs);
-
-    return lhs;
+    ends[lhs + '#'] = 1;
   };
 
-  const remove = lhs => {
-    assert(has(lhs));
-    delete pending[lhs];
-  };
+  const addRec = (lhs, includeLast=1) => {
+    const end = lhs.length + includeLast;
 
-  const hasRule = lhs => {
-    return lhs in rules;
+    for(let i = 0; i !== end; i++)
+      addAll(lhs.slice(0, i));
   };
-
-  const addRule = (lhs, rhs) => {
-    assert(!hasPrefix(lhs));
-    rules[lhs] = rhs;
-  };
-
-  const getRule = lhs => {
-    assert(hasRule(lhs));
-    return rules[lhs];
-  };
-
-  const removeRule = lhs => {
-    assert(hasRule(lhs));
-    delete rules[lhs];
-  };
-
-  pushAll('');
 
   const genRhs = () => {
-    let rhs = '';
-    let parens = 0;
-    let hasArg = 0;
-    let hasParens = 0;
+      let rhs = '';
+      let parens = 0;
+      let hasArg = 0;
+      let hasParens = 0;
 
-    while(1){
-      if(hasParens && hasArg && r()){
-        if(parens === 0) break;
+      while(1){
+        if(hasParens && hasArg && r()){
+          if(parens === 0) break;
 
-        rhs += ')';
-        parens--;
+          rhs += ')';
+          parens--;
 
-        continue;
-      }
-
-      if(r()){
-        if(r()){
-          rhs += '(';
-          parens++;
-          hasArg = 0;
-          hasParens = 1;
-        }else{
-          rhs += '.';
-          hasArg = 1;
+          continue;
         }
-      }else{
-        rhs += r();
+
+        if(r()){
+          if(r()){
+            rhs += '(';
+            parens++;
+            hasArg = 0;
+            hasParens = 1;
+          }else{
+            rhs += '.';
+            hasArg = 1;
+          }
+        }else{
+          rhs += r();
+        }
       }
-    }
 
-    if(rhs === '')
-      rhs = '/';
+      if(rhs === '')
+        rhs = '/';
 
-    return rhs;
-  };
+      return rhs;
+    };
 
-  const genBitArr = () => {
-    let rhs = '';
+  while(rhsArr.length !== lhsArr.length){
+    const index = rhsArr.length;
 
-    while(r())
-      rhs += r();
-
-    if(rhs === '')
-      rhs = '/';
-
-    return rhs;
-  };
-
-  while(stack.length !== 0){
-    O.logf({
-      rules,
-      pending: O.keys(pending).join(' '),
-      stack: stack.join(' '),
-    });
-
-    const lhs = O.last(stack);
-
-    if(lhs.endsWith('#')){
-      pop();
-      addRule(lhs, genBitArr());
-      continue;
-    }
-
-    const len = lhs.length;
-    let lenNew = 0;
+    const lhs = lhsArr[index];
+    const lhsLen = lhs.length;
+    let lhsLenNew = 0;
 
     while(r())
-      lenNew++;
+      lhsLenNew++;
 
-    const lenDif = Math.max(lenNew - len, 0);
-    const lhsNew = `${lhs}${'0'.repeat(lenDif)}`;
+    const lhsLenDif = Math.max(lhsLenNew - lhsLen, 0);
+    let lhsNew = lhs;
 
-    pushAll(lhsNew);
+    for(let i = 0; i !== lhsLenDif; i++)
+      lhsNew += r();
 
-    let rhs;
+    addRec(lhsNew, 0);
 
-    genRhsLoop: while(1){
-      rhs = genRhs(lhs);
+    const rhs = genRhs();
+    rhsArr.push(rhs);
 
-      for(const match of O.exec(rhs, /\(([01]+)/g))
-        if(match[1].startsWith(lhs))
-          continue genRhsLoop;
-
-      break;
-    }
-
-    log('='.repeat(100));
-    O.logf({
-      rules,
-      pending: O.keys(pending).join(' '),
-      stack: stack.join(' '),
-    });
-    log(lhs);
-    log(lhsNew);
-    log('='.repeat(100));
-
-    const index = get(lhsNew);
-    remove(lhsNew);
-
-    assert(index < stack.length);
-    assert(stack[index] === lhsNew);
-
-    if(index === stack.length - 1){
-      stack.pop();
-    }else{
-      const lhs = stack.pop();
-      assert(pending[lhs] === stack.length);
-      stack[index] = lhs;
-      pending[lhs] = index;
-    }
-
-    addRule(lhsNew, rhs);
-
-    for(const match of O.exec(rhs, /\(([01]+)/g))
-      pushAll(log(match[1]));
+    for(const match of O.exec(rhs, /\((\d*)/g))
+      addRec(match[1]);
   }
 
-  return O.keys(rules).sort((lhs1, lhs2) => {
+  O.shuffle(rhsArr);
 
-  }).map(lhs => {
-    return `${lhs} - ${rules[lhs]}`;
+  return lhsArr.map((lhs, index) => {
+    return [lhs, rhsArr[index]];
+  }).concat(O.keys(ends).map(lhs => {
+    let rhs = '';
+    while(r()) rhs += r();
+    return [lhs, rhs];
+  })).sort(([lhs1], [lhs2]) => {
+    lhs1 += '.';
+    lhs2 += '.';
+
+    for(let i = 0;; i++){
+      const c1 = lhs1[i];
+      const c2 = lhs2[i];
+      assert(c1 !== '.');
+      assert(c2 !== '.');
+      if(c1 === c2) continue;
+
+      const n1 = '01#'.indexOf(c1);
+      const n2 = '01#'.indexOf(c2);
+
+      return n1 - n2;
+    }
+  }).map(([lhs, rhs]) => {
+    if(lhs === '') lhs = '/';
+    if(rhs === '') rhs = '/';
+    return `${lhs} - ${rhs}`;
   }).join('\n');
 };
 
