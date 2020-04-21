@@ -42,41 +42,41 @@ const codeGen = () => {
   };
 
   const genRhs = () => {
-      let rhs = '';
-      let parens = 0;
-      let hasArg = 0;
-      let hasParens = 0;
+    let rhs = '';
+    let parens = 0;
+    let hasArg = 0;
+    let hasParens = 0;
 
-      while(1){
-        if(hasParens && hasArg && r()){
-          if(parens === 0) break;
+    while(1){
+      if(hasParens && hasArg && r()){
+        if(parens === 0) break;
 
-          rhs += ')';
-          parens--;
+        rhs += ')';
+        parens--;
 
-          continue;
-        }
-
-        if(r()){
-          if(r()){
-            rhs += '(';
-            parens++;
-            hasArg = 0;
-            hasParens = 1;
-          }else{
-            rhs += '.';
-            hasArg = 1;
-          }
-        }else{
-          rhs += r();
-        }
+        continue;
       }
 
-      if(rhs === '')
-        rhs = '/';
+      if(r()){
+        if(r()){
+          rhs += '(';
+          parens++;
+          hasArg = 0;
+          hasParens = 1;
+        }else{
+          rhs += '.';
+          hasArg = 1;
+        }
+      }else{
+        rhs += r();
+      }
+    }
 
-      return rhs;
-    };
+    if(rhs === '')
+      rhs = '/';
+
+    return rhs;
+  };
 
   while(rhsArr.length !== lhsArr.length){
     const index = rhsArr.length;
