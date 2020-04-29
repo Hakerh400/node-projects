@@ -4,8 +4,10 @@ const fs = require('fs');
 const path = require('path');
 const O = require('../omikron');
 
-const {min, max, floor, sin, cos} = Math;
+const {min, max, abs, floor, sin, cos} = Math;
 const {pi, pih} = O;
+
+const LIGHT = 0;
 
 const params = {
   width: 20,
@@ -27,19 +29,25 @@ const gen = () => {
 
     const x1 = O.bound(floor((k + 1) * wh), 0, w1)
     const x2 = O.bound(floor((1 - k) * wh), 0, w1);
-    const n = O.rand(4);
+    const mode = x1 < x2;
 
+    const n = O.rand(4);
     grid.set(x1, y, nucleotides[n]);
     grid.set(x2, y, nucleotides[3 - n]);
 
-    const start = min(x1, x2) + 1;
-    const end = max(x1, x2);
+    const xMin = mode ? x1 : x2;
+    const xMax = mode ? x2 : x1;
 
-    for(let x = start; x < end; x++)
-      grid.set(x, y, '-');
+    const lightBase = (sin(y * factor) * (mode ? -1 : 1) + 1) / 2;
+
+    for(let x = xMin + 1; x < xMax; x++){
+      const light = lightBase + (x - xMin) ** .5 / w + O.randf(.2);
+      const lightChar = LIGHT ? '=-.'[O.bound(floor(light * 3), 0, 2)] : '-';
+      grid.set(x, y, lightChar);
+    }
   }
 
-  return grid.d.map(a => a.join('')).join('\n');
+  return grid.d.map(a => a.join('').trimRight()).join('\n');
 };
 
 module.exports = {
