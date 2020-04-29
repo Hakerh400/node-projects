@@ -11,11 +11,19 @@ const codeGen = require('./code-gen');
 const LANG = 'Golden sunrise';
 
 const DEBUG = 0;
-const TIMEOUT = 3e3;
+const TIMEOUT = 5e3;
 const INDEX_START_RANGE = [1e6, 1e9];
 const TEST_NUM = 5;
 
-const TEST = null;
+const TEST = 1 ? `
+00 - (1.)
+01 - (0.)
+0# - /
+10 - (0.)1
+11 - (1.)
+1# - /
+# - /
+` : null;
 
 const opts = {
   useBitIO: 1,
@@ -53,8 +61,7 @@ const main = async () => {
       }
     }
   }else{
-    // const start = O.rand(...INDEX_START_RANGE);
-    const start = 0;
+    const start = arrOrder.id('01'.split(''), ''.split(''));
     await test(TEST, start, O.N);
   }
 
@@ -65,6 +72,8 @@ const test = async (src, start, end) => {
   let length = null;
 
   for(let i = start; i !== end; i++){
+    // i = O.rand(...INDEX_START_RANGE);
+
     const input = arrOrder.str('01', i);
     let output = null;
 
