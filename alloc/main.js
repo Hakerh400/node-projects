@@ -4,26 +4,53 @@ const fs = require('fs');
 const path = require('path');
 const assert = require('assert');
 const O = require('../omikron');
+const format = require('../format');
 const Memory = require('./memory');
+
+const r = O.rand;
+const ri = O.randInt;
 
 const main = () => {
   const mem = new Memory();
+  const blocks = [];
 
-  const a1 = mem.alloc(3);
-  const a2 = mem.alloc(5);
-  const a3 = mem.alloc(7);
+  const alloc = () => {
+    const size = ri(1);
+    blocks.push([mem.alloc(size), size]);
+  };
 
-  log();
-  mem.free(a2);
-  
-  const a4 = mem.alloc(3);
-  const a5 = mem.alloc(2);
-  
-  log();
-  mem.free(a3);
-  mem.free(a1);
-  mem.free(a5);
-  mem.free(a4);
+  const free = () => {
+    const [ptr, size] = O.randElem(blocks, 1);
+    mem.free(ptr);
+  };
+
+  const write = () => {
+    const [ptr, size] = O.randElem(blocks);
+    mem.set(ptr + r(size), ri() * (r() * 2 - 1));
+  };
+
+  let i = 0;
+
+  while(1){
+    if(++i === 1e6){
+      i = 0;
+      
+      log(format.num(mem.max));
+      log(format.num(blocks.length));
+      log();
+    }
+
+    if(blocks.length === 0){
+      alloc();
+      continue;
+    }
+
+    switch(r(3)){
+      case 0: alloc(); break;
+      case 1: free(); break;
+      case 2: write(); break;
+    }
+  }
 };
 
 main();

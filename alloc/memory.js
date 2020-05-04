@@ -7,14 +7,17 @@ const O = require('../omikron');
 
 const {abs} = Math;
 
-const DEBUG = 1;
+const DEBUG = 0;
 
 class Memory{
   #data = O.obj();
+  #max = -1;
 
   constructor(){
     if(DEBUG) this.log();
   }
+
+  get max(){ return this.#max; }
 
   get(addr){
     const data = this.#data;
@@ -25,9 +28,12 @@ class Memory{
   set(addr, val){
     const data = this.#data;
     data[addr] = val;
+    if(addr > this.#max) this.#max = addr;
   }
 
   alloc(size){
+    assert(size > 0, 'Memory block size must be positive');
+
     let ptr = 0;
 
     while(1){
@@ -60,7 +66,11 @@ class Memory{
 
   free(ptr){
     let start = ptr - 1;
+    assert(ptr > 0, 'Memory block address must be in the heap');
+
     let size = this.get(start);
+    assert(size > 0, 'Memory block is not allocated');
+
     let end = start + size + 1;
 
     if(start !== 0){
@@ -71,6 +81,8 @@ class Memory{
 
         start -= dif;
         size += dif;
+
+        assert(start >= 0, 'Heap corruption (invalid previous block size)');
       }
     }
 
@@ -103,15 +115,8 @@ class Memory{
 
   toString(){
     const data = this.#data;
-    const keys = O.keys(data);
 
-    const max = keys.reduce((a, b) => {
-      b |= 0;
-      if(data[b] === 0) return a;
-      return a > b ? a : b;
-    }, -1);
-
-    const arr = O.ca(max + 4, i => {
+    const arr = O.ca(this.#max + 4, i => {
       return this.get(i);
     });
 
