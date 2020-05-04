@@ -5,8 +5,16 @@ const path = require('path');
 const assert = require('assert');
 const O = require('../omikron');
 
+const {abs} = Math;
+
+const DEBUG = 1;
+
 class Memory{
   #data = O.obj();
+
+  constructor(){
+    if(DEBUG) this.log();
+  }
 
   get(addr){
     const data = this.#data;
@@ -30,21 +38,23 @@ class Memory{
         this.set(ptr + size + 1, size);
         this.set(ptr + size + 2, 0);
 
+        if(DEBUG) this.log();
         return ptr + 1;
       }
 
-      if(n < 0 && size + n > 2){
-        const dif = size + n - 2;
+      if(n < 0 && -n - 2 > size){
+        const dif = -n - 2 - size
 
         this.set(ptr, size);
         this.set(ptr + size + 1, size);
         this.set(ptr + size + 2, -dif);
-        this.set(ptr + n - 1, -dif);
+        this.set(ptr - n + 1, -dif);
 
+        if(DEBUG) this.log();
         return ptr + 1;
       }
 
-      ptr += n + 2;
+      ptr += abs(n) + 2;
     }
   }
 
@@ -69,6 +79,7 @@ class Memory{
 
       if(n === 0){
         this.set(start, 0);
+        if(DEBUG) this.log();
         return;
       }
 
@@ -82,6 +93,8 @@ class Memory{
 
     this.set(start, -size);
     this.set(end, -size);
+
+    if(DEBUG) this.log();
   }
 
   log(){
