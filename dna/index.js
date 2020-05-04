@@ -8,6 +8,7 @@ const {min, max, abs, floor, sin, cos} = Math;
 const {pi, pih} = O;
 
 const LIGHT = 0;
+const CORRELATION = 0;
 
 const params = {
   width: 20,
@@ -17,7 +18,7 @@ const params = {
 const nucleotides = 'ACGT';
 
 const gen = () => {
-  const {width:w, height: h} = params;
+  const {width: w, height: h} = params;
   const grid = new O.Grid(w, h, () => ' ');
 
   const factor = pi / w;
@@ -31,9 +32,11 @@ const gen = () => {
     const x2 = O.bound(floor((k + 1) * wh), 0, w1);
     const mode = x1 < x2;
 
-    const n = O.rand(4);
-    grid.set(x1, y, nucleotides[n]);
-    grid.set(x2, y, nucleotides[3 - n]);
+    const n1 = O.rand(4);
+    const n2 = CORRELATION ? 3 - n : O.rand(4);
+
+    grid.set(x1, y, nucleotides[n1]);
+    grid.set(x2, y, nucleotides[n2]);
 
     const xMin = mode ? x1 : x2;
     const xMax = mode ? x2 : x1;
