@@ -11,7 +11,7 @@ const DEBUG = 0;
 
 class Memory{
   #data = O.obj();
-  #max = -1;
+  #max = 0;
 
   constructor(){
     if(DEBUG) this.log();
