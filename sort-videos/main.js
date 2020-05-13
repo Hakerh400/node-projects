@@ -3,7 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 const assert = require('assert');
-const O = require('omikron');
+const O = require('../omikron');
 
 const a = O.sanl(O.rfs('1.txt', 1));
 const b = O.sanl(O.rfs('2.txt', 1));
