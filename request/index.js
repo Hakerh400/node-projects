@@ -8,6 +8,9 @@ const http = require('http');
 const https = require('https');
 const O = require('../omikron');
 
+const HTTP_PORT = 80;
+const HTTPS_PORT = 443;
+
 const nt = f => a => {
   process.nextTick(() => {
     f(a);
@@ -15,6 +18,8 @@ const nt = f => a => {
 };
 
 const get = (url, file=null) => new Promise((res, rej) => {
+  log(url);
+
   const resNt = nt(res);
   const rejNt = nt(rej);
 
@@ -29,17 +34,17 @@ const get = (url, file=null) => new Promise((res, rej) => {
     assert.fail(protocol)
   );
 
-  const requset = http.request({
+  const requset = httpm.request({
     hostname: urlInfo.host,
     port: (
       urlInfo.port !== null ? urlInfo.port :
-      httpm === http ? 80 : 443
+      httpm === http ? HTTP_PORT : HTTPS_PORT
     ),
     path: urlInfo.path,
     method: 'GET',
     headers: {
       'Cache-Control': 'no-cache',
-      'User-Agent': 'Mozilla/5.0 (Windows NT 6.3; Win64; x64; rv:72.0) Gecko/20100101 Firefox/72.0',
+      'User-Agent': 'Node.js',
     },
   }, response => {
     const status = response.statusCode;

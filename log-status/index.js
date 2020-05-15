@@ -14,18 +14,23 @@ logStatus.reset = reset;
 
 module.exports = logStatus;
 
-function logStatus(f, n=null, type='frame'){
+function logStatus(f, n=null, offset=null, type=null){
+  if(type === null){
+    type = offset !== null ? offset : 'frame';
+    offset = 0;
+  }
+
   const now = Date.now();
   if(startTime === null) startTime = now;
 
   const isSizeKnown = n !== null;
   const dt = now - startTime;
-  const eta = calcTime(dt, f, n);
+  const eta = calcTime(dt, f - offset, n - offset);
 
   const msgs = [
     `Processing ${type} ${format.num(f)}${isSizeKnown ? ` of ${format.num(n)}` : ``}`,
     ...isSizeKnown && eta >= 0 ? [`ETA: ${format.time(eta)}`] : [],
-    ...dt !== 0 ? [`Speed: ${f / (dt / 1e3) + .5 | 0}`] : [],
+    ...dt !== 0 ? [`Speed: ${(f - offset) / (dt / 1e3) + .5 | 0}`] : [],
   ];
 
   log(msgs.join(' '.repeat(2)));
