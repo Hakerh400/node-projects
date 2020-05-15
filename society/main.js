@@ -21,10 +21,10 @@ const main = () => {
 
     const ents = grid.getEntsInfo();
 
-    if(ents.reduce((a, b) => a + b, 0) >= 2){
+    if(ents.reduce((a, b) => a + b, 0) >= 3){
       log(grid.toString());
       log();
-      log(`${`${' '.repeat(3)}${ents.join('')}`}`);
+      log(`${' '.repeat(3)}${ents.join('')}`);
 
       break;
     }
