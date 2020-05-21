@@ -28,7 +28,7 @@ const gen = () => {
   for(let y = 0; y !== h; y++){
     const k = sin(y * factor + pih);
 
-    const x1 = O.bound(floor((1 - k) * wh), 0, w1)
+    const x1 = O.bound(floor((1 - k) * wh), 0, w1);
     const x2 = O.bound(floor((k + 1) * wh), 0, w1);
     const mode = x1 < x2;
 
