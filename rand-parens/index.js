@@ -6,7 +6,7 @@ const O = require('../omikron');
 
 const r = O.rand;
 
-const gen = (minLen, maxLen=null) => {
+const gen = (minLen=null, maxLen=null) => {
   while(1){
     let str = '';
     let depth = 0;
