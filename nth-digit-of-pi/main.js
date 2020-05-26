@@ -6,7 +6,7 @@ const assert = require('assert');
 const O = require('../omikron');
 const debug = require('../debug');
 
-const DIGITS_NUM = 5;
+const DIGITS_NUM = 7;
 
 const main = () => {
   log(`3.${O.ca(DIGITS_NUM, i => getDigit(i)).join('')}`);
