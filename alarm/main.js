@@ -14,7 +14,7 @@ const main = () => {
     const h = d.getHours();
     const m = d.getMinutes();
 
-    if(h === 8 && m === 0){
+    if(h === 12 && m === 0){
       while(1)
         cp.execSync(`ffplay -loglevel quiet -nodisp -autoexit -fast "${file}"`);
     }
