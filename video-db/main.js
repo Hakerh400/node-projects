@@ -98,15 +98,9 @@ async function processData(data){
 
     case 'download':
       const jsDir = path.join(cwd, '..');
-
-      const proc = cp.exec(`start cmd /c "cls&d&p&e "${data.url}""`, {
+      const proc = cp.exec(`start /min cmd /c "cls&d&p&e "${data.url}""`, {
         cwd: jsDir,
-      });
-      
-      proc.on('exit', () => {
-        log.inc();
-        log(`Downloaded ${data.url}`);
-        log.dec();
+        detached: true,
       });
       break;
   }
