@@ -27,9 +27,8 @@ const main = async () => {
   for(const vid of ps.vids){
     const j = files.findIndex(f => path.parse(f).name.endsWith(vid));
     if(j === -1) continue;
-    i++;
 
-    const indexStr = i.toString();
+    const indexStr = String(i++);
     assert(indexStr.length <= indexPad);
 
     const file = files[j];
@@ -55,7 +54,7 @@ const getParams = async () => {
   if(!/^(?:0?|[1-9][0-9]*)$/.test(offsetStr))
     err(`Invalid offset ${O.sf(offsetStr)}`);
 
-  const offset = BigInt(offsetStr);
+  const offset = offsetStr !== '' ? BigInt(offsetStr) : 1n;
 
   log('Video IDs:\n');
 
