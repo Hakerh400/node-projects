@@ -68,6 +68,8 @@ async function processInput(str){
       await spawn('python');
     }else if(files.includes(engs.haskell.script)){
       await spawn('haskell');
+    }else if(files.includes(engs.lisp.script)){
+      await spawn('lisp');
     }else{
       str = 't';
       break loadScript;

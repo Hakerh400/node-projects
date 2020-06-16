@@ -18,6 +18,9 @@
     }, {
       "name": "haskell",
       "ext": "hs"
+    }, {
+      "name": "lisp",
+      "ext": "lisp"
     }
   ]
 }
