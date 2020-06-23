@@ -50,6 +50,7 @@ async function onReq(req, res){
     .catch(err);
 
   function err(msg){
+    log(msg);
     send(msg, 0);
   }
 
@@ -98,10 +99,16 @@ async function processData(data){
 
     case 'download':
       const jsDir = path.join(cwd, '..');
-      const proc = cp.exec(`start /min cmd /c "cls&d&p&e "${data.url}""`, {
+      const args = `/d /s /c "start /min cmd /c "cls&d&p&e "${data.url}"""`;
+
+      const proc = cp.spawn('cmd', [args], {
         cwd: jsDir,
+        stdio: 'ignore',
+        windowsVerbatimArguments: true,
         detached: true,
       });
+
+      proc.unref();
       break;
   }
 }

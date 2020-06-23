@@ -9,20 +9,29 @@ const format = require('../format');
 const file = format.path('-dw/alarm.mp3');
 
 const main = () => {
+  return playAlarm();
+
   const f = () => {
     const d = new Date();
     const h = d.getHours();
     const m = d.getMinutes();
 
-    if(h === 12 && m === 0){
-      while(1)
-        cp.execSync(`ffplay -loglevel quiet -nodisp -autoexit -fast "${file}"`);
+    if(h === 7 && m === 0){
+      playAlarm();
+      return;
     }
 
     setTimeout(f, 1e3);
   };
 
   f();
+};
+
+const playAlarm = () => {
+  try{
+    while(1)
+      cp.execSync(`ffplay -loglevel quiet -nodisp -autoexit -fast "${file}"`);
+  }catch{}
 };
 
 main();
