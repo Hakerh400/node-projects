@@ -6,7 +6,7 @@ const cp = require('child_process');
 const O = require('../omikron');
 const format = require('../format');
 
-const file = format.path('-dw/alarm.mp3');
+const file = format.path('C:/Projects/Alarm/alarm.mp3');
 
 const main = () => {
   return playAlarm();
