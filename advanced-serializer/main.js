@@ -7,12 +7,28 @@ const arrOrder = require('../arr-order');
 const cs = require('.');
 
 const main = () => {
-  const z = new Zero();
-  const obj = new Pair(z, new Pair(new Pair(z, z), z));
-  const ser = new cs.Serializer();
-  const bits = ser.ser(obj);
+  for(let i = 0; i !== 100; i++){
+    const bits1 = arrOrder.str('01', i);
 
-  log(bits);
+    const ser = new cs.Serializer();
+    deser(bits1).ser(ser);
+    const bits2 = ser.getBits();
+
+    log(`${bits1} ---> ${bits2}`);
+  }
+};
+
+const deser = bits => {
+  const deser = new cs.Deserializer();
+
+  return deser.deser(bits, () => {
+    const bit = deser.bit();
+
+    if(bit === 0)
+      return [null, new Zero()];
+
+    return [Pair, 2];
+  })
 };
 
 class Zero extends cs.Serializable{
@@ -34,8 +50,7 @@ class Pair extends cs.Serializable{
 
   ser(ser){
     ser.bit(1);
-    ser.push(this.fst);
-    ser.push(this.snd);
+    return [this.fst, this.snd];
   }
 
   toStr(){

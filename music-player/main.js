@@ -41,7 +41,7 @@ async function main(){
   const files = [];
 
   for(const dir of dirs){
-    if(dir.includes('_'))
+    if(dir.includes('\x5F'))
       testMode = 1;
 
     if(SUB_FOLDERS){
@@ -56,6 +56,11 @@ async function main(){
       for(const file of fs.readdirSync(dir)){
         const fp = path.join(dir, file);
         if(!fs.statSync(fp).isFile()) continue;
+
+        if(file === 'd.bat'){
+          fs.unlinkSync(fp);
+          continue;
+        }
 
         if(!files.includes(fp))
           files.push(fp);
