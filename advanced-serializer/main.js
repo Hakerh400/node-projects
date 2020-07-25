@@ -2,6 +2,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const assert = require('assert');
 const O = require('../omikron');
 const arrOrder = require('../arr-order');
 const cs = require('.');
@@ -9,12 +10,10 @@ const cs = require('.');
 const main = () => {
   for(let i = 0; i !== 100; i++){
     const bits1 = arrOrder.str('01', i);
+    const obj = deser(bits1);
+    const bits2 = new cs.Serializer().ser(obj);
 
-    const ser = new cs.Serializer();
-    deser(bits1).ser(ser);
-    const bits2 = ser.getBits();
-
-    log(`${bits1} ---> ${bits2}`);
+    log(`${bits1} ---> ${obj}`);
   }
 };
 
