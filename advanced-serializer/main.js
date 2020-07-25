@@ -7,42 +7,30 @@ const O = require('../omikron');
 const arrOrder = require('../arr-order');
 const cs = require('.');
 
+const {
+  Serializable,
+  Tuple,
+  Literal,
+  Wrapper,
+} = cs;
+
+O.bion(1);
+
 const main = () => {
-  for(let i = 0; i !== 100; i++){
-    const bits1 = arrOrder.str('01', i);
-    const obj = deser(bits1);
-    const bits2 = new cs.Serializer().ser(obj);
+  for(let i = 0; i !== 20; i++){
+    const bits = arrOrder.str('01', i, 1);
+    const nStr = Pair.deserialize(bits, 3, [new Wrapper(2)]).toString();
+    const n = BigInt(`0b1${O.rev(nStr)}`) - 1n;
 
-    log(`${bits1} ---> ${obj}`);
+    log(`${bits} ---> ${n}`);
   }
 };
 
-const deser = bits => {
-  const deser = new cs.Deserializer();
-
-  return deser.deser(bits, () => {
-    const bit = deser.bit();
-
-    if(bit === 0)
-      return [null, new Zero()];
-
-    return [Pair, 2];
-  })
-};
-
-class Zero extends cs.Serializable{
-  ser(ser){
-    ser.bit(0);
-  }
-
-  toStr(){
-    return '0';
-  }
-}
-
-class Pair extends cs.Serializable{
-  constructor(fst, snd){
+class Pair extends Serializable{
+  constructor(base, fst, snd){
     super();
+
+    this.base = base;
     this.fst = fst;
     this.snd = snd;
   }
@@ -52,8 +40,45 @@ class Pair extends cs.Serializable{
     return [this.fst, this.snd];
   }
 
+  static deser(deser, args){
+    const base = args[0];
+
+    if(args.length === 1)
+      return new Digit(base.val, deser.intMax(base.val));
+
+    if(!deser.bit())
+      return new Eof();
+
+    return new Tuple(Pair, 3, [base]);
+  }
+
   toStr(){
-    return ['(', this.fst, ', ', this.snd, ')'];
+    return [this.fst, this.snd];
+  }
+}
+
+class Digit extends Literal{
+  constructor(base, val){
+    super();
+
+    this.base = base;
+    this.val = val;
+  }
+
+  ser(ser){
+    ser.intMax(this.base, this.val);
+  }
+
+  toStr(){
+    return String(this.val);
+  }
+}
+
+class Eof extends Literal{
+  ser(ser){}
+
+  toStr(){
+    return '';
   }
 }
 

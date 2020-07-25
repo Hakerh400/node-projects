@@ -2,49 +2,36 @@
 
 const fs = require('fs');
 const path = require('path');
+const assert = require('assert');
 const O = require('../omikron');
 
+O.bion(1);
+
 const main = () => {
-  O.bion(1);
-
   for(let m = 2n; m <= 20n; m++){
-    log(`Number: ${m}`);
-    log.inc();
-
     for(let n = 0n; n !== m; n++){
       let bits = '';
-      ser(a => bits += a ? 1 : 0, n, m);
+      ser(a => bits += a ? 1 : 0, m, n);
 
       let bs = bits;
       const a = deser(a => [bs[0] | 0, bs = bs.slice(1)][0], m);
 
-      log(`${a} ---> ${bits}`);
+      assert(a === n);
     }
-
-    log.dec();
-    log('\n');
   }
+
+  log('ok');
 };
 
-const ser = (f, n, m) => {
+const ser = (f, m, n) => {
   const a = log2(m);
   const b = 1n << a;
   const c = (b << 1n) - m;
 
   if(n < c){
-    for(let i = 0n; i !== a; i++){
-      f(n & 1n);
-      n >>= 1n;
-    }
+    write(f, a, n);
   }else{
-    const d = b - c;
-    let e = c + (n - c) % d;
-
-    for(let i = 0n; i !== a; i++){
-      f(e & 1n);
-      e >>= 1n;
-    }
-
+    write(f, a, c + (n - c) % (b - c));
     f(n >= b);
   }
 };
@@ -53,15 +40,24 @@ const deser = (f, m) => {
   const a = log2(m);
   const b = 1n << a;
   const c = (b << 1n) - m;
+  let n = read(f, a);
+
+  if(n >= c && f()) n += b - c;
+  return n;
+};
+
+const write = (f, a, b) => {
+  for(let i = 0n; i !== a; i++){
+    f(b & 1n);
+    b >>= 1n;
+  }
+};
+
+const read = (f, a) => {
   let n = 0n;
 
   for(let i = 0n; i !== a; i++)
-    if(f()) n |= (1n << i);
-
-  if(n < c) return n;
-
-  const d = b - c;
-  if(f()) n += d;
+    if(f()) n |= 1n << i;
 
   return n;
 };
