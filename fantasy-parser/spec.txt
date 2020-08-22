@@ -1,7 +1,7 @@
 (
-  () /\s+/ () ()
-  () "+" (PLUS) ()
-  () /\d+/ (NUMBER) ()
+  (/\s+/)
+  ("+" PLUS)
+  (/\d+/ NUMBER)
 )
 
 Program (Expr)
