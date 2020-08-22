@@ -1,0 +1,18 @@
+(
+  () /\s+/ () ()
+  () "+" (PLUS) ()
+  () /\d+/ (NUMBER) ()
+)
+
+Program (Expr)
+
+Expr (Add)
+
+Add (
+  Add: Add PLUS Term
+  Term: Term
+)
+
+Term (Num)
+
+Num (NUMBER)
