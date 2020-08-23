@@ -326,7 +326,7 @@ const main = () => {
         sp();
         const isLab = ch(0) === ':';
 
-        // If it is a label, then open a new section
+        // If it is a label, open a new section
         if(isLab){
           ch(1);
           rule.openSection(parser.getLabel(ident));
