@@ -1,16 +1,21 @@
 'use strict';
 
+const assert = require('assert');
 const O = require('omikron');
 
 class LexerRule{
   context = null;
   pattern = null;
-  tokens = [];
+  terms = [];
   action = null;
 
   setPattern(pat){
-    O.assert(this.pattern === null);
+    assert(this.pattern === null);
     this.pattern = pat;
+  }
+
+  addTerm(tok){
+    this.terms.push(tok);
   }
 }
 
