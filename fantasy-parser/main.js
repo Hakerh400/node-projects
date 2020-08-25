@@ -322,12 +322,10 @@ const main = () => {
         // Parse identifier
         const ident = parseIdent();
 
-        // Check whether it is a label or not
         sp();
-        const isLab = ch(0) === ':';
 
         // If it is a label, open a new section
-        if(isLab){
+        if(ch(0) === ':'){
           ch(1);
           rule.openSection(parser.getLabel(ident));
           continue;

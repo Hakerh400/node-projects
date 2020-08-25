@@ -21,6 +21,11 @@ const main = async () => {
       fs.renameSync(f1, f2);
   }
 
+  const batchFile = path.join(dir, 'd.bat');
+  
+  if(fs.existsSync(batchFile))
+    fs.unlinkSync(batchFile);
+
   const files = fs.readdirSync(dir);
   let i = ps.offset;
 
