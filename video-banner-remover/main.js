@@ -7,6 +7,8 @@ const O = require('../omikron');
 const fsRec = require('../fs-rec');
 
 const ffDir = 'C:/Program Files/FFmpeg/bin/latest';
+
+const wipStr = '[WIP]';
 const fixedStr = '[FIXED]';
 
 const args = process.argv.slice(2);
@@ -27,10 +29,20 @@ const main = () => {
   dir.topDown(entry => {
     if(!entry.isFile) return;
     if(!(entry.ext in exts)) return;
+
+    if(entry.name.endsWith(` ${wipStr}`)) return;
     if(entry.name.endsWith(` ${fixedStr}`)) return;
 
     const pth1 = entry.pth;
-    const pth2 = entry.join(`../${entry.name} ${fixedStr}.${entry.ext}`);
+    const pth2 = entry.join(`../${entry.name} ${wipStr}.${entry.ext}`);
+    const pth3 = entry.join(`../${entry.name} ${fixedStr}.${entry.ext}`);
+
+    log(path.relative(dirPth, pth1));
+
+    if(exists(pth2) && exists(pth3))
+      del(pth3);
+
+    if(exists(pth3)) return;
 
     const info = JSON.parse(fp(`-v quiet -print_format json -show_format -show_streams "${pth1}"`));
     const dur = Number(info.format.duration);
@@ -50,10 +62,9 @@ const main = () => {
     const w = width;
     const h = height * 0.0625 + 5;
 
-    log(path.relative(dirPth, pth1));
     fg(`-i "${pth1}" -c:a copy -vf "format=yuv420p,drawbox=enable='between(t,${start},${end})':x=${x}:y=${y}:w=${w}:h=${h}:color=#808080:t=fill" "${pth2}"`);
 
-    return;
+    fs.renameSync(pth2, pth3);
   });
 };
 
@@ -74,6 +85,14 @@ const cmd = (prog, args, opts={}) => {
   if(result === null) return null;
   if(Buffer.isBuffer(result)) return result.toString();
   return result.stdout + result.stderr;
+};
+
+const exists = pth => {
+  return fs.existsSync(pth);
+};
+
+const del = pth => {
+  fs.unlinkSync(pth);
 };
 
 main();
