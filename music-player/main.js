@@ -5,7 +5,7 @@ const path = require('path');
 const cp = require('child_process');
 const O = require('../omikron');
 const readline = require('../readline');
-const fsRec = require('../fs-rec');
+const fsRec = require('../fs-rec-legacy');
 const setPriority = require('../set-priority');
 
 const SUB_FOLDERS = 0;
