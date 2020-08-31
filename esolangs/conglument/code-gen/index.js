@@ -23,16 +23,19 @@ const arrc = [0, 1, 2];
 
 const codeGen = () => {
   const gen = (depth, arity, flags=0) => {
-    basicFunc: if(depth !== 0 && rf() > PROB_START * PROB_FACTOR ** depth){
-      const a = {0: 1, 1: 1, 2: 1};
+    basicFuncs: {
+      if(depth === 0) break basicFuncs;
+      if(flags & MINIFN) break basicFuncs;
+      if(rf() < PROB_START * PROB_FACTOR ** depth) break basicFuncs;
+
+      const a = O.arr2obj(arrc);
 
       if(flags & TARGET) a[0] = a[2] = 0;
-      if(flags & MINIFN) a[0] = a[1] = 0;
       if(arity !== 1) a[1] = 0;
       if(arity === 0) a[2] = 0;
 
       const b = arrc.filter(b => a[b]);
-      if(b.length === 0) break basicFunc;
+      if(b.length === 0) break basicFuncs;
 
       const c = re(b) | 0;
 
@@ -43,13 +46,14 @@ const codeGen = () => {
 
     depth++;
 
-    basicFunc: {
-      const a = O.arr2obj([0, 1, 2]);
+    combinators: {
+      const a = O.arr2obj(arrc);
 
       if(arity === 0) a[1] = 0;
+      if(r(4)) a[2] = 0;
 
       const b = O.keys(a).filter(b => a[b]);
-      if(b.length === 0) break basicFunc;
+      if(b.length === 0) break combinators;
 
       const c = re(b) | 0;
 

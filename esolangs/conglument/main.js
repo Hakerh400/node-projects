@@ -5,7 +5,6 @@ const path = require('path');
 const esolangs = require('../../../esolangs');
 const O = require('../../omikron');
 const arrOrder = require('../../arr-order');
-const logStatus = require('../../log-status');
 const codeGen = require('./code-gen');
 
 const cwd = __dirname;
@@ -32,12 +31,14 @@ const sandbox = new esolangs.Sandbox();
 
 const main = async () => {
   log(`Language: ${LANG}`);
-  sep();
+  O.logb();
+
+  let srcIndex = 0;
 
   if(TEST === null){
     for(let i = 1;; i++){
       if(DEBUG)
-        logStatus(i, null, 'source code');
+        log(`Processing source code ${++srcIndex}`);
 
       const src = codeGen();
 
@@ -52,10 +53,10 @@ const main = async () => {
       const ok = await test(src, start, end);
 
       if(DEBUG){
-        sep();
+        O.logb();
       }else if(ok){
-        log(src)
-        sep();
+        // log(src)
+        // O.logb();
       }
     }
   }else{
@@ -72,6 +73,9 @@ const test = async (src, start, end) => {
   let has0 = 0;
   let has1 = 0;
 
+  let ss = [];
+  let ok = 0;
+
   for(let i = start; i !== end; i++){
     // i = O.rand(...INDEX_START_RANGE);
 
@@ -80,22 +84,28 @@ const test = async (src, start, end) => {
 
     try{
       const result = await sandbox.run(LANG, src, input, opts, sbxOpts);
-      if(!result[0]) O.error(result[1]);
+
+      if(!result[0]){
+        log(src);
+        O.error(result[1]);
+      }
+
       output = result[1].toString();
     }catch{}
 
-    if(DEBUG || TEST !== null){
-      log([input, output].map(a => {
-        if(a === null) return '...';
-        // if(a === '') return '/';
-        return a;
-      }).join(' ---> '));
-    }
+    const s = [input, output].map(a => {
+      if(a === null) return '...';
+      // if(a === '') return '/';
+      return a;
+    }).join(' ---> ');
 
-    if(TEST === null){
+    if(DEBUG || TEST !== null) log(s);
+    ss.push(s);
+
+    if(TEST === null && !ok){
       if(output === null) return 0;
-      if(output.length === 0) return 0;
-      if(output in outputs) return 0;
+      if(output.length === 0 && length === null) return 0;
+      // if(output in outputs) return 0;
 
       outputs[output] = 1;
 
@@ -103,16 +113,24 @@ const test = async (src, start, end) => {
       if(output.includes('1')) has1 = 1;
 
       const len = output !== null ? output.length : -1;
-      if(length === null) length = len;
-      else if(len !== length) return has0 && has1;
+
+      if(length === null){
+        length = len;
+      }else if(len !== length){
+        ok = 1;
+      }
     }
   }
 
-  return 0;
-};
+  if(ok/* && has0 && has1*/){
+    log(src);
+    log();
+    log(ss.join('\n'));
+    O.logb();
+    return 1;
+  }
 
-const sep = () => {
-  log(`\n${'='.repeat(100)}\n`);
+  return 0;
 };
 
 main().catch(O.error);
