@@ -13,7 +13,7 @@ const langFile = path.join(cwd, '../lang.txt');
 const LANG = O.rfs(langFile, 1);
 
 const DEBUG = 0;
-const TIMEOUT = 3e3;
+const TIMEOUT = 2e3;
 const INDEX_START_RANGE = [1e6, 1e9];
 const TEST_NUM = 5;
 
@@ -21,6 +21,7 @@ const TEST = null;
 
 const opts = {
   minify: 0,
+  format: 0,
 };
 
 const sbxOpts = {
@@ -102,15 +103,17 @@ const test = async (src, start, end) => {
     if(DEBUG || TEST !== null) log(s);
     ss.push(s);
 
+    if(output !== null){
+      if(!has0 && output.includes('0')) has0 = 1;
+      if(!has1 && output.includes('1')) has1 = 1;
+    }
+
     if(TEST === null && !ok){
       if(output === null) return 0;
       if(output.length === 0 && length === null) return 0;
       // if(output in outputs) return 0;
 
       outputs[output] = 1;
-
-      if(output.includes('0')) has0 = 1;
-      if(output.includes('1')) has1 = 1;
 
       const len = output !== null ? output.length : -1;
 
@@ -122,7 +125,7 @@ const test = async (src, start, end) => {
     }
   }
 
-  if(ok/* && has0 && has1*/){
+  if(ok && has0 && has1){
     log(src);
     log();
     log(ss.join('\n'));
