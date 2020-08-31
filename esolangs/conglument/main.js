@@ -14,14 +14,14 @@ const langFile = path.join(cwd, '../lang.txt');
 const LANG = O.rfs(langFile, 1);
 
 const DEBUG = 0;
-const TIMEOUT = 5e3;
+const TIMEOUT = 3e3;
 const INDEX_START_RANGE = [1e6, 1e9];
 const TEST_NUM = 5;
 
 const TEST = null;
 
 const opts = {
-  useBitIO: 1,
+  minify: 0,
 };
 
 const sbxOpts = {
@@ -69,6 +69,8 @@ const main = async () => {
 const test = async (src, start, end) => {
   const outputs = O.obj();
   let length = null;
+  let has0 = 0;
+  let has1 = 0;
 
   for(let i = start; i !== end; i++){
     // i = O.rand(...INDEX_START_RANGE);
@@ -85,7 +87,7 @@ const test = async (src, start, end) => {
     if(DEBUG || TEST !== null){
       log([input, output].map(a => {
         if(a === null) return '...';
-        if(a === '') return '/';
+        // if(a === '') return '/';
         return a;
       }).join(' ---> '));
     }
@@ -97,9 +99,12 @@ const test = async (src, start, end) => {
 
       outputs[output] = 1;
 
+      if(output.includes('0')) has0 = 1;
+      if(output.includes('1')) has1 = 1;
+
       const len = output !== null ? output.length : -1;
       if(length === null) length = len;
-      else if(len !== length) return 1;
+      else if(len !== length) return has0 && has1;
     }
   }
 

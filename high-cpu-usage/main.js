@@ -8,7 +8,7 @@ const O = require('../omikron');
 const readline = require('../readline');
 const port = require('./port');
 
-const WORKERS_NUM = 3;
+const WORKERS_NUM = 4;
 const TIMEOUT = 1e3;
 
 const cwd = __dirname;
