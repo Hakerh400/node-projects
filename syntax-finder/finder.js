@@ -3,7 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 const O = require('../omikron');
-const fsRec = require('../fs-rec');
+const fsRec = require('../fs-rec-legacy');
 
 module.exports = {
   find,
