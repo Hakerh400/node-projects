@@ -1,0 +1,11 @@
+(lexer
+  (init-flags main)
+  (rule
+    (advance (repeat (range 0 9) 1 ()))
+    (emit-tokens number)
+  )
+  (rule
+    (advance (or (space)))
+    (emit-tokens number)
+  )
+)
