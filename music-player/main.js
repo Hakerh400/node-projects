@@ -115,6 +115,9 @@ function aels(){
         case 'o': moveTo('Other'); break;
         case 'w': moveTo('Word'); break;
         case 's': moveTo('Spam'); break;
+
+        case 'R': moveTo('Russian'); break;
+        case 'a': moveTo('Arabic'); break;
       }
     }
   });
