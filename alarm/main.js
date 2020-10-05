@@ -30,7 +30,7 @@ const main = () => {
 const playAlarm = () => {
   try{
     while(1)
-      cp.execSync(`ffplay -loglevel quiet -nodisp -autoexit -fast "${file}"`);
+      cp.execSync(`"C:/Program Files/FFmpeg/bin/latest/ffplay.exe" -loglevel quiet -nodisp -autoexit -fast "${file}"`);
   }catch{}
 };
 
