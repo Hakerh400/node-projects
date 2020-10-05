@@ -122,7 +122,6 @@ const main = () => {
           if(connectedNum !== whiteNum) break test;
         }
 
-
         if(found) return 0;
         found = 1;
       }

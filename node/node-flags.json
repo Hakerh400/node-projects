@@ -1,0 +1,5 @@
+[
+  "expose-gc",
+  "trace-warnings",
+  "max-old-space-size=5000"
+]

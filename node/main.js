@@ -7,18 +7,12 @@ const O = require('../omikron');
 const readline = require('../readline');
 const logSync = require('../log-sync');
 const engs = require('./engines');
+const nodeFlags = require('./node-flags');
 
 const DISPLAY_EXIT_CODE = 0;
 const DISPLAY_SIGINT = 0;
 const KILL_ON_SECOND_SIGINT = 1;
 const ELECTRON_NIGHTLY = 1;
-
-const NODE_FLAGS = [
-  '--expose-gc',
-  '--experimental-report',
-  '--trace-warnings',
-  '--max-old-space-size=5000',
-];
 
 const cwd = __dirname;
 const electronAppScript = path.join(cwd, 'electron-app.js');
@@ -119,7 +113,7 @@ async function processInput(str){
     const eng = engs[name];
 
     if(name === 'node')
-      args = NODE_FLAGS.concat(args);
+      args = nodeFlags.map(a => `--${a}`).concat(args);
 
     proc = spawnProc(eng.exe, [
       ...args,

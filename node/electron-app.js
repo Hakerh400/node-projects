@@ -3,6 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 const electron = require('electron');
+const nodeFlags = require('./node-flags');
 
 const DEBUG = process.argv.includes('visual');
 
@@ -13,9 +14,16 @@ const mainFile = path.join(cwd, process.argv[2]);
 
 const args = process.argv.slice(3);
 
-electron.app.once('ready', main);
+const {app} = electron;
+
+// for(const flag of nodeFlags)
+//   app.commandLine.appendSwitch(flag)
+
+app.once('ready', main);
 
 function main(){
+  process.traceProcessWarnings = 1;
+
   const ipc = electron.ipcMain;
 
   ipc.on('log', (evt, args) => console.log.apply(null, args));
@@ -30,6 +38,7 @@ function main(){
     show: false,
     webPreferences: {
       nodeIntegration: true,
+      contextIsolation: false,
     },
   });
 

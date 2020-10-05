@@ -7,7 +7,7 @@
     "python": "C:/Program Files/Python36/python.exe",
     "haskell": "C:/Program Files/Haskell Platform/8.6.5/bin/ghc.exe",
     "lisp": "C:/Program Files/clisp-2.49/clisp.exe",
-    "ffmpeg": "C:/Program Files/FFmpeg/bin/original/ffmpeg.exe"
+    "ffmpeg": "C:/Program Files/FFmpeg/bin/latest/ffmpeg.exe"
   },
 
   "isTravis": null
