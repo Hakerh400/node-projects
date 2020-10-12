@@ -21,6 +21,9 @@
     }, {
       "name": "lisp",
       "ext": "lisp"
+    }, {
+      "name": "z3",
+      "ext": "z3"
     }
   ]
 }
