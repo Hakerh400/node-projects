@@ -76,6 +76,12 @@
       "name": "test",
       "src": "C:/Projects/Test",
       "dest": "C:/GitHub/test"
+    },
+
+    "z3": {
+      "name": "z3-projects",
+      "src": "C:/Projects/Z3",
+      "dest": "C:/GitHub/z3"
     }
   }
 }

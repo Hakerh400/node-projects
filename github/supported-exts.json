@@ -23,7 +23,8 @@
     "ahk",
 
     "bat",
-    "glsl"
+    "glsl",
+    "z3"
   ],
   
   "bin": [
