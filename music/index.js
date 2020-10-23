@@ -9,7 +9,7 @@ const frequencies = require('./frequencies.json');
 const w = 44100;
 
 const defaultNoteNum = 4;
-const noteDuration = w / 1;
+const noteDuration = w / 4;
 const pauseFactor = 0;
 
 const volume = 1;
@@ -72,13 +72,7 @@ function render(notesFile, audioFile, cb=O.nop){
 }
 
 function loadNotes(file){
-  var notes = fs.readFileSync(file, 'utf8')
-    .replace(/(\d+)\[([^\]]*)\]/g, (m, num, chunk) => {
-      num |= 0;
-      chunk = ` ${chunk} `;
-      return chunk.repeat(num);
-    });
-
+  var notes = fs.readFileSync(file).toString();
   var time = 0;
 
   notes = notes.replace(/[^a-z0-9\#\d\.\- ]/gi, ' ').replace(/\s+/g, ' ').match(/\S+ \S+ \S+/g).map((line, index) => {
