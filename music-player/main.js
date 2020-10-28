@@ -221,7 +221,15 @@ function nav(di){
 }
 
 function kill(){
-  if(proc === null) return;
+  if(proc === null){
+    if(testMode && wasRestarted && waiting){
+      waiting = 0;
+      return;
+    }
+
+    return;
+  }
+
   proc.kill();
 }
 
