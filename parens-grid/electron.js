@@ -8,6 +8,8 @@ const arrOrder = require('../arr-order');
 
 const HD = 0;
 
+const scale = 1;
+
 const w = HD ? 1920 : 640;
 const h = HD ? 1080 : 480;
 const fps = 60;
@@ -21,10 +23,9 @@ const framesNum = fps * duration;
 const outputFile = '-img/1.png';
 
 const main = async () => {
+  const scale2 = scale ** 2;
+  
   media.renderImage(outputFile, w, h, (w, h, g) => {
-    const scale = 4;
-    const scale2 = scale ** 2;
-
     const imgd = new O.ImageData(g);
     const col = [0, 0, 0];
 
@@ -52,23 +53,27 @@ const main = async () => {
 };
 
 const getExpr = i => {
-  return arrOrder.str('()', BigInt(i));
+  return arrOrder.str('()[]{}', BigInt(i));
 };
 
 const isValid = e => {
-  let d = 0;
+  const stack = [];
 
   for(const c of e){
-    if(c === '('){
-      d++;
+    if(c === '(' || c === '[' || c === '{'){
+      stack.push(c)
       continue;
     }
 
-    if(d === 0) return 0;
-    d--;
+    if(stack.length === 0) return 0;
+
+    const c1 = stack.pop();
+    if(c1 === '(' && c !== ')') return 0;
+    if(c1 === '[' && c !== ']') return 0;
+    if(c1 === '{' && c !== '}') return 0;
   }
 
-  return d === 0;
+  return stack.length === 0;
 };
 
 setTimeout(() => main().catch(log));
