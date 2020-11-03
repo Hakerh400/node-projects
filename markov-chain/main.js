@@ -9,7 +9,9 @@ const debug = require('../debug');
 
 const {min, max} = Math;
 
-const MAX_LENGTH = 10;
+const MEMORY = 15;
+const FACTOR = .3;
+const LENGTH = 1e5;
 
 const fin = format.path('-dw/in.txt');
 const fout = format.path('-dw/out.txt');
@@ -18,10 +20,10 @@ const r = O.rand;
 const rf = O.randf;
 
 const main = () => {
-  let inp = O.rfs(fin, 1).replace(/\s+/g, ' ');
+  let inp = O.rfs(fin, 1).replace(/\s+/g, ' ').trim();
 
   const data = getData(inp);
-  const sample = genSample(data, 1e3);
+  const sample = genSample(data, LENGTH, '');
 
   O.wfs(fout, sample);
 };
@@ -29,15 +31,19 @@ const main = () => {
 const getData = inp => {
   const len = inp.length;
   const kLength = Symbol('length');
-  const data = O.ca(MAX_LENGTH + 1, () => O.obj());
+  const data = O.ca(MEMORY + 1, () => O.obj());
 
-  let str = inp.slice(0, MAX_LENGTH);
+  let str = inp.slice(0, MEMORY);
+  const lenp = len / 100 | 0;
 
-  for(let i = MAX_LENGTH; i !== len; i++){
+  for(let i = MEMORY; i !== len; i++){
+    if(i % lenp === 0 && i / lenp <= 100)
+      log(i / lenp);
+
     const char = inp[i];
 
-    for(let j = 0; j <= MAX_LENGTH; j++){
-      const s = str.slice(MAX_LENGTH - j);
+    for(let j = 0; j <= MEMORY; j++){
+      const s = str.slice(MEMORY - j);
       const obj = data[j];
 
       if(!(s in obj)){
@@ -87,12 +93,12 @@ const getData = inp => {
 };
 
 const genSample = (data, len, str='') => {
-  let lenTarget = MAX_LENGTH;
+  let lenTarget = MEMORY;
 
   for(let i = 0; i !== len; i++){
-    let len = MAX_LENGTH;
-    while(len !== 0 && rf() < .2) len--;
-    len = min(lenTarget, len, MAX_LENGTH, str.length);
+    let len = MEMORY;
+    while(len !== 0 && rf() < FACTOR) len--;
+    len = min(lenTarget, len, MEMORY, str.length);
 
     const obj = data[len];
     const s = str.slice(str.length - len);
@@ -102,7 +108,7 @@ const genSample = (data, len, str='') => {
       continue;
     }
 
-    lenTarget = MAX_LENGTH;
+    lenTarget = MEMORY;
 
     const a = obj[s];
     const n = a.length;
