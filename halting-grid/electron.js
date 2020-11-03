@@ -6,10 +6,12 @@ const O = require('../omikron');
 const media = require('../media');
 const arrOrder = require('../arr-order');
 
-const HD = 1;
+const HD = 0;
 
-const scale = 5;
-const maxStepsNum = 2e3;
+const scale = HD ? 5 : 20;
+const maxStepsNum = HD ? 2e3 : 100;
+const progOffset = 1e5;
+const inputOffset = 0;
 
 const w = HD ? 1920 : 640;
 const h = HD ? 1080 : 480;
@@ -37,15 +39,17 @@ const main = async () => {
       media.logStatus(y + 1, h, 'row');
 
       for(let x = 0; x !== w; x++){
-        const xx = x * scale;
-        const yy = y * scale;
+        const xx = inputOffset + x * scale;
+        const yy = progOffset + y * scale;
 
         let n = 0;
         let m = 0;
 
         for(let y = 0; y !== scale; y++){
           for(let x = 0; x !== scale; x++){
-            const steps = getStepsNum(getProg(xx + x), getInput(yy + y));
+            const prog = getProg(yy + y);
+            const input = getInput(xx + x);
+            const steps = getStepsNum(prog, input);
             if(steps === null) continue;
 
             n++;
@@ -114,7 +118,7 @@ const getStepsNum = (prog, input) => {
     else m++;
   }
 
-  return null;
+  return maxStepsNum;
 };
 
 setTimeout(() => main().catch(log));
