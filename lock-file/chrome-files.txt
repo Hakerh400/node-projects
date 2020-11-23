@@ -1,0 +1,11 @@
+Avatar Images
+Crashpad
+History
+History Provider Cache
+History-journal
+Pepper Data
+PepperFlash
+SwReporter
+Thumbnails
+Top Sites
+Top Sites-journal

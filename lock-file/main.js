@@ -6,6 +6,9 @@ const assert = require('assert');
 const cp = require('child_process');
 const O = require('../omikron');
 
+const cwd = __dirname;
+const chFiles = O.sanl(O.rfs(path.join(cwd, 'chrome-files.txt'), 1))
+
 let hostname = null;
 let username = null;
 let principal = null;
@@ -14,53 +17,88 @@ const main = async () => {
   const args = process.argv.slice(2);
 
   if(args.length === 0)
-    O.err('Expected path as argument');
+    O.err('Expected file path as argument');
 
   const pth = args.join(' ').replace(/"/g, '');
+
+  if(!pth.includes('*')){
+    await processPth(pth);
+    return;
+  }
+
+  for(const file of chFiles)
+    await processPth(pth.replace('*', file));
+};
+
+const processPth = async pth => {
+  log(`Processing "${pth}"`);
+  log.inc();
+
   await takeown(pth, 0);
 
   const locked = await isLocked(pth);
+
+  try{
+    await createEmptyFile(pth);
+  }catch{}
+
   await takeown(pth);
+  await takeControl(pth);
+  await assertFile(pth);
 
   if(!locked){
     await lock(pth);
+    assert(await isLocked(pth));
     log('Locked');
   }else{
     await unlock(pth);
+    assert(!await isLocked(pth));
     log('Unlocked');
   }
+
+  log.dec();
 };
 
 const isLocked = async pth => {
   if(!fs.existsSync(pth)){
     try{
-      O.wfs(pth, '');
-    }catch(err){
-      log(err);
+      await createEmptyFile(pth);
+      fs.unlinkSync(pth);
+    }catch{
       return 1;
     }
+  }else{
+    await assertFile(pth);
   }
 
   return 0;
 };
 
 const lock = async pth => {
-  await gainControl(pth);
+  await createEmptyFile(pth);
   await setReadonly(pth);
+  await clearRights(pth);
 };
 
 const unlock = async pth => {
-  // Administrator
+  await clearReadonly(pth);
+  await resetRights(pth);
+
+  fs.unlinkSync(pth);
 };
 
 const takeown = async (pth, checkExit) => {
   await spawn('takeown', ['/f', pth], checkExit);
 };
 
-const gainControl = async pth => {
+const takeControl = async pth => {
+  await clearRights(pth);
+  await adminFullControl(pth);
+};
+
+const clearRights = async pth => {
   await resetRights(pth);
   await disableInheritance(pth);
-  await adminFullControl(pth);
 };
 
 const resetRights = async pth => {
@@ -79,11 +117,20 @@ const setReadonly = async pth => {
   await spawn('attrib', ['+r', pth]);
 };
 
+const clearReadonly = async pth => {
+  await spawn('attrib', ['-r', pth]);
+};
+
 const getPrincipal = async () => {
   if(principal === null){
     const hostname = await getHostname();
     const username = await getUsername();
-    principal = `${hostname.toUpperCase()}\\${username}`;
+
+    const p1 = `${hostname.toUpperCase()}\\${username}`;
+    const p2 = await whoami();
+    assert(p1.toLowerCase() === p2.toLowerCase());
+
+    principal = p1;
   }
 
   return principal;
@@ -91,19 +138,35 @@ const getPrincipal = async () => {
 
 const getHostname = async () => {
   if(hostname === null)
-    hostname = (await spawn('hostname')).stdout.toString();
+    hostname = (await spawn('hostname')).stdout.toString().trim();
 
   return hostname;
 };
 
 const getUsername = async () => {
   if(username === null)
-    username = (await spawn('username')).stdout.toString();
+    username = process.env.username;
 
   return username;
 };
 
+const whoami = async () => {
+  return (await spawn('whoami')).stdout.toString().trim();
+};
+
+const assertFile = async pth => {
+  if(!fs.statSync(pth).isFile())
+    O.err('Path is not a file');
+};
+
+const createEmptyFile = async pth => {
+  O.wfs(pth, '');
+};
+
 const spawn = (prog, args=[], checkExit=1) => new Promise((res, rej) => {
+  for(const arg of args)
+    assert(typeof arg === 'string');
+
   return (async () => {
     const proc = cp.spawn(prog, args);
     const stdout = [];
