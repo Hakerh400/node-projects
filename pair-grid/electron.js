@@ -33,15 +33,21 @@ const main = () => {
       for(let xx = 0; xx !== w; xx++){
         const x = BigInt(xx);
         const y = BigInt(yy);
+        const h = BigInt(O.hypot(xx, yy) + .5 | 0);
 
         const fst = cs.Expression.fromInt(x);
         const snd = cs.Expression.fromInt(y);
-        const pair = new cs.Pair(fst, snd);
-        const n = pair.toInt();
+        const pair1 = new cs.Pair(new cs.Pair(cs.Term.term, fst), snd);
+        const pair2 = new cs.Pair(snd, new cs.Pair(cs.Term.term, fst));
+        const n1 = pair1.toInt() - pair2.toInt();
+        const n2 = h ** 3n;
 
-        col[0] = calc(n);
-        col[1] = calc(n >> 9n);
-        col[2] = calc(n >> 18n);
+        const k1 = .5;
+        const k2 = 1 - k1;
+
+        col[0] = calc(n1) * k1 + calc(n2) * k2;
+        col[1] = calc(n1 >> 9n) * k1 + calc(n2 >> 9n) * k2;
+        col[2] = calc(n1 >> 18n) * k1 + calc(n2 >> 18n) * k2;
 
         imgd.set(xx, yy, col);
       }
