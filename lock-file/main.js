@@ -128,7 +128,7 @@ const getPrincipal = async () => {
 
     const p1 = `${hostname.toUpperCase()}\\${username}`;
     const p2 = await whoami();
-    assert(p1.toLowerCase() === p2.toLowerCase());
+    assert.strictEqual(p1.toLowerCase(), p2.toLowerCase());
 
     principal = p1;
   }

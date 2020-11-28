@@ -23,6 +23,8 @@ const omikronScript = (
 
 const passwordsFile = path.join(cwd, 'passwords.json');
 
+let O;
+
 const dirs = {
   omikron: omikronScript,
 };
@@ -49,7 +51,7 @@ function getFramework(){
   var {document} = window;
 
   var func = new Function('window', 'document', 'require', str);
-  var O = func(window, document, getReq());
+  O = func(window, document, getReq());
 
   O.init(0);
 
