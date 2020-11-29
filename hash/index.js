@@ -4,15 +4,26 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const O = require('../omikron');
+const calcCrc32 = require('../crc32');
 
-module.exports = hash;
+const calcHash = (data, hashType, encoding=null) => {
+  const result = getResult(data, hashType);
+  if(encoding === null) return result;
+  return result.toString(encoding);
+};
 
-function hash(data, hashType='sha512', encoding=null){
-  const hash = crypto.createHash(hashType);
-  hash.update(data);
+const getResult = (data, hashType) => {
+  switch(hashType){
+    case 'crc32':
+      return calcCrc32(data);
+      break;
 
-  let result = hash.digest();
-  if(encoding !== null) result = result.toString(encoding);
+    default:
+      const hash = crypto.createHash(hashType);
+      hash.update(data);
+      return hash.getDigest();
+      break;
+  }
+};
 
-  return result;
-}
+module.exports = calcHash;
