@@ -9,7 +9,7 @@ const revBits = require('../rev-bits');
 
 const d = 0x104C11DB7n;
 
-const calcCrc32 = input => {
+const calcCrc32 = (input, toBuf=1) => {
   const buf = Buffer.from(input);
   const len = BigInt(input.length);
   const len1 = len - 1n;
@@ -19,6 +19,7 @@ const calcCrc32 = input => {
   }, 0n);
 
   const r = revBits(calcCrc(n, d, len << 3n), 32n);
+  if(!toBuf) return r;
 
   return Buffer.from(O.ca(4, i => {
     return Number((r >> (3n - BigInt(i) << 3n)) & 255n);

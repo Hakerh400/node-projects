@@ -21,7 +21,7 @@ const getResult = (data, hashType) => {
     default:
       const hash = crypto.createHash(hashType);
       hash.update(data);
-      return hash.getDigest();
+      return hash.digest();
       break;
   }
 };

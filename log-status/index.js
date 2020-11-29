@@ -17,10 +17,10 @@ module.exports = logStatus;
 function logStatus(f, n=null, offset=null, type=null){
   if(type === null){
     type = offset !== null ? offset : 'frame';
-    offset = 0;
+    offset = 0n;
   }
 
-  const now = Date.now();
+  const now = BigInt(Date.now());
   if(startTime === null) startTime = now;
 
   const isSizeKnown = n !== null;
@@ -29,15 +29,18 @@ function logStatus(f, n=null, offset=null, type=null){
 
   const msgs = [
     `Processing ${type} ${format.num(f)}${isSizeKnown ? ` of ${format.num(n)}` : ``}`,
-    ...isSizeKnown && eta >= 0 ? [`ETA: ${format.time(eta)}`] : [],
-    ...dt !== 0 ? [`Speed: ${(f - offset) / (dt / 1e3) + .5 | 0}`] : [],
+    ...isSizeKnown && eta >= 0 ? [
+      // `Progress: ${format.time(eta)}`,
+      `ETA: ${format.time(eta)}`,
+    ] : [],
+    ...dt !== 0n ? [`Speed: ${Number(f - offset) / (Number(dt) / 1e3) + .5 | 0}`] : [],
   ];
 
   log(msgs.join(' '.repeat(2)));
 }
 
 function calcTime(dt, f, n){
-  const remaining = dt * (n - f + 1) / f;
+  const remaining = Number(dt * (n - f + 1n)) / Number(f);
   return remaining / 1e3 + .5 | 0;
 }
 
