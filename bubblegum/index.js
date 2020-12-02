@@ -34,7 +34,7 @@ const encode = (buf, enc='xxd') => {
   const result = Buffer.from(bytes.reverse());
 
   if(enc === null) return result;
-  if(enc === 'xxd') return xxd.buf2hex(enc);
+  if(enc === 'xxd') return xxd.buf2hex(result);
   return result.toString(enc);
 };
 
