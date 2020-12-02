@@ -31,8 +31,12 @@ const buf2hex = (buf, opts) => {
   if(bufLen === 0n) return '';
 
   const toHex = (num, pad) => {
-    let str = padStart(num.toString(16), pad << 1n, '0');
+    const pad2 = pad << 1n;
+    if(num === null) return repeat(' ', pad2);
+
+    let str = padStart(num.toString(16), pad2, '0');
     if(upperCase) str = str.toUpperCase();
+    
     return str;
   };
 
@@ -48,9 +52,10 @@ const buf2hex = (buf, opts) => {
     const offsetStr = toHex(offset, offsetPad);
 
     const caStr = (f, sep='') => {
-      return O.ca(Number(cols), xn => {
-        const x = BigInt(xn);
-        const byte = buf[offset + x];
+      return O.ca(Number(cols), xNum => {
+        const x = BigInt(xNum);
+        const xx = offset + x;
+        const byte = xx < bufLen ? buf[xx] : null;
         
         return f(byte, x);
       }).join(sep);
