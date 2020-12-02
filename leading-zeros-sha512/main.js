@@ -7,7 +7,7 @@ const O = require('../omikron');
 const findLeadingZeros = require('.');
 
 const chars = '<>+-';
-const start = 4_085_579_775n;
+const start = 9_789_833_215n;
 
 const main = () => {
   const input = ',[.,]';

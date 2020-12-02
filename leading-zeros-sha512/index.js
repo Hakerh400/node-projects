@@ -13,7 +13,7 @@ const findLeadingZeros = (str, chars, start=0n) => {
 
   loop: while(1){
     if((~i & 65535n) === 0n)
-      logStatus(i, 1n << 33n, start, 'string');
+      logStatus(i, 1n << 34n, start, 'string');
 
     const s = str + arrOrder.str(chars, i++);
     const hash = calcHash(s, 'sha512');
