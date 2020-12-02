@@ -67,6 +67,7 @@ const buf2hex = (buf, opts) => {
     });
 
     const asciiStr = caStr((byte, x) => {
+      if(byte === null) return '';
       if(byte >= 0x20 && byte <= 0x7e) return O.sfcc(byte);
       return '.';
     });
