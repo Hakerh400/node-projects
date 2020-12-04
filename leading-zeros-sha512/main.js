@@ -7,10 +7,12 @@ const O = require('../omikron');
 const findLeadingZeros = require('.');
 
 const chars = '<>+-';
-const start = 9_789_833_215n;
+
+const prog = '+[-->-[>>+>-----<<]<--<---]>-.>>>+.>>..+++[.>]<<<<.+++.------.<<-.>>>>+.';
+const start = 2_631_860_223n;
 
 const main = () => {
-  const input = ',[.,]';
+  const input = prog;
   const output = findLeadingZeros(input, chars, start);
 
   log(output);
