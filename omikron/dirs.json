@@ -3,9 +3,9 @@
   "projects": "C:/Projects",
   "node": "C:/Projects/JavaScript",
   "web": "C:/wamp/www",
-  "O": "C:/wamp/www/web/omikron.js",
-  "img": "C:/wamp/www/web/projects/image",
-  "vid": "C:/wamp/www/web/projects/video",
+  "O": "C:/wamp/www/omikron.js",
+  "img": "C:/wamp/www/projects/image",
+  "vid": "C:/wamp/www/projects/video",
   "temp": "C:/Users/Thomas/AppData/Local/Temp",
   "encrypted": "C:/Projects/Encrypted",
   "render": "D:/Render"
