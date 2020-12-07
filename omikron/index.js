@@ -2,6 +2,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const assert = require('assert');
 const Process = require('./process');
 
 const isElectron = 'navigator' in global;
@@ -9,11 +10,20 @@ if(isElectron) initElectron();
 
 const cwd = __dirname;
 
-const omikronScript1 = path.join(cwd, '../../../wamp/www/web/omikron.js');
-const omikronScript2 = path.join(cwd, '../../browser-projects/omikron.js');
-const omikronScript = fs.existsSync(omikronScript1) ? omikronScript1 : omikronScript2;
+const omikronScript1 = path.join(cwd, '../../browser-projects/omikron.js');
+const omikronScript2 = path.join(cwd, '../../../wamp/www/omikron.js');
+const omikronScript3 = path.join(cwd, '../../../wamp/www/web/omikron.js');
+
+const omikronScript = (
+  fs.existsSync(omikronScript1) ? omikronScript1 :
+  fs.existsSync(omikronScript2) ? omikronScript2 :
+  fs.existsSync(omikronScript3) ? omikronScript3 :
+  assert.fail()
+);
 
 const passwordsFile = path.join(cwd, 'passwords.json');
+
+let O;
 
 const dirs = {
   omikron: omikronScript,
@@ -41,7 +51,7 @@ function getFramework(){
   var {document} = window;
 
   var func = new Function('window', 'document', 'require', str);
-  var O = func(window, document, getReq());
+  O = func(window, document, getReq());
 
   O.init(0);
 
