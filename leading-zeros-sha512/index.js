@@ -15,7 +15,7 @@ const findLeadingZeros = (str, chars, start=0n) => {
     if((~i & 65535n) === 0n)
       logStatus(i, 1n << 35n, start, 'string');
 
-    const s = str + arrOrder.str(chars, i++);
+    const s = String(i++)//str + arrOrder.str(chars, i++);
     const hash = calcHash(s, 'sha512');
 
     for(let i = 0; i !== 4; i++)

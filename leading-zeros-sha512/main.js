@@ -8,8 +8,8 @@ const findLeadingZeros = require('.');
 
 const chars = '<>+-';
 
-const prog = '+[-->-[>>+>-----<<]<--<---]>-.>>>+.>>..+++[.>]<<<<.+++.------.<<-.>>>>+.';
-const start = 2_631_860_223n;
+const prog = '';
+const start = 0n;
 
 const main = () => {
   const input = prog;

@@ -10,19 +10,22 @@ const encode = (buf, enc='xxd') => {
   buf = Buffer.from(buf);
   const len = buf.length;
 
-  let n = 1n;
+  let n = 0n;
 
-  for(const byte of buf){
+  for(let i = 0; i !== len; i++){
+    const byte = buf[i];
+
+    n = n * 96n + 1n;
+
     if(byte === 10){
-      n = (n + 95n) * 96n + 1n;
+      n += 95n
       continue;
     }
 
     assert(byte >= 0x20 && byte <= 0x7e);
 
-    n = (n + BigInt(byte - 0x20)) * 96n + 1n;
+    n += BigInt(byte - 0x20);
   }
-
 
   const bytes = [];
 

@@ -20,6 +20,10 @@ function logStatus(f, n=null, offset=null, type=null){
     offset = 0n;
   }
 
+  f = f !== null ? BigInt(f) : null;
+  n = n !== null ? BigInt(n) : null;
+  offset = offset !== null ? BigInt(offset) : null;
+
   const now = BigInt(Date.now());
   if(startTime === null) startTime = now;
 
