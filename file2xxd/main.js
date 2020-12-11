@@ -9,7 +9,7 @@ const main = () => {
   const args = process.argv.slice(2);
 
   const err = () => {
-    O.err('Expected two files as arguments');
+    O.err('Expected a file as argument');
   };
 
   if(args.length === 0) err();
