@@ -108,8 +108,9 @@ function aels(){
         case 'n': testMode ? moveTo('Nightcore') : next(); break;
         case 't': testMode && moveTo('Trance'); break;
         case 'b': testMode && moveTo('Bass'); break;
-        case 'R': testMode && moveTo('Popular'); break;
+        // case 'R': testMode && moveTo('Popular'); break;
         case 'm': testMode && moveTo('Mix'); break;
+        case 'g': testMode && moveTo('Background'); break;
         case 'c': moveTo('Classical'); break;
         case 'i': moveTo('Improvable'); break;
         case 'o': moveTo('Other'); break;

@@ -51,7 +51,7 @@ async function processInput(str){
   if(str.length !== 0 && str !== '-')
     scriptArgs = str.slice(1).trim().split(/\s+/);
 
-  var files = getFiles();
+  var files = getFiles().map(a => a.toLowerCase());
 
   loadScript: if(str.length === 0 || str.startsWith('-')){
     if(files.includes(engs.electron.script)){
