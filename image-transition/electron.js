@@ -9,6 +9,11 @@ const media = require('../media');
 const SPACE_SIZE = 200;
 const OFFSET = 20;
 
+const cols = {
+  bg: '#fff',
+  arrow: '#0f0',
+};
+
 const images = [
   '-dw/1.png',
   '-dw/2.png',
@@ -29,7 +34,7 @@ async function main(){
   const [wh, hh] = [w, h].map(a => a / 2);
 
   media.renderImage(outputFile, w, h, (w, h, g) => {
-    g.fillStyle = '#fff';
+    g.fillStyle = cols.bg;
     g.fillRect(0, 0, w, h);
 
     imgs.reduce((x, img, i) => {
@@ -51,7 +56,7 @@ async function main(){
         g.lineTo(.1, .6);
         g.closePath();
 
-        g.fillStyle = '#f00';
+        g.fillStyle = cols.arrow;
         g.fill();
         g.stroke();
 
