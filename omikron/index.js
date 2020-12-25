@@ -1,11 +1,11 @@
 'use strict';
 
-{
-  const O = require('C:/Projects/esolangs/node_modules/omikron');
-  O.dirs = require('./dirs');
-  module.exports = O;
-  return;
-}
+// {
+//   const O = require('C:/Projects/esolangs/node_modules/omikron');
+//   O.dirs = require('./dirs');
+//   module.exports = O;
+//   return;
+// }
 
 const fs = require('fs');
 const path = require('path');
