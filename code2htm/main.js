@@ -36,8 +36,8 @@ const parseScheme = str => {
     scheme.addGlob(name, scheme.parseExpr(globsObj[name]));
 
   for(const ruleObj of info.rules){
-    const {name, scope, ...rest} = ruleObj;
-    const rule = scheme.createRule(name, scheme.parseScopeSet(scope));
+    const {name: type, scope: scopes, ...rest} = ruleObj;
+    const rule = scheme.createRule(type, scheme.parseScopes(scopes));
 
     for(const prop of O.keys(rest)){
       const parsed = scheme.parseExpr(rest[prop]);
@@ -45,7 +45,7 @@ const parseScheme = str => {
     }
   }
 
-  log(scheme.toString());
+  O.wfs(require('../format').path('-dw/3.txt'), scheme.toString());
 };
 
 const parseScopes = str => {

@@ -80,10 +80,11 @@ class Parser{
 
       switch(type){
         case 'var': yield O.tco([this, 'parseVarRef'], str); break;
-        case 'hsl': yield O.tco([this, 'parseHSLCol'], str); break;
-        case 'hsla': yield O.tco([this, 'parseHSLACol'], str); break;
+        case 'hsl': yield O.tco([this, 'parseHslCol'], str); break;
+        case 'hsla': yield O.tco([this, 'parseHslaCol'], str); break;
         case 'color': yield O.tco([this, 'parseColor'], str); break;
         case 'alpha': yield O.tco([this, 'parseAlpha'], str); break;
+        case 'l': yield O.tco([this, 'parseLightnessAdj'], str); break;
 
         default: assert.fail(type); break;
       }
@@ -100,7 +101,7 @@ class Parser{
     return this.getVar(name);
   }
 
-  *parseHSL(str){
+  *parseHsl(str){
     const H = yield [[this, 'parseInt'], str, 0, 360];
     const S = yield [[this, 'parsePercent'], str];
     const L = yield [[this, 'parsePercent'], str];
@@ -108,18 +109,18 @@ class Parser{
     return [H, S, L];
   }
 
-  *parseHSLCol(str){
+  *parseHslCol(str){
     this.matchOpenParen(str);
-    const [H, S, L] = yield [[this, 'parseHSL'], str];
+    const [H, S, L] = yield [[this, 'parseHsl'], str];
     this.matchClosedParen(str);
 
     const rgb = O.Color.hsl2rgb(H, S, L);
     return new cs.Color(this.scheme, ...rgb);
   }
 
-  *parseHSLACol(str){
+  *parseHslaCol(str){
     this.matchOpenParen(str);
-    const [H, S, L] = yield [[this, 'parseHSL'], str];
+    const [H, S, L] = yield [[this, 'parseHsl'], str];
     const A = yield [[this, 'parseDecimal'], str, 0, 1];
     this.matchClosedParen(str);
 
@@ -145,6 +146,26 @@ class Parser{
     this.matchClosedParen(str);
 
     return new cs.Alpha(n);
+  }
+
+  *parseLightnessAdj(str){
+    this.matchOpenParen(str);
+    assert(str[0].length !== 0);
+
+    const match = this.match(str, /^[+\-]/, {force: 0, update: 0});
+    let sign = 1;
+
+    if(match !== null){
+      this.match(str, match);
+      sign = match === '+' ? 1 : -1;
+    }
+
+    let n = yield [[this, 'parsePercent'], str];
+    n *= sign;
+
+    this.matchClosedParen(str);
+
+    return new cs.LightnessAdjustement(n);
   }
 
   *parseInt(str, min, max){
@@ -177,11 +198,11 @@ class Parser{
     return this.match(str, reg);
   }
 
-  *parseScopeSet(str, prec=1, top=1, first=1){
+  *parseScopes(str, prec=1, top=1, first=1){
     const {scheme} = this;
 
-    const newSet = () => {
-      return new cs.ScopeSet(scheme);
+    const newCnf = () => {
+      return new cs.ScopeCNF(scheme);
     };
 
     if(str[0].length === 0){
@@ -189,7 +210,7 @@ class Parser{
       assert(!first);
       assert(prec === 1);
 
-      return newSet();
+      return newCnf();
     }
 
     const char = str[0][0];
@@ -199,38 +220,42 @@ class Parser{
       assert(!first);
       assert(prec === 1);
 
-      return newSet();
+      return newCnf();
     }
 
     let set1;
 
     parseSet1: {
-      if(/[a-zA-Z0-9\-_]/.test(char)){
-        const scope = yield [[this, 'parseScope'], str];
-        set1 = newSet().include(scope);
-
-        break parseSet1;
-      }
-
-      if(char === '('){
-        this.matchOpenParen(str);
-        set1 = yield [[this, 'parseScopeSet'], str, 1, 0, 1];
-        this.matchClosedParen(str);
-
-        break parseSet1;
-      }
-
       if(char === '|'){
         this.match(str, char);
-        set1 = yield [[this, 'parseScopeSet'], str, 0, top, first];
+        set1 = yield [[this, 'parseScopes'], str, 0, top, first];
 
         break parseSet1;
       }
 
       if(char === '-'){
         this.match(str, char);
-        set1 = yield [[this, 'parseScopeSet'], str, 0, top, first];
+        set1 = yield [[this, 'parseScopes'], str, 0, top, first];
         set1.negate();
+
+        break parseSet1;
+      }
+
+      if(char === '('){
+        if(!first) if(prec !== 1)O.exit(str[0])
+
+        this.matchOpenParen(str);
+        set1 = yield [[this, 'parseScopes'], str, 1, 0, 1];
+        this.matchClosedParen(str);
+
+        break parseSet1;
+      }
+
+      if(/[a-zA-Z0-9\-_]/.test(char)){
+        if(!first) if(prec !== 1)O.exit(str[0])
+
+        const scope = yield [[this, 'parseScope'], str];
+        set1 = newCnf().include(scope);
 
         break parseSet1;
       }
@@ -240,7 +265,7 @@ class Parser{
 
     if(prec === 0) return set1;
 
-    const set2 = yield [[this, 'parseScopeSet'], str, 1, top, 0];
+    const set2 = yield [[this, 'parseScopes'], str, 1, top, 0];
     return set1.union(set2);
 
     assert.fail(str);

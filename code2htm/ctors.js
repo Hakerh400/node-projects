@@ -5,8 +5,14 @@ const path = require('path');
 const assert = require('assert');
 const O = require('../omikron');
 
+const kNoRuleType = Symbol('noRuleType');
+
 const decimal2str = num => {
   return String(num.toFixed(3));
+};
+
+const decimal2percent = num => {
+  return `${decimal2str(num * 100)}%`;
 };
 
 class Base extends O.Stringifiable{}
@@ -15,7 +21,7 @@ class Scheme extends Base{
   parser = new Parser(this);
   vars = O.obj();
   globs = O.obj();
-  rules = O.obj();
+  ruleCol = new RuleCollection(this);
 
   hasVar(name){
     assert(typeof name === 'string');
@@ -25,6 +31,7 @@ class Scheme extends Base{
   addVar(name, val){
     assert(!this.hasVar(name));
     this.vars[name] = val;
+    return this;
   }
 
   getVar(name){
@@ -40,6 +47,7 @@ class Scheme extends Base{
   addGlob(name, val){
     assert(!this.hasGlob(name));
     this.globs[name] = val;
+    return this;
   }
 
   getGlob(name){
@@ -47,8 +55,8 @@ class Scheme extends Base{
     return this.globs[name];
   }
 
-  createRule(name, scope){
-    return new Rule(this, name, scope);
+  createRule(type, scopes){
+    return this.ruleCol.createRule(type, scopes);
   }
 
   parse(str, method, opts={}){
@@ -92,28 +100,57 @@ class Scheme extends Base{
   }
 
   parseExpr(str, opts){ return this.parse(str, 'parseExpr', opts); }
-  parseScopeSet(str, opts){ return this.parse(str, 'parseScopeSet', opts); }
+  parseScopes(str, opts){ return this.parse(str, 'parseScopes', opts); }
 
   toStr(){
-    const {vars, globs, rules} = this;
+    const {vars, globs, ruleCol: {rules}} = this;
     const arr = ['Variables:', this.inc];
 
-    for(const name in vars)
+    for(const name of O.keys(vars))
       arr.push('\n', name, ': ', vars[name]);
 
     arr.push(this.dec, '\n\n');
     arr.push('Globals:', this.inc);
 
-    for(const name in globs)
+    for(const name of O.keys(globs))
       arr.push('\n', name, ': ', globs[name]);
 
     arr.push(this.dec, '\n\n');
     arr.push('Rules:', this.inc);
 
-    for(const name in rules)
-      arr.push('\n', name, ': ', rules[name]);
+    for(const type of O.keys(rules)){
+      arr.push('\n', Rule.type2str(type), ':', this.inc);
+
+      for(const rule of rules[type])
+        arr.push('\n', rule);
+
+      arr.push(this.dec);
+    }
+
+    arr.push(this.dec);
 
     return arr;
+  }
+}
+
+class RuleCollection extends Base{
+  rules = O.obj();
+
+  createRule(type=kNoRuleType, scopes){
+    const rule = new Rule(this.scheme, type, scopes);
+    this.addRule(rule);
+    return rule;
+  }
+
+  addRule(rule){
+    const {rules} = this;
+    const {type} = rule;
+
+    if(!(type in rules))
+      rules[type] = new Set();
+
+    rules[type].add(rule);
+    return this;
   }
 }
 
@@ -122,18 +159,23 @@ class Rule extends Base{
     'foreground',
     'background',
     'font_style',
+    'foreground_adjust',
   ]);
 
   static isPropSupported(prop){
     return prop in this.supportedProps;
   }
 
+  static type2str(type){
+    return type === kNoRuleType ? '(no type)' : type;
+  }
+
   props = O.obj();
 
-  constructor(scheme, name, scopes){
+  constructor(scheme, type, scopes){
     super(scheme);
 
-    this.name = name;
+    this.type = type;
     this.scopes = scopes;
   }
 
@@ -161,6 +203,27 @@ class Rule extends Base{
   setProp(prop, val){
     this.assertPropSupported(prop);
     this.props[prop] = val;
+  }
+
+  get typeStr(){
+    return this.constructor.type2str(this.type);
+  }
+
+  toStr(){
+    const {props} = this;
+    const arr = ['Rule {', this.inc];
+
+    arr.push('\n', 'Type: ', this.typeStr);
+    arr.push('\n', 'Scopes: ', this.scopes);
+    arr.push('\n', 'Properties:', this.inc);
+
+    for(const prop of O.keys(props))
+      arr.push('\n', prop, ': ', props[prop]);
+
+    arr.push(this.dec);
+    arr.push(this.dec, '\n}');
+
+    return arr;
   }
 }
 
@@ -193,6 +256,19 @@ class Color extends Expression{
   }
 }
 
+class LightnessAdjustement extends Expression{
+  constructor(scheme, dif){
+    super(scheme);
+    this.dif = dif;
+  }
+
+  toStr(){
+    const {dif} = this;
+    const sign = dif >= 0 ? '+' : '-';
+    return `l(${sign}${decimal2percent(dif)})`;
+  }
+}
+
 class Alpha extends Expression{
   constructor(scheme, A){
     super(scheme);
@@ -218,14 +294,18 @@ class TextInfo extends Expression{
     return this;
   }
 
+  get attribsArr(){
+    const {attribs} = this;
+    return O.keys(attribs).map(a => attribs[a]);
+  }
+
   toStr(){
-    return this.join([], [...this.attribs], ' ');
+    return this.join([], this.attribsArr, ' ');
   }
 }
 
-class ScopeSet extends Base{
-  included = new Set();
-  excluded = new Set();
+class ScopeEquation extends Base{
+  scopes = O.obj();
 
   constructor(scheme, inc=null, exc=null){
     super(scheme);
@@ -234,57 +314,64 @@ class ScopeSet extends Base{
     if(exc !== null) this.excludeAll(exc);
   }
 
-  include(scope){
-    this.included.add(scope);
-    this.excluded.delete(scope);
+  add(scope, inc=1){
+    assert(scope instanceof Scope);
+
+    const {scopes} = this;
+    const {id} = scope;
+
+    scopes[id] = [scope, inc];
+
     return this;
   }
 
-  exclude(scope){
-    this.included.delete(scope);
-    this.excluded.add(scope);
-    return this;
-  }
+  addAll(scopes, inc=1){
+    if(O.proto(scopes) === null){
+      for(const id of O.keys(scopes))
+        this.add(scopes[id], inc);
 
-  includeAll(scopes){
-    for(const scope of scopes)
-      this.include(scope);
-    return this;
-  }
-
-  excludeAll(scopes){
-    for(const scope of scopes)
-      this.exclude(scope);
-    return this;
-  }
-
-  negate(){
-    [this.included, this.excluded] = [this.excluded, this.included];
-    return this;
-  }
-
-  union(other){
-    this.includeAll(other.included);
-    this.excludeAll(other.excluded);
-    return this;
-  }
-
-  toStr(){
-    const arr = [];
-
-    for(const sc of this.included){
-      if(arr.length !== 0) arr.push(', ');
-      arr.push(sc);
+      return this;
     }
 
-    for(const sc of this.excluded){
+    if(scopes instanceof ScopeEquation){
+      O.noimpl();
+      this.addAll(scopes.included, inc);
+      this.addAll(scopes.sxcluded, !inc);
+
+      return this;
+    }
+
+    for(const scope of scopes)
+      this.add(scope, inc);
+
+    return this;
+  }
+
+  include(scope){ return this.add(scope, 1); }
+  exclude(scope){ return this.add(scope, 0); }
+  includeAll(scopes){ return this.addAll(scopes, 1); }
+  excludeAll(scopes){ return this.addAll(scopes, 0); }
+
+  toStr(){
+    const {scopes} = this;
+    const arr = [];
+
+    for(const id of O.keys(included)){
+      const [sc, inc] = included[id];
       if(arr.length !== 0) arr.push(', ');
-      arr.push('-', sc);
+      if(!inc) arr.push('-');
+      arr.push(sc);
     }
 
     return arr;
   }
 }
+
+class ScopeDisjunction extends ScopeEquation{}
+
+class ScopeConjunction extends ScopeEquation{}
+
+class ScopeCNF extends ScopeConjunction{}
 
 class Scope extends Base{
   constructor(scheme, idents){
@@ -292,21 +379,32 @@ class Scope extends Base{
     this.idents = idents;
   }
 
+  get id(){ return this.toString(); }
+
   toStr(){
     return this.idents.join('.');
   }
 }
 
 module.exports = {
+  kNoRuleType,
+
+  decimal2str,
+  decimal2percent,
+
   Base,
   Scheme,
   Rule,
   Expression,
   Color,
+  LightnessAdjustement,
   Alpha,
   Constant,
   TextInfo,
-  ScopeSet,
+  ScopeEquation,
+  ScopeDisjunction,
+  ScopeConjunction,
+  ScopeCNF,
   Scope,
 };
 

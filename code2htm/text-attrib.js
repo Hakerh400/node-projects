@@ -59,4 +59,6 @@ for(const ctor of derivedCtorsArr){
   instancesObj[ctor.getName()] = new ctor(null, kCtor);
 }
 
-module.exports = Object.assign(TextAttribute, derivedCtorsObj);
+module.exports = Object.assign(TextAttribute, derivedCtorsObj, {
+  kCtor,
+});
