@@ -12,9 +12,10 @@ const decimal2str = num => {
 class Base extends O.Stringifiable{}
 
 class Scheme extends Base{
+  parser = new Parser(this);
   vars = O.obj();
   globs = O.obj();
-  parser = new Parser(this);
+  rules = O.obj();
 
   hasVar(name){
     assert(typeof name === 'string');
@@ -46,19 +47,55 @@ class Scheme extends Base{
     return this.globs[name];
   }
 
-  parseExpr(str){
-    str = [str];
-
-    const result = O.rec([this.parser, 'parseExpr'], str);
-
-    if(str[0].length !== 0)
-      assert.fail(str[0]);
-
-    return result;
+  createRule(name, scope){
+    return new Rule(this, name, scope);
   }
 
+  parse(str, method, opts={}){
+    const {
+      all=0,
+      trimFirst=/^\s*/,
+      trimSep=trimFirst,
+    } = opts;
+
+    if(trimFirst !== null)
+      str = str.replace(trimFirst, '');
+
+    if(str.length === 0){
+      assert(all);
+      return [];
+    }
+
+    const arr = all ? [] : null;
+
+    str = [str];
+
+    while(1){
+      const result = O.rec([this.parser, method], str);
+
+      if(!all){
+        if(str[0].length !== 0)
+          assert.fail(str[0]);
+
+        return result;
+      }
+
+      arr.push(result);
+
+      if(trimSep !== null)
+        str[0] = str[0].replace(trimSep, '');
+
+      if(str[0].length === null) break;
+    }
+
+    return arr;
+  }
+
+  parseExpr(str, opts){ return this.parse(str, 'parseExpr', opts); }
+  parseScopeSet(str, opts){ return this.parse(str, 'parseScopeSet', opts); }
+
   toStr(){
-    const {vars, globs} = this;
+    const {vars, globs, rules} = this;
     const arr = ['Variables:', this.inc];
 
     for(const name in vars)
@@ -71,142 +108,60 @@ class Scheme extends Base{
       arr.push('\n', name, ': ', globs[name]);
 
     arr.push(this.dec, '\n\n');
+    arr.push('Rules:', this.inc);
+
+    for(const name in rules)
+      arr.push('\n', name, ': ', rules[name]);
 
     return arr;
   }
 }
 
-class Parser extends Base{
-  constructor(scheme){
-    super();
-    this.scheme = scheme;
+class Rule extends Base{
+  static supportedProps = O.arr2obj([
+    'foreground',
+    'background',
+    'font_style',
+  ]);
+
+  static isPropSupported(prop){
+    return prop in this.supportedProps;
   }
 
-  match(str, pat, opts={}){
-    const {
-      force=1, 
-      update=1, 
-      trim=1,
-    } = opts;
+  props = O.obj();
 
-    let match = null;
+  constructor(scheme, name, scopes){
+    super(scheme);
 
-    getMatch: {
-      if(typeof pat === 'string'){
-        if(!str[0].startsWith(pat)) break getMatch;
-        match = [pat];
-        break getMatch;
-      }
-
-      if(pat instanceof RegExp){
-        match = str[0].match(pat);
-        break getMatch;
-      }
-
-      assert.fail(pat);
-    }
-
-    const ok = match !== null;
-    if(!ok && force) assert.fail();
-
-    if(ok && update) str[0] = str[0].slice(match[0].length);
-    if(trim) str[0] = str[0].replace(/^\s*(?:,\s*)?/, '');
-
-    return ok ? match.length !== 1 ? match.slice(1) : match[0] : null;
+    this.name = name;
+    this.scopes = scopes;
   }
 
-  matchOpenParen(str){ return this.match(str, '('); }
-  matchClosedParen(str){ return this.match(str, ')'); }
-
-  *parseExpr(str){
-    let match = this.match(str, /^[a-zA-Z0-9_]+/, {force: 0});
-
-    if(match !== null){
-      const type = match;
-
-      if(TextAttribute.isSupported(type))
-        return TextAttribute.getType(type);
-
-      switch(type){
-        case 'var': yield O.tco([this, 'parseVarRef'], str); break;
-        case 'hsl': yield O.tco([this, 'parseHSL'], str); break;
-        case 'color': yield O.tco([this, 'parseColor'], str); break;
-        case 'alpha': yield O.tco([this, 'parseAlpha'], str); break;
-        case 'underline': return TextAttribute.UNDERLINE; break;
-
-        default: assert.fail(type); break;
-      }
-    }
-
-    assert.fail(str);
+  isPropSupported(prop){
+    return this.constructor.isPropSupported(prop);
   }
 
-  *parseVarRef(str){
-    this.matchOpenParen(str);
-    const name = yield [[this, 'parseIdent'], str, 0, 360];
-    this.matchClosedParen(str);
-
-    return this.getVar(name);
+  assertPropSupported(prop){
+    assert(this.isPropSupported(prop), prop);
   }
 
-  *parseHSL(str){
-    this.matchOpenParen(str);
-    const H = yield [[this, 'parseInt'], str, 0, 360];
-    const S = yield [[this, 'parsePercent'], str];
-    const L = yield [[this, 'parsePercent'], str];
-    this.matchClosedParen(str);
-
-    const rgb = O.Color.hsl2rgb(H, S, L);
-    return new Color(this.scheme, ...rgb);
+  hasProp(prop){
+    this.assertPropSupported(prop);
+    return prop in this.props;
   }
 
-  *parseColor(str){
-    this.matchOpenParen(str);
-    const baseCol = yield [[this, 'parseExpr'], str];
-    const alpha = yield [[this, 'parseExpr'], str];
-    this.matchClosedParen(str);
+  getProp(prop){
+    this.assertPropSupported(prop);
 
-    assert(baseCol instanceof Color);
-    assert(alpha instanceof Alpha);
-
-    return baseCol.withNewAlpha(alpha.A);
+    const {props} = this;
+    if(prop in props) return props[prop];
+    return null;
   }
 
-  *parseAlpha(str){
-    this.matchOpenParen(str);
-    const n = yield [[this, 'parseDecimal'], str];
-    this.matchClosedParen(str);
-
-    return new Alpha(n);
+  setProp(prop, val){
+    this.assertPropSupported(prop);
+    this.props[prop] = val;
   }
-
-  *parseInt(str, min=null, max=null){
-    const n = +this.match(str, /^[+\-]?\d+/);
-
-    if(min !== null && n < min) assert.fail(n);
-    if(max !== null && n > max) assert.fail(n);
-
-    return n;
-  }
-
-  *parseDecimal(str){
-    const n = +this.match(str, /^[+\-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+\-]?\d+)?/);
-    return n;
-  }
-
-  *parsePercent(str){
-    const n = yield [[this, 'parseInt'], str, 0, 100];
-    this.match(str, '%');
-
-    return n / 100;
-  }
-
-  *parseIdent(str){
-    return this.match(str, /^[a-zA-Z0-9_]+/);
-  }
-
-  getVar(name){ return this.scheme.getVar(name); }
-  getGlob(name){ return this.scheme.getGlob(name); }
 }
 
 class Expression extends Base{
@@ -241,7 +196,6 @@ class Color extends Expression{
 class Alpha extends Expression{
   constructor(scheme, A){
     super(scheme);
-
     this.A = A;
   }
 
@@ -256,13 +210,108 @@ class Constant extends Expression{
   }
 }
 
+class TextInfo extends Expression{
+  attribs = O.obj();
+
+  add(attrib){
+    this.attribs[attrib.name] = attrib;
+    return this;
+  }
+
+  toStr(){
+    return this.join([], [...this.attribs], ' ');
+  }
+}
+
+class ScopeSet extends Base{
+  included = new Set();
+  excluded = new Set();
+
+  constructor(scheme, inc=null, exc=null){
+    super(scheme);
+
+    if(inc !== null) this.includeAll(inc);
+    if(exc !== null) this.excludeAll(exc);
+  }
+
+  include(scope){
+    this.included.add(scope);
+    this.excluded.delete(scope);
+    return this;
+  }
+
+  exclude(scope){
+    this.included.delete(scope);
+    this.excluded.add(scope);
+    return this;
+  }
+
+  includeAll(scopes){
+    for(const scope of scopes)
+      this.include(scope);
+    return this;
+  }
+
+  excludeAll(scopes){
+    for(const scope of scopes)
+      this.exclude(scope);
+    return this;
+  }
+
+  negate(){
+    [this.included, this.excluded] = [this.excluded, this.included];
+    return this;
+  }
+
+  union(other){
+    this.includeAll(other.included);
+    this.excludeAll(other.excluded);
+    return this;
+  }
+
+  toStr(){
+    const arr = [];
+
+    for(const sc of this.included){
+      if(arr.length !== 0) arr.push(', ');
+      arr.push(sc);
+    }
+
+    for(const sc of this.excluded){
+      if(arr.length !== 0) arr.push(', ');
+      arr.push('-', sc);
+    }
+
+    return arr;
+  }
+}
+
+class Scope extends Base{
+  constructor(scheme, idents){
+    super(scheme);
+    this.idents = idents;
+  }
+
+  toStr(){
+    return this.idents.join('.');
+  }
+}
+
 module.exports = {
   Base,
   Scheme,
-  Parser,
+  Rule,
   Expression,
+  Color,
+  Alpha,
   Constant,
+  TextInfo,
+  ScopeSet,
+  Scope,
 };
+
+const Parser = require('./parser');
+module.exports.Parser = Parser;
 
 const TextAttribute = require('./text-attrib');
 module.exports.TextAttribute = TextAttribute;

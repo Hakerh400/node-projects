@@ -18,13 +18,13 @@ class TextAttribute extends cs.Constant{
   get name(){ return this.constructor.getName(); }
   get val(){ return this.name; }
 
-  static isSupported(name){
-    return name in instancesObj;
+  static isTypeSupported(type){
+    return type in instancesObj;
   }
 
-  static getType(name){
-    assert(this.isSupported(name));
-    return instancesObj[name];
+  static getType(type){
+    assert(this.isTypeSupported(type));
+    return instancesObj[type];
   }
 }
 
@@ -36,9 +36,19 @@ class StippledUnderline extends TextAttribute{
   static getName(){ return 'stippled_underline'; }
 }
 
+class Italic extends TextAttribute{
+  static getName(){ return 'italic'; }
+}
+
+class Bold extends TextAttribute{
+  static getName(){ return 'bold'; }
+}
+
 const derivedCtorsArr = [
   Underline,
   StippledUnderline,
+  Italic,
+  Bold,
 ];
 
 const derivedCtorsObj = O.obj();
