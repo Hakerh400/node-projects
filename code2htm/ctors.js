@@ -50,25 +50,27 @@ class Scheme extends Base{
     str = [str];
 
     const result = O.rec([this.parser, 'parseExpr'], str);
-    assert(str[0].length === 0);
+
+    if(str[0].length !== 0)
+      assert.fail(str[0]);
 
     return result;
   }
 
   toStr(){
     const {vars, globs} = this;
-    const arr = ['Variables:', O.inc];
+    const arr = ['Variables:', this.inc];
 
     for(const name in vars)
       arr.push('\n', name, ': ', vars[name]);
 
-    arr.push(O.dec, '\n\n');
-    arr.push('Globals:', O.inc);;
+    arr.push(this.dec, '\n\n');
+    arr.push('Globals:', this.inc);
 
     for(const name in globs)
       arr.push('\n', name, ': ', globs[name]);
 
-    arr.push(O.dec, '\n\n');
+    arr.push(this.dec, '\n\n');
 
     return arr;
   }
@@ -80,30 +82,59 @@ class Parser extends Base{
     this.scheme = scheme;
   }
 
-  match(str, reg, {force=1, update=1, trim=1}={}){
-    const match = str[0].match(reg);
+  match(str, pat, opts={}){
+    const {
+      force=1, 
+      update=1, 
+      trim=1,
+    } = opts;
 
-    if(force && match === null)
-      assert.fail();
+    let match = null;
 
-    if(update) str[0] = str[0].slice(match[0].length);
+    getMatch: {
+      if(typeof pat === 'string'){
+        if(!str[0].startsWith(pat)) break getMatch;
+        match = [pat];
+        break getMatch;
+      }
+
+      if(pat instanceof RegExp){
+        match = str[0].match(pat);
+        break getMatch;
+      }
+
+      assert.fail(pat);
+    }
+
+    const ok = match !== null;
+    if(!ok && force) assert.fail();
+
+    if(ok && update) str[0] = str[0].slice(match[0].length);
     if(trim) str[0] = str[0].replace(/^\s*(?:,\s*)?/, '');
 
-    return match.slice(1);
+    return ok ? match.length !== 1 ? match.slice(1) : match[0] : null;
   }
 
+  matchOpenParen(str){ return this.match(str, '('); }
+  matchClosedParen(str){ return this.match(str, ')'); }
+
   *parseExpr(str){
-    const match = this.match(str, /^([a-zA-Z0-9]+)\(/, {force: 0});
+    let match = this.match(str, /^[a-zA-Z0-9_]+/, {force: 0});
 
     if(match !== null){
-      const funcName = match[0];
+      const type = match;
 
-      switch(funcName){
+      if(TextAttribute.isSupported(type))
+        return TextAttribute.getType(type);
+
+      switch(type){
         case 'var': yield O.tco([this, 'parseVarRef'], str); break;
         case 'hsl': yield O.tco([this, 'parseHSL'], str); break;
         case 'color': yield O.tco([this, 'parseColor'], str); break;
+        case 'alpha': yield O.tco([this, 'parseAlpha'], str); break;
+        case 'underline': return TextAttribute.UNDERLINE; break;
 
-        default: assert.fail(funcName); break;
+        default: assert.fail(type); break;
       }
     }
 
@@ -111,21 +142,46 @@ class Parser extends Base{
   }
 
   *parseVarRef(str){
-    const [name] = this.match(str, /^([a-zA-Z0-9]+)\)/);
+    this.matchOpenParen(str);
+    const name = yield [[this, 'parseIdent'], str, 0, 360];
+    this.matchClosedParen(str);
+
     return this.getVar(name);
   }
 
   *parseHSL(str){
+    this.matchOpenParen(str);
     const H = yield [[this, 'parseInt'], str, 0, 360];
     const S = yield [[this, 'parsePercent'], str];
     const L = yield [[this, 'parsePercent'], str];
-    const rgb = O.Color.hsl2rgb(H, S, L);
+    this.matchClosedParen(str);
 
+    const rgb = O.Color.hsl2rgb(H, S, L);
     return new Color(this.scheme, ...rgb);
   }
 
+  *parseColor(str){
+    this.matchOpenParen(str);
+    const baseCol = yield [[this, 'parseExpr'], str];
+    const alpha = yield [[this, 'parseExpr'], str];
+    this.matchClosedParen(str);
+
+    assert(baseCol instanceof Color);
+    assert(alpha instanceof Alpha);
+
+    return baseCol.withNewAlpha(alpha.A);
+  }
+
+  *parseAlpha(str){
+    this.matchOpenParen(str);
+    const n = yield [[this, 'parseDecimal'], str];
+    this.matchClosedParen(str);
+
+    return new Alpha(n);
+  }
+
   *parseInt(str, min=null, max=null){
-    const n = +this.match(str, /^\d+/)[0];
+    const n = +this.match(str, /^[+\-]?\d+/);
 
     if(min !== null && n < min) assert.fail(n);
     if(max !== null && n > max) assert.fail(n);
@@ -133,15 +189,20 @@ class Parser extends Base{
     return n;
   }
 
+  *parseDecimal(str){
+    const n = +this.match(str, /^[+\-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+\-]?\d+)?/);
+    return n;
+  }
+
   *parsePercent(str){
-    const n = yield this.parseInt(str, 0, 100);
-    this.match(str, /^%/);
+    const n = yield [[this, 'parseInt'], str, 0, 100];
+    this.match(str, '%');
 
     return n / 100;
   }
 
-  *parseColor(str){
-    const baseCol = yield [[this, 'parseColor'], str];
+  *parseIdent(str){
+    return this.match(str, /^[a-zA-Z0-9_]+/);
   }
 
   getVar(name){ return this.scheme.getVar(name); }
@@ -165,10 +226,33 @@ class Color extends Expression{
     this.A = A;
   }
 
+  withNewAlpha(A){
+    const {R, G, B} = this;
+    return new Color(this.scheme, R, G, B, A);
+  }
+
   toStr(){
     const {R, G, B, A} = this;
     if(A === 1) return `#${[R, G, B].map(a => O.hex(a, 1)).join('')}`;
     return `rgba(${R}, ${G}, ${B}, ${decimal2str(A)})`
+  }
+}
+
+class Alpha extends Expression{
+  constructor(scheme, A){
+    super(scheme);
+
+    this.A = A;
+  }
+
+  toStr(){
+    return ['alpha(', this.A, ')'];
+  }
+}
+
+class Constant extends Expression{
+  toStr(){
+    return String(this.val);
   }
 }
 
@@ -177,4 +261,8 @@ module.exports = {
   Scheme,
   Parser,
   Expression,
+  Constant,
 };
+
+const TextAttribute = require('./text-attrib');
+module.exports.TextAttribute = TextAttribute;

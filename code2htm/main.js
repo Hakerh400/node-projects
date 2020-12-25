@@ -35,7 +35,7 @@ const parseScheme = str => {
   for(const name of globNames)
     scheme.addGlob(name, scheme.parseExpr(globsObj[name]));
 
-  O.logf(globsObj);
+  log(scheme.toString());
 };
 
 const parseScopes = str => {
