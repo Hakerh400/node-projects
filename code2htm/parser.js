@@ -21,7 +21,7 @@ class Parser{
     const {
       force=1, 
       update=1, 
-      trim=/^\s*(?:,\s*)?/,
+      trim=/^\s*/,
     } = opts;
 
     let match = null;
@@ -42,7 +42,14 @@ class Parser{
     }
 
     const ok = match !== null;
-    if(!ok && force) assert.fail();
+
+    if(!ok && force){
+      O.logb();
+      log(pat);
+      log(str[0]);
+      O.logb();
+      assert.fail();
+    }
 
     if(ok && update){
       str[0] = str[0].slice(match[0].length);
@@ -54,6 +61,7 @@ class Parser{
 
   matchOpenParen(str){ return this.match(str, '('); }
   matchClosedParen(str){ return this.match(str, ')'); }
+  matchComma(str){ return this.match(str, ','); }
 
   *parseExpr(str){
     let match = this.match(str, /^[a-zA-Z0-9_]+/, {force: 0});
@@ -103,7 +111,9 @@ class Parser{
 
   *parseHsl(str){
     const H = yield [[this, 'parseInt'], str, 0, 360];
+    this.matchComma(str);
     const S = yield [[this, 'parsePercent'], str];
+    this.matchComma(str);
     const L = yield [[this, 'parsePercent'], str];
 
     return [H, S, L];
@@ -121,6 +131,7 @@ class Parser{
   *parseHslaCol(str){
     this.matchOpenParen(str);
     const [H, S, L] = yield [[this, 'parseHsl'], str];
+    this.matchComma(str);
     const A = yield [[this, 'parseDecimal'], str, 0, 1];
     this.matchClosedParen(str);
 
@@ -198,77 +209,85 @@ class Parser{
     return this.match(str, reg);
   }
 
-  *parseScopes(str, prec=1, top=1, first=1){
-    const {scheme} = this;
+  *parseScopes(str){
+    yield O.tco([this, 'parseScopes1'], str);
+  }
 
-    const newCnf = () => {
-      return new cs.ScopeCNF(scheme);
-    };
+  // A, B, C
+  // A | B | C
+  *parseScopes1(str, top=1){
+    const disj = new cs.ScopeDisjunction();
 
-    if(str[0].length === 0){
-      assert(top);
-      assert(!first);
-      assert(prec === 1);
+    while(1){
+      assert(str[0].length !== 0);
 
-      return newCnf();
+      const scopes = yield [[this, 'parseScopes2'], str];
+      disj.addAll(scopes);
+
+      if(str[0].length === 0) break;
+
+      const char = str[0][0];
+      
+      if(char === ',') assert(top);
+
+      if(char === ')'){
+        assert(!top);
+        break;
+      }
+
+      this.match(str, /^[,\|]/);
     }
+
+    return disj;
+  }
+
+  // A B C
+  *parseScopes2(str){
+    const conj = new cs.ScopeConjunction();
+
+    while(1){
+      assert(str[0].length !== 0);
+
+      const scopes = yield [[this, 'parseScopes3'], str];
+      conj.addAll(scopes);
+
+      if(str[0].length === 0) break;
+
+      const char = str[0][0];
+      if(/[,\|\)]/.test(char)) break;
+    }
+
+    return conj;
+  }
+
+  // (A)
+  // -A
+  // A
+  *parseScopes3(str){
+    assert(str[0].length !== 0);
 
     const char = str[0][0];
 
-    if(char === ')'){
-      assert(!top);
-      assert(!first);
-      assert(prec === 1);
+    if(char === '('){
+      this.matchOpenParen(str);
+      const scopes = yield [[this, 'parseScopes1'], str, 0];
+      this.matchOpenParen(str);
 
-      return newCnf();
+      return scopes;
     }
 
-    let set1;
-
-    parseSet1: {
-      if(char === '|'){
-        this.match(str, char);
-        set1 = yield [[this, 'parseScopes'], str, 0, top, first];
-
-        break parseSet1;
-      }
-
-      if(char === '-'){
-        this.match(str, char);
-        set1 = yield [[this, 'parseScopes'], str, 0, top, first];
-        set1.negate();
-
-        break parseSet1;
-      }
-
-      if(char === '('){
-        if(!first) if(prec !== 1)O.exit(str[0])
-
-        this.matchOpenParen(str);
-        set1 = yield [[this, 'parseScopes'], str, 1, 0, 1];
-        this.matchClosedParen(str);
-
-        break parseSet1;
-      }
-
-      if(/[a-zA-Z0-9\-_]/.test(char)){
-        if(!first) if(prec !== 1)O.exit(str[0])
-
-        const scope = yield [[this, 'parseScope'], str];
-        set1 = newCnf().include(scope);
-
-        break parseSet1;
-      }
-
-      assert.fail(str);
+    if(char === '-'){
+      this.match(char);
+      const scopes = yield [[this, 'parseScopes3'], str];
+      return scopes.negate();
     }
 
-    if(prec === 0) return set1;
+    const conj = new cs.ScopeConjunction();
+    const scope = yield [[this, 'parseScope'], str];
+    
+    conj.add(scope);
 
-    const set2 = yield [[this, 'parseScopes'], str, 1, top, 0];
-    return set1.union(set2);
-
-    assert.fail(str);
+    return conj;
   }
 
   *parseScope(str){

@@ -341,6 +341,8 @@ class ScopeEquation extends Base{
       return this;
     }
 
+    assert(Array.isArray(scopes) || scopes instanceof Set);
+
     for(const scope of scopes)
       this.add(scope, inc);
 
