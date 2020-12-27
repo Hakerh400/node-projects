@@ -45,8 +45,8 @@ class Parser{
 
     if(!ok && force){
       O.logb();
-      log(pat);
-      log(str[0]);
+      log('pat: ' + pat);
+      log('str: ' + str[0]);
       O.logb();
       assert.fail();
     }
@@ -209,20 +209,22 @@ class Parser{
     return this.match(str, reg);
   }
 
-  *parseScopes(str){
-    yield O.tco([this, 'parseScopes1'], str);
+  *parseScope(str){
+    yield O.tco([this, 'parseScopeDisjunction'], str);
   }
 
   // A, B, C
   // A | B | C
-  *parseScopes1(str, top=1){
-    const disj = new cs.ScopeDisjunction();
+  *parseScopeDisjunction(str, top=1){
+    let result = null;
 
     while(1){
       assert(str[0].length !== 0);
 
-      const scopes = yield [[this, 'parseScopes2'], str];
-      disj.addAll(scopes);
+      const scope = yield [[this, 'parseScopeConjuction'], str];
+      
+      if(result === null) result = scope;
+      else result = new cs.ScopeDisjunction(result, scope);
 
       if(str[0].length === 0) break;
 
@@ -238,18 +240,20 @@ class Parser{
       this.match(str, /^[,\|]/);
     }
 
-    return disj;
+    return result;
   }
 
   // A B C
-  *parseScopes2(str){
-    const conj = new cs.ScopeConjunction();
+  *parseScopeConjuction(str){
+    let result = null;
 
     while(1){
       assert(str[0].length !== 0);
 
-      const scopes = yield [[this, 'parseScopes3'], str];
-      conj.addAll(scopes);
+      const scope = yield [[this, 'parseScopeTerm'], str];
+
+      if(result === null) result = scope;
+      else result = new cs.ScopeConjunction(result, scope);
 
       if(str[0].length === 0) break;
 
@@ -257,40 +261,35 @@ class Parser{
       if(/[,\|\)]/.test(char)) break;
     }
 
-    return conj;
+    return result;
   }
 
   // (A)
   // -A
   // A
-  *parseScopes3(str){
+  *parseScopeTerm(str){
     assert(str[0].length !== 0);
 
     const char = str[0][0];
 
     if(char === '('){
       this.matchOpenParen(str);
-      const scopes = yield [[this, 'parseScopes1'], str, 0];
-      this.matchOpenParen(str);
+      const scope = yield [[this, 'parseScopeDisjunction'], str, 0];
+      this.matchClosedParen(str);
 
-      return scopes;
+      return scope;
     }
 
     if(char === '-'){
-      this.match(char);
-      const scopes = yield [[this, 'parseScopes3'], str];
-      return scopes.negate();
+      this.match(str, char);
+      const scope = yield [[this, 'parseScopeTerm'], str];
+      yield O.tco([scope, 'negate']);
     }
 
-    const conj = new cs.ScopeConjunction();
-    const scope = yield [[this, 'parseScope'], str];
-    
-    conj.add(scope);
-
-    return conj;
+    yield O.tco([this, 'parseScopeLiteral'], str);
   }
 
-  *parseScope(str){
+  *parseScopeLiteral(str){
     const idents = [];
 
     while(1){
@@ -299,7 +298,7 @@ class Parser{
       str[0] = str[0].slice(1);
     }
 
-    return new cs.Scope(this.scheme, idents);
+    return new cs.ScopeLiteral(this.scheme, idents);
   }
 
   getVar(name){ return this.scheme.getVar(name); }

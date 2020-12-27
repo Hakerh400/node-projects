@@ -100,7 +100,7 @@ class Scheme extends Base{
   }
 
   parseExpr(str, opts){ return this.parse(str, 'parseExpr', opts); }
-  parseScopes(str, opts){ return this.parse(str, 'parseScopes', opts); }
+  parseScope(str, opts){ return this.parse(str, 'parseScope', opts); }
 
   toStr(){
     const {vars, globs, ruleCol: {rules}} = this;
@@ -304,78 +304,11 @@ class TextInfo extends Expression{
   }
 }
 
-class ScopeEquation extends Base{
-  scopes = O.obj();
-
-  constructor(scheme, inc=null, exc=null){
-    super(scheme);
-
-    if(inc !== null) this.includeAll(inc);
-    if(exc !== null) this.excludeAll(exc);
-  }
-
-  add(scope, inc=1){
-    assert(scope instanceof Scope);
-
-    const {scopes} = this;
-    const {id} = scope;
-
-    scopes[id] = [scope, inc];
-
-    return this;
-  }
-
-  addAll(scopes, inc=1){
-    if(O.proto(scopes) === null){
-      for(const id of O.keys(scopes))
-        this.add(scopes[id], inc);
-
-      return this;
-    }
-
-    if(scopes instanceof ScopeEquation){
-      O.noimpl();
-      this.addAll(scopes.included, inc);
-      this.addAll(scopes.sxcluded, !inc);
-
-      return this;
-    }
-
-    assert(Array.isArray(scopes) || scopes instanceof Set);
-
-    for(const scope of scopes)
-      this.add(scope, inc);
-
-    return this;
-  }
-
-  include(scope){ return this.add(scope, 1); }
-  exclude(scope){ return this.add(scope, 0); }
-  includeAll(scopes){ return this.addAll(scopes, 1); }
-  excludeAll(scopes){ return this.addAll(scopes, 0); }
-
-  toStr(){
-    const {scopes} = this;
-    const arr = [];
-
-    for(const id of O.keys(included)){
-      const [sc, inc] = included[id];
-      if(arr.length !== 0) arr.push(', ');
-      if(!inc) arr.push('-');
-      arr.push(sc);
-    }
-
-    return arr;
-  }
+class Scope extends Base{
+  *negate(){ O.virtual('negate'); }
 }
 
-class ScopeDisjunction extends ScopeEquation{}
-
-class ScopeConjunction extends ScopeEquation{}
-
-class ScopeCNF extends ScopeConjunction{}
-
-class Scope extends Base{
+class ScopeLiteral extends Scope{
   constructor(scheme, idents){
     super(scheme);
     this.idents = idents;
@@ -383,8 +316,78 @@ class Scope extends Base{
 
   get id(){ return this.toString(); }
 
+  *negate(){
+    return new ScopeNegation(this);
+  }
+
   toStr(){
     return this.idents.join('.');
+  }
+}
+
+class ScopeOperation extends Scope{
+  get opName(){ O.virtual('opName'); }
+}
+
+class ScopeUnaryOperation extends ScopeOperation{
+  constructor(scope){
+    super();
+
+    assert(scope instanceof Scope);
+    this.scope = scope;
+  }
+
+  toStr(){
+    return [this.opName, this.scope];
+  }
+}
+
+class ScopeNegation extends ScopeUnaryOperation{
+  *negate(){
+    return this.scope;
+  }
+
+  get opName(){ return '-'; }
+}
+
+class ScopeBinaryOperation extends ScopeOperation{
+  constructor(scope1, scope2){
+    super();
+
+    assert(scope1 instanceof Scope);
+    assert(scope2 instanceof Scope);
+
+    this.scope1 = scope1;
+    this.scope2 = scope2;
+  }
+
+  toStr(){
+    const {opName} = this;
+    const op = opName !== null ? ` ${opName} ` : ' ';
+
+    return ['(', this.scope1, op, this.scope2, ')'];
+  }
+}
+
+class ScopeDisjunction extends ScopeBinaryOperation{
+  get opName(){ return '|'; }
+
+  *negate(){
+    return new ScopeConjunction(
+      yield [[this.scope1, 'negate']],
+      yield [[this.scope2, 'negate']],
+    );
+  }
+}
+
+class ScopeConjunction extends ScopeBinaryOperation{
+  get opName(){ return null; }
+
+  *negate(){
+    return new ScopeDisjunction(
+      yield [[this.scope1, 'negate']],
+      yield [[this.scope2, 'negate']],
+    );
   }
 }
 
@@ -403,11 +406,14 @@ module.exports = {
   Alpha,
   Constant,
   TextInfo,
-  ScopeEquation,
+  Scope,
+  ScopeLiteral,
+  ScopeOperation,
+  ScopeUnaryOperation,
+  ScopeNegation,
+  ScopeBinaryOperation,
   ScopeDisjunction,
   ScopeConjunction,
-  ScopeCNF,
-  Scope,
 };
 
 const Parser = require('./parser');

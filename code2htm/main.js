@@ -36,8 +36,8 @@ const parseScheme = str => {
     scheme.addGlob(name, scheme.parseExpr(globsObj[name]));
 
   for(const ruleObj of info.rules){
-    const {name: type, scope: scopes, ...rest} = ruleObj;
-    const rule = scheme.createRule(type, scheme.parseScopes(scopes));
+    const {name: type, scope, ...rest} = ruleObj;
+    const rule = scheme.createRule(type, scheme.parseScope(scope));
 
     for(const prop of O.keys(rest)){
       const parsed = scheme.parseExpr(rest[prop]);
