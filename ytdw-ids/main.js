@@ -13,6 +13,9 @@ const BATCH_FILE = path.join(VIDS_DIR, 'a.bat');
 const URL_BASE = 'https://www.youtube.com/watch?v=';
 
 const main = () => {
+  if(!fs.existsSync(BATCH_FILE))
+    O.wfs(BATCH_FILE, '');
+
   const idsOld = O.obj();
   const idsNew = O.obj();
 
@@ -24,8 +27,7 @@ const main = () => {
     let {name} = a;
     if(name.length < 11) return;
 
-    if(name.endsWith('~'))
-      name = name.slice(0, name.length - 1);
+    name = name.replace(/[\~\[\]]+/g, '');
 
     idsOld[name.slice(name.length - 11)] = 1;
   });
@@ -48,7 +50,7 @@ const main = () => {
     }
   }
 
-  O.wfs(BATCH_FILE, `@echo off\ncls\n\n${O.keys(idsNew).map(id => {
+  O.wfs(BATCH_FILE, `@echo off\ncls\n\n${O.shuffle(O.keys(idsNew)).map(id => {
     return `call d ${URL_BASE}${id}`;
   }).join('\n')}`.trim());
 };

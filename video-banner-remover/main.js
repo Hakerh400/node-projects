@@ -8,6 +8,8 @@ const fsRec = require('../fs-rec');
 
 const {min, max} = Math;
 
+const END_MIN = 135;
+
 const ffDir = 'C:/Program Files/FFmpeg/bin/latest';
 
 const wipStr = '[WIP]';
@@ -58,7 +60,7 @@ const main = () => {
     */
 
     const start = dur * 0.2 - 20;
-    const end = max(dur * 0.5 + 5, 72);
+    const end = max(dur * 0.5 + 5, END_MIN);
     const x = 0;
     const y = 0;
     const w = width;
