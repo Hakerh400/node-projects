@@ -4,7 +4,6 @@ const fs = require('fs');
 const path = require('path');
 const assert = require('assert');
 const O = require('../omikron');
-const cs = require('./ctors');
 
 const checkBounds = (n, min, max) => {
   if(min !== null && n < min) assert.fail(n);
@@ -13,15 +12,15 @@ const checkBounds = (n, min, max) => {
 };
 
 class Parser{
-  constructor(scheme){
+  constructor(scheme=null){
     this.scheme = scheme;
   }
 
   match(str, pat, opts={}){
     const {
-      force=1, 
-      update=1, 
-      trim=/^\s*/,
+      force = 1,
+      update = 1,
+      trim = /^\s*/,
     } = opts;
 
     let match = null;
@@ -46,7 +45,7 @@ class Parser{
     if(!ok && force){
       O.logb();
       log('pat: ' + pat);
-      log('str: ' + str[0]);
+      log('str: ' + str[0].slice(0, 100));
       O.logb();
       assert.fail();
     }
@@ -103,14 +102,14 @@ class Parser{
 
   *parseVarRef(str){
     this.matchOpenParen(str);
-    const name = yield [[this, 'parseIdent'], str, 0, 360];
+    const name = yield [[this, 'parseIdent'], str];
     this.matchClosedParen(str);
 
     return this.getVar(name);
   }
 
   *parseHsl(str){
-    const H = yield [[this, 'parseInt'], str, 0, 360];
+    const H = (yield [[this, 'parseInt'], str, 0, 360]) / 360;
     this.matchComma(str);
     const S = yield [[this, 'parsePercent'], str];
     this.matchComma(str);
@@ -161,7 +160,7 @@ class Parser{
 
   *parseLightnessAdj(str){
     this.matchOpenParen(str);
-    assert(str[0].length !== 0);
+    this.neof(str);
 
     const match = this.match(str, /^[+\-]/, {force: 0, update: 0});
     let sign = 1;
@@ -198,8 +197,8 @@ class Parser{
 
   *parseIdent(str, opts={}){
     const {
-      dash=0,
-      underscore=1,
+      dash = 0,
+      underscore = 1,
     } = opts;
 
     const reg = new RegExp(`^[a-zA-Z0-9${
@@ -209,24 +208,29 @@ class Parser{
     return this.match(str, reg);
   }
 
-  *parseScope(str){
-    yield O.tco([this, 'parseScopeDisjunction'], str);
+  *parseScope(str, opts){
+    yield O.tco([this, 'parseScopeDisjunction'], str, opts);
   }
 
   // A, B, C
   // A | B | C
-  *parseScopeDisjunction(str, top=1){
+  *parseScopeDisjunction(str, opts={}){
+    const {
+      top = 1,
+      termChar = null,
+    } = opts;
+
     let result = null;
 
     while(1){
-      assert(str[0].length !== 0);
+      this.neof(str);
 
-      const scope = yield [[this, 'parseScopeConjuction'], str];
+      const scope = yield [[this, 'parseScopeConjuction'], str, {termChar}];
       
       if(result === null) result = scope;
       else result = new cs.ScopeDisjunction(result, scope);
 
-      if(str[0].length === 0) break;
+      if(str[0][0] == termChar) break;
 
       const char = str[0][0];
       
@@ -244,18 +248,22 @@ class Parser{
   }
 
   // A B C
-  *parseScopeConjuction(str){
+  *parseScopeConjuction(str, opts={}){
+    const {
+      termChar = null,
+    } = opts;
+
     let result = null;
 
     while(1){
-      assert(str[0].length !== 0);
+      this.neof(str);
 
       const scope = yield [[this, 'parseScopeTerm'], str];
 
       if(result === null) result = scope;
       else result = new cs.ScopeConjunction(result, scope);
 
-      if(str[0].length === 0) break;
+      if(str[0][0] == termChar) break;
 
       const char = str[0][0];
       if(/[,\|\)]/.test(char)) break;
@@ -267,14 +275,18 @@ class Parser{
   // (A)
   // -A
   // A
-  *parseScopeTerm(str){
-    assert(str[0].length !== 0);
+  *parseScopeTerm(str, opts={}){
+    const {
+      termChar = null,
+    } = opts;
+
+    this.neof(str);
 
     const char = str[0][0];
 
     if(char === '('){
       this.matchOpenParen(str);
-      const scope = yield [[this, 'parseScopeDisjunction'], str, 0];
+      const scope = yield [[this, 'parseScopeDisjunction'], str, {top: 0}];
       this.matchClosedParen(str);
 
       return scope;
@@ -289,7 +301,11 @@ class Parser{
     yield O.tco([this, 'parseScopeLiteral'], str);
   }
 
-  *parseScopeLiteral(str){
+  *parseScopeLiteral(str, opts={}){
+    const {
+      termChar = null,
+    } = opts;
+
     const idents = [];
 
     while(1){
@@ -301,6 +317,61 @@ class Parser{
     return new cs.ScopeLiteral(this.scheme, idents);
   }
 
+  *parseScopesInfo(str){
+    const scopesInfo = [];
+    let first = 0;
+
+    this.match(str, '[');
+
+    while(1){
+      this.neof(str);
+
+      if(str[0][0] === ']'){
+        assert(first);
+        this.match(str, ']');
+        break;
+      }
+
+      const scopeInfo = yield [[this, 'parseScopeInfo'], str];
+      scopesInfo.push(scopeInfo);
+
+      this.neof(str);
+
+      if(str[0][0] === ']'){
+        this.match(str, ']');
+        break;
+      }
+
+      this.matchComma(str);
+
+      first = 0;
+    }
+
+    return scopesInfo;
+  }
+
+  *parseScopeInfo(str){
+    this.matchOpenParen(str);
+
+    this.matchOpenParen(str);
+    const start = yield [[this, 'parseInt'], str, 0];
+    this.matchComma(str);
+    const end = yield [[this, 'parseInt'], str, start + 1];
+    this.matchClosedParen(str);
+
+    this.matchComma(str);
+    this.match(str, '\'');
+    const scope = yield [[this, 'parseScope'], str, {termChar: '\''}];
+    this.match(str, '\'');
+
+    this.matchClosedParen(str);
+    return new cs.ScopeInfo(scope, start, end);
+  }
+
+  neof(str){
+    assert(str[0].length !== 0);
+  }
+
   getVar(name){ return this.scheme.getVar(name); }
   getGlob(name){ return this.scheme.getGlob(name); }
 }
@@ -308,3 +379,5 @@ class Parser{
 module.exports = Object.assign(Parser, {
   checkBounds,
 });
+
+const cs = require('./ctors');

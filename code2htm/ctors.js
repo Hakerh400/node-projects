@@ -5,6 +5,8 @@ const path = require('path');
 const assert = require('assert');
 const O = require('../omikron');
 
+const {min, max} = Math;
+
 const kNoRuleType = Symbol('noRuleType');
 
 const decimal2str = num => {
@@ -21,7 +23,7 @@ class Scheme extends Base{
   parser = new Parser(this);
   vars = O.obj();
   globs = O.obj();
-  ruleCol = new RuleCollection(this);
+  ruleColl = new RuleCollection(this);
 
   hasVar(name){
     assert(typeof name === 'string');
@@ -56,7 +58,21 @@ class Scheme extends Base{
   }
 
   createRule(type, scopes){
-    return this.ruleCol.createRule(type, scopes);
+    return this.ruleColl.createRule(type, scopes);
+  }
+
+  matchRules(scopes){
+    return this.ruleColl.matchRules(scopes);
+  }
+
+  matchProps(scopes){
+    const rules = this.matchRules(scopes);
+
+    const props = rules.reduce((props, rule) => {
+      return Object.assign(props, rule.props);
+    }, O.obj());
+
+    return props;
   }
 
   parse(str, method, opts={}){
@@ -101,9 +117,10 @@ class Scheme extends Base{
 
   parseExpr(str, opts){ return this.parse(str, 'parseExpr', opts); }
   parseScope(str, opts){ return this.parse(str, 'parseScope', opts); }
+  parseScopesInfo(str, opts){ return this.parse(str, 'parseScopesInfo', opts); }
 
   toStr(){
-    const {vars, globs, ruleCol: {rules}} = this;
+    const {vars, globs, ruleColl: {rulesObj}} = this;
     const arr = ['Variables:', this.inc];
 
     for(const name of O.keys(vars))
@@ -118,10 +135,10 @@ class Scheme extends Base{
     arr.push(this.dec, '\n\n');
     arr.push('Rules:', this.inc);
 
-    for(const type of O.keys(rules)){
+    for(const type of O.keys(rulesObj)){
       arr.push('\n', Rule.type2str(type), ':', this.inc);
 
-      for(const rule of rules[type])
+      for(const rule of rulesObj[type])
         arr.push('\n', rule);
 
       arr.push(this.dec);
@@ -134,7 +151,8 @@ class Scheme extends Base{
 }
 
 class RuleCollection extends Base{
-  rules = O.obj();
+  rulesObj = O.obj();
+  rulesArr = [];
 
   createRule(type=kNoRuleType, scopes){
     const rule = new Rule(this.scheme, type, scopes);
@@ -143,14 +161,28 @@ class RuleCollection extends Base{
   }
 
   addRule(rule){
-    const {rules} = this;
+    const {rulesObj, rulesArr} = this;
     const {type} = rule;
 
-    if(!(type in rules))
-      rules[type] = new Set();
+    if(!(type in rulesObj))
+      rulesObj[type] = new Set();
 
-    rules[type].add(rule);
+    rulesObj[type].add(rule);
+    rulesArr.push(rule);
+
     return this;
+  }
+
+  matchRules(scopes){
+    return this.rulesArr.map(rule => {
+      return [rule.test(scopes), rule];
+    }).filter(([level]) => {
+      return level !== 0;
+    }).sort(([level1], [level2]) => {
+      return level1 - level2;
+    }).map(([level, rule]) => {
+      return rule;
+    });
   }
 }
 
@@ -172,11 +204,11 @@ class Rule extends Base{
 
   props = O.obj();
 
-  constructor(scheme, type, scopes){
+  constructor(scheme, type, scope){
     super(scheme);
 
     this.type = type;
-    this.scopes = scopes;
+    this.scope = scope;
   }
 
   isPropSupported(prop){
@@ -209,12 +241,16 @@ class Rule extends Base{
     return this.constructor.type2str(this.type);
   }
 
+  test(scopes){
+    return O.rec([this.scope, 'test'], scopes);
+  }
+
   toStr(){
     const {props} = this;
     const arr = ['Rule {', this.inc];
 
     arr.push('\n', 'Type: ', this.typeStr);
-    arr.push('\n', 'Scopes: ', this.scopes);
+    arr.push('\n', 'Scope: ', this.scope);
     arr.push('\n', 'Properties:', this.inc);
 
     for(const prop of O.keys(props))
@@ -222,6 +258,174 @@ class Rule extends Base{
 
     arr.push(this.dec);
     arr.push(this.dec, '\n}');
+
+    return arr;
+  }
+}
+
+class Scope extends Base{
+  #id = null;
+
+  get id(){
+    if(this.#id === null)
+      return this.#id = this.toString();
+
+    return this.#id;
+  }
+
+  *negate(){ O.virtual('negate'); }
+  *toArr(){ O.virtual('toArr'); }
+  *test(){ O.virtual('test'); }
+
+  toString(arg){
+    if(this.#id !== null) return this.#id;
+    return super.toString(arg);
+  }
+}
+
+class ScopeLiteral extends Scope{
+  constructor(scheme, idents){
+    super(scheme);
+    this.idents = idents;
+  }
+
+  *negate(){
+    return new ScopeNegation(this);
+  }
+
+  *toArr(){
+    return [this];
+  }
+
+  *test(scopes){
+    const {idents} = this;
+    const len = idents.length;
+
+    findScope: for(const idents1 of scopes){
+      for(let i = 0; i !== len; i++)
+        if(idents1[i] !== idents[i])
+          continue findScope;
+
+      return len;
+    };
+
+    return 0;
+  }
+
+  toStr(){
+    return this.idents.join('.');
+  }
+}
+
+class ScopeOperation extends Scope{
+  get opName(){ O.virtual('opName'); }
+}
+
+class ScopeUnaryOperation extends ScopeOperation{
+  constructor(scope){
+    super();
+
+    assert(scope instanceof Scope);
+    this.scope = scope;
+  }
+
+  toStr(){
+    return [this.opName, this.scope];
+  }
+}
+
+class ScopeNegation extends ScopeUnaryOperation{
+  *negate(){
+    return this.scope;
+  }
+
+  get opName(){ return '-'; }
+
+  *test(scopes){
+    const result = yield [[this.scope, 'test'], scopes];
+    return result !== 0 ? 0 : 1;
+  }
+}
+
+class ScopeBinaryOperation extends ScopeOperation{
+  constructor(scope1, scope2){
+    super();
+
+    assert(scope1 instanceof Scope);
+    assert(scope2 instanceof Scope);
+
+    this.scope1 = scope1;
+    this.scope2 = scope2;
+  }
+
+  toStr(){
+    const {opName} = this;
+    const op = opName !== null ? ` ${opName} ` : ' ';
+
+    return ['(', this.scope1, op, this.scope2, ')'];
+  }
+}
+
+class ScopeDisjunction extends ScopeBinaryOperation{
+  get opName(){ return '|'; }
+
+  *negate(){
+    return new ScopeConjunction(
+      yield [[this.scope1, 'negate']],
+      yield [[this.scope2, 'negate']],
+    );
+  }
+
+  *test(scopes){
+    return max(
+      (yield [[this.scope1, 'test'], scopes]),
+      (yield [[this.scope2, 'test'], scopes]),
+    );
+  }
+}
+
+class ScopeConjunction extends ScopeBinaryOperation{
+  get opName(){ return null; }
+
+  *negate(){
+    return new ScopeDisjunction(
+      yield [[this.scope1, 'negate']],
+      yield [[this.scope2, 'negate']],
+    );
+  }
+
+  *toArr(){
+    return [
+      ...yield [[this.scope1, 'toArr']],
+      ...yield [[this.scope2, 'toArr']],
+    ];
+  }
+
+  *test(scopes){
+    return min(
+      (yield [[this.scope1, 'test'], scopes]),
+      (yield [[this.scope2, 'test'], scopes]),
+    );
+  }
+}
+
+class ScopeInfo extends Base{
+  constructor(scopes, start, end){
+    super();
+
+    if(scopes instanceof Scope)
+      scopes = O.rec([scopes, 'toArr']).map(a => a.idents);
+
+    this.scopes = scopes;
+    this.start = start;
+    this.end = end;
+  }
+
+  toStr(){
+    const arr = [`((${this.start}, ${this.end}), '`];
+
+    this.join(arr, this.scopes, ' ');
+    arr.push(`')`);
 
     return arr;
   }
@@ -304,93 +508,6 @@ class TextInfo extends Expression{
   }
 }
 
-class Scope extends Base{
-  *negate(){ O.virtual('negate'); }
-}
-
-class ScopeLiteral extends Scope{
-  constructor(scheme, idents){
-    super(scheme);
-    this.idents = idents;
-  }
-
-  get id(){ return this.toString(); }
-
-  *negate(){
-    return new ScopeNegation(this);
-  }
-
-  toStr(){
-    return this.idents.join('.');
-  }
-}
-
-class ScopeOperation extends Scope{
-  get opName(){ O.virtual('opName'); }
-}
-
-class ScopeUnaryOperation extends ScopeOperation{
-  constructor(scope){
-    super();
-
-    assert(scope instanceof Scope);
-    this.scope = scope;
-  }
-
-  toStr(){
-    return [this.opName, this.scope];
-  }
-}
-
-class ScopeNegation extends ScopeUnaryOperation{
-  *negate(){
-    return this.scope;
-  }
-
-  get opName(){ return '-'; }
-}
-
-class ScopeBinaryOperation extends ScopeOperation{
-  constructor(scope1, scope2){
-    super();
-
-    assert(scope1 instanceof Scope);
-    assert(scope2 instanceof Scope);
-
-    this.scope1 = scope1;
-    this.scope2 = scope2;
-  }
-
-  toStr(){
-    const {opName} = this;
-    const op = opName !== null ? ` ${opName} ` : ' ';
-
-    return ['(', this.scope1, op, this.scope2, ')'];
-  }
-}
-
-class ScopeDisjunction extends ScopeBinaryOperation{
-  get opName(){ return '|'; }
-
-  *negate(){
-    return new ScopeConjunction(
-      yield [[this.scope1, 'negate']],
-      yield [[this.scope2, 'negate']],
-    );
-  }
-}
-
-class ScopeConjunction extends ScopeBinaryOperation{
-  get opName(){ return null; }
-
-  *negate(){
-    return new ScopeDisjunction(
-      yield [[this.scope1, 'negate']],
-      yield [[this.scope2, 'negate']],
-    );
-  }
-}
-
 module.exports = {
   kNoRuleType,
 
@@ -400,12 +517,6 @@ module.exports = {
   Base,
   Scheme,
   Rule,
-  Expression,
-  Color,
-  LightnessAdjustement,
-  Alpha,
-  Constant,
-  TextInfo,
   Scope,
   ScopeLiteral,
   ScopeOperation,
@@ -414,6 +525,13 @@ module.exports = {
   ScopeBinaryOperation,
   ScopeDisjunction,
   ScopeConjunction,
+  ScopeInfo,
+  Expression,
+  Color,
+  LightnessAdjustement,
+  Alpha,
+  Constant,
+  TextInfo,
 };
 
 const Parser = require('./parser');
