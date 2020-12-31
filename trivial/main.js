@@ -12,9 +12,12 @@ const dir = path.join(cwd, 'test');
 const codeFile = path.join(dir, 'code.txt');
 
 const main = () => {
-  const seed = O.rand(1e5);
+  const seed = 6356//O.rand(1e5);
+  
+  log(seed);
+
   const ser = new O.NatSerializer(BigInt(seed));
-  const prog = gen(/*ser*/);
+  const prog = gen(ser);
   const code = prog.toString();
 
   O.wfs(codeFile, code);

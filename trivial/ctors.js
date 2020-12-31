@@ -9,24 +9,39 @@ const arrOrder = require('../arr-order');
 const lower = O.chars('a', 'z');
 const upper = O.chars('A', 'Z');
 
-class Base extends O.Stringifiable{
+class Base extends O.Stringifiable{}
+
+class RefContainer extends O.Stringifiable{
   argRefs = new Set();
   funcRefs = new Set();
 
   hasArgRef(arg){
+    O.logb()
+    log(this+'\n')
+    log(arg)
+    log()
+    log(this.argRefs)
+    log()
+    log(((arg in this.argRefs)|0)+'\n')
+    O.logb()
+
+    assert(arg instanceof Argument);
     return arg in this.argRefs;
   }
 
   hasFuncRef(func){
+    assert(func instanceof Function);
     return func in this.funcRefs;
   }
 
   addArgRef(arg){
+    assert(arg instanceof Argument);
     this.argRefs.add(arg);
     return this;
   }
 
   addFuncRef(func){
+    assert(func instanceof Function);
     this.funcRefs.add(func);
     return this;
   }
@@ -44,7 +59,7 @@ class Base extends O.Stringifiable{
   }
 }
 
-class Program extends Base{
+class Program extends RefContainer{
   constructor(expr, funcs=[]){
     super();
 
@@ -91,7 +106,7 @@ class FunctionID extends Identifier{
   get chars(){ return lower; }
 }
 
-class Argument extends Base{
+class Argument extends RefContainer{
   used = 0;
 
   constructor(id, first=0){
@@ -99,6 +114,8 @@ class Argument extends Base{
 
     this.id = new ArgumentID(id);
     this.first = first;
+
+    this.addArgRef(this);
   }
 
   toStr(){
@@ -106,7 +123,7 @@ class Argument extends Base{
   }
 }
 
-class Function extends Base{
+class Function extends RefContainer{
   parent = null;
 
   constructor(id, args=[], expr=null, funcs=[]){
@@ -117,8 +134,7 @@ class Function extends Base{
     this.expr = null;
     this.funcs = [];
 
-    for(const arg of args)
-      this.addArg(arg);
+    this.addFuncRef(this);
 
     if(expr !== null)
       this.setExpr(expr);
@@ -129,7 +145,7 @@ class Function extends Base{
 
   addArg(arg){
     this.args.push(arg);
-    return this.copyRefs(arg);
+    return this;
   }
 
   setExpr(expr){
@@ -163,7 +179,7 @@ class Function extends Base{
   }
 }
 
-class Expression extends Base{}
+class Expression extends RefContainer{}
 
 class Reference extends Expression{}
 
@@ -172,7 +188,7 @@ class ArgumentRef extends Reference{
     super();
 
     this.arg = arg;
-    this.argRefs.add(arg);
+    this.copyRefs(arg);
 
     arg.used = 1;
   }
@@ -187,7 +203,7 @@ class FunctionRef extends Reference{
     super();
 
     this.func = func;
-    this.funcRefs.add(func);
+    this.addFuncRef(func);
   }
 
   toStr(){
@@ -228,6 +244,7 @@ class Call extends Expression{
 
 module.exports = {
   Base,
+  RefContainer,
   Program,
   Identifier,
   ArgumentID,

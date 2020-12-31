@@ -103,10 +103,7 @@ const gen = (ser=null) => {
     }
 
     const optsNew = opts;
-    func.expr = yield [genExpr, optsNew];
-
-    for(let i = 0; i !== funcArgsNum; i++)
-      opts.args.pop();
+    func.setExpr(yield [genExpr, optsNew]);
 
     addLocalFuncs: for(let i = funcsIndex; i !== opts.funcs.length; i++){
       const f = opts.funcs[i];
@@ -121,6 +118,9 @@ const gen = (ser=null) => {
         }
       }
     }
+
+    for(let i = 0; i !== funcArgsNum; i++)
+      opts.args.pop();
 
     return func;
   };
