@@ -33,8 +33,8 @@ const gen = (ser=null) => {
     return rand(mod);
   };
 
-  const ri = () => {
-    let n = 0;
+  const ri = (start=0) => {
+    let n = start;
     while(r()) n++;
     return n;
   };
@@ -58,7 +58,7 @@ const gen = (ser=null) => {
       const index = r(opts.funcs.length + 1);
 
       if(index === opts.funcs.length){
-        const optsNew = yield [clone, opts];
+        const optsNew = opts;
         yield [genFunc, optsNew];
       }
 
@@ -75,7 +75,7 @@ const gen = (ser=null) => {
     const call = new cs.Call(target);
 
     for(let i = 0; i !== callArgsNum; i++){
-      const optsNew = yield [clone, opts];
+      const optsNew = opts;
       const expr = yield [genExpr, optsNew];
 
       call.addArg(expr);
@@ -87,27 +87,54 @@ const gen = (ser=null) => {
   const genFunc = function*(opts){
     const id = opts.funcs.length;
     const func = new cs.Function(id);
+
     opts.funcs.push(func);
 
-    const funcArgsNum = ri();
+    const funcsIndex = opts.funcs.length;
+    const argsIndex = opts.args.length;
 
-    for(let i = 0; i !== funcArgsNum; i++)
-      opts.args.push(new cs.Argument(opts.args.length));
+    const funcArgsNum = ri(1);
 
-    const optsNew = yield [clone, opts];
+    for(let i = 0; i !== funcArgsNum; i++){
+      const arg = new cs.Argument(opts.args.length, i === 0);
+
+      func.addArg(arg);
+      opts.args.push(arg);
+    }
+
+    const optsNew = opts;
     func.expr = yield [genExpr, optsNew];
 
     for(let i = 0; i !== funcArgsNum; i++)
       opts.args.pop();
 
+    addLocalFuncs: for(let i = funcsIndex; i !== opts.funcs.length; i++){
+      const f = opts.funcs[i];
+      if(f.parent !== null) return;
+
+      for(let j = 0; j !== funcArgsNum; j++){
+        const arg = opts.args[argsIndex + j];
+
+        if(f.hasArgRef(arg)){
+          func.addFunc(f);
+          continue addLocalFuncs;
+        }
+      }
+    }
+
     return func;
   };
 
-  return O.rec(genExpr, O.nproto({
+  const opts = O.nproto({
     depth: 0,
     args: [],
     funcs: [],
-  }));
+  });
+
+  const expr = O.rec(genExpr, opts);
+  const prog = new cs.Program(expr, opts.funcs);
+
+  return prog;
 };
 
 const clone = function*(obj, extra=null){

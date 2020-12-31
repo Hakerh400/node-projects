@@ -9,7 +9,66 @@ const arrOrder = require('../arr-order');
 const lower = O.chars('a', 'z');
 const upper = O.chars('A', 'Z');
 
-class Base extends O.Stringifiable{}
+class Base extends O.Stringifiable{
+  argRefs = new Set();
+  funcRefs = new Set();
+
+  hasArgRef(arg){
+    return arg in this.argRefs;
+  }
+
+  hasFuncRef(func){
+    return func in this.funcRefs;
+  }
+
+  addArgRef(arg){
+    this.argRefs.add(arg);
+    return this;
+  }
+
+  addFuncRef(func){
+    this.funcRefs.add(func);
+    return this;
+  }
+
+  copyRefs(other){
+    const {argRefs, funcRefs} = this;
+
+    for(const arg of other.argRefs)
+      argRefs.add(arg);
+
+    for(const func of other.funcRefs)
+      funcRefs.add(func);
+
+    return this;
+  }
+}
+
+class Program extends Base{
+  constructor(expr, funcs=[]){
+    super();
+
+    this.expr = expr;
+    this.funcs = [];
+
+    for(const func of funcs)
+      this.addFunc(func);
+  }
+
+  addFunc(func){
+    this.funcs.push(func);
+    return this.copyRefs(func);
+  }
+
+  toStr(){
+    const arr = [this.expr];
+
+    for(const func of this.funcs)
+      arr.push('\n\n', func);
+
+    return arr;
+  }
+}
 
 class Identifier extends Base{
   constructor(id){
@@ -48,26 +107,45 @@ class Argument extends Base{
 }
 
 class Function extends Base{
+  parent = null;
+
   constructor(id, args=[], expr=null, funcs=[]){
     super();
 
     this.id = new FunctionID(id);
-    this.args = args;
-    this.expr = expr;
-    this.funcs = funcs;
+    this.args = [];
+    this.expr = null;
+    this.funcs = [];
+
+    for(const arg of args)
+      this.addArg(arg);
+
+    if(expr !== null)
+      this.setExpr(expr);
+
+    for(const func of funcs)
+      this.addfunc(arg);
   }
 
   addArg(arg){
     this.args.push(arg);
+    return this.copyRefs(arg);
   }
 
   setExpr(expr){
     assert(this.expr === null);
+
     this.expr = expr;
+    return this.copyRefs(expr);
   }
 
   addFunc(func){
+    assert(func.parent === null);
+
     this.funcs.push(func);
+    func.parent = this;
+
+    return this.copyRefs(func);
   }
 
   toStr(){
@@ -78,9 +156,9 @@ class Function extends Base{
     arr.push(this.expr);
 
     for(const func of this.funcs)
-      arr.push('\n\n', this.func);
+      arr.push('\n\n', func);
 
-    arr.push(this.dec, '}');
+    arr.push(this.dec, '\n}');
     return arr;
   }
 }
@@ -92,7 +170,11 @@ class Reference extends Expression{}
 class ArgumentRef extends Reference{
   constructor(arg){
     super();
+
     this.arg = arg;
+    this.argRefs.add(arg);
+
+    arg.used = 1;
   }
 
   toStr(){
@@ -103,7 +185,9 @@ class ArgumentRef extends Reference{
 class FunctionRef extends Reference{
   constructor(func){
     super();
+
     this.func = func;
+    this.funcRefs.add(func);
   }
 
   toStr(){
@@ -116,11 +200,17 @@ class Call extends Expression{
     super();
 
     this.target = target;
-    this.args = args;
+    this.args = [];
+
+    this.copyRefs(target);
+
+    for(const arg of args)
+      this.addArg(arg);
   }
 
   addArg(arg){
     this.args.push(arg);
+    return this.copyRefs(arg);
   }
 
   toStr(){
@@ -138,6 +228,7 @@ class Call extends Expression{
 
 module.exports = {
   Base,
+  Program,
   Identifier,
   ArgumentID,
   FunctionID,
