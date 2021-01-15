@@ -10,6 +10,7 @@ const format = require('../format');
 const IDS_FILE = format.path('-dw/ids.txt');
 const VIDS_DIR = 'D:/Videos/Other/Folder/Channels/Other/T';
 const BATCH_FILE = path.join(VIDS_DIR, 'a.bat');
+const EXCLUDED = path.join(VIDS_DIR, 'x.txt');
 const URL_BASE = 'https://www.youtube.com/watch?v=';
 
 const main = () => {
@@ -37,12 +38,19 @@ const main = () => {
     O.sanl(O.rfs(BATCH_FILE, 1)).slice(3).map(a => a.slice(a.length - 11)),
   ];
 
+  const excluded = O.arr2obj(O.sanl(O.rfs(EXCLUDED, 1)));
+
   for(const idsArr of idsArrs){
     for(const id of idsArr){
       if(!/^[a-zA-Z0-9\-_]{11}$/.test(id)) continue;
 
       if(id in idsOld){
-        log(id);
+        log(`OLD: ${id}`);
+        continue;
+      }
+
+      if(id in excluded){
+        log(`EXCLUDED: ${id}`);
         continue;
       }
 
@@ -51,7 +59,7 @@ const main = () => {
   }
 
   O.wfs(BATCH_FILE, `@echo off\ncls\n\n${O.shuffle(O.keys(idsNew)).map(id => {
-    return `call d ${URL_BASE}${id}`;
+    return `call d1 ${URL_BASE}${id}`;
   }).join('\n')}`.trim());
 };
 

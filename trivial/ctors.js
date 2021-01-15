@@ -11,7 +11,7 @@ const upper = O.chars('A', 'Z');
 
 class Base extends O.Stringifiable{}
 
-class RefContainer extends O.Stringifiable{
+class RefContainer extends Base{
   argRefs = new Set();
   funcRefs = new Set();
 
