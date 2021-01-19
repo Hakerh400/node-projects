@@ -110,7 +110,8 @@ function aels(){
         case 'b': testMode && moveTo('Bass'); break;
         // case 'R': testMode && moveTo('Popular'); break;
         case 'm': testMode && moveTo('Mix'); break;
-        case 'g': testMode && moveTo('Background'); break;
+        case 'g': testMode && moveTo('Melodic'); break;
+        case 'E': testMode && moveTo('Epic'); break;
         case 'c': moveTo('Classical'); break;
         case 'i': moveTo('Improvable'); break;
         case 'o': moveTo('Other'); break;
