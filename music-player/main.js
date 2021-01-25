@@ -107,7 +107,6 @@ function aels(){
         case 'p': testMode ? moveTo('Priority') : prev(); break;
         case 'n': testMode ? moveTo('Nightcore') : next(); break;
         case 't': testMode && moveTo('Trance'); break;
-        case 'b': testMode && moveTo('Bass'); break;
         // case 'R': testMode && moveTo('Popular'); break;
         case 'm': testMode && moveTo('Mix'); break;
         case 'g': testMode && moveTo('Melodic'); break;
@@ -118,6 +117,7 @@ function aels(){
         case 'w': moveTo('Word'); break;
         case 's': moveTo('Spam'); break;
         case 'l': moveTo('Low quality'); break;
+        case 'b': moveTo('Bass'); break;
 
         case 'R': moveTo('Russian'); break;
         case 'a': moveTo('Arabic'); break;
