@@ -16,6 +16,7 @@ const file1 = path.join(tabsDir, '1.txt');
 const file2 = path.join(tabsDir, '2.txt');
 
 let fileIndex = 1;
+let infoPrev = null;
 
 const realms = O.obj();
 const windows = O.obj();
@@ -152,6 +153,9 @@ const getAllInfo = () => {
 
 const saveInfo = () => {
   const info = getAllInfo();
+  if(info === infoPrev) return;
+
+  infoPrev = info;
 
   if(fileIndex === 1) fileIndex = 2;
   else fileIndex = 1;
