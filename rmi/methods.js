@@ -7,11 +7,11 @@ const O = require('../omikron');
 
 const methods = {
   async ping(){
-    return new Promise((res, rej) => {
-      setTimeout(() => {
-        res('ok');
-      }, 1e3);
-    });
+    return 'ok';
+  },
+
+  async echo(val){
+    return val;
   },
 };
 
