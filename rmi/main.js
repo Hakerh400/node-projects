@@ -5,6 +5,8 @@ const path = require('path');
 const assert = require('assert');
 const http = require('http');
 const O = require('../omikron');
+const readline = require('../readline');
+const rmi = require('.');
 const methods = require('./methods');
 
 const PORT = 8081;
@@ -15,23 +17,38 @@ const headers = {
   'Cache-Control': 'no-cache',
 };
 
-const sem = new O.Semaphore();
+const rmiSem = new O.Semaphore();
+const rlSem = new O.Semaphore();
+
+const rl = readline.rl();
 
 let server = null;
 
-const main = () => {
-  process.on('SIGINT', () => {
-    (async () => {
-      await sem.wait();
-      log('Closing server');
-      server.close();
-    })().catch(O.exit);
-  });
+const main = async () => {
+  rmi.init();
 
   server = http.createServer(onReq);
 
   server.listen(PORT, () => {
     log(`Server is listening on port ${PORT}`);
+  });
+
+  rl.on('line', str => {
+    (async () => {
+      await rlSem.wait();
+
+      str = str.trim();
+
+      if(str === '')
+        return;
+
+      if(str === 'q' || str === 'exit'){
+        exit();
+        return;
+      }
+
+      log(`Unnown command`);
+    })().catch(log).finally(() => rlSem.signal());
   });
 };
 
@@ -66,7 +83,7 @@ const onReq = (req, res) => {
 
 const processReq = async str => {
   try{
-    await sem.wait();
+    await rmiSem.wait();
 
     log(`Request: ${str}`);
     log.inc();
@@ -93,7 +110,7 @@ const processReq = async str => {
     throw err;
   }finally{
     log.dec();
-    sem.signal();
+    rmiSem.signal();
   }
 };
 
@@ -102,8 +119,20 @@ const setHeaders = res => {
     res.setHeader(key, headers[key]);
 };
 
-const sf = val => {
+const sf = (val=null) => {
   return JSON.stringify(val);
+};
+
+const exit = () => {
+  (async () => {
+    await rmiSem.wait();
+
+    log('Closing server');
+
+    server.close();
+    rl.close();
+    rmi.close();
+  })().catch(O.exit);
 };
 
 main();
