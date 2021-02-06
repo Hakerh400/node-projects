@@ -5,12 +5,7 @@ const path = require('path');
 const assert = require('assert');
 const O = require('../../omikron');
 const rmi = require('..');
-const tabs = require('./tabs');
-const ublockDir = require('./dir');
 
-const methods = {
-  ublockDir,
-  tabs,
-};
+const dir = path.join(rmi.mainDir, 'ublock');
 
-module.exports = methods;
+module.exports = dir;

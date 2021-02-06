@@ -7,11 +7,9 @@ const O = require('../../../omikron');
 const rmi = require('../..');
 
 class Tab extends O.Stringifiable{
-  window = null;
-  index = null;
-  url = null;
-
   #realm = null;
+  window = null;
+  url = null;
 
   constructor(id){
     super();
@@ -22,6 +20,9 @@ class Tab extends O.Stringifiable{
 
   get inco(){ return this.window?.inco; }
   get realm(){ return this.#realm; }
+
+  get index(){ assert.fail(); }
+  set index(a){ assert.fail(); }
 
   set realm(realm){
     if(this.#realm === null){

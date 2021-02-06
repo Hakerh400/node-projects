@@ -5,9 +5,17 @@ const path = require('path');
 const assert = require('assert');
 const O = require('../../../omikron');
 const rmi = require('../..');
+const ublockDir = require('../dir');
 const Realm = require('./realm');
 const Window = require('./window');
 const Tab = require('./tab');
+
+const tabsDir = path.join(ublockDir, 'tabs');
+const indexFile = path.join(tabsDir, 'index.txt');
+const file1 = path.join(tabsDir, '1.txt');
+const file2 = path.join(tabsDir, '2.txt');
+
+let fileIndex = 1;
 
 const realms = O.obj();
 const windows = O.obj();
@@ -19,21 +27,13 @@ const incoRealm = createRealm('Incognito', 1);
 const methods = {
   show: {
     async all(){
-      log(O.vals(realms).join('\n'));
-
-      const detachedWins = O.vals(windows).filter(a => a.realm === null);
-      const detachedTabs = O.vals(tabs).filter(a => a.window === null);
-
-      if(detachedWins.length !== 0)
-        log(detachedWins.join('\n'));
-
-      if(detachedTabs.length !== 0)
-        log(detachedTabs.join('\n'));
+      log(getAllInfo());
     },
   },
 
   async create(tabRaw){
-    const {realm, win, tab} = getTabInfo(tabRaw);
+    const {realm, win, tab} = getTabInfo(tabRaw, 1);
+    saveInfo();
   },
 
   async update(tabId, dif, tabRaw){
@@ -41,6 +41,8 @@ const methods = {
 
     if(O.has(dif, 'url'))
       tab.url = dif.url;
+    
+    saveInfo();
   },
 
   async move(tabId, info){
@@ -50,7 +52,9 @@ const methods = {
       index: info.fromIndex,
     });
 
-    win.moveTab(tab, info.toIndex);
+    win.moveTab(tab, info.fromIndex, info.toIndex);
+
+    saveInfo();
   },
 
   async detach(tabId, info){
@@ -64,6 +68,8 @@ const methods = {
 
     win.removeTab(tab.id);
     closeWinIfNeeded(win);
+
+    saveInfo();
   },
 
   async attach(tabId, info){
@@ -85,6 +91,8 @@ const methods = {
       realm.addWindow(win);
 
     win.insertTab(tab, info.newPosition);
+
+    saveInfo();
   },
 
   async replace(info){
@@ -120,10 +128,39 @@ const methods = {
     closeWinIfNeeded(win);
 
     delete tabs[tab.id];
+
+    saveInfo();
   },
 };
 
-const getTabInfo = info => {
+const getAllInfo = () => {
+  const arr = [];
+
+  arr.push(O.vals(realms).join('\n'));
+
+  const detachedWins = O.vals(windows).filter(a => a.realm === null);
+  const detachedTabs = O.vals(tabs).filter(a => a.window === null);
+
+  if(detachedWins.length !== 0)
+    arr.push(detachedWins.join('\n'));
+
+  if(detachedTabs.length !== 0)
+    arr.push(detachedTabs.join('\n'));
+
+  return arr.join('\n');
+};
+
+const saveInfo = () => {
+  const info = getAllInfo();
+
+  if(fileIndex === 1) fileIndex = 2;
+  else fileIndex = 1;
+
+  O.wfs(fileIndex === 1 ? file1 : file2, info);
+  O.wfs(indexFile, String(fileIndex));
+};
+
+const getTabInfo = (info, insert=0) => {
   const realm = getRealm(info);
   const winId = getWinId(info);
   const tabId = getTabId(info);
@@ -160,7 +197,12 @@ const getTabInfo = info => {
       const tab = new Tab(tabId);
 
       tabs[tabId] = tab;
-      win.setTab(tab, index);
+
+      if(insert){
+        win.insertTab(tab, index);
+      }else{
+        win.setTab(tab, index);
+      }
 
       if(O.has(info, 'url'))
         tab.url = info.url;

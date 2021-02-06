@@ -42,7 +42,6 @@ class Window extends O.Stringifiable{
     const arr = this.#tabsArr;
 
     assert(tab.window === null);
-    assert(tab.index === null);
 
     const {id} = tab;
     assert(!this.hasTab(id));
@@ -54,7 +53,6 @@ class Window extends O.Stringifiable{
     arr.splice(index, 0, tab);
 
     tab.window = this;
-    tab.index = index;
 
     this.#tabsNum++;
   }
@@ -63,7 +61,6 @@ class Window extends O.Stringifiable{
     const arr = this.#tabsArr;
 
     assert(tab.window === null);
-    assert(tab.index === null);
 
     const {id} = tab;
     assert(!this.hasTab(id));
@@ -77,38 +74,49 @@ class Window extends O.Stringifiable{
     arr[index] = tab;
 
     tab.window = this;
-    tab.index = index;
     tab.realm = this.realm;
 
     this.#tabsNum++;
   }
 
-  moveTab(tab, indexNew){
+  moveTab(tab, indexCur, indexNew){
     const arr = this.#tabsArr;
 
     assert(this.hasTab(tab.id));
     assert(tab.window === this);
 
-    const indexCur = tab.index;
+    if(arr[indexCur] !== tab){
+      O.logb();
+      log(arr.map((a, b) => `${b}: ${a}`).join('\n'));
+      log(`tab.id: ${tab.id}`);
+      log(`indexCur: ${indexCur}`);
+      log(`indexNew: ${indexNew}`);
+      O.logb();
+      O.exit();
+    }
+
     assert(arr[indexCur] === tab);
     assert(indexNew !== indexCur);
 
     arr.splice(indexCur, 1);
-    arr.splice(indexNew, 0, tab);
 
-    tab.index = indexNew;
+    while(arr.length < indexNew)
+      arr.push(null);
+    
+    arr.splice(indexNew, 0, tab);
   }
 
   removeTab(id){
     assert(this.hasTab(id));
 
     const tab = this.#tabsObj[id];
+    const index = this.#tabsArr.indexOf(tab);
+    assert(index !== -1);
 
     delete this.#tabsObj[id];
-    this.#tabsArr.splice(tab.index, 1);
+    this.#tabsArr.splice(index, 1);
 
     tab.window = null;
-    tab.index = null;
     tab.realm = this.realm;
 
     this.#tabsNum--;
