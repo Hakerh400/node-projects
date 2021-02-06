@@ -13,6 +13,9 @@ const logsDir = path.join(mainDir, 'logs');
 
 let logFd = null;
 
+let first = 1;
+let dateOnStart = 1;
+
 const init = () => {
   initLogFd();
   overrideStdout();
@@ -23,6 +26,36 @@ const initLogFd = () => {
   const logFile = path.join(logsDir, `${logIndex}.txt`);
 
   logFd = fs.openSync(logFile, 'a');
+};
+
+const writeLog = data => {
+  let str = O.lf(String(data));
+  const dateStr = `[${O.date}] `;
+
+  if(dateOnStart){
+    str = `${first ? dateStr : '\n'}${str}`;
+    dateOnStart = 0;
+    if(first) first = 0;
+  }
+
+  if(str.endsWith('\n')){
+    str = str.slice(0, str.length - 1);
+    dateOnStart = 1;
+  }
+
+  str = str.replace(/\n/g, `\n${dateStr}`);
+
+  fs.writeSync(logFd, str);
+};
+
+const rmiLog = data => {
+  writeLog(`${data}\n`);
+  return data;
+};
+
+const rmiLogRaw = data => {
+  writeLog(data);
+  return data;
 };
 
 const overrideStdout = () => {
@@ -39,29 +72,6 @@ const overrideStdout = () => {
       writeLog(args[1]);
 
     writeSync(...args);
-  };
-
-  let first = 1;
-  let dateOnStart = 1;
-
-  const writeLog = data => {
-    let str = O.lf(String(data));
-    const dateStr = `[${O.date}] `;
-
-    if(dateOnStart){
-      str = `${first ? dateStr : '\n'}${str}`;
-      dateOnStart = 0;
-      if(first) first = 0;
-    }
-
-    if(str.endsWith('\n')){
-      str = str.slice(0, str.length - 1);
-      dateOnStart = 1;
-    }
-
-    str = str.replace(/\n/g, `\n${dateStr}`);
-
-    fs.writeSync(logFd, str);
   };
 };
 
@@ -103,5 +113,7 @@ module.exports = {
   logsDir,
 
   init,
+  log: rmiLog,
+  logRaw: rmiLogRaw,
   close,
 };

@@ -17,8 +17,7 @@ const headers = {
   'Cache-Control': 'no-cache',
 };
 
-const rmiSem = new O.Semaphore();
-const rlSem = new O.Semaphore();
+const sem = new O.Semaphore();
 
 const rl = readline.rl();
 
@@ -34,9 +33,7 @@ const main = async () => {
   });
 
   rl.on('line', str => {
-    (async () => {
-      await rlSem.wait();
-
+    cmd([`> ${str}`], async () => {
       str = str.trim();
 
       if(str === '')
@@ -47,9 +44,28 @@ const main = async () => {
         return;
       }
 
-      log(`Unnown command`);
-    })().catch(log).finally(() => rlSem.signal());
+      log(`Unknown command`);
+    });
   });
+};
+
+const cmd = async (cmdInfo, func) => {
+  await sem.wait();
+
+  if(Array.isArray(cmdInfo)){
+    rmi.log(cmdInfo);
+  }else{
+    log(cmdInfo);
+  }
+
+  log.inc();
+
+  try{
+    return await func();
+  }finally{
+    log.dec();
+    sem.signal();
+  }
 };
 
 const onReq = (req, res) => {
@@ -82,36 +98,30 @@ const onReq = (req, res) => {
 };
 
 const processReq = async str => {
-  try{
-    await rmiSem.wait();
+  cmd(`Request: ${str}`, async () => {
+    try{
+      const req = JSON.parse(str);
 
-    log(`Request: ${str}`);
-    log.inc();
+      // log(`Request: ${
+      //   methodPath.join('.')}(${
+      //   args.map(a => sf(a)).join(', ')})`);
 
-    const req = JSON.parse(str);
+      const [methodPath, args] = req;
+      const method = methodPath.reduce((obj, key) => obj[key], methods);
 
-    // log(`Request: ${
-    //   methodPath.join('.')}(${
-    //   args.map(a => sf(a)).join(', ')})`);
+      const result = await method(...args);
+      log(`Result: ${sf(result)}`);
 
-    const [methodPath, args] = req;
-    const method = methodPath.reduce((obj, key) => obj[key], methods);
+      return result;
+    }catch(err){
+      log(`Error: ${err?.stack}`);
 
-    const result = await method(...args);
-    log(`Result: ${sf(result)}`);
+      if(err instanceof Error)
+        throw err.message;
 
-    return result;
-  }catch(err){
-    log(`Error: ${err}`);
-
-    if(err instanceof Error)
-      throw err.message;
-
-    throw err;
-  }finally{
-    log.dec();
-    rmiSem.signal();
-  }
+      throw err;
+    }
+  });
 };
 
 const setHeaders = res => {
@@ -119,13 +129,9 @@ const setHeaders = res => {
     res.setHeader(key, headers[key]);
 };
 
-const sf = (val=null) => {
-  return JSON.stringify(val);
-};
-
 const exit = () => {
   (async () => {
-    await rmiSem.wait();
+    await sem.wait();
 
     log('Closing server');
 
@@ -133,6 +139,10 @@ const exit = () => {
     rl.close();
     rmi.close();
   })().catch(O.exit);
+};
+
+const sf = (val=null) => {
+  return JSON.stringify(val);
 };
 
 main();
