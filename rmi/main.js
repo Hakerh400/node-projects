@@ -44,8 +44,11 @@ const main = async () => {
         return;
       }
 
+      if(str.includes('.'))
+        return await str.split('.').reduce((a, b) => a[b], methods)();
+
       log(`Unknown command`);
-    });
+    }).catch(O.nop);
   });
 };
 
@@ -62,6 +65,13 @@ const cmd = async (cmdInfo, func) => {
 
   try{
     return await func();
+  }catch(err){
+    log(`Error: ${err?.stack}`);
+
+    if(err instanceof Error)
+      throw err.message;
+
+    throw err;
   }finally{
     log.dec();
     sem.signal();
@@ -97,30 +107,23 @@ const onReq = (req, res) => {
   });
 };
 
-const processReq = async str => {
-  cmd(`Request: ${str}`, async () => {
-    try{
-      const req = JSON.parse(str);
+const processReq = str => {
+  return cmd(`Request: ${str}`, async () => {
+    const req = JSON.parse(str);
 
-      // log(`Request: ${
-      //   methodPath.join('.')}(${
-      //   args.map(a => sf(a)).join(', ')})`);
+    // log(`Request: ${
+    //   methodPath.join('.')}(${
+    //   args.map(a => sf(a)).join(', ')})`);
 
-      const [methodPath, args] = req;
-      const method = methodPath.reduce((obj, key) => obj[key], methods);
+    const [methodPath, args] = req;
+    const method = methodPath.reduce((obj, key) => obj[key], methods);
 
-      const result = await method(...args);
+    const result = await method(...args);
+
+    if(result !== undefined)
       log(`Result: ${sf(result)}`);
 
-      return result;
-    }catch(err){
-      log(`Error: ${err?.stack}`);
-
-      if(err instanceof Error)
-        throw err.message;
-
-      throw err;
-    }
+    return result;
   });
 };
 

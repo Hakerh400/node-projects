@@ -6,11 +6,14 @@ const assert = require('assert');
 const O = require('../../../omikron');
 const rmi = require('../..');
 
-class Realm{
+class Realm extends O.Stringifiable{
   #windows = O.obj();
 
-  constructor(name){
+  constructor(name, inco=0){
+    super();
+
     this.name = name;
+    this.inco = inco;
   }
 
   hasWindow(id){
@@ -23,6 +26,7 @@ class Realm{
   }
 
   addWindow(win){
+    assert(typeof win.id === 'number');
     assert(win.realm === null);
 
     const {id} = win;
@@ -33,6 +37,7 @@ class Realm{
   }
 
   removeWindow(id){
+    assert(typeof id === 'number');
     assert(this.hasWindow(id));
     const win = this.#windows[id];
     delete this.#windows[id];
@@ -40,7 +45,17 @@ class Realm{
   }
 
   *[Symbol.iterator](){
-    yield* O.keys(this.#windows);
+    yield* O.vals(this.#windows);
+  }
+
+  toStr(){
+    const arr = ['Realm ', O.sf(this.name), this.inc];
+
+    for(const win of this)
+      arr.push('\n', win);
+
+    arr.push(this.dec);
+    return arr;
   }
 }
 
