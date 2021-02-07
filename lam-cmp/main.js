@@ -18,25 +18,56 @@ const {
 const {K, S, I, iota} = nativeCombs;
 
 const DEBUG = 1;
+const STEPS_LIMIT = 1e5;
 
 const main = () => {
   const i = iota;
 
   const _I = [i, i];
+  const _iI = [i, _I];
+  const _K = [i, _iI];
+  const _S = [i, _K];
 
-  const expr1 = [I];
-  const expr2 = [_I];
+  const f1 = [S, I, I];
+  const f2 = [f1, f1];
 
-  log(O.rec(cmp, expr1, expr2));
+  const exprsObj = {
+    _I,
+    _iI,
+    _K,
+    _S,
+    f1,
+    f2,
+  };
+
+  const exprsArr = O.vals(exprsObj);
+  const exprsMap = O.keys(exprsObj).map(a => [exprsObj[a], a]);
+
+  const equivClasses = [];
+
+  const expr1 = [_iI];
+  const expr2 = [K, I];
+
+  const stepsNum = [STEPS_LIMIT];
+  const eq = O.rec(cmp, expr1, expr2, stepsNum);
+
+  if(eq === null){
+    log('unknown');
+    return;
+  }
+
+  log(eq ? 'equal' : 'not equal');
+
+  log();
+  log(`Steps: ${STEPS_LIMIT - stepsNum[0]}`);
 };
 
-const cmp = function*(expr1, expr2){
-  if(isComb(expr1)) expr1 = [expr1];
-  if(isComb(expr2)) expr2 = [expr2];
+const cmp = function*(expr1, expr2, stepsNum){
+  const exprs = [[expr1], [expr2]];
 
-  const exprs = [expr1, expr2];
   let needArgs = 0;
   let simplified = 1;
+  let limitReached = 0;
 
   const iter = func => {
     for(const expr of exprs)
@@ -50,6 +81,13 @@ const cmp = function*(expr1, expr2){
     }
 
     while(1){
+      if(stepsNum[0] === 0){
+        limitReached = 1;
+        return;
+      }
+
+      stepsNum[0]--;
+
       const target = expr[0];
 
       if(isCall(target)){
@@ -58,8 +96,7 @@ const cmp = function*(expr1, expr2){
         for(let i = target.length - 1; i !== -1; i--)
           expr.unshift(target[i]);
 
-        if(DEBUG) {simplified = 0; break;}
-        else continue;
+        continue;
       }
 
       if(isSpecial(target))
@@ -69,7 +106,7 @@ const cmp = function*(expr1, expr2){
 
       if(target === K){
         if(argsNum < 2){
-          needArgs = 1;
+          needArgs = 2 - argsNum;
           break;
         }
 
@@ -84,7 +121,7 @@ const cmp = function*(expr1, expr2){
 
       if(target === S){
         if(argsNum < 3){
-          needArgs = 1;
+          needArgs = 3 - argsNum;
           break;
         }
 
@@ -100,7 +137,7 @@ const cmp = function*(expr1, expr2){
 
       if(target === I){
         if(argsNum < 1){
-          needArgs = 1;
+          needArgs = 1 - argsNum;
           break;
         }
 
@@ -112,7 +149,7 @@ const cmp = function*(expr1, expr2){
 
       if(target === iota){
         if(argsNum < 1){
-          needArgs = 1;
+          needArgs = 1 - argsNum;
           break;
         }
 
@@ -143,12 +180,17 @@ const cmp = function*(expr1, expr2){
 
     iter(simplify);
 
-    if(needArgs){
-      const arg = Symbol();
+    if(limitReached)
+      return null;
 
-      iter(expr => {
-        addArg(expr, arg);
-      });
+    if(needArgs){
+      while(needArgs--){
+        const arg = Symbol();
+
+        iter(expr => {
+          addArg(expr, arg);
+        });
+      }
 
       continue;
     }
@@ -162,10 +204,7 @@ const cmp = function*(expr1, expr2){
       continue;
 
     if(isSpecial(target1) || isSpecial(target2)){
-      if(DEBUG){
-        iter(logExpr);
-        log();
-      }
+      const [expr1, expr2] = exprs;
 
       if(target1 !== target2) return 0;
       if(expr1.length !== expr2.length) return 0;
@@ -174,8 +213,10 @@ const cmp = function*(expr1, expr2){
 
       for(let i = 0; i !== expr1.length; i++){
         if(DEBUG) log.inc();
-        const eq = yield [cmp, expr1[i], expr2[i]];
+        const eq = yield [cmp, expr1[i], expr2[i], stepsNum];
         if(DEBUG) log.dec();
+
+        if(eq === null) return null;
         if(!eq) return 0;
       }
 
