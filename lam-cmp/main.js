@@ -17,52 +17,118 @@ const {
 
 const {K, S, I, iota} = nativeCombs;
 
-const DEBUG = 1;
+const DEBUG = 0;
 const STEPS_LIMIT = 1e5;
 
 const main = () => {
-  const i = iota;
+  const i = [iota];
 
   const _I = [i, i];
   const _iI = [i, _I];
   const _K = [i, _iI];
   const _S = [i, _K];
 
+  const _KI = [K, I];
   const f1 = [S, I, I];
   const f2 = [f1, f1];
 
   const exprsObj = {
+    I,
+    S,
+    K,
+    iota,
+    i,
     _I,
     _iI,
     _K,
     _S,
+    _KI,
     f1,
     f2,
   };
 
   const exprsArr = O.vals(exprsObj);
-  const exprsMap = O.keys(exprsObj).map(a => [exprsObj[a], a]);
+  const exprsMap = new Map(O.keys(exprsObj).map(a => [exprsObj[a], a]));
+
+  const exprName = expr => {
+    return exprsMap.get(expr);
+  };
+
+  const logExprName = expr => {
+    log(exprName(expr));
+  };
 
   const equivClasses = [];
+  const unknown = new Set();
 
-  const expr1 = [_iI];
-  const expr2 = [K, I];
+  const addEqc = expr => {
+    const eqc = new Set();
+    equivClasses.push(eqc);
+    eqc.add(expr);
+  };
 
-  const stepsNum = [STEPS_LIMIT];
-  const eq = O.rec(cmp, expr1, expr2, stepsNum);
+  initClasses: {
+    const len = exprsArr.length;
 
-  if(eq === null){
-    log('unknown');
-    return;
+    for(let i = 0; i !== len; i++){
+      const expr1 = exprsArr[i];
+
+      for(let j = i + 1; j !== len; j++){
+        const expr2 = exprsArr[j];
+        const eq = O.rec(cmp, expr1, expr2);
+        if(eq === null) continue;
+
+        addEqc(expr1);
+
+        if(eq){
+          eqc1.add(expr2);
+        }else{
+          addEqc(expr2);
+        }
+
+        exprsArr.splice(j, 1);
+        exprsArr.splice(i, 1);
+
+        break initClasses;
+      }
+    }
   }
 
-  log(eq ? 'equal' : 'not equal');
+  exprLoop: for(const expr of exprsArr){
+    eqcLoop: for(const eqc of equivClasses){
+      const expr1 = O.fst(eqc);
+      const eq = O.rec(cmp, expr, expr1);
 
-  log();
-  log(`Steps: ${STEPS_LIMIT - stepsNum[0]}`);
+      if(eq === null){
+        unknown.add(expr);
+        continue exprLoop;
+      }
+
+      if(eq){
+        eqc.add(expr);
+        continue exprLoop;
+      }
+    }
+
+    addEqc(expr);
+  }
+
+  for(let i = 0; i !== equivClasses.length; i++){
+    if(i !== 0) log();
+
+    const eqc = equivClasses[i];
+
+    for(const expr of eqc)
+      logExprName(expr);
+  }
+
+  O.logb();
+
+  for(const expr of unknown)
+    logExprName(expr);
 };
 
-const cmp = function*(expr1, expr2, stepsNum){
+const cmp = function*(expr1, expr2, stepsNum=[STEPS_LIMIT]){
   const exprs = [[expr1], [expr2]];
 
   let needArgs = 0;
