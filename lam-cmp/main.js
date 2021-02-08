@@ -18,38 +18,23 @@ const {
 const {K, S, I, iota} = nativeCombs;
 
 const DEBUG = 0;
-const STEPS_LIMIT = 1e5;
+const STEPS_LIMIT = 1e4;
 
 const main = () => {
   const i = [iota];
 
-  const _I = [i, i];
-  const _iI = [i, _I];
-  const _K = [i, _iI];
-  const _S = [i, _K];
-
-  const _KI = [K, I];
-  const f1 = [_S, _I, _I];
-  const f2 = [f1, f1];
-  const f3 = []; f3.push(f3);
-  const f4 = [K, f1, f3];
-
   const exprsObj = {
-    I,
-    S,
-    K,
-    iota,
-    i,
-    _I,
-    _iI,
-    _K,
-    _S,
-    _KI,
-    f1,
-    f2,
-    f3,
-    f4,
+    0: i,
+    1: [],
+    2: [],
+    3: [],
+    4: [],
   };
+
+  exprsObj[1].push([0, 1].map(a => exprsObj[a]));
+  exprsObj[2].push([0, 0].map(a => exprsObj[a]));
+  exprsObj[3].push([0, 3].map(a => exprsObj[a]));
+  exprsObj[4].push([0, 0].map(a => exprsObj[a]));
 
   const exprsArr = O.vals(exprsObj);
   const exprsMap = new Map(O.keys(exprsObj).map(a => [exprsObj[a], a]));
@@ -67,9 +52,12 @@ const main = () => {
 
   const addEqc = expr => {
     const eqc = new Set();
+
     equivClasses.push(eqc);
     eqc.add(expr);
-  };
+
+    return eqc;
+  }
 
   initClasses: {
     const len = exprsArr.length;
@@ -82,10 +70,10 @@ const main = () => {
         const eq = O.rec(cmp, expr1, expr2);
         if(eq === null) continue;
 
-        addEqc(expr1);
+        const eqc = addEqc(expr1);
 
         if(eq){
-          eqc1.add(expr2);
+          eqc.add(expr2);
         }else{
           addEqc(expr2);
         }

@@ -19,6 +19,9 @@
       "name": "haskell",
       "ext": "hs"
     }, {
+      "name": "agda",
+      "ext": "agda"
+    }, {
       "name": "lisp",
       "ext": "lisp"
     }, {
