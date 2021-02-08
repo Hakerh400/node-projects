@@ -29,8 +29,10 @@ const main = () => {
   const _S = [i, _K];
 
   const _KI = [K, I];
-  const f1 = [S, I, I];
+  const f1 = [_S, _I, _I];
   const f2 = [f1, f1];
+  const f3 = []; f3.push(f3);
+  const f4 = [K, f1, f3];
 
   const exprsObj = {
     I,
@@ -45,6 +47,8 @@ const main = () => {
     _KI,
     f1,
     f2,
+    f3,
+    f4,
   };
 
   const exprsArr = O.vals(exprsObj);

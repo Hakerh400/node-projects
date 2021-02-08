@@ -47,7 +47,9 @@ const expr2str = function*(expr, parens=0){
   for(let i = 0; i !== expr.length; i++){
     const first = i === 0;
     if(!first) str += ' ';
-    str += yield [expr2str, expr[i], !first];
+
+    const e = expr[i];
+    str += yield [expr2str, e, !first && e.length > 1];
   }
 
   return parens ? intoParens(str, 1) : str;
