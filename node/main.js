@@ -63,7 +63,7 @@ async function processInput(str){
     }else if(files.includes(engs.haskell.script)){
       await spawn('haskell');
     }else if(files.includes(engs.agda.script)){
-      await spawn('agda');
+      await spawn('agda', ['--ignore-interfaces']);
     }else if(files.includes(engs.lisp.script)){
       await spawn('lisp');
     }else if(files.includes(engs.z3.script)){
@@ -230,13 +230,24 @@ function spawnProc(file, args=[], options=O.obj(), opts=O.obj(), cb=null){
     const isEsolang = currDir.startsWith('C:\\Projects\\esolangs\\');
     
     if(isEsolang || opts.ignore || opts.killOnSigint || (sigintSent && KILL_ON_SECOND_SIGINT)){
-      if(opts.killCmd === null) proc.kill();
-      else cp.exec(opts.killCmd);
+      if(!opts.killCmd){
+        proc.kill();
+        return
+      }
+
+      try{
+        cp.execSync(`taskkill /f /t /pid ${proc.pid}`, {stdio: 'ignore'});
+      }catch(err){
+        log(err);
+      }
+
       return;
     }
 
     sigintSent = 1;
-    write(sigintBuf);
+
+    if(opts.sendSigint)
+      write(sigintBuf);
   };
 
   const onFinish = () => {
@@ -260,9 +271,10 @@ function spawnProc(file, args=[], options=O.obj(), opts=O.obj(), cb=null){
   };
 
   opts = Object.assign({
+    sendSigint: 1,
     skipFirst: 0,
     killOnSigint: 0,
-    killCmd: null,
+    killCmd: 0,
     ignore: 0,
   }, opts);
 
@@ -270,6 +282,7 @@ function spawnProc(file, args=[], options=O.obj(), opts=O.obj(), cb=null){
 
   const proc = cp.spawn(file, args, {
     cwd: currDir,
+    ...opts.spawnOptions || {},
     ...options,
   });
 

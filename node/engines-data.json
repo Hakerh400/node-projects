@@ -10,14 +10,21 @@
       "options": {
         "skipFirst": true,
         "killOnSigint": true,
-        "killCmd": "taskkill /f /im electron.exe"
+        "killCmd": true
       }
     }, {
       "name": "python",
       "ext": "py"
     }, {
       "name": "haskell",
-      "ext": "hs"
+      "ext": "hs",
+      "options": {
+        "sendSigint": false,
+        "killCmd": true,
+        "spawnOptions": {
+          "windowsHide": true
+        }
+      }
     }, {
       "name": "agda",
       "ext": "agda"
