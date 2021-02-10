@@ -21,6 +21,7 @@
       "options": {
         "sendSigint": false,
         "killCmd": true,
+        "killOnSigint": true,
         "spawnOptions": {
           "windowsHide": true
         }
