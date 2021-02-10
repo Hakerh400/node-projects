@@ -100,12 +100,13 @@ async function processInput(str){
     return;
   }
 
-  var batchName = `${str}.bat`;
-  var batchFile = path.join(currDir, batchName);
+  const batchName = `${str}.bat`;
+  let batchFile = path.join(currDir, batchName);
 
   if(!fs.existsSync(batchFile)){
-    log(`Batch file "${batchName}" not found`);
-    return;
+    // log(`Batch file "${batchName}" not found`);
+    // return;
+    batchFile = batchName;
   }
 
   await clear();
@@ -199,28 +200,36 @@ function onInput(str){
 
 function spawnProc(file, args=[], options=O.obj(), opts=O.obj(), cb=null){
   const onLog = (data, type) => {
-    if(opts.skipFirst && first){
-      first = 0;
-      return;
-    }
+    (async () => {
+      if(opts.skipFirst && first){
+        first = 0;
+        return;
+      }
 
-    let str = data.toString();
+      const strParts = data.toString().split(/\x0C/);
 
-    if(str.includes('Terminate batch job (Y/N)?')) return;
-    if(str.includes('Building the projects in this solution one at a time.')) return;
+      for(let i = 0; i !== strParts.length; i++){
+        if(i !== 0) await clear();
 
-    str = str.replace(/\[Object: null prototype\] /g, '');
-    str = str.replace(/\[Object: null prototype\]/g, '[Object]');
+        let str = strParts[i];
 
-    if(type === 0){
-      logSync(str);
-      return;
-    }
+        if(str.includes('Terminate batch job (Y/N)?')) return;
+        if(str.includes('Building the projects in this solution one at a time.')) return;
 
-    if(type === 1){
-      stderrData += str;
-      return;
-    }
+        str = str.replace(/\[Object: null prototype\] /g, '');
+        str = str.replace(/\[Object: null prototype\]/g, '[Object]');
+
+        if(type === 0){
+          logSync(str);
+          return;
+        }
+
+        if(type === 1){
+          stderrData += str;
+          return;
+        }
+      }
+    })().catch(log);
   };
 
   const onSigint = () => {
