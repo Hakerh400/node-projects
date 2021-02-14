@@ -19,11 +19,12 @@ const electronAppScript = path.join(cwd, 'electron-app.js');
 
 const sigintBuf = Buffer.from([0x03]);
 
-var currDir = path.join(cwd, '..');
-var rl = readline.rl();
+let currDir = path.join(cwd, '..');
+let rl = readline.rl();
 
-var proc = null;
-var shouldExit = 0;
+let proc = null;
+let shouldExit = 0;
+let stopLogging = 0;
 
 setTimeout(() => main().catch(log));
 
@@ -199,6 +200,9 @@ function onInput(str){
 }
 
 function spawnProc(file, args=[], options=O.obj(), opts=O.obj(), cb=null){
+  const isEsolang = currDir.startsWith('C:\\Projects\\esolangs\\');
+  const isBatch = file.toLowerCase().endsWith('.bat');
+
   const onLog = (data, type) => {
     (async () => {
       if(opts.skipFirst && first){
@@ -220,6 +224,7 @@ function spawnProc(file, args=[], options=O.obj(), opts=O.obj(), cb=null){
         str = str.replace(/\[Object: null prototype\]/g, '[Object]');
 
         if(type === 0){
+          if(stopLogging) return;
           logSync(str);
           return;
         }
@@ -236,20 +241,19 @@ function spawnProc(file, args=[], options=O.obj(), opts=O.obj(), cb=null){
     if(DISPLAY_SIGINT)
       logSync('^C');
 
-    const isEsolang = currDir.startsWith('C:\\Projects\\esolangs\\');
-    
-    if(isEsolang || opts.ignore || opts.killOnSigint || (sigintSent && KILL_ON_SECOND_SIGINT)){
-      if(!opts.killCmd){
-        proc.kill();
-        return
+    if(isEsolang || isBatch || opts.ignore || opts.killOnSigint || (sigintSent && KILL_ON_SECOND_SIGINT)){
+      if(opts.killCmd || isBatch){
+        try{
+          cp.execSync(`taskkill /f /t /pid ${proc.pid}`, {stdio: 'ignore'});
+          stopLogging = 1;
+        }catch(err){
+          // log(err);
+        }
+
+        return;
       }
 
-      try{
-        cp.execSync(`taskkill /f /t /pid ${proc.pid}`, {stdio: 'ignore'});
-      }catch(err){
-        log(err);
-      }
-
+      proc.kill();
       return;
     }
 
