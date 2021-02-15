@@ -18,7 +18,7 @@ const main = () => {
   const rel = system.rels[0];
   const {lhs, rhs} = rel;
 
-  log(O.rec([system, 'sort'])+'');
+  log(O.rec([system, 'simplify'])+'');
 };
 
 main();

@@ -12,6 +12,8 @@ class Base extends O.Stringifiable{
   *contains(expr, subst=0){ O.virtual('contains'); }
   *sort(deepCopy=null){ O.virtual('sort'); }
   *cmp(other){ O.virtual('cmp'); }
+  *getIdents(obj=O.obj()){ O.virtual('getIdents'); }
+  *simplify(){ O.virtual('simplify'); }
 }
 
 class System extends Base{
@@ -28,10 +30,6 @@ class System extends Base{
   getCh(i){ return this.rels[i]; }
 
   get len(){ return this.rels.length; }
-
-  *cmp(other){
-    return this.len - other.len;
-  }
 
   addRels(rels){
     for(const rel of rels)
@@ -100,6 +98,26 @@ class System extends Base{
     return sys;
   }
 
+  *cmp(other){
+    return this.len - other.len;
+  }
+
+  *getIdents(obj=O.obj()){
+    for(const rel of this.rels)
+      yield [[rel, 'getIdents'], obj];
+
+    return obj;
+  }
+
+  *simplify(){
+    const rels = [];
+
+    for(const rel of this.rels)
+      rels.push(yield [[rel, 'simplify']]);
+
+    return new System(rels);
+  }
+
   toStr(){
     return this.join([], this.rels, '\n');
   }
@@ -127,7 +145,7 @@ class Relation extends Base{
     return (
       (other.type - this.type) ||
       (yield [[this.lhs, 'cmp'], other.lhs]) ||
-      (yield [[this.rhs, 'cmp'], other.rhs])
+      (yield [[this.rhs, 'cmp2'], other.rhs])
     );
   }
 
@@ -172,6 +190,19 @@ class Relation extends Base{
     yield O.tco([this, 'copy'], deepCopy);
   }
 
+  *getIdents(obj=O.obj()){
+    yield [[this.lhs, 'getIdents'], obj];
+    yield [[this.rhs, 'getIdents'], obj];
+    return obj;
+  }
+
+  *simplify(){
+    return new this.constructor(
+      yield [[this.lhs, 'simplify']],
+      yield [[this.rhs, 'simplify']],
+    );
+  }
+
   toStr(){
     return [this.lhs, ' ', this.op, ' ', this.rhs];
   }
@@ -188,42 +219,13 @@ class Inequation extends Relation{
 }
 
 class Expression extends Base{
-  #idents = O.obj();
-
-  hasIdent(ident){
-    assert(typeof ident === 'string');
-    return O.has(this.#idents, ident);
-  }
-
-  getIdent(ident){
-    assert(this.hasIdent(ident));
-    return this.#idents[ident];
-  }
-
-  addIdent(ident, type=1){
-    if(!this.hasIdent(ident)){
-      this.#idents[ident] = type;
-      return;
-    }
-
-    this.#idents[ident] |= type;
-    return this;
-  }
-
-  get idents(){
-    return O.kvPairs(this.#idents);
-  }
-
-  inheritIdents(expr, type=1){
-    for(const [name, t] of expr.idents)
-      this.addIdent(name, t & type);
-
-    return this;
-  }
+  get isStruct(){ return 0; }
 
   get pri(){ O.virtual('pri'); }
+  get pri2(){ O.virtual('pri2'); }
 
   *cmp(other){ return this.pri - other.pri; }
+  *cmp2(other){ return this.pri2 - other.pri2; }
 
   *eq(expr){
     if(expr.constructor !== this.constructor) return 0;
@@ -235,6 +237,50 @@ class Expression extends Base{
         return 0;
 
     return 1;
+  }
+
+  *eqStruct(expr){
+    if(yield [[this, 'eq'], expr])
+      return 1;
+
+    if(!(this.isStruct && expr.isStruct))
+      return null;
+
+    const ctor1 = this.constructor;
+    const ctor2 = expr.constructor;
+
+    if(ctor1 !== ctor2)
+      return 0;
+
+    assert(ctor1 === Pair);
+    assert(ctor2 === Pair);
+
+    const result1 = yield [[this.fst, 'eqStruct'], expr.fst];
+    const result2 = yield [[this.snd, 'eqStruct'], expr.snd];
+
+    if(result1 !== null && !result1) return 0;
+    if(result2 !== null && !result2) return 0;
+
+    if(result1 === null) return null;
+    if(result2 === null) return null;
+
+    assert(result1);
+    assert(result2);
+
+    return 1;
+  }
+
+  *eqMaybe(expr){
+    if(yield [[this, 'eq'], expr])
+      return 1;
+
+    if(yield [[this, 'contains'], expr])
+      return 0;
+
+    if(yield [[expr, 'contains'], this])
+      return 0;
+
+    yield O.tco([this, 'eqStruct'], expr);
   }
 
   *contains(expr, subst=0){
@@ -261,7 +307,10 @@ class Term extends Expression{
 
   get chNum(){ return 0; }
 
+  get isStruct(){ return 1; }
+
   get pri(){ return 3; }
+  get pri2(){ return 0; }
 
   *copy(deepCopy=null){
     return this;
@@ -274,6 +323,14 @@ class Term extends Expression{
     return this;
   }
 
+  *getIdents(obj=O.obj()){
+    return obj;
+  }
+
+  *simplify(){
+    return this;
+  }
+
   toStr(){
     return '.';
   }
@@ -282,14 +339,13 @@ class Term extends Expression{
 class Identifier extends Expression{
   constructor(name){
     super();
-
     this.name = name;
-    this.addIdent(name);
   }
 
   get chNum(){ return 0; }
 
   get pri(){ return 0; }
+  get pri2(){ return 1; }
 
   *eq(expr){
     return (
@@ -310,6 +366,15 @@ class Identifier extends Expression{
     return this;
   }
 
+  *getIdents(obj=O.obj()){
+    obj[this.name] = 1;
+    return obj;
+  }
+
+  *simplify(){
+    return this;
+  }
+
   toStr(){
     return this.name;
   }
@@ -321,9 +386,6 @@ class Pair extends Expression{
 
     this.fst = fst;
     this.snd = snd;
-
-    this.inheritIdents(fst);
-    this.inheritIdents(snd);
   }
 
   get chNum(){ return 2; }
@@ -334,7 +396,10 @@ class Pair extends Expression{
     assert.fail(i);
   }
 
+  get isStruct(){ return 1; }
+
   get pri(){ return 2; }
+  get pri2(){ return 2; }
 
   *copy(deepCopy=null){
     if(deepCopy === null) return this;
@@ -355,6 +420,19 @@ class Pair extends Expression{
     );
   }
 
+  *getIdents(obj=O.obj()){
+    yield [[this.fst, 'getIdents'], obj];
+    yield [[this.snd, 'getIdents'], obj];
+    return obj;
+  }
+
+  *simplify(){
+    return new Pair(
+      yield [[this.fst, 'simplify']],
+      yield [[this.snd, 'simplify']],
+    );
+  }
+
   toStr(){
     return ['(', this.fst, ' ', this.snd, ')'];
   }
@@ -363,14 +441,9 @@ class Pair extends Expression{
 class Substitution extends Expression{
   constructor(target, pattern, replacement){
     super();
-
     this.target = target;
     this.pattern = pattern;
     this.replacement = replacement;
-
-    this.inheritIdents(target, 0);
-    this.inheritIdents(pattern, 0);
-    this.inheritIdents(replacement, 0);
   }
 
   get chNum(){ return 2; }
@@ -383,6 +456,7 @@ class Substitution extends Expression{
   }
 
   get pri(){ return 1; }
+  get pri2(){ return 3; }
 
   *copy(deepCopy=null){
     if(deepCopy === null) return this;
@@ -407,6 +481,45 @@ class Substitution extends Expression{
       yield [[this.target, 'subst'], expr1, expr2, deepCopy],
       yield [[this.pattern, 'subst'], expr1, expr2, deepCopy],
       yield [[this.replacement, 'subst'], expr1, expr2, deepCopy],
+    );
+  }
+
+  *getIdents(obj=O.obj()){
+    yield [[this.target, 'getIdents'], obj];
+    yield [[this.pattern, 'getIdents'], obj];
+    yield [[this.replacement, 'getIdents'], obj];
+    return obj;
+  }
+
+  *simplify(){
+    const target = yield [[this.target, 'simplify']];
+    const pattern = yield [[this.pattern, 'simplify']];
+    const replacement = yield [[this.replacement, 'simplify']];
+
+    if(yield [[pattern, 'eq'], replacement])
+      return target;
+
+    const result = yield [[target, 'eqMaybe'], pattern];
+
+    if(result === null)
+      return new Substitution(target, pattern, replacement);
+
+    if(result)
+      return replacement;
+
+    if(!target.isStruct)
+      return new Substitution(target, pattern, replacement);
+
+    const ctor = target.constructor;
+
+    if(ctor === Term)
+      return target;
+
+    assert(ctor === Pair);
+
+    return new Pair(
+      yield [[new Substitution(target.fst, pattern, replacement), 'simplify']],
+      yield [[new Substitution(target.snd, pattern, replacement), 'simplify']],
     );
   }
 
