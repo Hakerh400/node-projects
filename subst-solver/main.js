@@ -18,7 +18,7 @@ const main = () => {
 
   log(String(sys));
   O.logb();
-  log(String(sol));
+  log(sol ? String(sol) : '/');
 };
 
 main();

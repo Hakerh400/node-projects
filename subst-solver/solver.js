@@ -10,8 +10,10 @@ const cs = require('./ctors');
 
 const {term} = cs;
 
-const solve = function*(sys){
-  const targetIdents = yield [[sys, 'getIdents']];
+const solve = function*(sys, targetIdents=null){
+  if(targetIdents === null)
+    targetIdents = yield [[sys, 'getIdents']];
+  
   const queue = new ArrayList([[sys, null]]);
 
   while(!queue.isEmpty){
@@ -54,7 +56,7 @@ const solve = function*(sys){
       for(let i = 0; i !== len; i++){
         const bin = bindings[i];
         const ident = bin[0];
-        const expr = yield [[bin[1], 'substIdents'], term];
+        const expr = yield [[yield [[bin[1], 'substIdents'], term], 'simplify']];
 
         if(O.has(targetIdents, ident))
           bindingsObj[ident] = expr;
@@ -160,10 +162,10 @@ const newPair = () => {
   return new cs.Pair(newIdent(), newIdent());
 };
 
-let identsNum = 0;
+// let identsNum = 0;
 
 const newIdent = () => {
-  return new cs.Identifier(`a${identsNum++}`);
+  return new cs.Identifier(Symbol()/*`a${identsNum++}`*/);
 };
 
 module.exports = {
