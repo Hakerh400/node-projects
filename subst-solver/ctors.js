@@ -140,6 +140,7 @@ class System extends Base{
       const rel = rels[i];
       const {type, lhs, rhs} = rel;
 
+      O.z=1
       const eqMaybe = yield [[lhs, 'eqMaybe'], rhs];
 
       if(eqMaybe !== null){
@@ -538,7 +539,7 @@ class Substitution extends Expression{
     this.replacement = replacement;
   }
 
-  get chNum(){ return 2; }
+  get chNum(){ return 3; }
   
   getCh(i){
     if(i === 0) return this.target;
