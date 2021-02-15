@@ -6,7 +6,7 @@ const assert = require('assert');
 const O = require('../omikron');
 
 class Base extends O.Stringifiable{
-  *copy(){ O.virtual('copy'); }
+  *copy(deep=0){ O.virtual('copy'); }
 }
 
 class System extends Base{
@@ -31,11 +31,11 @@ class System extends Base{
     return this;
   }
 
-  *copy(){
+  *copy(deep=0){
     const sys = new System();
 
     for(const rel of this)
-      sys.addRel(yield [[rel, 'copy']]);
+      sys.addRel(deep ? yield [[rel, 'copy'], deep] : rel);
 
     return sys;
   }
@@ -58,11 +58,21 @@ class Relation extends Base{
 
   get op(){ O.virtual('op'); }
 
-  *copy(){
+  *copy(deep=0){
     return new this.constructor(
-      yield [[this.lhs, 'copy']],
-      yield [[this.rhs, 'copy']],
+      deep ? yield [[this.lhs, 'copy'], deep] : this.lhs,
+      deep ? yield [[this.rhs, 'copy'], deep] : this.rhs,
     );
+  }
+
+  swap(copy=null){
+    const rel = copy !== null ? O.rec([this, 'copy'], copy) : this;
+    const {lhs, rhs} = rel;
+
+    rel.lhs = rhs;
+    rel.rhs = lhs;
+
+    return rel;
   }
 
   toStr(){
@@ -123,6 +133,18 @@ class Expression extends Base{
 
     return 1;
   }
+
+  *contains(expr){
+    if(yield [[this, 'eq'], expr]) return 1;
+
+    const {chNum} = this;
+
+    for(let i = 0; i !== chNum; i++)
+      if(yield [[this.getCh(i), 'contains'], expr])
+        return 1;
+
+    return 0;
+  }
 }
 
 class Term extends Expression{
@@ -136,7 +158,7 @@ class Term extends Expression{
 
   get chNum(){ return 0; }
 
-  *copy(){
+  *copy(deep=0){
     return this;
   }
 
@@ -162,7 +184,7 @@ class Identifier extends Expression{
     );
   }
 
-  *copy(){
+  *copy(deep=0){
     return new Identifier(this.name);
   }
 
@@ -190,10 +212,10 @@ class Pair extends Expression{
     assert.fail(i);
   }
 
-  *copy(){
+  *copy(deep=0){
     return new Pair(
-      yield [[this.fst, 'copy']],
-      yield [[this.snd, 'copy']],
+      deep ? yield [[this.fst, 'copy'], deep] : this.fst,
+      deep ? yield [[this.snd, 'copy'], deep] : this.snd,
     );
   }
 
@@ -224,12 +246,16 @@ class Substitution extends Expression{
     assert.fail(i);
   }
 
-  *copy(){
+  *copy(deep=0){
     return new Substitution(
-      yield [[this.target, 'copy']],
-      yield [[this.pattern, 'copy']],
-      yield [[this.replacement, 'copy']],
+      deep ? yield [[this.target, 'copy'], deep] : this.target,
+      deep ? yield [[this.pattern, 'copy'], deep] : this.pattern,
+      deep ? yield [[this.replacement, 'copy'], deep] : this.replacement,
     );
+  }
+
+  *contains(expr){
+    yield O.tco([this, 'eq'], expr);
   }
 
   toStr(){

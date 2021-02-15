@@ -56,7 +56,7 @@ const parse = str => {
     const rhs = yield [parseExpr];
 
     const rel = op === '=' ?
-      new cs.Eqution(lhs, rhs) :
+      new cs.Equation(lhs, rhs) :
       new cs.Inequation(lhs, rhs);
 
     return rel;

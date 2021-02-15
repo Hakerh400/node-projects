@@ -18,8 +18,7 @@ const main = () => {
   const rel = system.rels[0];
   const {lhs, rhs} = rel;
 
-  log(system+'')
-  log(O.rec([lhs, 'eq'], rhs) | 0);
+  log(O.rec([lhs, 'contains'], rhs) | 0);
 };
 
 main();
