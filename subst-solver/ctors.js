@@ -5,7 +5,78 @@ const path = require('path');
 const assert = require('assert');
 const O = require('../omikron');
 
-class Base extends O.Stringifiable{}
+class Base extends O.Stringifiable{
+  *copy(){ O.virtual('copy'); }
+}
+
+class System extends Base{
+  rels = [];
+  bindings = O.obj();
+
+  constructor(rels=[]){
+    super();
+    
+    this.addRels(rels);
+  }
+
+  addRels(rels){
+    for(const rel of rels)
+      this.addRel(rel);
+
+    return this;
+  }
+
+  addRel(rel){
+    this.rels.push(rel);
+    return this;
+  }
+
+  *copy(){
+    const sys = new System();
+
+    for(const rel of this)
+      sys.addRel(yield [[rel, 'copy']]);
+
+    return sys;
+  }
+
+  *[Symbol.iterator](){
+    yield* this.rels;
+  }
+
+  toStr(){
+    return this.join([], this.rels, '\n');
+  }
+}
+
+class Relation extends Base{
+  constructor(lhs, rhs){
+    super();
+    this.lhs = lhs;
+    this.rhs = rhs;
+  }
+
+  get op(){ O.virtual('op'); }
+
+  *copy(){
+    return new this.constructor(
+      yield [[this.lhs, 'copy']],
+      yield [[this.rhs, 'copy']],
+    );
+  }
+
+  toStr(){
+    return [this.lhs, ' ', this.op, ' ', this.rhs];
+  }
+}
+
+class Equation extends Relation{
+  get op(){ return '='; }
+}
+
+class Inequation extends Relation{
+  get op(){ return '!='; }
+}
 
 class Expression extends Base{
   #idents = O.obj();
@@ -65,6 +136,10 @@ class Term extends Expression{
 
   get chNum(){ return 0; }
 
+  *copy(){
+    return this;
+  }
+
   toStr(){
     return '.';
   }
@@ -85,6 +160,10 @@ class Identifier extends Expression{
       expr.constructor === Identifier &&
       expr.name === this.name
     );
+  }
+
+  *copy(){
+    return new Identifier(this.name);
   }
 
   toStr(){
@@ -109,6 +188,13 @@ class Pair extends Expression{
     if(i === 0) return this.fst;
     if(i === 1) return this.snd;
     assert.fail(i);
+  }
+
+  *copy(){
+    return new Pair(
+      yield [[this.fst, 'copy']],
+      yield [[this.snd, 'copy']],
+    );
   }
 
   toStr(){
@@ -138,6 +224,14 @@ class Substitution extends Expression{
     assert.fail(i);
   }
 
+  *copy(){
+    return new Substitution(
+      yield [[this.target, 'copy']],
+      yield [[this.pattern, 'copy']],
+      yield [[this.replacement, 'copy']],
+    );
+  }
+
   toStr(){
     return ['[',
       this.target, ' ',
@@ -147,64 +241,15 @@ class Substitution extends Expression{
   }
 }
 
-class Relation extends Base{
-  constructor(lhs, rhs){
-    super();
-    this.lhs = lhs;
-    this.rhs = rhs;
-  }
-
-  get op(){ O.virtual('op'); }
-
-  toStr(){
-    return [this.lhs, ' ', this.op, ' ', this.rhs];
-  }
-}
-
-class Equation extends Relation{
-  get op(){ return '='; }
-}
-
-class Inequation extends Relation{
-  get op(){ return '!='; }
-}
-
-class System extends Base{
-  rels = [];
-  bindings = O.obj();
-
-  constructor(rels=[]){
-    super();
-    
-    this.addRels(rels);
-  }
-
-  addRels(rels){
-    for(const rel of rels)
-      this.addRel(rel);
-
-    return this;
-  }
-
-  addRel(rel){
-    this.rels.push(rel);
-    return this;
-  }
-
-  toStr(){
-    return this.join([], this.rels, '\n');
-  }
-}
-
 module.exports = {
   Base,
+  System,
+  Relation,
+  Equation,
+  Inequation,
   Expression,
   Term,
   Identifier,
   Pair,
   Substitution,
-  Relation,
-  Equation,
-  Inequation,
-  System,
 };
