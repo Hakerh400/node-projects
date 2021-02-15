@@ -13,12 +13,12 @@ const srcFile = path.join(cwd, 'src.txt');
 
 const main = () => {
   const src = O.rfs(srcFile, 1);
-  const system = parser.parse(src);
+  const sys = parser.parse(src);
+  const sol = O.rec(solver.solve, sys);
 
-  const rel = system.rels[0];
-  const {lhs, rhs} = rel;
-
-  log(O.rec([system, 'simplify'])+'');
+  log(String(sys));
+  O.logb();
+  log(String(sol));
 };
 
 main();

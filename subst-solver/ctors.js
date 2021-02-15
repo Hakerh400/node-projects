@@ -9,6 +9,7 @@ const debug = require('../debug');
 class Base extends O.Stringifiable{
   *copy(deepCopy=null){ O.virtual('copy'); }
   *subst(expr1, expr2, deepCopy=null){ O.virtual('subst'); }
+  *substIdents(expr, deepCopy=null){ O.virtual('substIdents'); }
   *contains(expr, subst=0){ O.virtual('contains'); }
   *sort(deepCopy=null){ O.virtual('sort'); }
   *cmp(other){ O.virtual('cmp'); }
@@ -30,6 +31,8 @@ class System extends Base{
   getCh(i){ return this.rels[i]; }
 
   get len(){ return this.rels.length; }
+  get empty(){ return this.rels.length === 0; }
+  get nempty(){ return this.rels.length !== 0; }
 
   addRels(rels){
     for(const rel of rels)
@@ -63,6 +66,15 @@ class System extends Base{
     return sys;
   }
 
+  *substIdents(expr, deepCopy=null){
+    const sys = new System();
+
+    for(const rel of this.rels)
+      sys.addRel(yield [[rel, 'substIdents'], expr, deepCopy]);
+
+    return sys;
+  }
+
   *contains(expr, subst=0){
     for(const rel of this.rels)
       if(yield [[rel, 'contains'], expr, subst])
@@ -74,28 +86,35 @@ class System extends Base{
   *sort(deepCopy=null){
     const relsOld = this.rels;
     const relsNew = deepCopy !== null ? relsOld.slice() : relsOld;
-    const len = relsNew.length;
 
-    for(let i = 0; i !== len; i++){
-      const rel = relsNew[i];
-      relsNew[i] = yield [[rel, 'sort'], deepCopy];
-    }
-
-    for(let i = 0; i !== len; i++){
-      for(let j = i + 1; j !== len; j++){
-        const rel1 = relsNew[i];
-        const rel2 = relsNew[j];
-
-        if((yield [[rel1, 'cmp'], rel2]) > 0){
-          relsNew[i] = rel2;
-          relsNew[j] = rel1;
-        }
-      }
-    }
+    yield [[this, 'sortRels'], relsNew, deepCopy];
 
     const sys = deepCopy !== null ? new System(relsNew) : this;
 
     return sys;
+  }
+
+  *sortRels(rels, deepCopy=null){
+    const len = rels.length;
+
+    for(let i = 0; i !== len; i++){
+      const rel = rels[i];
+      rels[i] = yield [[rel, 'sort'], deepCopy];
+    }
+
+    for(let i = 0; i !== len; i++){
+      for(let j = i + 1; j !== len; j++){
+        const rel1 = rels[i];
+        const rel2 = rels[j];
+
+        if((yield [[rel1, 'cmp'], rel2]) > 0){
+          rels[i] = rel2;
+          rels[j] = rel1;
+        }
+      }
+    }
+
+    return rels;
   }
 
   *cmp(other){
@@ -115,11 +134,50 @@ class System extends Base{
     for(const rel of this.rels)
       rels.push(yield [[rel, 'simplify']]);
 
+    yield [[this, 'sortRels'], rels];
+
+    for(let i = 0; i !== rels.length; i++){
+      const rel = rels[i];
+      const {type, lhs, rhs} = rel;
+
+      const eqMaybe = yield [[lhs, 'eqMaybe'], rhs];
+
+      if(eqMaybe !== null){
+        if(eqMaybe ^ type)
+          return null;
+
+        rels.splice(i--, 1);
+        continue;
+      }
+    }
+
     return new System(rels);
   }
 
   toStr(){
     return this.join([], this.rels, '\n');
+  }
+}
+
+class Solution extends Base{
+  constructor(bindings){
+    super();
+    this.bindings = bindings;
+  }
+
+  toStr(){
+    const {bindings} = this;
+    const arr = [];
+
+    const idents = O.sortAsc(O.keys(bindings));
+
+    for(let i = 0; i !== idents.length; i++){
+      const ident = idents[i];
+      if(i !== 0) arr.push('\n');
+      arr.push(ident, ' = ', bindings[ident]);
+    }
+
+    return arr;
   }
 }
 
@@ -144,7 +202,11 @@ class Relation extends Base{
   *cmp(other){
     return (
       (other.type - this.type) ||
-      (yield [[this.lhs, 'cmp'], other.lhs]) ||
+      (
+        (yield [[this.rhs, 'contains'], this.lhs, 1]) -
+        (yield [[other.rhs, 'contains'], other.lhs, 1])
+      ) ||
+      (yield [[this.lhs, 'cmp2'], other.lhs]) ||
       (yield [[this.rhs, 'cmp2'], other.rhs])
     );
   }
@@ -172,6 +234,13 @@ class Relation extends Base{
     return new this.constructor(
       yield [[this.lhs, 'subst'], expr1, expr2, deepCopy],
       yield [[this.rhs, 'subst'], expr1, expr2, deepCopy],
+    );
+  }
+
+  *substIdents(expr, deepCopy=null){
+    return new this.constructor(
+      yield [[this.lhs, 'substIdents'], expr, deepCopy],
+      yield [[this.rhs, 'substIdents'], expr, deepCopy],
     );
   }
 
@@ -219,6 +288,10 @@ class Inequation extends Relation{
 }
 
 class Expression extends Base{
+  get isTerm(){ return 0; }
+  get isIdent(){ return 0; }
+  get isPair(){ return 0; }
+  get isSubst(){ return 0; }
   get isStruct(){ return 0; }
 
   get pri(){ O.virtual('pri'); }
@@ -307,6 +380,7 @@ class Term extends Expression{
 
   get chNum(){ return 0; }
 
+  get isTerm(){ return 1; }
   get isStruct(){ return 1; }
 
   get pri(){ return 3; }
@@ -320,6 +394,10 @@ class Term extends Expression{
     if(yield [[this, 'eq'], expr1])
       yield O.tco([expr2, 'copy'], deepCopy);
 
+    return this;
+  }
+
+  *substIdents(expr, deepCopy=null){
     return this;
   }
 
@@ -344,8 +422,10 @@ class Identifier extends Expression{
 
   get chNum(){ return 0; }
 
+  get isIdent(){ return 1; }
+
   get pri(){ return 0; }
-  get pri2(){ return 1; }
+  get pri2(){ return 2; }
 
   *eq(expr){
     return (
@@ -364,6 +444,10 @@ class Identifier extends Expression{
       yield O.tco([expr2, 'copy'], deepCopy);
 
     return this;
+  }
+
+  *substIdents(expr, deepCopy=null){
+    yield O.tco([expr, 'copy'], deepCopy);
   }
 
   *getIdents(obj=O.obj()){
@@ -396,10 +480,11 @@ class Pair extends Expression{
     assert.fail(i);
   }
 
+  get isPair(){ return 1; }
   get isStruct(){ return 1; }
 
   get pri(){ return 2; }
-  get pri2(){ return 2; }
+  get pri2(){ return 1; }
 
   *copy(deepCopy=null){
     if(deepCopy === null) return this;
@@ -417,6 +502,13 @@ class Pair extends Expression{
     return new Pair(
       yield [[this.fst, 'subst'], expr1, expr2, deepCopy],
       yield [[this.snd, 'subst'], expr1, expr2, deepCopy],
+    );
+  }
+
+  *substIdents(expr, deepCopy=null){
+    return new Pair(
+      yield [[this.fst, 'substIdents'], expr, deepCopy],
+      yield [[this.snd, 'substIdents'], expr, deepCopy],
     );
   }
 
@@ -455,6 +547,8 @@ class Substitution extends Expression{
     assert.fail(i);
   }
 
+  get isSubst(){ return 1; }
+
   get pri(){ return 1; }
   get pri2(){ return 3; }
 
@@ -481,6 +575,14 @@ class Substitution extends Expression{
       yield [[this.target, 'subst'], expr1, expr2, deepCopy],
       yield [[this.pattern, 'subst'], expr1, expr2, deepCopy],
       yield [[this.replacement, 'subst'], expr1, expr2, deepCopy],
+    );
+  }
+
+  *substIdents(expr, deepCopy=null){
+    return new Substitution(
+      yield [[this.target, 'substIdents'], expr, deepCopy],
+      yield [[this.pattern, 'substIdents'], expr, deepCopy],
+      yield [[this.replacement, 'substIdents'], expr, deepCopy],
     );
   }
 
@@ -532,9 +634,14 @@ class Substitution extends Expression{
   }
 }
 
+const {term} = Term;
+
 module.exports = {
+  term,
+
   Base,
   System,
+  Solution,
   Relation,
   Equation,
   Inequation,
