@@ -140,7 +140,6 @@ class System extends Base{
       const rel = rels[i];
       const {type, lhs, rhs} = rel;
 
-      O.z=1
       const eqMaybe = yield [[lhs, 'eqMaybe'], rhs];
 
       if(eqMaybe !== null){
