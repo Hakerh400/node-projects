@@ -1,11 +1,11 @@
 'use strict';
 
-{
-  const O = require('C:/Projects/omikron');
-  O.dirs = require('./dirs');
-  module.exports = O;
-  return;
-}
+// {
+//   const O = require('C:/Projects/omikron');
+//   O.dirs = require('./dirs');
+//   module.exports = O;
+//   return;
+// }
 
 const fs = require('fs');
 const path = require('path');
@@ -20,11 +20,13 @@ const cwd = __dirname;
 const omikronScript1 = path.join(cwd, '../../browser-projects/omikron.js');
 const omikronScript2 = path.join(cwd, '../../../wamp/www/omikron.js');
 const omikronScript3 = path.join(cwd, '../../../wamp/www/web/omikron.js');
+const omikronScript4 = path.join(cwd, '../../omikron/src/omikron/omikron.js');
 
 const omikronScript = (
   fs.existsSync(omikronScript1) ? omikronScript1 :
   fs.existsSync(omikronScript2) ? omikronScript2 :
   fs.existsSync(omikronScript3) ? omikronScript3 :
+  fs.existsSync(omikronScript4) ? omikronScript4 :
   assert.fail()
 );
 
