@@ -1,7 +1,4 @@
 [
   "node_modules",
-  "test",
-  "test-addon",
-  "test-video",
   "video-editor"
 ]
