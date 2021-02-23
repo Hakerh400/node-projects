@@ -212,8 +212,6 @@ function spawnProc(file, args=[], options=O.obj(), opts=O.obj(), cb=null){
 
       const strParts = data.toString().split(/\x0C/);
 
-      stopLogging = 0;
-
       for(let i = 0; i !== strParts.length; i++){
         if(i !== 0) await clear();
 

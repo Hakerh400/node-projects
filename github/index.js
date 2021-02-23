@@ -112,6 +112,7 @@ async function push(repoName, cb=O.nop){
         if(/node_modules|package\-lock\.json/.test(fp)) return;
 
         if(!includeAll){
+          if(/\/test\-/.test(fp)) return;
           if(skipList.some(a => fp === a || fp.endsWith(`\\${a}`) || fp.includes(`\\${a}\\`))) return;
           if(noCopyList.some(a => e.name == a)) return;
         }
