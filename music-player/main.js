@@ -107,6 +107,7 @@ function aels(){
         case 'p': testMode ? moveTo('Priority') : prev(); break;
         case 'n': testMode ? moveTo('Nightcore') : next(); break;
         case 't': testMode && moveTo('Trance'); break;
+        case 'T': testMode && moveTo('Trim'); break;
         // case 'R': testMode && moveTo('Popular'); break;
         case 'm': testMode && moveTo('Mix'); break;
         case 'g': testMode && moveTo('Melodic'); break;

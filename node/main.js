@@ -299,6 +299,13 @@ function spawnProc(file, args=[], options=O.obj(), opts=O.obj(), cb=null){
     ...options,
   });
 
+  proc.on('error', err => {
+    log(err);
+    
+    onEnd();
+    onExit();
+  });
+
   shouldExit = 0;
   stopLogging = 0;
 
@@ -330,10 +337,12 @@ function spawnProc(file, args=[], options=O.obj(), opts=O.obj(), cb=null){
     proc.stderr.on('error', onError);
   }
 
-  proc.on('exit', code => {
+  const onExit = code => {
     exitCode = code;
     onFinish();
-  });
+  };
+
+  proc.on('exit', onExit);
 
   return proc;
 }
