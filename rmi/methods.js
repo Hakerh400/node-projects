@@ -5,9 +5,11 @@ const path = require('path');
 const assert = require('assert');
 const O = require('../omikron');
 const ublock = require('./ublock');
+const tags = require('./tags');
 
 const methods = {
   ublock,
+  tags,
   
   async ping(){
     return 'ok';

@@ -17,6 +17,9 @@ let first = 1;
 let dateOnStart = 1;
 
 const init = () => {
+  if(!fs.existsSync(logsDir))
+    fs.mkdirSync(logsDir);
+
   initLogFd();
   overrideStdout();
 };

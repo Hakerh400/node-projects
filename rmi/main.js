@@ -66,9 +66,11 @@ const cmd = async (cmdInfo, func) => {
   try{
     return await func();
   }catch(err){
-    log(`Error: ${err?.stack}`);
+    const isErr = err instanceof Error;
+    
+    log(`Error: ${isErr ? err.stack : err}`);
 
-    if(err instanceof Error)
+    if(isErr)
       throw err.message;
 
     throw err;
@@ -110,13 +112,20 @@ const onReq = (req, res) => {
 const processReq = str => {
   return cmd(`Request: ${str}`, async () => {
     const req = JSON.parse(str);
-
-    // log(`Request: ${
-    //   methodPath.join('.')}(${
-    //   args.map(a => sf(a)).join(', ')})`);
-
     const [methodPath, args] = req;
-    const method = methodPath.reduce((obj, key) => obj[key], methods);
+
+    const errPth = () => {
+      throw `Unknown method ${O.sf(methodPath.join('.'))}`;
+    };
+
+    const method = methodPath.reduce((obj, key) => {
+      const val = obj[key];
+      if(val === undefined) errPth();
+      return val;
+    }, methods);
+
+    if(typeof method !== 'function')
+      errPth();
 
     const result = await method(...args);
 
