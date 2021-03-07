@@ -2,8 +2,8 @@
 
 var fs = require('fs');
 var path = require('path');
-var O = require('../framework');
-var fsRec = require('../fs-recursive');
+var O = require('../omikron');
+var fsRec = require('../fs-rec-legacy');
 var buffer = require('../buffer');
 
 var fileNamesBlackList = [

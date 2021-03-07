@@ -9,7 +9,7 @@ var outputDir = './test/output';
 setTimeout(main);
 
 function main(){
-  var cwd = process.cwd();
+  var cwd = __dirname;
 
   inputDir = path.join(cwd, inputDir);
   outputDir = path.join(cwd, outputDir);
