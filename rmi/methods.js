@@ -10,13 +10,23 @@ const tags = require('./tags');
 const methods = {
   ublock,
   tags,
-  
+
   async ping(){
     return 'ok';
   },
 
   async echo(val){
     return val;
+  },
+
+  fs: {
+    async isFile(pth){
+      return fs.statSync(pth).isFile();
+    },
+
+    async isDir(pth){
+      return fs.statSync(pth).isDirectory();
+    },
   },
 };
 
