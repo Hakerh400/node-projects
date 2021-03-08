@@ -3,16 +3,18 @@
 const fs = require('fs');
 const path = require('path');
 const assert = require('assert');
-const O = require('omikron');
+const O = require('../omikron');
 
 const SYM = 0;
 const FST = 0;
 const SND = 1;
 const REDUCED_TO = 2;
-const REDUCED_FROM = 3
-const REF_FST = 4
-const REF_SND = 5
-const REF_BOTH = 6
+const REDUCED_FROM = 3;
+const REF_FST = 4;
+const REF_SND = 5;
+const REF_BOTH = 6;
+const BASE_SYM = 7;
+const DEPTH = 8;
 
 class Database{
   table = [];
@@ -27,7 +29,7 @@ class Database{
   addSym(sym){
     if(!this.hasSym(sym)){
       this.syms[sym] = this.table.length;
-      this.table.push([sym, null, null, [], [], [], []]);
+      this.table.push([sym, null, null, [], [], [], [], sym, 0]);
     }
 
     return this.syms[sym];
@@ -43,9 +45,10 @@ class Database{
         this.pairs[a] = O.obj();
 
       const entry = this.table.length;
+      const info = this.getInfo(a);
 
       this.pairs[a][b] = entry;
-      this.table.push([a, b, null, [], [], [], []]);
+      this.table.push([a, b, null, [], [], [], [], info[BASE_SYM], info[DEPTH] + 1]);
 
       if(a === b){
         this.getInfo(a)[REF_BOTH].push(entry);

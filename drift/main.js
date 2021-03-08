@@ -15,6 +15,8 @@ const {
   REF_FST,
   REF_SND,
   REF_BOTH,
+  BASE_SYM,
+  DEPTH,
 
   isSym,
   isPair,
