@@ -40,10 +40,6 @@ for(const info of tagsInfo){
   filesObj[file] = info;
 }
 
-process.on('exit', () => {
-  O.wfs(tagsFile, O.sf(tagsInfo));
-});
-
 const methods = {
   tag: {
     async search(substr){
@@ -63,29 +59,26 @@ const methods = {
 
     async setTags(file, tags){
       tags = O.undupe(tags);
-
       addTags(tags);
 
-      if(!O.has(filesObj, file)){
+      updateInfo: {
+        if(O.has(filesObj, file)){
+          filesObj[file].tags = tags;
+          break updateInfo
+        }
+
         const info = {file, tags};
 
         tagsInfo.push(info);
         filesObj[file] = info;
-
-        return;
       }
 
-      filesObj[file].tags = tags;
+      O.wfs(tagsFile, O.sf(tagsInfo));
     },
 
     async search(tags){
-      const tagsObj = O.obj();
-
-      for(const tag of tags)
-        tagsObj[tag] = 1;
-
       return O.sortAsc(tagsInfo.filter(info => {
-        return info.tags.every(tag => tag in tagsObj);
+        return tags.every(tag => info.tags.includes(tag));
       }).map(a => a.file));
     },
   },
@@ -113,8 +106,13 @@ const findMatches = (arr, substr, sortFunc=defaultSortFunc) => {
     return tag.toLowerCase().includes(lower);
   });
 
-  if(sortFunc)
-    matches.sort(sortFunc);
+  if(sortFunc){
+    matches.sort((a, b) => {
+      if(a.toLowerCase() === lower) return -1;
+      if(b.toLowerCase() === lower) return 1;
+      return sortFunc(a, b);
+    });
+  }
 
   return matches;
 };

@@ -11,15 +11,18 @@ const fdOut = stdout.fd;
 const mainDir = 'D:/Data/rmi';
 const logsDir = path.join(mainDir, 'logs');
 
+if(!fs.existsSync(mainDir))
+  fs.mkdirSync(mainDir);
+
+if(!fs.existsSync(logsDir))
+  fs.mkdirSync(logsDir);
+
 let logFd = null;
 
 let first = 1;
 let dateOnStart = 1;
 
 const init = () => {
-  if(!fs.existsSync(logsDir))
-    fs.mkdirSync(logsDir);
-
   initLogFd();
   overrideStdout();
 };
