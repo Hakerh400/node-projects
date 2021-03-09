@@ -4,17 +4,8 @@ const fs = require('fs');
 const path = require('path');
 const assert = require('assert');
 const O = require('../omikron');
-
-const SYM = 0;
-const FST = 0;
-const SND = 1;
-const REDUCED_TO = 2;
-const REDUCED_FROM = 3;
-const REF_FST = 4;
-const REF_SND = 5;
-const REF_BOTH = 6;
-const BASE_SYM = 7;
-const DEPTH = 8;
+const Info = require('./info');
+const cs = require('./expression');
 
 class Database{
   table = [];
@@ -22,98 +13,57 @@ class Database{
   syms = O.obj();
   pairs = O.obj();
 
-  hasSym(sym){
-    return O.has(this.syms, sym);
-  }
+  getInfo(expr){
+    if(expr.isSym){
+      const {syms} = this;
+      const {sym} = expr;
 
-  addSym(sym){
-    if(!this.hasSym(sym)){
-      this.syms[sym] = this.table.length;
-      this.table.push([sym, null, null, [], [], [], [], sym, 0]);
+      if(O.has(syms, sym))
+        return syms[sym];
+
+      const info = this.infoFromExpr(expr);
+      return syms[sym] = info;
     }
 
-    return this.syms[sym];
-  }
+    const {pairs} = this;
+    const {fst, snd} = expr;
 
-  hasPair(a, b){
-    return O.has(this.pairs, a) && O.has(this.pairs[a], b);
-  }
-
-  addPair(a, b){
-    if(!this.hasPair(a, b)){
-      if(!O.has(this.pairs, a))
-        this.pairs[a] = O.obj();
-
-      const entry = this.table.length;
-      const info = this.getInfo(a);
-
-      this.pairs[a][b] = entry;
-      this.table.push([a, b, null, [], [], [], [], info[BASE_SYM], info[DEPTH] + 1]);
-
-      if(a === b){
-        this.getInfo(a)[REF_BOTH].push(entry);
-      }else{
-        this.getInfo(a)[REF_FST].push(entry);
-        this.getInfo(b)[REF_SND].push(entry);
-      }
+    if(O.has(pairs, fst)){
+      if(O.has(pairs[fst], snd))
+        return pairs[fst][snd];
+    }else{
+      pairs[fst] = O.obj();
     }
 
-    return this.pairs[a][b];
+    const info = this.infoFromExpr(expr);
+    return pairs[fst][snd] = info;
   }
 
-  add(expr){
-    if(isSym(expr))
-      return this.addSym(expr);
+  infoFromExpr(expr){
+    const {table} = this;
+    const index = table.length;
+    const info = new Info();
 
-    return this.addPair(expr);
-  }
+    info.index = index;
+    info.expr = expr;
 
-  getInfo(entry){
-    assert(entry < this.table.length);
-    return this.table[entry];
-  }
+    if(expr.isSym){
+      info.baseSym = expr.sym;
+      info.argsNum = 0;
+    }else{
+      const {fst, snd} = expr;
 
-  reduce(fromEntry, toEntry){
-    const from = getInfo(fromEntry);
-    const to = getInfo(toEntry);
+      info.baseSym = fst.baseSym;
+      info.argsNum = fst.argsNum + 1;
 
-    assert(from[REDUCED_TO] === null);
+      fst.refs.push(index);
+      if(fst !== snd) snd.refs.push(index);
+    }
 
-    from[REDUCED_TO] = toEntry;
-    to[REDUCED_FROM].push(fromEntry);
+    table.push(info);
 
-    return toEntry;
+    return info;
   }
 }
 
-const isSym = expr => {
-  return typeof expr === 'symbol';
-};
-
-const isPair = expr => {
-  return typeof expr === 'object';
-};
-
-const infoSym = info => {
-  return info[SND] === null;
-};
-
-const infoPair = info => {
-  return info[SND] !== null;
-};
-
-module.exports = Object.assign(Database, {
-  SYM,
-  FST,
-  SND,
-  REDUCED_TO,
-  REDUCED_FROM,
-  REF_FST,
-  REF_SND,
-  REF_BOTH,
-
-  isSym,
-  isPair,
-  infoSym,
-  infoPair,
-});
+module.exports = Object.assign(Database);
