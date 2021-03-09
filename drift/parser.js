@@ -7,7 +7,13 @@ const debug = require('../debug');
 const O = require('../omikron');
 const tokenizer = require('./tokenizer');
 
-const {tokenize, tokTypes: tt, err} = tokenizer;
+const {
+  tokenize,
+  tokTypes: tt,
+  toks2str,
+  toksLen,
+  err,
+} = tokenizer;
 
 const parse = str => {
   const objIdentSym = O.obj();
@@ -25,6 +31,7 @@ const parse = str => {
 
   let currentType = null;
   let lastFunc = null;
+  let lastArgsNum = null;
 
   for(const info of tokenize(str)){
     const {line, toks, isLabel, popLevel} = info;
@@ -44,14 +51,15 @@ const parse = str => {
       lastFunc = null;
     }
 
+    const tlen = toksLen(toks);
+
     if(isLabel){
       // Type definition
 
-      assert(toks.length >= 1);
       assert(O.last(toks) === tt.COLON);
 
       inCase(currentType !== null, `Nested type definitions are not allowed`);
-      inCase(toks.length !== 3 || toks[0] !== tt.TYPE, `Invalid type definition`);
+      inCase(tlen !== 2 || toks[0] !== tt.TYPE, `Invalid type definition`);
 
       const typeIdent = toks[1];
       inCase(hasIdent(typeIdent), `Redefinition of type ${O.sf(typeIdent)}`);
@@ -78,7 +86,26 @@ const parse = str => {
 
     lastFunc = func;
 
-    log(func);
+    const eqIndex = toks.indexOf(tt.EQ);
+    const eqIndexLast = toks.lastIndexOf(tt.EQ);
+
+    inCase(eqIndex === -1, `Missing equals sign`);
+    inCase(eqIndexLast !== eqIndex, `Multiple equal signs`);
+
+    const lhs = toks.slice(1, eqIndex);
+    const rhs = toks.slice(eqIndex + 1);
+
+    const args = O.rec(parseLhs, lhs);
+    const result = O.rec(parseRhs, rhs);
+    const argsNum = args.length;
+
+    inCase(
+      lastArgsNum !== null && argsNum !== lastArgsNum,
+      `Case definitions of function ${
+        O.sf(funcIdent)} differ in the number of arguments (${
+        lastArgsNum} vs ${argsNum})`);
+
+    lastArgsNum = argsNum;
   }
 
   O.exit();

@@ -161,6 +161,29 @@ const tokenize = function*(str, func){
   }
 };
 
+const toks2str = toks => {
+  return toks.map(tok => {
+    if(typeof tok === 'string') return tok;
+
+    assert(typeof tok === 'number');
+
+    if(tok < tokChars.length)
+      return tokChars[tok];
+
+    return null;
+  }).filter(a => a !== null).join(' ');
+};
+
+const toksLen = toks => {
+  let len = 0;
+
+  for(const tok of toks)
+    if(typeof tok === 'number')
+      len++;
+
+  return len;
+};
+
 const err = msg => {
   O.logb();
   log(`Syntax error: ${msg}`);
@@ -170,5 +193,7 @@ const err = msg => {
 module.exports = {
   tokTypes,
   tokenize,
+  toks2str,
+  toksLen,
   err,
 };
