@@ -5,7 +5,6 @@ const path = require('path');
 const assert = require('assert');
 const O = require('../omikron');
 const Info = require('./info');
-const cs = require('./expression');
 
 class Database{
   table = [];
@@ -14,9 +13,9 @@ class Database{
   pairs = O.obj();
 
   getInfo(expr){
-    if(expr.isSym){
+    if(isSym(expr)){
       const {syms} = this;
-      const {sym} = expr;
+      const sym = expr;
 
       if(O.has(syms, sym))
         return syms[sym];
@@ -26,7 +25,7 @@ class Database{
     }
 
     const {pairs} = this;
-    const {fst, snd} = expr;
+    const [fst, snd] = expr;
 
     if(O.has(pairs, fst)){
       if(O.has(pairs[fst], snd))
@@ -47,11 +46,13 @@ class Database{
     info.index = index;
     info.expr = expr;
 
-    if(expr.isSym){
-      info.baseSym = expr.sym;
+    if(isSym(expr)){
+      const sym = expr;
+
+      info.baseSym = sym;
       info.argsNum = 0;
     }else{
-      const {fst, snd} = expr;
+      const [fst, snd] = expr;
 
       info.baseSym = fst.baseSym;
       info.argsNum = fst.argsNum + 1;
@@ -64,6 +65,17 @@ class Database{
 
     return info;
   }
-}
+};
 
-module.exports = Object.assign(Database);
+const isSym = expr => {
+  return typeof expr === 'symbol';
+};
+
+const isPair = expr => {
+  return typeof expr === 'object';
+};
+
+module.exports = Object.assign(Database, {
+  isSym,
+  isPair,
+});
