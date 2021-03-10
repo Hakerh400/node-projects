@@ -10,7 +10,6 @@ const tokTypes = O.enum([
   'EQ',
   'COLON',
   'STAR',
-  'AMP',
   'OPEN_PAREN',
   'CLOSED_PAREN',
   'VAR',
@@ -19,7 +18,7 @@ const tokTypes = O.enum([
 
 const tt = tokTypes;
 
-const tokChars = '=:*&()';
+const tokChars = '=:*()';
 const tokCharsReg = new RegExp(`[${tokChars.replace(/./gs, a => `\\${a}`)}]`);
 
 const tokenize = function*(str, func){

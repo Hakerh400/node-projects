@@ -19,6 +19,7 @@ const {
 
 const parse = str => {
   const objIdentSym = O.obj();
+  const prog = new cs.Program();
 
   const hasIdent = ident => {
     return O.has(objIdentSym, ident);
@@ -42,10 +43,6 @@ const parse = str => {
       error(line, msg);
     };
 
-    const inCase = (test, msg) => {
-      if(test) err(msg);
-    };
-
     if(popLevel !== 0){
       assert(popLevel === 1);
 
@@ -60,13 +57,14 @@ const parse = str => {
 
       assert(O.last(toks) === tt.COLON);
 
-      inCase(currentType !== null, `Nested type definitions are not allowed`);
-      inCase(tlen !== 2 || toks[0] !== tt.TYPE, `Invalid type definition`);
+      if(currentType !== null) err(`Nested type definitions are not allowed`);
+      if(tlen !== 2 || toks[0] !== tt.TYPE) err(`Invalid type definition`);
 
       const typeIdent = toks[1];
-      inCase(hasIdent(typeIdent), `Redefinition of type ${O.sf(typeIdent)}`);
-
       const type = ident2sym(typeIdent);
+
+      if(prog.hasType(type)) err(`Redefinition of type ${O.sf(typeIdent)}`);
+      prog.addType(type);
 
       currentType = type;
       lastFunc = null;
@@ -76,17 +74,26 @@ const parse = str => {
 
     // Function definition
 
-    inCase(toks[0] !== tt.VAR, `Function name must be in lowercase`);
+    if(toks[0] !== tt.VAR) err(`Function name must be in lowercase`);
 
     const funcIdent = toks[1];
-
-    inCase(
-      hasIdent(funcIdent) && ident2sym(funcIdent) !== lastFunc,
-      `All case definitions of function ${O.sf(funcIdent)} must be continuous`);
-
     const func = ident2sym(funcIdent);
 
-    if(lastFunc === null)
+    if(prog.hasFunc(func) && func !== lastFunc)
+      err(`All case definitions of function ${O.sf(funcIdent)} must be continuous`);
+
+    if(!prog.hasFunc(func)){
+      const sym = func;
+
+      {
+        const func = new cs.Function(sym, currentType)
+        prog.addFunc(sym, func);
+      }
+    }else{
+      assert(prog.hasCases(func));
+    }
+
+    if(func !== lastFunc)
       lastArgsNum = null;
 
     lastFunc = func;
@@ -94,18 +101,18 @@ const parse = str => {
     const eqIndex = toks.indexOf(tt.EQ);
     const eqIndexLast = toks.lastIndexOf(tt.EQ);
 
-    inCase(eqIndex === -1, `Missing equals sign`);
-    inCase(eqIndexLast !== eqIndex, `Multiple equal signs`);
+    if(eqIndex === -1) err(`Missing equals sign`);
+    if(eqIndexLast !== eqIndex) err(`Multiple equal signs`);
 
-    const lhs = toks.slice(2, eqIndex);
-    const rhs = toks.slice(eqIndex + 1);
+    const lhsToks = toks.slice(2, eqIndex);
+    const rhsToks = toks.slice(eqIndex + 1);
 
     const parseLhs = function*(toks){
       const toksNum = toks.length;
       let index = 0;
 
       const next = (advance=1) => {
-        inCase(eof(), `Expected a token, but found the end of the statement`);
+        if(eof()) err(`Expected a token, but found the end of the statement`);
 
         const tok = toks[index];
         if(advance) index++;
@@ -121,13 +128,13 @@ const parse = str => {
         const args = [];
 
         while(!eof())
-          args.push(yield [parseExpr]);
+          args.push(yield [parseAsPat]);
 
         return args;
       };
 
       const parseExpr = function*(){
-        let expr = yield [parseTerm];
+        let expr = yield [parseAsPat];
 
         while(!eof()){
           const tok = next(0);
@@ -135,42 +142,54 @@ const parse = str => {
           if(tok === tt.CLOSED_PAREN)
             break;
 
-          const isAsPat = !eof() && next(0) === tt.COLON;
-          const ctor = isAsPat ? cs.AsPattern : cs.Call;
-
-          if(isAsPat) next();
-
-          const term = yield [parseTerm];
-
-          expr = new ctor(expr, term);
+          const asPat = yield [parseAsPat];
+          expr = new cs.Pair(expr, asPat);
         }
 
         return expr;
+      };
+
+      const parseAsPat = function*(){
+        const exprs = [yield [parseTerm]];
+
+        while(!eof()){
+          const tok = next(0);
+
+          if(tok !== tt.COLON)
+            break;
+
+          next();
+
+          const term = yield [parseTerm];
+          exprs.push(term);
+        }
+
+        return new cs.AsPattern(exprs);
       };
 
       const parseTerm = function*(){
         const tok = next();
 
         if(tok === tt.VAR)
-          return new cs.Variable(next());
+          return new cs.Variable(ident2sym(next()));
 
         if(tok === tt.TYPE)
-          return new cs.Type(next());
+          return new cs.Type(ident2sym(next()));
 
         if(tok === tt.OPEN_PAREN){
           const expr = yield [parseExpr];
-          inCase(next() !== tt.CLOSED_PAREN, `Missing closed parenthese`);
+          if(next() !== tt.CLOSED_PAREN) err(`Missing closed parenthese`);
           return expr;
         }
 
         if(tok === tt.STAR)
-          return cs.any
+          return cs.anyExpr;
 
         err(`Unexpected token ${O.sf(tok2str(tok))}`);
       };
 
       const args = O.rec(parseArgs);
-      inCase(!eof(), `Extra tokens found on the LHS`);
+      if(!eof()) err(`Extra tokens found on the LHS`);
 
       return new cs.Lhs(args);
     };
@@ -180,7 +199,7 @@ const parse = str => {
       let index = 0;
 
       const next = (advance=1) => {
-        inCase(eof(), `Expected a token, but found the end of the statement`);
+        if(eof()) err(`Expected a token, but found the end of the statement`);
 
         const tok = toks[index];
         if(advance) index++;
@@ -212,14 +231,14 @@ const parse = str => {
         const tok = next();
 
         if(tok === tt.VAR)
-          return new cs.Variable(next());
+          return new cs.Variable(ident2sym(next()));
 
         if(tok === tt.TYPE)
-          return new cs.Type(next());
+          return new cs.Type(ident2sym(next()));
 
         if(tok === tt.OPEN_PAREN){
           const expr = yield [parseExpr];
-          inCase(next() !== tt.CLOSED_PAREN, `Missing closed parenthese`);
+          if(next() !== tt.CLOSED_PAREN) err(`Missing closed parenthese`);
           return expr;
         }
 
@@ -227,27 +246,29 @@ const parse = str => {
       };
 
       const expr = O.rec(parseExpr);
-      inCase(!eof(), `Extra tokens found on the RHS`);
+      if(!eof()) err(`Extra tokens found on the RHS`);
 
       return new cs.Rhs(expr);
     };
 
-    const lhsParsed = O.rec(parseLhs, lhs);
-    const rhsParsed = O.rec(parseRhs, rhs);
+    const lhs = O.rec(parseLhs, lhsToks);
+    const rhs = O.rec(parseRhs, rhsToks);
 
-    const {args, argsNum} = lhsParsed;
-    const {result} = rhsParsed;
+    const {args, argsNum} = lhs;
+    const {result} = rhs;
 
-    inCase(
-      lastArgsNum !== null && argsNum !== lastArgsNum,
-      `Case definitions of function ${
+    if(lastArgsNum !== null && argsNum !== lastArgsNum)
+      err(`Case definitions of function ${
         O.sf(funcIdent)} differ in the number of arguments (${
         lastArgsNum} vs ${argsNum})`);
 
     lastArgsNum = argsNum;
+
+    const fcase = new cs.FunctionCase(lhs, rhs);
+    prog.addCase(func, fcase);
   }
 
-  O.exit();
+  return prog.sanitize();
 };
 
 const error = (line, msg) => {
