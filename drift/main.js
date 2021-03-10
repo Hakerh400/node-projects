@@ -219,7 +219,7 @@ const getArgsFromInfo = info => {
     expr = fst.expr;
   }
 
-  return args;
+  return args.reverse();
 };
 
 const error = msg => {
