@@ -65,7 +65,7 @@ class Database{
 
     return info;
   }
-};
+}
 
 const isSym = expr => {
   return typeof expr === 'symbol';

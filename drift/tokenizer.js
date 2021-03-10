@@ -9,7 +9,6 @@ const O = require('../omikron');
 const tokTypes = O.enum([
   'EQ',
   'COLON',
-  'TILDE',
   'STAR',
   'AMP',
   'OPEN_PAREN',
@@ -18,7 +17,9 @@ const tokTypes = O.enum([
   'TYPE',
 ]);
 
-const tokChars = '=:~*&()';
+const tt = tokTypes;
+
+const tokChars = '=:*&()';
 const tokCharsReg = new RegExp(`[${tokChars.replace(/./gs, a => `\\${a}`)}]`);
 
 const tokenize = function*(str, func){
@@ -94,12 +95,13 @@ const tokenize = function*(str, func){
         push(tokChars.indexOf(a));
       },
 
-      /[a-z][a-zA-Z0-9\.\-\_]*/, a => {
-        push(tokTypes.VAR, a);
+      /(\&?)([a-z][a-zA-Z0-9\.\-\_]*)/, (a, [b, c]) => {
+        const type = b.length === 1 ? tt.TYPE : tt.VAR;
+        push(type, c);
       },
 
-      /[A-Z0-9\.\-\_]+[a-zA-Z0-9\.\-\_]*/, a => {
-        push(tokTypes.TYPE, a);
+      /\~|[A-Z0-9\.\-\_]+[a-zA-Z0-9\.\-\_]*/, a => {
+        push(tt.TYPE, a);
       },
 
       /\s+/, O.nop,
@@ -161,6 +163,10 @@ const tokenize = function*(str, func){
   }
 };
 
+const tok2str = tok => {
+  return toks2str([tok]);
+};
+
 const toks2str = toks => {
   return toks.map(tok => {
     if(typeof tok === 'string') return tok;
@@ -193,6 +199,7 @@ const err = msg => {
 module.exports = {
   tokTypes,
   tokenize,
+  tok2str,
   toks2str,
   toksLen,
   err,
