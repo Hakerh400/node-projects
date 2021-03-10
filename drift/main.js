@@ -43,6 +43,7 @@ const main = () => {
       return db.reduceToItself(info);
 
     const func = prog.getFunc(baseSym);
+    const funcType = func.type;
     const {arity} = func;
     const args = getArgsFromInfo(info);
     const argsNum = args.length;
@@ -52,13 +53,34 @@ const main = () => {
     if(argsNum < arity)
       return db.reduceToItself(info);
 
-    tryCase: for(const fcase of func.cases){
+    const err = msg => {
+      error(`${msg}\n\n${O.rec(info2str, info)}`);
+    };
+
+    const {cases} = func;
+    const casesNum = cases.length;
+
+    tryCase: for(let i = 0; i !== casesNum; i++){
+      const fcase = cases[i];
+
       const {lhs, rhs} = fcase;
       const lhsArg = lhs.args;
       const rhsExpr = rhs.expr;
-      const vars = O.obj();
 
-      const match = function*(formal, actual){
+      const vars = O.obj();
+      const refs = O.obj();
+
+      const errCtx = msg => {
+        const ctxInfo = O.keys(vars).map(sym => {
+          return `${sym.description}: ${O.rec(info2str, vars[sym])}`;
+        });
+
+        const ctxStr = ctxInfo.length !== 0 ? `\n\n${ctxInfo.join('\n')}` : '';
+
+        error(`${msg}\n\n${O.rec(info2str, info)}${ctxStr}`);
+      };
+
+      const match = function*(formal, actual, ref=1){
         if(formal instanceof cs.Type){
           const info = yield [reduceSym, formal.sym];
           return info === actual;
@@ -66,6 +88,8 @@ const main = () => {
         
         if(formal instanceof cs.Variable){
           const {sym} = formal;
+
+          if(ref) refs[sym] = 1;
 
           if(!O.has(vars, sym)){
             vars[sym] = actual;
@@ -79,15 +103,17 @@ const main = () => {
           const {expr} = actual;
           if(isSym(expr)) return 0;
 
+          const [fst, snd] = expr;
+
           return (
-            (yield [match, formal.fst, expr[0]]) &&
-            (yield [match, formal.snd, expr[1]])
+            (yield [match, formal.fst, fst, 0]) &&
+            (yield [match, formal.snd, snd, ref && fst.baseSym !== tilde])
           );
         }
 
         if(formal instanceof cs.AsPattern){
           for(const expr of formal.exprs)
-            if(!(yield [match, expr, actual]))
+            if(!(yield [match, expr, actual, ref]))
               return 0;
 
           return 1;
@@ -103,8 +129,28 @@ const main = () => {
         if(expr instanceof cs.NamedExpression){
           const {sym} = expr;
 
-          if(O.has(vars, sym))
+          const illegalConstructor = (
+            !escaped &&
+            expr instanceof cs.Type &&
+            prog.hasType(sym) &&
+            sym !== funcType &&
+            sym !== tilde
+          );
+
+          if(illegalConstructor)
+            err(`Function ${
+              O.sf(func.sym.description)} is not allowed to contruct type ${
+              O.sf(sym.description)}`);
+
+          if(O.has(vars, sym)){
+            if(!escaped && !O.has(refs, sym))
+              errCtx(`Variable ${
+                O.sf(sym.description)} from the case ${
+                i + 1} of function ${
+                O.sf(func.sym.description)} cannot be referenced in this context`);
+
             return vars[sym];
+          }
 
           return O.tco(reduceSym, sym);
         }
@@ -120,9 +166,9 @@ const main = () => {
         assert.fail(expr.constructor.name);
       };
 
-      for(let i = 0; i !== arity; i++){
-        const formal = lhsArg[i];
-        const actual = args[i];
+      for(let j = 0; j !== arity; j++){
+        const formal = lhsArg[j];
+        const actual = args[j];
 
         if(!(yield [match, formal, actual]))
           continue tryCase;
@@ -133,9 +179,7 @@ const main = () => {
       return db.reduce(info, reduced);
     }
 
-    err(`Non-exhaustive patterns in function ${
-      O.sf(baseSym.description)}\n\n${
-      yield [info2str, info]}`);
+    err(`Non-exhaustive patterns in function ${O.sf(baseSym.description)}`);
   };
 
   const info2str = function*(info, parens=0){
@@ -152,9 +196,14 @@ const main = () => {
     return str;
   };
 
-  const result = O.rec(reduceIdent, 'two');
+  const result = O.rec(reduceIdent, 'func');
 
   log(O.rec(info2str, result));
+  log();
+
+  for(const info of result.reducedFrom.slice().reverse())
+    log(O.rec(info2str, info));
+
   log();
   log(db.toString());
 };
@@ -173,7 +222,7 @@ const getArgsFromInfo = info => {
   return args;
 };
 
-const err = msg => {
+const error = msg => {
   O.exit(`Error: ${msg}`);
 };
 

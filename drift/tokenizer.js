@@ -190,7 +190,6 @@ const toksLen = toks => {
 };
 
 const err = msg => {
-  O.logb();
   log(`Syntax error: ${msg}`);
   O.exit();
 };

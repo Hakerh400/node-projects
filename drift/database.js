@@ -42,7 +42,9 @@ class Database{
 
   reduce(from, to){
     assert(from.reducedTo === null);
-    // assert(to.index <= from.index);
+
+    if(from !== to)
+      assert(to.reducedTo === to);
 
     from.reducedTo = to;
     to.reducedFrom.push(from);
