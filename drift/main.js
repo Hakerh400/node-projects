@@ -7,7 +7,9 @@ const O = require('../omikron');
 const parser = require('./parser');
 const Database = require('./database');
 const Info = require('./info');
+const cs = require('./ctors');
 
+const {tilde} = parser;
 const {isSym, isPair} = Database;
 
 const cwd = __dirname;
@@ -21,7 +23,158 @@ const main = () => {
   const prog = parser.parse(src);
   const db = new Database();
 
-  log(prog);
+  const reduceIdent = function*(ident){
+    const sym = prog.ident2sym(ident);
+    return O.tco(reduceSym, sym);
+  };
+
+  const reduceSym = function*(sym){
+    const info = db.getInfo(sym);
+    return O.tco(reduce, info);
+  };
+
+  const reduce = function*(info){
+    if(info.reducedTo !== null)
+      return info.reducedTo;
+
+    const {baseSym} = info;
+
+    if(prog.hasType(baseSym))
+      return db.reduceToItself(info);
+
+    const func = prog.getFunc(baseSym);
+    const {arity} = func;
+    const args = getArgsFromInfo(info);
+    const argsNum = args.length;
+
+    assert(argsNum <= arity);
+
+    if(argsNum < arity)
+      return db.reduceToItself(info);
+
+    tryCase: for(const fcase of func.cases){
+      const {lhs, rhs} = fcase;
+      const lhsArg = lhs.args;
+      const rhsExpr = rhs.expr;
+      const vars = O.obj();
+
+      const match = function*(formal, actual){
+        if(formal instanceof cs.Type){
+          const info = yield [reduceSym, formal.sym];
+          return info === actual;
+        }
+        
+        if(formal instanceof cs.Variable){
+          const {sym} = formal;
+
+          if(!O.has(vars, sym)){
+            vars[sym] = actual;
+            return 1;
+          }
+
+          return vars[sym] === actual;
+        }
+
+        if(formal instanceof cs.Pair){
+          const {expr} = actual;
+          if(isSym(expr)) return 0;
+
+          return (
+            (yield [match, formal.fst, expr[0]]) &&
+            (yield [match, formal.snd, expr[1]])
+          );
+        }
+
+        if(formal instanceof cs.AsPattern){
+          for(const expr of formal.exprs)
+            if(!(yield [match, expr, actual]))
+              return 0;
+
+          return 1;
+        }
+
+        if(formal instanceof cs.AnyExpression)
+          return 1;
+
+        assert.fail(formal.constructor.name);
+      };
+
+      const simplify = function*(expr, escaped=0){
+        if(expr instanceof cs.NamedExpression){
+          const {sym} = expr;
+
+          if(O.has(vars, sym))
+            return vars[sym];
+
+          return O.tco(reduceSym, sym);
+        }
+
+        if(expr instanceof cs.Call){
+          const fst = yield [simplify, expr.fst, escaped];
+          const snd = yield [simplify, expr.snd, escaped || fst.baseSym === tilde];
+          const info = db.getInfo([fst, snd]);
+
+          return O.tco(reduce, info);
+        }
+
+        assert.fail(expr.constructor.name);
+      };
+
+      for(let i = 0; i !== arity; i++){
+        const formal = lhsArg[i];
+        const actual = args[i];
+
+        if(!(yield [match, formal, actual]))
+          continue tryCase;
+      }
+
+      const reduced = yield [simplify, rhsExpr];
+      
+      return db.reduce(info, reduced);
+    }
+
+    err(`Non-exhaustive patterns in function ${
+      O.sf(baseSym.description)}\n\n${
+      yield [info2str, info]}`);
+  };
+
+  const info2str = function*(info, parens=0){
+    const {expr} = info;
+
+    if(isSym(expr))
+      return expr.description;
+
+    const str = `${
+      yield [info2str, expr[0], 0]} ${
+      yield [info2str, expr[1], 1]}`;
+
+    if(parens) return `(${str})`;
+    return str;
+  };
+
+  const result = O.rec(reduceIdent, 'two');
+
+  log(O.rec(info2str, result));
+  log();
+  log(db.toString());
+};
+
+const getArgsFromInfo = info => {
+  const args = [];
+  let expr = info.expr;
+
+  while(isPair(expr)){
+    const [fst, snd] = expr;
+
+    args.push(snd);
+    expr = fst.expr;
+  }
+
+  return args;
+};
+
+const err = msg => {
+  O.exit(`Error: ${msg}`);
 };
 
 main();

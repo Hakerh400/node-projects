@@ -26,16 +26,32 @@ class Database{
 
     const {pairs} = this;
     const [fst, snd] = expr;
+    const fsti = fst.index;
+    const sndi = snd.index;
 
-    if(O.has(pairs, fst)){
-      if(O.has(pairs[fst], snd))
-        return pairs[fst][snd];
+    if(O.has(pairs, fsti)){
+      if(O.has(pairs[fsti], sndi))
+        return pairs[fsti][sndi];
     }else{
-      pairs[fst] = O.obj();
+      pairs[fsti] = O.obj();
     }
 
     const info = this.infoFromExpr(expr);
-    return pairs[fst][snd] = info;
+    return pairs[fsti][sndi] = info;
+  }
+
+  reduce(from, to){
+    assert(from.reducedTo === null);
+    // assert(to.index <= from.index);
+
+    from.reducedTo = to;
+    to.reducedFrom.push(from);
+
+    return to;
+  }
+
+  reduceToItself(info){
+    return this.reduce(info, info);
   }
 
   infoFromExpr(expr){
@@ -64,6 +80,17 @@ class Database{
     table.push(info);
 
     return info;
+  }
+
+  toString(){
+    return this.table.map(info => {
+      const {expr, reducedTo} = info;
+
+      const exprStr = isSym(expr) ? expr.description : O.sfa(expr.map(a => a.index));
+      const reducedStr = reducedTo !== null ? ` ---> ${reducedTo.index}` : '';
+
+      return `${info.index}: ${exprStr}${reducedStr}`;
+    }).join('\n');
   }
 }
 

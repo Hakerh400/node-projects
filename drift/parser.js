@@ -17,9 +17,10 @@ const {
   err,
 } = tokenizer;
 
+const tilde = Symbol('~');
+
 const parse = str => {
   const objIdentSym = O.obj();
-  const prog = new cs.Program();
 
   const hasIdent = ident => {
     return O.has(objIdentSym, ident);
@@ -29,12 +30,19 @@ const parse = str => {
     if(hasIdent(ident))
       return objIdentSym[ident];
 
-    return objIdentSym[ident] = Symbol(ident);
+    const sym = ident === '~' ? tilde : Symbol(ident);
+    objIdentSym[ident] = sym;
+
+    return sym;
   };
+
+  const prog = new cs.Program(err);
+
+  prog.addType(tilde);
 
   let currentType = null;
   let lastFunc = null;
-  let lastArgsNum = null;
+  let lastArity = null;
 
   for(const info of tokenize(str)){
     const {line, toks, isLabel, popLevel} = info;
@@ -94,7 +102,7 @@ const parse = str => {
     }
 
     if(func !== lastFunc)
-      lastArgsNum = null;
+      lastArity = null;
 
     lastFunc = func;
 
@@ -102,7 +110,7 @@ const parse = str => {
     const eqIndexLast = toks.lastIndexOf(tt.EQ);
 
     if(eqIndex === -1) err(`Missing equals sign`);
-    if(eqIndexLast !== eqIndex) err(`Multiple equal signs`);
+    if(eqIndexLast !== eqIndex) err(`Multiple equals signs`);
 
     const lhsToks = toks.slice(2, eqIndex);
     const rhsToks = toks.slice(eqIndex + 1);
@@ -164,17 +172,26 @@ const parse = str => {
           exprs.push(term);
         }
 
+        if(exprs.length === 1)
+          return exprs[0];
+
         return new cs.AsPattern(exprs);
       };
 
       const parseTerm = function*(){
         const tok = next();
 
+        if(tok === tt.TYPE){
+          const sym = ident2sym(next());
+
+          if(sym === tilde)
+            return new cs.Pair(new cs.Type(sym), yield [parseTerm]);
+
+          return new cs.Type(sym);
+        }
+
         if(tok === tt.VAR)
           return new cs.Variable(ident2sym(next()));
-
-        if(tok === tt.TYPE)
-          return new cs.Type(ident2sym(next()));
 
         if(tok === tt.OPEN_PAREN){
           const expr = yield [parseExpr];
@@ -230,11 +247,17 @@ const parse = str => {
       const parseTerm = function*(){
         const tok = next();
 
+        if(tok === tt.TYPE){
+          const sym = ident2sym(next());
+
+          if(sym === tilde)
+            return new cs.Call(new cs.Type(sym), yield [parseTerm]);
+
+          return new cs.Type(sym);
+        }
+
         if(tok === tt.VAR)
           return new cs.Variable(ident2sym(next()));
-
-        if(tok === tt.TYPE)
-          return new cs.Type(ident2sym(next()));
 
         if(tok === tt.OPEN_PAREN){
           const expr = yield [parseExpr];
@@ -254,15 +277,15 @@ const parse = str => {
     const lhs = O.rec(parseLhs, lhsToks);
     const rhs = O.rec(parseRhs, rhsToks);
 
-    const {args, argsNum} = lhs;
+    const {args, arity} = lhs;
     const {result} = rhs;
 
-    if(lastArgsNum !== null && argsNum !== lastArgsNum)
+    if(lastArity !== null && arity !== lastArity)
       err(`Case definitions of function ${
         O.sf(funcIdent)} differ in the number of arguments (${
-        lastArgsNum} vs ${argsNum})`);
+        lastArity} vs ${arity})`);
 
-    lastArgsNum = argsNum;
+    lastArity = arity;
 
     const fcase = new cs.FunctionCase(lhs, rhs);
     prog.addCase(func, fcase);
@@ -280,4 +303,5 @@ const error = (line, msg) => {
 
 module.exports = {
   parse,
+  tilde,
 };
