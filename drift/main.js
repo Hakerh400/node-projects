@@ -12,24 +12,24 @@ const cs = require('./ctors');
 const {tilde} = parser;
 const {isSym, isPair} = Database;
 
+const MAIN_FUNC_NAME = 'main';
+
 const cwd = __dirname;
-const testDir = path.join(cwd, 'test');
-const srcFile = path.join(testDir, 'src.txt');
-const inputFile = path.join(testDir, 'input.txt');
+const srcDir = path.join(cwd, 'src');
+const srcFile = path.join(srcDir, 'src.txt');
 
 const main = () => {
   const src = O.rfs(srcFile, 1);
-  const input = O.rfs(inputFile);
   const prog = parser.parse(src);
   const db = new Database();
 
   const reduceIdent = function*(ident){
     const sym = prog.ident2sym(ident);
-    return O.tco(reduceSym, sym);
+    return O.tco(reduceExpr, sym);
   };
 
-  const reduceSym = function*(sym){
-    const info = db.getInfo(sym);
+  const reduceExpr = function*(expr){
+    const info = db.getInfo(expr);
     return O.tco(reduce, info);
   };
 
@@ -80,9 +80,11 @@ const main = () => {
         error(`${msg}\n\n${O.rec(info2str, info)}${ctxStr}`);
       };
 
-      const match = function*(formal, actual, ref=1){
+      const match = function*(formal, actual, left=0, escaped=0){
+        const ref = !(left || escaped);
+
         if(formal instanceof cs.Type){
-          const info = yield [reduceSym, formal.sym];
+          const info = yield [reduceExpr, formal.sym];
           return info === actual;
         }
         
@@ -106,14 +108,14 @@ const main = () => {
           const [fst, snd] = expr;
 
           return (
-            (yield [match, formal.fst, fst, 0]) &&
-            (yield [match, formal.snd, snd, ref && fst.baseSym !== tilde])
+            (yield [match, formal.fst, fst, 1, escaped]) &&
+            (yield [match, formal.snd, snd, 0, escaped || fst.baseSym === tilde])
           );
         }
 
         if(formal instanceof cs.AsPattern){
           for(const expr of formal.exprs)
-            if(!(yield [match, expr, actual, ref]))
+            if(!(yield [match, expr, actual, left, escaped]))
               return 0;
 
           return 1;
@@ -152,7 +154,7 @@ const main = () => {
             return vars[sym];
           }
 
-          return O.tco(reduceSym, sym);
+          return O.tco(reduceExpr, sym);
         }
 
         if(expr instanceof cs.Call){
@@ -196,16 +198,9 @@ const main = () => {
     return str;
   };
 
-  const result = O.rec(reduceIdent, 'func');
+  const result = O.rec(reduceIdent, 'main');
 
   log(O.rec(info2str, result));
-  log();
-
-  for(const info of result.reducedFrom.slice().reverse())
-    log(O.rec(info2str, info));
-
-  log();
-  log(db.toString());
 };
 
 const getArgsFromInfo = info => {
@@ -223,7 +218,7 @@ const getArgsFromInfo = info => {
 };
 
 const error = msg => {
-  O.exit(`Error: ${msg}`);
+  O.exit(msg);
 };
 
 main();

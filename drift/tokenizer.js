@@ -3,7 +3,6 @@
 const fs = require('fs');
 const path = require('path');
 const assert = require('assert');
-const debug = require('../debug');
 const O = require('../omikron');
 
 const tokTypes = O.enum([
@@ -190,8 +189,7 @@ const toksLen = toks => {
 };
 
 const err = msg => {
-  log(`Syntax error: ${msg}`);
-  O.exit();
+  O.exit(`Syntax error: ${msg}`);
 };
 
 module.exports = {
