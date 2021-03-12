@@ -14,11 +14,11 @@ const {isSym, isPair} = Database;
 
 const cwd = __dirname;
 const srcDir = path.join(cwd, 'src');
-const srcFile = path.join(srcDir, 'src.txt');
+const systemFile = path.join(srcDir, 'system.txt');
 
 const main = () => {
-  const src = O.rfs(srcFile, 1);
-  const prog = parser.parse(src);
+  const system = O.rfs(systemFile, 1);
+  const prog = parser.parse(system);
   const db = new Database();
 
   const reduceIdent = function*(ident){
