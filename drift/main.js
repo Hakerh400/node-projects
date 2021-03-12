@@ -12,8 +12,6 @@ const cs = require('./ctors');
 const {tilde} = parser;
 const {isSym, isPair} = Database;
 
-const MAIN_FUNC_NAME = 'main';
-
 const cwd = __dirname;
 const srcDir = path.join(cwd, 'src');
 const srcFile = path.join(srcDir, 'src.txt');
