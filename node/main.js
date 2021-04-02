@@ -9,7 +9,6 @@ const logSync = require('../log-sync');
 const engs = require('./engines');
 const nodeFlags = require('./node-flags');
 
-const DISPLAY_EXIT_CODE = 0;
 const DISPLAY_SIGINT = 0;
 const KILL_ON_SECOND_SIGINT = 1;
 const ELECTRON_NIGHTLY = 1;
@@ -348,8 +347,10 @@ function spawnProc(file, args=[], options=O.obj(), opts=O.obj(), cb=null){
 }
 
 function onProcExit(code=null, cb=null){
-  if(cb !== null) cb(code);
-  else if(code !== null && DISPLAY_EXIT_CODE) log(code);
+  if(cb !== null)
+    cb(code);
+  else if(code !== null && code !== 0 && code !== 1)
+    log(`\n\nEXIT CODE: ${code}`);
 
   proc = null;
   askForInput();
