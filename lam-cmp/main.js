@@ -23,21 +23,48 @@ const STEPS_LIMIT = 1e4;
 const main = () => {
   const i = [iota];
 
-  const exprsObj = {
-    0: i,
-    1: [],
-    2: [],
-    3: [],
-    4: [],
+  const parse = str => {
+    return new Function('exprs', `return [${
+      str.
+        replace(/\(/g, '[').
+        replace(/\)/g, '],').
+        replace(/[^\s\[\]\,]+/g, a => `exprs[${JSON.stringify(a)}],`)
+    }]`)(exprs);
   };
 
-  exprsObj[1].push([0, 1].map(a => exprsObj[a]));
-  exprsObj[2].push([0, 0].map(a => exprsObj[a]));
-  exprsObj[3].push([0, 3].map(a => exprsObj[a]));
-  exprsObj[4].push([0, 0].map(a => exprsObj[a]));
+  const exprs = [
+    K,
+    S,
+    I,
+  ];
 
-  const exprsArr = O.vals(exprsObj);
-  const exprsMap = new Map(O.keys(exprsObj).map(a => [exprsObj[a], a]));
+  const exprNew = parse(`
+    (S (K (S (S I (K (K I))))) (S (K (S (S (K S) (S I (K K))))) (S (K K) K)))
+  `);
+
+  const maybe = [];
+
+  for(const name of O.keys(exprs)){
+    const exprOld = exprs[name];
+    const result = O.rec(cmp, exprOld, exprNew);
+
+    if(result === null){
+      maybe.push(name);
+      continue;
+    }
+
+    if(result){
+      log(name);
+      return;
+    }
+  }
+
+  log('~');
+
+  if(maybe.length !== 0)
+    log(`\n${maybe.join('\n')}`);
+
+  return;
 
   const exprName = expr => {
     return exprsMap.get(expr);
