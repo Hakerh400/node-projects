@@ -5,8 +5,9 @@ const path = require('path');
 const assert = require('assert');
 const O = require('../omikron');
 const fsRec = require('../fs-rec');
+const strs = require('../strs');
 
-const texturesDir = 'C:/Users/Thomas/AppData/Roaming/.minecraft/versions/21w11a/textures';
+const texturesDir = `C:/Users/Thomas/AppData/Roaming/.${strs.m}/versions/21w11a/textures`;
 
 const main = () => {
   const dir = new fsRec.Directory(texturesDir);
