@@ -82,6 +82,12 @@
       "name": "z3-projects",
       "src": "C:/Projects/Z3",
       "dest": "C:/GitHub/z3"
+    },
+
+    "hs": {
+      "name": "haskell-projects",
+      "src": "C:/Projects/Haskell",
+      "dest": "C:/GitHub/haskell-projects"
     }
   }
 }

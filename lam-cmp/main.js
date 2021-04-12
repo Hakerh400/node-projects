@@ -38,37 +38,13 @@ const main = () => {
   const exprs = {K, S, I};
 
   O.sanl(`
-    K K
-    S 0
-    1 K
-    S I
-    3 0
-    K S
-    S 5
-    6 4
-    S 7
-    K 8
-    S 9
-    10 2
-    K I
-    K 12
-    3 13
-    S 14
-    K 15
-    S 16
-    17 11
-    3 I
-    K 3
-    S 20
-    21 19
-    19 22
-    23 18
+    S (S I (K (S K))) (K K)
   `).filter(a => a.trim()).forEach((expr,  index) => {
     exprs[index] = parse(expr);
   });
 
   const exprNew = parse(`
-    23 18
+    
   `);
 
   const maybe = [];
