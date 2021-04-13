@@ -44,7 +44,7 @@ const main = () => {
   });
 
   const exprNew = parse(`
-    
+    S K K
   `);
 
   const maybe = [];
