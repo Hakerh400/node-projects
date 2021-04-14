@@ -9,7 +9,7 @@ const strs = require('../strs');
 const fsRec = require('../fs-rec');
 
 const VERSION_MAJOR = '1.17';
-const VERSION = '21w14a';
+const VERSION = '21w15a';
 
 const EMPTY_SOUND_HASH = '7f31c0bcfab392513ac53c75ac30f18bfc8d18da';
 
@@ -185,9 +185,9 @@ const main = () => {
       objs[key].hash = EMPTY_SOUND_HASH;
     });
 
-    log(`Removing door sounds`);
+    log(`Removing door and chest sounds`);
     exec(() => {
-      const keys = allKeys.filter(a => /(?<![a-z0-9])door(?![a-z0-9])/.test(a));
+      const keys = allKeys.filter(a => /(?<![a-z0-9])(?:door|chest)(?![a-z0-9])/.test(a));
       assert(keys.length !== 0);
 
       for(const key of keys)
