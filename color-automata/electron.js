@@ -50,6 +50,7 @@ const main = async () => {
           -0.5189740790537805,   -0.7599592242728006,
       ] : O.ca(30, () => O.randf(-1, 1))  
     );
+    
     log(pat);
 
     let vec = O.ca(w, x => {
