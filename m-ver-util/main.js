@@ -50,7 +50,7 @@ const main = () => {
   O.wfs(jarFile, O.rfs(bakFile));
 
   if(fs.existsSync(jarDir)){
-    log(`Deleting the JAR directory`);
+    log(`Deleting the old JAR directory`);
     del(jarDir);
   }
 
