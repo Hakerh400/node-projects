@@ -8,7 +8,7 @@ const O = require('../omikron');
 const DEBUG = 0;
 
 const cwd = __dirname;
-const srcFile = path.join(cwd, 'src.js');
+const srcFile = path.join(cwd, 'prog.js');
 
 const GeneratorFunction = function*(){}.constructor;
 
