@@ -8,12 +8,35 @@ const O = require('../omikron');
 const DEBUG = 0;
 
 const cwd = __dirname;
-const srcFile = path.join(cwd, 'prog.js');
+const srcFile = path.join(cwd, 'prog.txt');
 
 const GeneratorFunction = function*(){}.constructor;
 
 const main = () => {
-  const src = O.rfs(srcFile, 1);
+  let src = O.rfs(srcFile, 1).
+    replace(/[\.\#\*\@\<\>]/g, a => ` ${['arg', 'func', 'call', 'pair', 'fst', 'snd']['.#*@<>'.indexOf(a)]} `).
+    replace(/(?<=[a-z]\b|[\)\]\|])(?!\s*(?:[\)\]\|]|$))/g, ',');
+
+  // O.exit(src);
+
+  while(/[\[\]]/.test(src)){
+    const srcPrev = src;
+
+    src = src.replace(/\[([^\[\]]*)\]/, (a, b) => {
+      return `\`${b.replace(/\`/g, `\\\``)}\``;
+    });
+
+    assert(src !== srcPrev);
+  }
+
+  src = src.
+    replace(/(?=call|pair|fst|snd)/g, '[').
+    replace(/\[/g, 'yield[').
+    replace(/\|/g, ']').
+    replace(/[01]+/g, a => `'${a}'+`);
+
+  // O.exit(src);
+
   const input = '1011';
   const result = O.rec(call, initInput(input), src);
   const output = parseOutput(result);
