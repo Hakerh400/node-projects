@@ -11,11 +11,12 @@ const parser = require('./parser');
 const cs = require('./ctors');
 const core = require('./core');
 const PointFree = require('./point-free');
+const opts = require('./opts');
 
 const {SHOW_SUBSTS} = cs;
 const {SINGLE_CHAR_COMBINATORS} = core;
 
-const MAIN_FUNC_NAME = 'main';
+const {MAIN_FUNC_NAME} = opts;
 
 const DEBUG = 0;
 const SPACE = 1;
@@ -34,13 +35,17 @@ const main = () => {
   const src = O.rfs(srcFile, 1);
   const prog = parser.parseProg(src);
 
-  // const input = '1011';
-  // const output = run(prog, input);
-  // log(output);
-
   const pfree = O.rec([PointFree, 'fromProg'], prog);
+  const srcNew = pfree.toString();
 
-  log(pfree.toString());
+  log(srcNew);
+  O.logb();
+
+  const progNew = parser.parseProg(srcNew);
+  const input = '1011';
+  const output = run(progNew, input);
+  
+  log(output);
 };
 
 const run = (prog, input) => {

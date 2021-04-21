@@ -61,9 +61,9 @@ class Parser extends SimpleParser{
   }
 }
 
-const parseProg = str => {
+const parseProg = (str, builtins=O.obj()) => {
   str = str.trim().
-    replace(/\/\/[^\r\n]*|\/\*.*?\*\//gs, '').
+    replace(/\-\-[^\r\n]*|\{\*.*?\*\}/gs, '').
     replace(/(?:\r\n|\r|\n)[ \t]/g, ' ');
 
   const parts = O.sanl(str).filter(a => a.trim().length !== 0);
@@ -89,6 +89,7 @@ const parseProg = str => {
     const {args, expr} = func;
 
     for(const ident in expr.idents){
+      if(O.has(builtins, ident)) continue;
       if(O.has(funcsObj, ident)) continue;
       if(args.includes(ident)) continue;
 
