@@ -147,7 +147,7 @@ const main = () => {
 
     assert(files.length === texts.length);
 
-    log(`Updating texts one at a time`);
+    log(`Patching texts one at a time`);
     exec(() => {
       for(const text of texts){
         const fileName = `${text}.txt`;
