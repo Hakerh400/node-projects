@@ -46,7 +46,7 @@ class FunctionDefinition extends Base{
     for(const arg of this.args)
       arr.push(' ', arg);
 
-    arr.push(' = ', this.expr, ';');
+    arr.push(' = ', this.expr);
     return arr;
   }
 }

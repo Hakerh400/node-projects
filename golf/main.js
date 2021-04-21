@@ -10,6 +10,7 @@ const format = require('../format');
 const parser = require('./parser');
 const cs = require('./ctors');
 const core = require('./core');
+const PointFree = require('./point-free');
 
 const {SHOW_SUBSTS} = cs;
 const {SINGLE_CHAR_COMBINATORS} = core;
@@ -27,19 +28,24 @@ const SHOW_IO = 0;
 const cwd = __dirname;
 const testDir = path.join(cwd, 'test');
 const srcFile = path.join(testDir, 'src.txt');
+const pfreeFile = path.join(testDir, 'point-free.txt');
 
 const main = () => {
   const src = O.rfs(srcFile, 1);
-  const input = '1011';
-  const output = run(src, input);
+  const prog = parser.parseProg(src);
 
-  log(output);
+  // const input = '1011';
+  // const output = run(prog, input);
+  // log(output);
+
+  const pfree = O.rec([PointFree, 'fromProg'], prog);
+
+  log(pfree.toString());
 };
 
-const run = (src, input) => {
+const run = (prog, input) => {
   const t = SHOW_PERF ? performance.now() : null;
 
-  const prog = parser.parseProg(src);
   const io = new O.IOBit(input);
 
   let ioFlag = 1;

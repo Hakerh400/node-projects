@@ -68,8 +68,8 @@ const parseProg = str => {
 
   const parts = O.sanl(str).filter(a => a.trim().length !== 0);
 
-  if(parts.length < 2)
-    error(`Source code must contain at least one function definition`);
+  // if(parts.length < 2)
+  //   error(`Source code must contain at least one function definition`);
 
   const prog = new cs.Program();
   const {funcsObj, funcsArr} = prog;
