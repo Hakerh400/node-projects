@@ -15,13 +15,28 @@ class Program extends Base{
   funcsObj = O.obj();
   funcsArr = [];
 
+  constructor(builtins){
+    super();
+    this.builtins = builtins;
+  }
+
   hasFunc(name){
-    return O.has(this.funcsObj, name);
+    return (
+      O.has(this.builtins, name) ||
+      O.has(this.funcsObj, name)
+    );
   }
 
   getFunc(name){
-    assert(this.hasFunc(name), name);
-    return this.funcsObj[name];
+    const {builtins, funcsObj} = this;
+
+    if(O.has(builtins, name))
+      return builtins[name];
+
+    if(O.has(funcsObj, name))
+      return funcsObj[name];
+
+    assert.fail(name);
   }
 
   toStr(){

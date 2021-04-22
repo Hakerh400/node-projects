@@ -41,7 +41,11 @@ const main = () => {
   log(srcNew);
   O.logb();
 
-  const progNew = parser.parseProg(srcNew);
+  const builtins = {
+    iota: new cs.FunctionDefinition('iota', [], new cs.Expression(core.IOTA, [])),
+  };
+
+  const progNew = parser.parseProg(srcNew, builtins);
   const input = '1011';
   const output = run(progNew, input);
   
@@ -217,6 +221,10 @@ const run = (prog, input) => {
   };
 
   const coreFuncs = {
+    [core.IOTA](){
+      const x = pop();
+      pushArr([x, core.S, core.K]);
+    },
     [core.K](){
       const x = pop();
       const y = pop();

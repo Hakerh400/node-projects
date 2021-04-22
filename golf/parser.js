@@ -71,7 +71,7 @@ const parseProg = (str, builtins=O.obj()) => {
   // if(parts.length < 2)
   //   error(`Source code must contain at least one function definition`);
 
-  const prog = new cs.Program();
+  const prog = new cs.Program(builtins);
   const {funcsObj, funcsArr} = prog;
 
   for(const funcDefStr of parts){

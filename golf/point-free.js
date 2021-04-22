@@ -44,7 +44,10 @@ class PointFree extends Base{
       pfree.addFunc(name, expr);
     }
 
-    yield O.tco([pfree, 'elimRec']);
+    yield [[pfree, 'elimRec']];
+    // yield [[pfree, 'addBuiltins']];
+
+    return pfree;
   }
 
   funcs = O.obj();
@@ -150,9 +153,10 @@ class PointFree extends Base{
 
   *toStr(){
     let str = O.ftext(`
-      I a = a
-      K a b = a
-      S a b c = a c (b c)
+      I = iota iota
+      iI = iota I
+      K = iota iI
+      S = iota K
       . = S (K S) K
       ~ = S (. . S) (K K)
       fix = (S I I) (. (S I) (S I I))
@@ -197,6 +201,15 @@ class Expression extends Base{
   *eq(other){ O.virtual('eq'); }
   *elimArg(){ O.virtual('elimArg'); }
   *subst(){ O.virtual('subst'); }
+  *iter(){ O.virtual('iter'); }
+
+  *topDown(func){
+    return O.tco([this, 'iter'], func, 0);
+  }
+
+  *bottomUp(func){
+    return O.tco([this, 'iter'], func, 1);
+  }
 }
 
 class Combinator extends Expression{
@@ -220,6 +233,10 @@ class Combinator extends Expression{
   *subst(name, expr){
     if(this.name !== name) return this;
     return expr;
+  }
+
+  *iter(func, dir){
+    yield [func, this];
   }
 
   *toStr(){
@@ -276,6 +293,15 @@ class Application extends Expression{
     const arg = yield [[this.arg, 'subst'], name, expr];
 
     return new Application(target, arg);
+  }
+
+  *iter(func, dir){
+    if(dir === 0) yield [func, this];
+
+    yield [func, this.target];
+    yield [func, this.arg];
+
+    if(dir === 1) yield [func, this];
   }
 
   *toStr(parens=0){

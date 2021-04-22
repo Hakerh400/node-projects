@@ -8,6 +8,7 @@ const O = require('../omikron');
 const SINGLE_CHAR_COMBINATORS = 0;
 
 const core = O.enum([
+  'IOTA',
   'K',
   'S',
   'IO',
