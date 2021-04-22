@@ -45,7 +45,7 @@ class PointFree extends Base{
     }
 
     yield [[pfree, 'elimRec']];
-    // yield [[pfree, 'addBuiltins']];
+    yield [[pfree, 'addBuiltins']];
 
     return pfree;
   }
@@ -151,22 +151,88 @@ class PointFree extends Base{
     return this;
   }
 
-  *toStr(){
-    let str = O.ftext(`
-      I = iota iota
-      iI = iota I
-      K = iota iI
-      S = iota K
-      . = S (K S) K
-      ~ = S (. . S) (K K)
-      fix = (S I I) (. (S I) (S I I))
-    `);
+  *addBuiltins(){
+    const sii = new Application(new Application(combs.S, combs.I), combs.I);
 
+    this.addFunc(combs.I.name, new Application(combs.IOTA, combs.IOTA));
+    this.addFunc(combs.K.name, new Application(combs.IOTA, new Application(combs.IOTA, combs.I)));
+    this.addFunc(combs.S.name, new Application(combs.IOTA, combs.K));
+    this.addFunc(combs.DOT.name, new Application(new Application(combs.S, new Application(combs.K, combs.S)), combs.K));
+    this.addFunc(combs.FLIP.name, new Application(new Application(combs.S, new Application(new Application(combs.DOT, combs.DOT), combs.S)), new Application(combs.K, combs.K)));
+    this.addFunc(combs.FIX.name, new Application(sii, new Application(new Application(combs.DOT, new Application(combs.S, combs.I)), sii)));
+  }
+
+  *pack(){
+    const pfree = this;
+    const mainFunc = this.getFunc(MAIN_FUNC_NAME);
+
+    const ser = new O.NatSerializer();
+    const calls = new O.Map2D();
+    const cache = new Map();
+
+    let exprsNum = 1;
+
+    const stack = [];
+
+    const packExpr = function*(expr){
+      if(expr instanceof Combinator){
+        const {name} = expr;
+
+        if(name === combs.IOTA.name){
+          ser.write(2, 0);
+          ser.write(exprsNum, 0);
+
+          return 0;
+        }
+
+        return O.tco(packExpr, pfree.getFunc(name));
+      }
+
+      if(cache.has(expr)){
+        const index = cache.get(expr);
+
+        ser.write(2, 0);
+        ser.write(exprsNum, index);
+
+        return index;
+      }
+
+      const target = yield [packExpr, expr.target];
+      const arg = yield [packExpr, expr.arg];
+
+      if(calls.has(target, arg)){
+        const index = calls.get(target, arg);
+
+        ser.write(2, 0);
+        ser.write(exprsNum, index);
+
+        cache.set(expr, index);
+
+        return index;
+      }
+
+      const index = exprsNum++;
+
+      ser.write(2, 0);
+      ser.write(exprsNum, index);
+
+      calls.set(target, arg, index);
+      cache.set(expr, index);
+
+      return index;
+    };
+
+    yield [packExpr, mainFunc];
+
+    return ser.output;
+  }
+
+  *toStr(){
+    let str = '';
     let first = 1;
 
     for(const name of this.funcNames){
-      str += '\n'
-      if(first) str += '\n';
+      if(!first) str += '\n';
       first = 0;
 
       str += `${name2str(name)} = ${yield [[this.getFunc(name), 'toStr']]}`;
@@ -201,15 +267,15 @@ class Expression extends Base{
   *eq(other){ O.virtual('eq'); }
   *elimArg(){ O.virtual('elimArg'); }
   *subst(){ O.virtual('subst'); }
-  *iter(){ O.virtual('iter'); }
 
-  *topDown(func){
-    return O.tco([this, 'iter'], func, 0);
-  }
 
-  *bottomUp(func){
-    return O.tco([this, 'iter'], func, 1);
-  }
+
+
+
+
+
+
+
 }
 
 class Combinator extends Expression{
@@ -235,9 +301,9 @@ class Combinator extends Expression{
     return expr;
   }
 
-  *iter(func, dir){
-    yield [func, this];
-  }
+
+
+
 
   *toStr(){
     return name2str(this.name);
@@ -295,14 +361,12 @@ class Application extends Expression{
     return new Application(target, arg);
   }
 
-  *iter(func, dir){
-    if(dir === 0) yield [func, this];
 
-    yield [func, this.target];
-    yield [func, this.arg];
 
-    if(dir === 1) yield [func, this];
-  }
+
+
+
+
 
   *toStr(parens=0){
     const s1 = yield [[this.target, 'toStr']];
@@ -314,6 +378,7 @@ class Application extends Expression{
 }
 
 const combs = {
+  IOTA: new Combinator(Symbol('iota')),
   I: new Combinator(Symbol('I')),
   K: new Combinator(Symbol('K')),
   S: new Combinator(Symbol('S')),

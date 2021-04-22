@@ -31,19 +31,21 @@ const testDir = path.join(cwd, 'test');
 const srcFile = path.join(testDir, 'src.txt');
 const pfreeFile = path.join(testDir, 'point-free.txt');
 
+const builtins = {
+  iota: new cs.FunctionDefinition('iota', [], new cs.Expression(core.IOTA, [])),
+};
+
 const main = () => {
+  O.bion(1);
+  
   const src = O.rfs(srcFile, 1);
   const prog = parser.parseProg(src);
 
   const pfree = O.rec([PointFree, 'fromProg'], prog);
-  const srcNew = pfree.toString();
+  const srcNew = O.rec([pfree, 'pack']);
 
   log(srcNew);
   O.logb();
-
-  const builtins = {
-    iota: new cs.FunctionDefinition('iota', [], new cs.Expression(core.IOTA, [])),
-  };
 
   const progNew = parser.parseProg(srcNew, builtins);
   const input = '1011';
