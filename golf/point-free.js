@@ -267,15 +267,6 @@ class Expression extends Base{
   *eq(other){ O.virtual('eq'); }
   *elimArg(){ O.virtual('elimArg'); }
   *subst(){ O.virtual('subst'); }
-
-
-
-
-
-
-
-
-
 }
 
 class Combinator extends Expression{
@@ -300,10 +291,6 @@ class Combinator extends Expression{
     if(this.name !== name) return this;
     return expr;
   }
-
-
-
-
 
   *toStr(){
     return name2str(this.name);
@@ -360,13 +347,6 @@ class Application extends Expression{
 
     return new Application(target, arg);
   }
-
-
-
-
-
-
-
 
   *toStr(parens=0){
     const s1 = yield [[this.target, 'toStr']];
