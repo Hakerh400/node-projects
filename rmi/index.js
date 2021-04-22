@@ -12,7 +12,7 @@ const mainDir = 'D:/Data/rmi';
 const logsDir = path.join(mainDir, 'logs');
 
 if(!fs.existsSync(mainDir))
-  fs.mkdirSync(mainDir);
+  fs.mkdirSync(mainDir, {recursive: true});
 
 if(!fs.existsSync(logsDir))
   fs.mkdirSync(logsDir);
