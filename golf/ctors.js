@@ -15,7 +15,7 @@ class Program extends Base{
   funcsObj = O.obj();
   funcsArr = [];
 
-  constructor(builtins){
+  constructor(builtins=O.obj()){
     super();
     this.builtins = builtins;
   }
@@ -39,6 +39,14 @@ class Program extends Base{
     assert.fail(name);
   }
 
+  addFunc(funcDef){
+    const {name} = funcDef;
+    assert(!this.hasFunc(name));
+
+    this.funcsObj[name] = funcDef;
+    this.funcsArr.push(funcDef);
+  }
+
   toStr(){
     return this.join([], this.funcsArr, '\n');
   }
@@ -56,12 +64,12 @@ class FunctionDefinition extends Base{
   get arity(){ return this.args.length; }
 
   toStr(){
-    const arr = [this.name];
+    const arr = [String(this.name)];
 
     for(const arg of this.args)
       arr.push(' ', arg);
 
-    arr.push(' = ', this.expr);
+    arr.push(' - ', this.expr);
     return arr;
   }
 }

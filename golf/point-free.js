@@ -6,9 +6,12 @@ const assert = require('assert');
 const O = require('../omikron');
 const debug = require('../debug');
 const cs = require('./ctors');
+const core = require('./core');
 const opts = require('./opts');
 
 const {MAIN_FUNC_NAME} = opts;
+
+const emptyArr = [];
 
 const name2str = name => {
   if(typeof name === 'symbol')
@@ -18,6 +21,25 @@ const name2str = name => {
     return name;
 
   return `[${name}]`;
+};
+
+const makeAvailArgsFunc = (calls, allArgs) => {
+  const getAvailArgs = index => {
+    if(index === null) return allArgs;
+    if(!O.has(calls, index)) return allArgs;
+
+    const args = calls[index];
+
+    const availArgs = allArgs.filter(a => {
+      return !O.has(args, a);
+    });
+
+    assert(availArgs.length !== 0);
+
+    return availArgs;
+  };
+
+  return getAvailArgs;
 };
 
 class Base{
@@ -48,6 +70,85 @@ class PointFree extends Base{
     yield [[pfree, 'addBuiltins']];
 
     return pfree;
+  }
+
+  static *unpack(n){
+    const ser = new O.NatSerializer(n);
+
+    const exprIndexMap = new Map();
+    const calls = O.obj();
+    const table = [];
+    const allArgs = [0];
+
+    const iotaExpr = new cs.Expression(core.IOTA, emptyArr);
+    exprIndexMap.set(iotaExpr, 0);
+    table.push(iotaExpr);
+
+    const getAvailArgs = makeAvailArgsFunc(calls, allArgs);
+
+    const addCall = (target, arg, index) => {
+      if(!O.has(calls, target))
+        calls[target] = O.obj();
+
+      calls[target][arg] = index;
+    };
+
+    const hasIndex = expr => {
+      return exprIndexMap.has(expr);
+    };
+
+    const getIndex = expr => {
+      assert(hasIndex(expr));
+      return exprIndexMap.get(expr);
+    };
+
+    const addIndex = (expr, index) => {
+      assert(!hasIndex(expr));
+      exprIndexMap.set(expr, index);
+    };
+
+    const unpackExpr = function*(targetPrev=null){
+      if(!ser.read(2)){
+        const availArgs = getAvailArgs(targetPrev);
+        return table[availArgs[ser.read(availArgs.length)]];
+      }
+
+      const target = yield [unpackExpr];
+      const targetIndex = getIndex(target);
+
+      const arg = yield [unpackExpr, targetIndex];
+      const argIndex = getIndex(arg);
+
+      const expr = new cs.Expression(
+        new cs.Expression(targetIndex, emptyArr),
+        [new cs.Expression(argIndex, emptyArr)]);
+
+      const index = table.length;
+
+      addCall(targetIndex, argIndex, expr);
+      addIndex(expr, index);
+
+      assert(allArgs.length === index);
+      allArgs.push(index);
+      table.push(expr);
+
+      return expr;
+    };
+
+    const mainExpr = yield [unpackExpr];
+
+    const funcsNum = table.length;
+    const prog = new cs.Program();
+
+    for(let i = 0; i !== funcsNum; i++){
+      const expr = table[i];
+      const name = i === funcsNum - 1 ? MAIN_FUNC_NAME : i;
+
+      const funcDef = new cs.FunctionDefinition(name, emptyArr, expr);
+      prog.addFunc(funcDef);
+    }
+
+    return prog;
   }
 
   funcs = O.obj();
@@ -166,46 +267,79 @@ class PointFree extends Base{
     const pfree = this;
     const mainFunc = this.getFunc(MAIN_FUNC_NAME);
 
-    const ser = new O.NatSerializer();
-    const calls = new O.Map2D();
+    const stack = [];
+    const calls = O.obj();
     const cache = new Map();
+    const allArgs = [0];
 
     let exprsNum = 1;
 
-    const stack = [];
+    const hasCall = (target, arg) => {
+      if(!O.has(calls, target)) return 0;
+      return O.has(calls[target], arg);
+    };
 
-    const packExpr = function*(expr){
+    const getCall = (target, arg) => {
+      return calls[target][arg];
+    };
+
+    const addCall = (target, arg, index) => {
+      if(!O.has(calls, target))
+        calls[target] = O.obj();
+      
+      calls[target][arg] = index;
+    };
+
+    const getAvailArgs = makeAvailArgsFunc(calls, allArgs);
+
+    const table = [combs.IOTA];
+    combs.IOTA.index=0
+
+    const packExpr = function*(expr, targetPrev=null){
+      const availArgs = getAvailArgs(targetPrev);
+      const stackIndex = stack.length;
+
+      assert(availArgs.length !== 0);
+
+      const writeOld = index => {
+        assert(availArgs.length !== 0);
+
+        stack.push([2, 0]);
+        stack.push([availArgs.length, availArgs.indexOf(index)]);
+      };
+
+      const writeNew = index => {
+        assert(index === allArgs.length);
+        assert(stackIndex < stack.length);
+
+        allArgs.push(index);
+        stack.splice(stackIndex, 0, [2, 1]);
+      };
+
       if(expr instanceof Combinator){
         const {name} = expr;
 
         if(name === combs.IOTA.name){
-          ser.write(2, 0);
-          ser.write(exprsNum, 0);
-
+          writeOld(0);
           return 0;
         }
 
-        return O.tco(packExpr, pfree.getFunc(name));
+        return O.tco(packExpr, pfree.getFunc(name), targetPrev);
       }
 
       if(cache.has(expr)){
         const index = cache.get(expr);
-
-        ser.write(2, 0);
-        ser.write(exprsNum, index);
-
+        writeOld(index);
         return index;
       }
 
       const target = yield [packExpr, expr.target];
-      const arg = yield [packExpr, expr.arg];
+      const arg = yield [packExpr, expr.arg, target];
 
-      if(calls.has(target, arg)){
-        const index = calls.get(target, arg);
+      if(hasCall(target, arg)){
+        const index = getCall(target, arg);
 
-        ser.write(2, 0);
-        ser.write(exprsNum, index);
-
+        writeOld(index);
         cache.set(expr, index);
 
         return index;
@@ -213,16 +347,92 @@ class PointFree extends Base{
 
       const index = exprsNum++;
 
-      ser.write(2, 0);
-      ser.write(exprsNum, index);
+      expr.index = index;
+      table.push(expr);
 
-      calls.set(target, arg, index);
+      writeNew(index);
+      addCall(target, arg, index);
       cache.set(expr, index);
 
       return index;
     };
 
+    const expandExpr = function*(expr){
+      let exprNew = null;
+
+      if(expr instanceof Combinator){
+        const {name} = expr;
+
+        if(name === combs.IOTA.name)
+          return 'i';
+
+        exprNew = yield [expandExpr, pfree.getFunc(name)];
+      }else{
+        const target = yield [expandExpr, expr.target];
+        const arg = yield [expandExpr, expr.arg];
+
+        exprNew = new Application(target, arg);
+      }
+
+      return exprNew;
+    };
+
+    const expr2str = function*(expr, parens=0){
+      if(expr instanceof Combinator){
+        const {name} = expr;
+
+        if(name === combs.IOTA.name)
+          return 'i';
+
+        return O.tco(expr2str, pfree.getFunc(name), parens);
+      }
+
+      const target = yield [expr2str, expr.target];
+      const arg = yield [expr2str, expr.arg, 1];
+      const str = `${target}${arg}`;
+
+      if(parens) return `(${str})`;
+      return str;
+    };
+
+    const getIndex = function*(expr){
+      if(expr instanceof Combinator){
+        const {name} = expr;
+
+        if(name === combs.IOTA.name)
+          return 0;
+
+        return O.tco(getIndex, pfree.getFunc(name));
+      }
+
+      const target = yield [getIndex, expr.target];
+      const arg = yield [getIndex, expr.arg];
+
+      return getCall(target, arg);
+    };
+
+    const stack2str = () => {
+      return stack.map(a => a.join(' ')).join('\n');
+    };
+
     yield [packExpr, mainFunc];
+
+    // log(table[2].arg);
+    O.logb();
+    log((yield [O.mapr, table, function*(a, b){
+      if(b === 0) return '0'
+
+      return `${b} - ${yield [getIndex, a.target]} ${yield [getIndex, a.arg]}`;
+    }]).join('\n'));
+    // O.logb();
+    // log(yield [expr2str, mainFunc]);
+    // log(stack2str());
+    // O.exit();
+
+    const ser = new O.NatSerializer();
+
+    for(const [mod, num] of stack)
+      ser.write(mod, num);
 
     return ser.output;
   }
@@ -235,7 +445,7 @@ class PointFree extends Base{
       if(!first) str += '\n';
       first = 0;
 
-      str += `${name2str(name)} = ${yield [[this.getFunc(name), 'toStr']]}`;
+      str += `${name2str(name)} - ${yield [[this.getFunc(name), 'toStr']]}`;
     }
 
     return str;
@@ -358,7 +568,7 @@ class Application extends Expression{
 }
 
 const combs = {
-  IOTA: new Combinator(Symbol('iota')),
+  IOTA: new Combinator(Symbol('i')),
   I: new Combinator(Symbol('I')),
   K: new Combinator(Symbol('K')),
   S: new Combinator(Symbol('S')),

@@ -32,24 +32,27 @@ const srcFile = path.join(testDir, 'src.txt');
 const pfreeFile = path.join(testDir, 'point-free.txt');
 
 const builtins = {
-  iota: new cs.FunctionDefinition('iota', [], new cs.Expression(core.IOTA, [])),
+  // iota: new cs.FunctionDefinition('iota', [], new cs.Expression(core.IOTA, [])),
 };
 
 const main = () => {
   O.bion(1);
-  
+
   const src = O.rfs(srcFile, 1);
   const prog = parser.parseProg(src);
 
   const pfree = O.rec([PointFree, 'fromProg'], prog);
-  const srcNew = O.rec([pfree, 'pack']);
+  const packed = O.rec([pfree, 'pack']);
+  const unpacked = O.rec([PointFree, 'unpack'], packed);
 
-  log(srcNew);
+  // log(packed);
+  O.logb();
+  log(unpacked.toString());
   O.logb();
 
-  const progNew = parser.parseProg(srcNew, builtins);
+  // const progNew = parser.parseProg(srcNew, builtins);
   const input = '1011';
-  const output = run(progNew, input);
+  const output = run(unpacked, input);
   
   log(output);
 };
@@ -328,7 +331,7 @@ const run = (prog, input) => {
 
     const elem = pop(list);
 
-    if(typeof elem === 'string'){
+    if(typeof elem === 'number' || typeof elem === 'string'){
       const func = prog.getFunc(elem);
       const {args, expr} = func;
 
@@ -346,7 +349,7 @@ const run = (prog, input) => {
       continue;
     }
 
-    if(typeof elem === 'number'){
+    if(typeof elem === 'symbol'){
       coreFuncs[elem]();
       continue;
     }

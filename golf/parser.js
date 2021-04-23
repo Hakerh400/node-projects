@@ -72,26 +72,23 @@ const parseProg = (str, builtins=O.obj()) => {
   //   error(`Source code must contain at least one function definition`);
 
   const prog = new cs.Program(builtins);
-  const {funcsObj, funcsArr} = prog;
 
   for(const funcDefStr of parts){
     const funcDef = parseFuncDef(funcDefStr);
     const {name} = funcDef;
 
-    if(O.has(funcsObj, name))
+    if(prog.hasFunc(name))
       error(`Redefinition of function ${O.sf(name)}`);
 
-    funcsObj[funcDef.name] = funcDef;
-    funcsArr.push(funcDef);
+    prog.addFunc(funcDef);
   }
 
-  for(const func of funcsArr){
+  for(const func of prog.funcsArr){
     const {args, expr} = func;
 
     for(const ident in expr.idents){
-      if(O.has(builtins, ident)) continue;
-      if(O.has(funcsObj, ident)) continue;
       if(args.includes(ident)) continue;
+      if(prog.hasFunc(ident)) continue;
 
       error(`Undefined identifier ${
         O.sf(ident)} in function ${

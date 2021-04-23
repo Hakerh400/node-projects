@@ -5,9 +5,9 @@ const path = require('path');
 const assert = require('assert');
 const O = require('../omikron');
 
-const SINGLE_CHAR_COMBINATORS = 0;
+const SINGLE_CHAR_COMBINATORS = 1;
 
-const core = O.enum([
+const coreFuncNames = [
   'IOTA',
   'K',
   'S',
@@ -18,13 +18,25 @@ const core = O.enum([
   'WRITE1',
   'BIT0',
   'BIT1',
-]);
+];
+
+const core = O.obj();
+
+for(let i = 0; i !== coreFuncNames.length; i++){
+  const name = coreFuncNames[i];
+  const sym = Symbol(name);
+
+  core[name] = sym;
+  core[sym] = name;
+}
 
 const getInfo = val => {
-  if(typeof val !== 'number') return val;
+  if(typeof val !== 'symbol') return String(val);
+
+  const name = val.description;
 
   if(SINGLE_CHAR_COMBINATORS)
-    return 'KSFABCD01'[val];
+    return 'iKSFABCD01'[coreFuncNames.indexOf(name)];
 
   return `{${core[val]}}`;
 };
