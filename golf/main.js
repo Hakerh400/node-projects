@@ -49,6 +49,7 @@ const main = () => {
   O.logb();
   log(unpacked.toString());
   O.logb();
+  O.exit();
 
   // const progNew = parser.parseProg(srcNew, builtins);
   const input = '1011';

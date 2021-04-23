@@ -265,7 +265,7 @@ class PointFree extends Base{
 
   *pack(){
     const pfree = this;
-    const mainFunc = this.getFunc(MAIN_FUNC_NAME);
+    const mainExpr = this.getFunc(MAIN_FUNC_NAME);
 
     const stack = [];
     const calls = O.obj();
@@ -273,6 +273,24 @@ class PointFree extends Base{
     const allArgs = [0];
 
     let exprsNum = 1;
+
+    const getAvailArgs = makeAvailArgsFunc(calls, allArgs);
+
+    const modVal = (mod, val) => {
+      assert(val >= 0);
+      assert(val < mod);
+      assert(mod > 0);
+
+      return [mod, val];
+    };
+
+    const push = (mod, val) => {
+      stack.push(modVal(mod, val));
+    };
+
+    const insert = (index, mod, val) => {
+      stack.splice(index, 0, modVal(mod, val));
+    };
 
     const hasCall = (target, arg) => {
       if(!O.has(calls, target)) return 0;
@@ -290,10 +308,8 @@ class PointFree extends Base{
       calls[target][arg] = index;
     };
 
-    const getAvailArgs = makeAvailArgsFunc(calls, allArgs);
-
     const table = [combs.IOTA];
-    combs.IOTA.index=0
+    combs.IOTA.index = 0
 
     const packExpr = function*(expr, targetPrev=null){
       const availArgs = getAvailArgs(targetPrev);
@@ -301,26 +317,41 @@ class PointFree extends Base{
 
       assert(availArgs.length !== 0);
 
-      const writeOld = index => {
+      const writeOld = function*(index){
         assert(availArgs.length !== 0);
 
-        stack.push([2, 0]);
-        stack.push([availArgs.length, availArgs.indexOf(index)]);
+        const availIndex = availArgs.indexOf(index);
+
+        if(availIndex === -1){
+          log(`expr: ${yield [expr2str, expr]}`);
+          log(`tprev: ${targetPrev !== null ? yield [expr2str, table[targetPrev]] : 'null'}`);
+          log();
+          log((yield [O.mapr, availArgs, function*(index){
+            return O.tco(expr2str, table[index]);
+          }]).join('\n'));
+          log();
+          log(yield [expr2str, table[index]]);
+          O.logb();
+          assert.fail();
+        }
+
+        push(2, 0);
+        push(availArgs.length, availIndex);
       };
 
-      const writeNew = index => {
+      const writeNew = function*(index){
         assert(index === allArgs.length);
         assert(stackIndex < stack.length);
 
         allArgs.push(index);
-        stack.splice(stackIndex, 0, [2, 1]);
+        insert(stackIndex, 2, 1);
       };
 
       if(expr instanceof Combinator){
         const {name} = expr;
 
         if(name === combs.IOTA.name){
-          writeOld(0);
+          yield [writeOld, 0];
           return 0;
         }
 
@@ -329,7 +360,7 @@ class PointFree extends Base{
 
       if(cache.has(expr)){
         const index = cache.get(expr);
-        writeOld(index);
+        yield [writeOld, index];
         return index;
       }
 
@@ -339,7 +370,7 @@ class PointFree extends Base{
       if(hasCall(target, arg)){
         const index = getCall(target, arg);
 
-        writeOld(index);
+        yield [writeOld, index];
         cache.set(expr, index);
 
         return index;
@@ -350,7 +381,7 @@ class PointFree extends Base{
       expr.index = index;
       table.push(expr);
 
-      writeNew(index);
+      yield [writeNew, index];
       addCall(target, arg, index);
       cache.set(expr, index);
 
@@ -412,20 +443,38 @@ class PointFree extends Base{
     };
 
     const stack2str = () => {
-      return stack.map(a => a.join(' ')).join('\n');
+      return stack.map(([mod, val]) => {
+        assert(val < mod);
+
+        if(mod === 1) return '';
+        if(mod === 2) return val;
+        return ` [${mod}.${val}] `;
+      }).join('').trim().replace(/\s+/g, ' ');
     };
 
-    yield [packExpr, mainFunc];
+    yield [packExpr, mainExpr];
 
     // log(table[2].arg);
+    log(stack2str());
     O.logb();
-    log((yield [O.mapr, table, function*(a, b){
-      if(b === 0) return '0'
+    log((yield [O.mapr, table, function*(expr, index){
+      const name = index === table.length - 1 ? 'main' : String(index);
 
-      return `${b} - ${yield [getIndex, a.target]} ${yield [getIndex, a.arg]}`;
+      let exprStr = null;
+
+      if(expr instanceof Combinator){
+        exprStr = name2str(expr.name);
+      }else{
+        const targetIndex = yield [getIndex, expr.target];
+        const argIndex = yield [getIndex, expr.arg];
+
+        exprStr = `${targetIndex} ${argIndex}`;
+      }
+
+      return `${`${name} - ${exprStr}`.padEnd(20)}${expr}`;
     }]).join('\n'));
     // O.logb();
-    // log(yield [expr2str, mainFunc]);
+    // log(yield [expr2str, mainExpr]);
     // log(stack2str());
     // O.exit();
 
