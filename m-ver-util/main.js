@@ -9,7 +9,7 @@ const strs = require('../strs');
 const fsRec = require('../fs-rec');
 
 const VERSION_MAJOR = '1.17';
-const VERSION = '21w16a';
+const VERSION = '21w17a';
 
 const EMPTY_SOUND_HASH = '7f31c0bcfab392513ac53c75ac30f18bfc8d18da';
 
@@ -58,9 +58,10 @@ const main = () => {
   fs.mkdirSync(jarDir);
 
   log(`Extracting the JAR archive`);
-  cp.spawnSync('jar', ['-xf', jarFile], {
+  spawn('jar', ['-xf', jarFile], {
     cwd: jarDir,
   });
+  O.exit()
 
   log(`Deleting the original JAR file`);
   fs.unlinkSync(jarFile);
@@ -199,7 +200,7 @@ const main = () => {
   });
 
   log(`Compressing into JAR archive`);
-  cp.spawnSync('jar', ['cMf', jarFile, '*'], {
+  spawn('jar', ['cMf', jarFile, '*'], {
     cwd: jarDir,
   });
 
@@ -213,6 +214,15 @@ const exec = func => {
   log.inc();
   const result = func();
   log.dec();
+
+  return result;
+};
+
+const spawn = (...args) => {
+  const result = cp.spawnSync(...args);
+
+  if(result.error)
+    throw result.error;
 
   return result;
 };
