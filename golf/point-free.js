@@ -11,6 +11,8 @@ const opts = require('./opts');
 
 const {MAIN_FUNC_NAME} = opts;
 
+const builtinsNum = 1;
+
 const emptyArr = [];
 
 const name2str = name => {
@@ -267,221 +269,66 @@ class PointFree extends Base{
     const pfree = this;
     const mainExpr = this.getFunc(MAIN_FUNC_NAME);
 
-    const stack = [];
-    const calls = O.obj();
-    const cache = new Map();
-    const allArgs = [0];
+    const createTable = function*(expr){
+      const table = O.ca(builtinsNum, () => null);
+      const targetArgMap = O.obj();
 
-    let exprsNum = 1;
+      const insertExpr = function*(expr){
+        if(expr instanceof Combinator){
+          const {name} = expr;
 
-    const getAvailArgs = makeAvailArgsFunc(calls, allArgs);
+          if(pfree.hasFunc(name))
+            return O.tco(insertExpr, pfree.getFunc(name))
 
-    const modVal = (mod, val) => {
-      assert(val >= 0);
-      assert(val < mod);
-      assert(mod > 0);
-
-      return [mod, val];
-    };
-
-    const push = (mod, val) => {
-      stack.push(modVal(mod, val));
-    };
-
-    const insert = (index, mod, val) => {
-      stack.splice(index, 0, modVal(mod, val));
-    };
-
-    const hasCall = (target, arg) => {
-      if(!O.has(calls, target)) return 0;
-      return O.has(calls[target], arg);
-    };
-
-    const getCall = (target, arg) => {
-      return calls[target][arg];
-    };
-
-    const addCall = (target, arg, index) => {
-      if(!O.has(calls, target))
-        calls[target] = O.obj();
-      
-      calls[target][arg] = index;
-    };
-
-    const table = [combs.IOTA];
-    combs.IOTA.index = 0
-
-    const packExpr = function*(expr, targetPrev=null){
-      const availArgs = getAvailArgs(targetPrev);
-      const stackIndex = stack.length;
-
-      assert(availArgs.length !== 0);
-
-      const writeOld = function*(index){
-        assert(availArgs.length !== 0);
-
-        const availIndex = availArgs.indexOf(index);
-
-        if(availIndex === -1){
-          log(`expr: ${yield [expr2str, expr]}`);
-          log(`tprev: ${targetPrev !== null ? yield [expr2str, table[targetPrev]] : 'null'}`);
-          log();
-          log((yield [O.mapr, availArgs, function*(index){
-            return O.tco(expr2str, table[index]);
-          }]).join('\n'));
-          log();
-          log(yield [expr2str, table[index]]);
-          O.logb();
-          assert.fail();
-        }
-
-        push(2, 0);
-        push(availArgs.length, availIndex);
-      };
-
-      const writeNew = function*(index){
-        assert(index === allArgs.length);
-        assert(stackIndex < stack.length);
-
-        allArgs.push(index);
-        insert(stackIndex, 2, 1);
-      };
-
-      if(expr instanceof Combinator){
-        const {name} = expr;
-
-        if(name === combs.IOTA.name){
-          yield [writeOld, 0];
+          assert(name === combs.IOTA.name);
           return 0;
         }
 
-        return O.tco(packExpr, pfree.getFunc(name), targetPrev);
-      }
+        assert(expr instanceof Application);
 
-      if(cache.has(expr)){
-        const index = cache.get(expr);
-        yield [writeOld, index];
-        return index;
-      }
+        const target = yield [insertExpr, expr.target];
+        const arg = yield [insertExpr, expr.arg];
 
-      const target = yield [packExpr, expr.target];
-      const arg = yield [packExpr, expr.arg, target];
+        if(!O.has(targetArgMap, target))
+          targetArgMap[target] = O.obj();
 
-      if(hasCall(target, arg)){
-        const index = getCall(target, arg);
+        if(!O.has(targetArgMap[target], arg)){
+          targetArgMap[target][arg] = table.length;
+          table.push([target, arg]);
+        }
 
-        yield [writeOld, index];
-        cache.set(expr, index);
+        return targetArgMap[target][arg];
+      };
 
-        return index;
-      }
+      yield [insertExpr, expr];
 
-      const index = exprsNum++;
-
-      expr.index = index;
-      table.push(expr);
-
-      yield [writeNew, index];
-      addCall(target, arg, index);
-      cache.set(expr, index);
-
-      return index;
+      return table;
     };
 
-    const expandExpr = function*(expr){
-      let exprNew = null;
+    const serTable = function*(tableOrig){
+      const ser = new O.NatSerializer();
+      const table = O.ca(builtinsNum, () => null);
+      const targetArgMap = O.obj();
+      let remainingExprs = 1;
 
-      if(expr instanceof Combinator){
-        const {name} = expr;
+      const serIndex = function*(index){
+        
+      };
 
-        if(name === combs.IOTA.name)
-          return 'i';
+      yield [serIndex, table.length - 1];
 
-        exprNew = yield [expandExpr, pfree.getFunc(name)];
-      }else{
-        const target = yield [expandExpr, expr.target];
-        const arg = yield [expandExpr, expr.arg];
-
-        exprNew = new Application(target, arg);
-      }
-
-      return exprNew;
+      return ser.output;
     };
 
-    const expr2str = function*(expr, parens=0){
-      if(expr instanceof Combinator){
-        const {name} = expr;
+    const table = yield [createTable, mainExpr];
 
-        if(name === combs.IOTA.name)
-          return 'i';
-
-        return O.tco(expr2str, pfree.getFunc(name), parens);
-      }
-
-      const target = yield [expr2str, expr.target];
-      const arg = yield [expr2str, expr.arg, 1];
-      const str = `${target}${arg}`;
-
-      if(parens) return `(${str})`;
-      return str;
-    };
-
-    const getIndex = function*(expr){
-      if(expr instanceof Combinator){
-        const {name} = expr;
-
-        if(name === combs.IOTA.name)
-          return 0;
-
-        return O.tco(getIndex, pfree.getFunc(name));
-      }
-
-      const target = yield [getIndex, expr.target];
-      const arg = yield [getIndex, expr.arg];
-
-      return getCall(target, arg);
-    };
-
-    const stack2str = () => {
-      return stack.map(([mod, val]) => {
-        assert(val < mod);
-
-        if(mod === 1) return '';
-        if(mod === 2) return val;
-        return ` [${mod}.${val}] `;
-      }).join('').trim().replace(/\s+/g, ' ');
-    };
-
-    yield [packExpr, mainExpr];
-
-    // log(table[2].arg);
-    log(stack2str());
+    log(table.map((a, i) => {
+      const str = a !== null ? a.join(' ') : 'i';
+      return `${i} - ${str}`;
+    }).join('\n'));
     O.logb();
-    log((yield [O.mapr, table, function*(expr, index){
-      const name = index === table.length - 1 ? 'main' : String(index);
 
-      let exprStr = null;
-
-      if(expr instanceof Combinator){
-        exprStr = name2str(expr.name);
-      }else{
-        const targetIndex = yield [getIndex, expr.target];
-        const argIndex = yield [getIndex, expr.arg];
-
-        exprStr = `${targetIndex} ${argIndex}`;
-      }
-
-      return `${`${name} - ${exprStr}`.padEnd(20)}${expr}`;
-    }]).join('\n'));
-    // O.logb();
-    // log(yield [expr2str, mainExpr]);
-    // log(stack2str());
-    // O.exit();
-
-    const ser = new O.NatSerializer();
-
-    for(const [mod, num] of stack)
-      ser.write(mod, num);
+    O.exit();
 
     return ser.output;
   }
