@@ -61,7 +61,6 @@ const main = () => {
   spawn('jar', ['-xf', jarFile], {
     cwd: jarDir,
   });
-  O.exit()
 
   log(`Deleting the original JAR file`);
   fs.unlinkSync(jarFile);
