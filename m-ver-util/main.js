@@ -180,7 +180,7 @@ const main = () => {
 
     log(`Removing the portal sound`);
     exec(() => {
-      const key = 'minecraft/sounds/portal/portal.ogg';
+      const key = `${strs.m}/sounds/portal/portal.ogg`;
       assert(O.has(objs, key));
       objs[key].hash = EMPTY_SOUND_HASH;
     });
