@@ -305,23 +305,92 @@ class PointFree extends Base{
       return table;
     };
 
-    const serTable = function*(tableOrig){
+    const serTable = function*(table){
       const ser = new O.NatSerializer();
-      const table = O.ca(builtinsNum, () => null);
       const targetArgMap = O.obj();
+      const tableIndices = [0];
+
       let remainingExprs = 1;
 
-      const serIndex = function*(index){
-        
+      const write = (mod, val) => {
+        // debugger;
+        log(mod, val);
+        ser.write(mod, val);
       };
 
-      yield [serIndex, table.length - 1];
+      const serIndex = function*(targetIndex, index){
+        const hasMore = remainingExprs !== 1;
+        const isOld = index < tableIndices.length;
+
+        if(hasMore){
+          if(isOld){
+            write(2, 0);
+            writeOldIndex(targetIndex, index);
+            return;
+          }
+
+          write(2, 1);
+          yield [writeNewIndex, index];
+
+          return;
+        }
+
+        if(isOld){
+          writeOldIndex(targetIndex, index);
+          return;
+        }
+
+        write(1, getAvailArgs().length);
+        yield [writeNewIndex, index];
+      };
+
+      const writeNewIndex = function*(index){
+        const [target, arg] = table[index];
+
+        remainingExprs++;
+        yield [serIndex, null, target];
+
+        remainingExprs--;
+        yield [serIndex, target, arg];
+
+        tableIndices.push(tableIndices.length);
+
+        if(!O.has(targetArgMap, target))
+          targetArgMap[target] = O.obj();
+
+        targetArgMap[target][arg] = index;
+      };
+
+      const writeOldIndex = (targetIndex, index) => {
+        const availArgs = getAvailArgs(targetIndex);
+        const newIndex = availArgs.indexOf(index);
+
+        assert(newIndex !== -1);
+        write(availArgs.length, newIndex);
+      };
+
+      const getAvailArgs = targetIndex => {
+        if(targetIndex === null || !O.has(targetArgMap, targetIndex))
+          return tableIndices;
+
+        const oldArgs = targetArgMap[targetIndex];
+
+        const availArgs = tableIndices.filter(i => {
+          return !O.has(oldArgs, i);
+        });
+
+        return availArgs;
+      };
+
+      yield [serIndex, null, table.length - 1];
 
       return ser.output;
     };
 
     const table = yield [createTable, mainExpr];
+    const serd = yield [serTable, table];
 
+    O.logb();
     log(table.map((a, i) => {
       const str = a !== null ? a.join(' ') : 'i';
       return `${i} - ${str}`;
