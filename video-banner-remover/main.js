@@ -66,7 +66,7 @@ const main = () => {
     const w = width;
     const h = height * 0.0625 + 5;
 
-    fg(`-i "${pth1}" -c:a copy -vf "format=yuv420p,drawbox=enable='between(t,${start},${end})':x=${x}:y=${y}:w=${w}:h=${h}:color=#808080:t=fill" "${pth2}"`);
+    fg(`-i "${pth1}" -c:a copy -vf "format=yuv420p,drawbox=enable='between(t,${start},${end})':x=${x}:y=${y}:w=${w}:h=${h}:color=#808080:t=fill" -max_muxing_queue_size 2048 "${pth2}"`);
 
     fs.renameSync(pth2, pth3);
   });
