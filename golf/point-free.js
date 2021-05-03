@@ -168,7 +168,7 @@ class PointFree extends Base{
     // }).join('\n'));
     // O.exit();
 
-    const iotaSym = core.IOTA.description;
+    const iotaSym = core.IOTA;
 
     const prog = new cs.Program({
       [iotaSym]: new cs.FunctionDefinition(iotaSym, emptyArr, new cs.Expression(core.IOTA, [])),

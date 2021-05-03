@@ -31,7 +31,10 @@ for(let i = 0; i !== coreFuncNames.length; i++){
 }
 
 const getInfo = val => {
-  if(typeof val !== 'symbol') return String(val);
+  if(typeof val !== 'symbol')
+    return String(val);
+
+  assert(typeof val === 'symbol');
 
   const name = val.description;
 

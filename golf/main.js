@@ -49,10 +49,10 @@ const main = () => {
   O.logb();
   log(unpacked.toString());
   O.logb();
-  O.exit();
+  // O.exit();
 
   const progNew = unpacked;
-  const input = '1011';
+  const input = '0';
   const output = run(unpacked, input);
   
   log(output);
