@@ -76,7 +76,7 @@ class PointFree extends Base{
 
   static *unpack(str){
     const str2int = str => {
-      const buf = Buffer.from(str);
+      const buf = Buffer.from(str.replace(/\s+/g, ''));
       const ser = new O.NatSerializer();
 
       for(const byte of buf){
@@ -436,7 +436,7 @@ class PointFree extends Base{
     while(ser.nz)
       bytes.push(0x21 + Number(ser.read(94)));
 
-    return Buffer.from(bytes).toString();
+    return O.match(Buffer.from(bytes).toString(), /.{100}|.*/g).join('\n');
   }
 
   *toStr(){

@@ -49,7 +49,7 @@ const main = () => {
   O.logb();
   log(unpacked.toString());
   O.logb();
-  // O.exit();
+  O.exit();
 
   const progNew = unpacked;
   const input = '1011';

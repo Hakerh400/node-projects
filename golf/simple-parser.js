@@ -131,8 +131,8 @@ class SimpleParser{
     const msgStr = msg !== null ? `: ${msg}` : '';
 
     const near = this.str.trim() ?
-      `\n\nNear: ${this.str.slice(0, 100)}` :
-      `Near the end of the ${this.structName}`;
+      `\nNear: ${this.str.slice(0, 100)}` :
+      `\nNear the end of the ${this.structName}`;
 
     error(`Syntax error${msgStr}${near}`);
   }
