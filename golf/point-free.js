@@ -436,7 +436,7 @@ class PointFree extends Base{
     while(ser.nz)
       bytes.push(0x21 + Number(ser.read(94)));
 
-    return O.match(Buffer.from(bytes).toString(), /.{100}|.*/g).join('\n');
+    return O.match(Buffer.from(bytes).toString(), /.{100}|.+/g).join('\n');
   }
 
   *toStr(){
