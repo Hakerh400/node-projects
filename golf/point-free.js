@@ -74,8 +74,114 @@ class PointFree extends Base{
     return pfree;
   }
 
-  static *unpack(n){
-    
+  static *unpack(str){
+    const str2int = str => {
+      const buf = Buffer.from(str);
+      const ser = new O.NatSerializer();
+
+      for(const byte of buf){
+        ser.inc();
+        ser.write(94, byte - 0x21);
+      }
+
+      return ser.output;
+    };
+
+    const parseTable = function*(n){
+      const table = O.ca(builtinsNum, () => null);
+
+      const ser = new O.NatSerializer(n);
+      const targetArgMap = O.obj();
+      const tableIndices = [0];
+
+      let remainingExprs = 1;
+
+      const parseIndex = function*(targetIndex){
+        const hasMore = remainingExprs !== 1;
+        const availArgs = getAvailArgs(targetIndex);
+        const availsNum = availArgs.length;
+
+        if(!ser.input) debugger;
+
+        if(hasMore){
+          const isOld = !ser.read(2);
+
+          if(isOld)
+            return availArgs[ser.read(availsNum)];
+
+          return O.tco(parseNewIndex, availArgs);
+        }
+
+        const isOld = ser.input < availsNum;
+
+        if(isOld)
+          return availArgs[ser.read(availsNum)];
+
+        ser.input -= BigInt(availsNum);
+        return O.tco(parseNewIndex, availArgs);
+      };
+
+      const parseNewIndex = function*(availArgs){
+        remainingExprs++;
+        const target = yield [parseIndex, null];
+
+        remainingExprs--;
+        const arg = yield [parseIndex, target];
+
+        const index = table.length;
+        assert(tableIndices.length === index);
+
+        table.push([target, arg]);
+        tableIndices.push(index);
+
+        if(!O.has(targetArgMap, target))
+          targetArgMap[target] = O.obj();
+
+        targetArgMap[target][arg] = index;
+        return index;
+      };
+
+      const getAvailArgs = targetIndex => {
+        if(targetIndex === null || !O.has(targetArgMap, targetIndex))
+          return tableIndices;
+
+        const oldArgs = targetArgMap[targetIndex];
+
+        const availArgs = tableIndices.filter(i => {
+          return !O.has(oldArgs, i);
+        });
+
+        return availArgs;
+      };
+
+      yield [parseIndex, null];
+
+      return table;
+    };
+
+    const serd = str2int(str);
+    const table = yield [parseTable, serd];
+
+    // log(table.map((a, i) => {
+    //   const str = a !== null ? a.join(' ') : 'i';
+    //   return `${i} - ${str}`;
+    // }).join('\n'));
+    // O.exit();
+
+    const iotaSym = core.IOTA.description;
+
+    const prog = new cs.Program({
+      [iotaSym]: new cs.FunctionDefinition(iotaSym, emptyArr, new cs.Expression(core.IOTA, [])),
+    });
+
+    prog.addFunc(new cs.FunctionDefinition(0, emptyArr, new cs.Expression(iotaSym, [])));
+
+    for(let i = 1; i !== table.length; i++){
+      const [target, arg] = table[i];
+      prog.addFunc(new cs.FunctionDefinition(i, emptyArr, new cs.Expression(target, [arg])));
+    }
+
+    return prog;
   }
 
   funcs = O.obj();
@@ -239,7 +345,7 @@ class PointFree extends Base{
 
       const write = (mod, val) => {
         // debugger;
-        log(mod, val);
+        // log(mod, val);
         ser.write(mod, val);
       };
 
@@ -265,8 +371,8 @@ class PointFree extends Base{
           return;
         }
 
-        write(1, getAvailArgs().length);
-        yield [writeNewIndex, index];
+        write(1, getAvailArgs(targetIndex).length);
+        return O.tco(writeNewIndex, index);
       };
 
       const writeNewIndex = function*(index){
@@ -315,16 +421,22 @@ class PointFree extends Base{
     const table = yield [createTable, mainExpr];
     const serd = yield [serTable, table];
 
-    O.logb();
-    log(table.map((a, i) => {
-      const str = a !== null ? a.join(' ') : 'i';
-      return `${i} - ${str}`;
-    }).join('\n'));
-    O.logb();
+    // O.logb();
+    // log(table.map((a, i) => {
+    //   const str = a !== null ? a.join(' ') : 'i';
+    //   return `${i} - ${str}`;
+    // }).join('\n'));
+    // O.logb();
+    // log(serd);
+    // O.exit();
 
-    O.exit();
+    const ser = new O.NatSerializer(serd);
+    const bytes = [];
 
-    return ser.output;
+    while(ser.nz)
+      bytes.push(0x21 + Number(ser.read(94)));
+
+    return Buffer.from(bytes).toString();
   }
 
   *toStr(){
@@ -458,7 +570,7 @@ class Application extends Expression{
 }
 
 const combs = {
-  IOTA: new Combinator(Symbol('i')),
+  IOTA: new Combinator(Symbol('IOTA')),
   I: new Combinator(Symbol('I')),
   K: new Combinator(Symbol('K')),
   S: new Combinator(Symbol('S')),

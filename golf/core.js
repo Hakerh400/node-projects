@@ -35,8 +35,15 @@ const getInfo = val => {
 
   const name = val.description;
 
-  if(SINGLE_CHAR_COMBINATORS)
-    return 'iKSFABCD01'[coreFuncNames.indexOf(name)];
+  if(SINGLE_CHAR_COMBINATORS){
+    const str = 'iKSFABCD01';
+    const index = coreFuncNames.indexOf(name);
+
+    assert(index !== -1);
+    assert(index < str.length);
+
+    return str[index];
+  }
 
   return `{${core[val]}}`;
 };

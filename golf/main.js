@@ -45,13 +45,13 @@ const main = () => {
   const packed = O.rec([pfree, 'pack']);
   const unpacked = O.rec([PointFree, 'unpack'], packed);
 
-  // log(packed);
+  log(packed);
   O.logb();
   log(unpacked.toString());
   O.logb();
-  O.exit();
+  // O.exit();
 
-  // const progNew = parser.parseProg(srcNew, builtins);
+  const progNew = unpacked;
   const input = '1011';
   const output = run(unpacked, input);
   
@@ -85,7 +85,7 @@ const run = (prog, input) => {
     }
   };
 
-  const list = ['main'];
+  const list = [O.last(prog.funcsArr).name];
   const popped = [];
 
   const top = () => {
@@ -129,6 +129,7 @@ const run = (prog, input) => {
   };
 
   const push = elem => {
+    // assert(elem !== null);
     list.push(elem);
   };
 
@@ -282,49 +283,49 @@ const run = (prog, input) => {
   let iterCnt = 0;
 
   while(!end){
-    showDbgInfo: if(DEBUG){
-      logList: {
-        if(SINGLE_CHAR_COMBINATORS){
-          let s = list.
-            filter(a => !(a instanceof cs.Reduce)).
-            reverse().
-            map((elem, index) => {
-              let s = String(core.getInfo(elem));
-              if(index !== 0 && s.includes(' ')) s = `(${s})`;
-              return s;
-            }).join(' ');
-
-          if(!SPACE)
-            s = s.replace(/\s+/g, '');
-
-          if(s === sPrev)
-            break showDbgInfo;
-
-          sPrev = s;
-
-          O.logb();
-          log(s);
-          
-          break logList;
-        }
-
-        O.logb();
-
-        for(let i = list.length - 1; i !== -1; i--){
-          const elem = list[i];
-          if(elem instanceof cs.Reduce) continue;
-
-          let s = String(core.getInfo(elem));
-
-          if(!SPACE)
-            s = s.replace(' ', '');
-
-          log(s);
-        }
-      }
-
-      // debug();
-    }
+    // showDbgInfo: if(DEBUG){
+    //   logList: {
+    //     if(SINGLE_CHAR_COMBINATORS){
+    //       let s = list.
+    //         filter(a => !(a instanceof cs.Reduce)).
+    //         reverse().
+    //         map((elem, index) => {
+    //           let s = String(core.getInfo(elem));
+    //           if(index !== 0 && s.includes(' ')) s = `(${s})`;
+    //           return s;
+    //         }).join(' ');
+    //
+    //       if(!SPACE)
+    //         s = s.replace(/\s+/g, '');
+    //
+    //       if(s === sPrev)
+    //         break showDbgInfo;
+    //
+    //       sPrev = s;
+    //
+    //       O.logb();
+    //       log(s);
+    //
+    //       break logList;
+    //     }
+    //
+    //     O.logb();
+    //
+    //     for(let i = list.length - 1; i !== -1; i--){
+    //       const elem = list[i];
+    //       if(elem instanceof cs.Reduce) continue;
+    //
+    //       let s = String(core.getInfo(elem));
+    //
+    //       if(!SPACE)
+    //         s = s.replace(' ', '');
+    //
+    //       log(s);
+    //     }
+    //   }
+    //
+    //   // debug();
+    // }
 
     iterCnt++;
 
