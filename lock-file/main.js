@@ -26,8 +26,20 @@ const main = async () => {
     return;
   }
 
-  for(const file of chFiles)
-    await processPth(pth.replace('*', file));
+  const locked = [];
+  const unlocked = [];
+
+  for(const file of chFiles){
+    const pthNew = pth.replace('*', file);
+    const isLocked = await processPth(pthNew);
+
+    if(isLocked) locked.push(pthNew);
+    else unlocked.push(pthNew);
+  }
+
+  if(locked.length !== 0 && unlocked.length !== 0)
+    for(const file of unlocked)
+      await processPth(file);
 };
 
 const processPth = async pth => {
@@ -57,6 +69,8 @@ const processPth = async pth => {
   }
 
   log.dec();
+
+  return locked;
 };
 
 const isLocked = async pth => {
