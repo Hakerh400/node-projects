@@ -39,7 +39,7 @@ const main = async () => {
       if(str === '')
         return;
 
-      if(str === 'q' || str === 'exit'){
+      if(/^\:?(?:q(?:uit)?|exit)$/.test(str)){
         exit();
         return;
       }
