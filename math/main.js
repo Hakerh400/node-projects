@@ -14,7 +14,7 @@ const main = () => {
   const src = O.rfs(srcFile, 1);
   const system = parser.parse(src);
 
-  log(system);
+  log(system.toString());
 };
 
 main();

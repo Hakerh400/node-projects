@@ -5,6 +5,8 @@ const path = require('path');
 const assert = require('assert');
 const O = require('../omikron');
 
+const n2 = '\n'.repeat(2);
+
 class Base extends O.Stringifiable{}
 
 class System extends Base{
@@ -50,7 +52,27 @@ class System extends Base{
     assert(!this.hasFunc(name));
 
     this.funcsArr.push(func);
-    this.funcsObj[name] = type;
+    this.funcsObj[name] = func;
+  }
+
+  toStr(){
+    const {typesArr, funcsArr} = this;
+    const typesNum = typesArr.length;
+    const funcsNum = funcsArr.length;
+
+    const arr = [];
+
+    if(typesNum !== 0){
+      this.join(arr, typesArr, n2);
+
+      if(funcsNum !== 0)
+        arr.push(n2);
+    }
+
+    if(funcsNum !== 0)
+      this.join(arr, funcsArr, n2);
+
+    return arr;
   }
 }
 
@@ -106,7 +128,7 @@ class TypeDef extends Base{
         arr.push(' |');
     }
 
-    arr.push(this.def);
+    arr.push(this.dec);
 
     return arr;
   }
@@ -156,11 +178,16 @@ class Type extends Base{
   }
 
   addArg(arg){
+    assert(arg !== this);
     this.args.push(arg);
   }
 
   toStr(){
     const {name, args} = this;
+
+    if(this.isFunc)
+      return this.join([], args, ` ${name} `);
+
     const arr = [name];
 
     for(const arg of args)
@@ -190,7 +217,7 @@ class FuncDef extends Base{
 
   toStr(){
     const {name, signature, cases} = this;
-    const arr = [name, ' :: ', signature, '\n'];
+    const arr = [name, ' :: ', signature];
 
     for(const fcase of cases)
       arr.push('\n', fcase);
@@ -213,11 +240,12 @@ class FuncCase extends Base{
   get arity(){ return this.args.length; }
 
   addArg(arg){
+    assert(arg instanceof Expr);
     this.args.push(arg);
   }
 
   setExpr(expr){
-    assert(expr instanceof Expression);
+    assert(expr instanceof Expr);
     assert(this.expr === null);
 
     this.expr = expr;
@@ -227,10 +255,61 @@ class FuncCase extends Base{
     const {name, args, expr} = this;
     const arr = [name];
 
-    for(const arg of args)
-      arr.push(' ', arg);
+    assert(expr !== null);
+
+    for(const arg of args){
+      arr.push(' ');
+
+      if(arg.isCall) arr.push('(');
+      arr.push(arg);
+      if(arg.isCall) arr.push(')');
+    }
 
     arr.push(' = ', expr);
+
+    return arr;
+  }
+}
+
+class Expr extends Base{
+  get isIdent(){ return 0; }
+  get isCall(){ return 0; }
+}
+
+class Ident extends Expr{
+  constructor(name){
+    super();
+
+    assert(isIdentName(name));
+    this.name = name;
+  }
+
+  get isIdent(){ return 1; }
+
+  isCtor(){ return isCtorName(this.name); }
+
+  toStr(){
+    return this.name;
+  }
+}
+
+class Call extends Expr{
+  constructor(target, arg){
+    super();
+
+    this.target = target;
+    this.arg = arg;
+  }
+
+    get isCall(){ return 1; }
+
+  toStr(){
+    const {target, arg} = this;
+    const arr = [target, ' '];
+
+    if(arg.isCall) arr.push('(');
+    arr.push(arg);
+    if(arg.isCall) arr.push(')');
 
     return arr;
   }
@@ -246,11 +325,11 @@ const isCtorName = str => {
 };
 
 const isFuncName = str => {
-  return isIdentName(str)
+  return /^[a-z][a-zA-Z0-9]*$/.test(str);
 };
 
 const isIdentName = str => {
-  return /^[a-z][a-zA-Z0-9]*$/.test(str);
+  return /^[a-zA-Z0-9]+$/.test(str);
 };
 
 const isCapitalized = str => {
@@ -265,6 +344,9 @@ module.exports = {
   Type,
   FuncDef,
   FuncCase,
+  Expr,
+  Ident,
+  Call,
 
   isTypeName,
   isCtorName,

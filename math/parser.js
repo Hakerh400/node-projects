@@ -48,6 +48,8 @@ const parse = src => {
 
         const fcase = O.rec(parseFuncCase, info);
         funcDef.addCase(fcase);
+
+        i++;
       }
 
       i--;
@@ -165,9 +167,11 @@ const parseSignature = function*(str){
       continue;
     }
 
-    type = new cs.Type('->');
-    type.addArg(t);
-    type.addArg(type);
+    const type1 = new cs.Type('->');
+    type1.addArg(t);
+    type1.addArg(type);
+
+    type = type1;
   }
 
   assert(type !== null);
@@ -188,11 +192,79 @@ const parseFuncCase = function*(info){
   const funcName = match[0];
   const fcase = new cs.FuncCase(funcName);
 
-  const args = yield [parseFormalArgs, lhs.slice(funcName.length)];
+  const argsStr = lhs.slice(funcName.length);
+  const args = yield [parseFormalArgs, argsStr];
 
-  O.exit(args);
+  for(const arg of args)
+    fcase.addArg(arg);
+
+  const [expr] = yield [parseExpr, rhs];
+  fcase.setExpr(expr);
 
   return fcase;
+};
+
+const parseFormalArgs = function*(str){
+  str = str.trim();
+
+  if(str.length === 0)
+    return [];
+
+  let expr = null;
+
+  if(str[0] === '('){
+    [expr, str] = yield [parseExpr, str.slice(1)];
+
+    str = str.trim();
+    assert(str.startsWith(')'));
+
+    str = str.slice(1);
+  }else{
+    const match = str.match(/^[a-zA-Z0-9]+/);
+    assert(match !== null);
+
+    const ident = match[0];
+    str = str.slice(ident.length);
+
+    expr = new cs.Ident(ident);
+  }
+
+  return [expr, ...yield [parseFormalArgs, str]];
+};
+
+const parseExpr = function*(str){
+  str = str.trim();
+
+  assert(str.length !== 0);
+  assert(!str.startsWith(')'));
+
+  let expr = null;
+
+  if(str[0] === '('){
+    [expr, str] = yield [parseExpr, str.slice(1)];
+
+    str = str.trim();
+    assert(str.startsWith(')'));
+
+    str = str.slice(1);
+  }else{
+    const match = str.match(/^[a-zA-Z0-9]+/);
+    assert(match !== null);
+
+    const ident = match[0];
+    str = str.slice(ident.length);
+
+    expr = new cs.Ident(ident);
+  }
+
+  str = str.trim();
+
+  if(str.length === 0 || str.startsWith(')'))
+    return [expr, str];
+
+  const [expr1, str1] = yield [parseExpr, str];
+
+  return [new cs.Call(expr, expr1), str1];
 };
 
 module.exports = {
