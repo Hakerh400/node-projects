@@ -11,6 +11,9 @@ class System extends Base{
   typesArr = [];
   typesObj = O.obj();
 
+  funcsArr = [];
+  funcsObj = O.obj();
+
   hasType(name){
     return O.has(this.typesObj, name);
   }
@@ -28,6 +31,26 @@ class System extends Base{
 
     this.typesArr.push(type);
     this.typesObj[name] = type;
+  }
+
+  hasFunc(name){
+    return O.has(this.funcsObj, name);
+  }
+
+  getFunc(name){
+    assert(this.hasFunc(name));
+    return this.funcsObj[name];
+  }
+
+  addFunc(func){
+    assert(func instanceof FuncDef);
+    assert(func.cases.length !== 0);
+
+    const {name} = func;
+    assert(!this.hasFunc(name));
+
+    this.funcsArr.push(func);
+    this.funcsObj[name] = type;
   }
 }
 
@@ -99,6 +122,8 @@ class CtorDef extends Base{
     this.name = name;
   }
 
+  get arity(){ return this.args.length; }
+
   addArg(arg){
     this.args.push(arg);
   }
@@ -124,6 +149,12 @@ class Type extends Base{
     this.name = name;
   }
 
+  get isFunc(){
+    if(this.name !== '->') return 0;
+    assert(this.args.length === 2);
+    return 1;
+  }
+
   addArg(arg){
     this.args.push(arg);
   }
@@ -139,7 +170,74 @@ class Type extends Base{
   }
 }
 
+class FuncDef extends Base{
+  cases = [];
+
+  constructor(name, signature){
+    super();
+
+    assert(isFuncName(name));
+
+    this.name = name;
+    this.signature = signature;
+  }
+
+  addCase(fcase){
+    const {name} = fcase;
+    assert(name === this.name);
+    this.cases.push(fcase);
+  }
+
+  toStr(){
+    const {name, signature, cases} = this;
+    const arr = [name, ' :: ', signature, '\n'];
+
+    for(const fcase of cases)
+      arr.push('\n', fcase);
+
+    return arr;
+  }
+}
+
+class FuncCase extends Base{
+  args = [];
+  expr = null;
+
+  constructor(name){
+    super();
+
+    assert(isFuncName(name));
+    this.name = name;
+  }
+
+  get arity(){ return this.args.length; }
+
+  addArg(arg){
+    this.args.push(arg);
+  }
+
+  setExpr(expr){
+    assert(expr instanceof Expression);
+    assert(this.expr === null);
+
+    this.expr = expr;
+  }
+
+  toStr(){
+    const {name, args, expr} = this;
+    const arr = [name];
+
+    for(const arg of args)
+      arr.push(' ', arg);
+
+    arr.push(' = ', expr);
+
+    return arr;
+  }
+}
+
 const isTypeName = str => {
+  if(str === '->') return 1;
   return isCapitalized(str);
 };
 
@@ -147,8 +245,16 @@ const isCtorName = str => {
   return isCapitalized(str);
 };
 
+const isFuncName = str => {
+  return isIdentName(str)
+};
+
+const isIdentName = str => {
+  return /^[a-z][a-zA-Z0-9]*$/.test(str);
+};
+
 const isCapitalized = str => {
-  return /^[A-Z][a-z0-9]*$/.test(str);
+  return /^[A-Z][a-zA-Z0-9]*$/.test(str);
 };
 
 module.exports = {
@@ -157,6 +263,8 @@ module.exports = {
   TypeDef,
   CtorDef,
   Type,
+  FuncDef,
+  FuncCase,
 
   isTypeName,
   isCtorName,

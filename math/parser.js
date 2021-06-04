@@ -11,22 +11,52 @@ const parse = src => {
   const defs = parseDefs(src);
   const defsNum = defs.length;
 
-  for(let i = 0; i !== defs.length; i++){
+  for(let i = 0; i !== defsNum; i++){
     const info = defs[i];
-
     const start = info[0];
+
     assert(typeof start === 'string');
 
     if(/^data\b/.test(start)){
-      const str = O.rec(stringifyDef, info);
+      const str = O.rec(stringify, info);
       system.addType(O.rec(parseTypeDef, str));
-
       continue;
     }
 
     if(/^[a-z][a-zA-Z0-9]*\s*\:\:/.test(start)){
-      const funcName = start.split(':')[0];
+      const str = O.rec(stringify, info);
+      const parts = str.split(/\s*\:\:\s*/);
+      assert(parts.length === 2);
+
+      const funcName = parts[0];
+      const signature = O.rec(parseSignature, parts[1]);
+      const funcDef = new cs.FuncDef(funcName, signature);
+
+      i++;
+
+      while(1){
+        if(i === defsNum) break;
+
+        const info = defs[i];
+        const start = info[0];
+
+        assert(typeof start === 'string');
+
+        const match = start.match(/^[a-z][a-zA-Z0-9]*/);
+        if(match === null) break;
+        if(match[0] !== funcName) break;
+
+        const fcase = O.rec(parseFuncCase, info);
+        funcDef.addCase(fcase);
+      }
+
+      i--;
+
+      system.addFunc(funcDef);
+      continue;
     }
+
+    assert.fail(info);
   }
 
   return system;
@@ -75,12 +105,12 @@ const parseDefs = src => {
   return O.uni(stack);
 };
 
-const stringifyDef = function*(def){
+const stringify = function*(def){
   if(typeof def === 'string')
     return def;
 
   return O.rec(O.mapr, def, function*(def){
-    return O.tco(stringifyDef, def);
+    return O.tco(stringify, def);
   }).join(' ');
 };
 
@@ -119,6 +149,50 @@ const parseCtorDef = function*(str){
   }
 
   return ctorDef;
+};
+
+const parseSignature = function*(str){
+  const types = str.split(/\s*\-\>\s*/);
+  const typesNum = types.length;
+  let type = null;
+
+  for(let i = typesNum - 1; i !== -1; i--){
+    const typeName = types[i];
+    const t = new cs.Type(typeName);
+
+    if(type === null){
+      type = t;
+      continue;
+    }
+
+    type = new cs.Type('->');
+    type.addArg(t);
+    type.addArg(type);
+  }
+
+  assert(type !== null);
+
+  return type;
+};
+
+const parseFuncCase = function*(info){
+  const str = yield [stringify, info];
+  const parts = str.split(/\s*\=\s*/);
+  assert(parts.length === 2);
+
+  const [lhs, rhs] = parts;
+
+  const match = lhs.match(/^[a-z][a-zA-Z0-9]*/);
+  assert(match !== null);
+
+  const funcName = match[0];
+  const fcase = new cs.FuncCase(funcName);
+
+  const args = yield [parseFormalArgs, lhs.slice(funcName.length)];
+
+  O.exit(args);
+
+  return fcase;
 };
 
 module.exports = {
