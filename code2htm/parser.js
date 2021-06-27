@@ -225,7 +225,7 @@ class Parser{
     while(1){
       this.neof(str);
 
-      const scope = yield [[this, 'parseScopeConjuction'], str, {termChar}];
+      const scope = yield [[this, 'parseScopeConjunction'], str, {termChar}];
       
       if(result === null) result = scope;
       else result = new cs.ScopeDisjunction(result, scope);
@@ -248,7 +248,7 @@ class Parser{
   }
 
   // A B C
-  *parseScopeConjuction(str, opts={}){
+  *parseScopeConjunction(str, opts={}){
     const {
       termChar = null,
     } = opts;

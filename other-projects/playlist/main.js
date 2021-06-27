@@ -3,9 +3,9 @@
 const fs = require('fs');
 const path = require('path');
 const assert = require('assert');
-const O = require('../omikron');
-const fsRec = require('../fs-rec');
-const format = require('../format');
+const O = require('../../omikron');
+const fsRec = require('../../fs-rec');
+const format = require('../../format');
 
 const idsFile = format.path('-dw/pl.txt');
 const ids = O.sanl(O.rfs(idsFile, 1).trim()).map(a => a.trim());

@@ -10,10 +10,11 @@ const cwd = __dirname;
 
 const dirs = [
   O.dirs.web,
-  path.join(cwd, '..'),
-  path.join(cwd, '../../Omikron'),
-  path.join(cwd, '../../Esolangs'),
-  path.join(cwd, '../../../Extensions/Ultra Block'),
+  path.join(cwd, '../..'),
+  // path.join(cwd, '..'),
+  // path.join(cwd, '../../Omikron'),
+  // path.join(cwd, '../../Esolangs'),
+  // path.join(cwd, '../../../Extensions/Ultra Block'),
 ];
 
 const codeExts = [
@@ -26,6 +27,7 @@ const codeExts = [
   'cpp',
   'h',
   'hh',
+  'hs',
 ];
 
 const textExts = codeExts.concat([
