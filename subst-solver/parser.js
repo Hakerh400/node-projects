@@ -55,7 +55,7 @@ const parse = str => {
     const op = yield [parseRelOp]
     const rhs = yield [parseExpr];
 
-    const rel = op === '=' ?
+    const rel = op === '-' ?
       new cs.Equation(lhs, rhs) :
       new cs.Inequation(lhs, rhs);
 
@@ -65,8 +65,8 @@ const parse = str => {
   const parseRelOp = function*(){
     let m;
 
-    if(m = match(/^\=/)) return m;
-    if(m = match(/^\!\=/)) return m;
+    if(m = match(/^\-/)) return m;
+    if(m = match(/^\!\-/)) return m;
 
     assert.fail(str);
   };
