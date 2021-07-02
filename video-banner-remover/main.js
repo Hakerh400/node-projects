@@ -60,7 +60,7 @@ const main = () => {
     */
 
     const start = dur * 0.2 - 20;
-    const end = max(dur * 0.5 + 5, END_MIN);
+    const end = max(dur * 0.5492662563025523 + 5, END_MIN);
     const x = 0;
     const y = 0;
     const w = width;
