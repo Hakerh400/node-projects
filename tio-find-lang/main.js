@@ -30,7 +30,7 @@ const main = async () => {
   const langs = O.keys(langsInfo);
   const langsNum = langs.length;
 
-  for(let i = 527; i <= langsNum; i++){
+  for(let i = 1; i <= langsNum; i++){
     const lang = langs[i - 1];
     const info = langsInfo[lang];
 
