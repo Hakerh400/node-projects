@@ -10,6 +10,8 @@ const O = require('../omikron');
 const download = require('../download');
 const logStatus = require('../log-status');
 
+const TIMEOUT = 7e3;
+
 const langsUrl = 'https://tio.run/static/3fbdee7a34cd8d340fe2dbd19acd2391-languages.json';
 const runUrl = 'https://tio.run/cgi-bin/static/fb67788fd3d1ebf92e66b295525335af-run';
 const msgTemplate = 'Vlang(0)1(0)(1)(0)VTIO_OPTIONS(0)0(0)F.code.tio(0)(2)F.input.tio(0)0(0)Vargs(0)0(0)R'.
@@ -28,21 +30,44 @@ const main = async () => {
   const langs = O.keys(langsInfo);
   const langsNum = langs.length;
 
-  for(let i = 0; i !== langsNum; i++){
-    logStatus(i + 1, langsNum, 'language');
+  for(let i = 527; i <= langsNum; i++){
+    const lang = langs[i - 1];
+    const info = langsInfo[lang];
 
-    const lang = langs[i];
+    if(info.encoding !== 'UTF-8')
+      continue;
+
+    logStatus(i, langsNum, `language ${O.sf(lang)}`);
+
     const output = await run(lang, code);
+
+    if(output === null){
+      log.inc();
+      log('Timeout');
+      log.dec();
+      continue;
+    }
 
     if(output.trim() === target){
       O.logb();
-      log(langsInfo[lang].name);
+      log(info.name);
       return;
     }
   }
 };
 
 const run = async (lang, code) => {
+  try{
+    return await runRaw(lang, code);
+  }catch(err){
+    if(err === 'timeout')
+      return null;
+
+    throw err;
+  }
+};
+
+const runRaw = async (lang, code) => {
   let msg = msgTemplate.
     replace(/\(1\)/, lang).
     replace(/\(2\)/, `${code.length}\x00${code}`);
@@ -63,7 +88,7 @@ const run = async (lang, code) => {
       if(statusCode !== 200)
         return rej(new Error(`Status code: ${statusCode}`));
 
-      readAllData(response).then(res);
+      readAllData(response).then(res, rej);
     });
 
     req.end(msg);
@@ -82,18 +107,29 @@ const apply = (str, stream) => {
   return readAllData(stream);
 };
 
-const readAllData = stream => new Promise((res, rej) => {
-  const bufs = [];
+const readAllData = (stream, timeout=TIMEOUT) => {
+  return new Promise((res, rej) => {
+    const onTimeout = () => {
+      stream.destroy();
+      rej('timeout');
+    };
 
-  stream.on('data', buf => {
-    bufs.push(buf);
+    const tId = timeout !== null ?
+      setTimeout(onTimeout, timeout) : null;
+
+    const bufs = [];
+
+    stream.on('data', buf => {
+      bufs.push(buf);
+    });
+
+    stream.on('end', buf => {
+      clearTimeout(tId);
+      res(Buffer.concat(bufs));
+    });
+
+    stream.on('error', rej);
   });
-
-  stream.on('end', buf => {
-    res(Buffer.concat(bufs));
-  });
-
-  stream.on('error', rej);
-});
+};
 
 main();
