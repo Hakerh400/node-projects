@@ -124,7 +124,9 @@ const readAllData = (stream, timeout=TIMEOUT) => {
     });
 
     stream.on('end', buf => {
-      clearTimeout(tId);
+      if(tId !== null)
+        clearTimeout(tId);
+      
       res(Buffer.concat(bufs));
     });
 
