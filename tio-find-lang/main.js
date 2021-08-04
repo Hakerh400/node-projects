@@ -4,44 +4,96 @@ const fs = require('fs');
 const path = require('path');
 const URL = require('url');
 const https = require('https');
-const crypto = require('crypto');
+const zlib = require('zlib');
 const assert = require('assert');
 const O = require('../omikron');
+const download = require('../download');
+const logStatus = require('../log-status');
 
-const url = 'https://tio.run/cgi-bin/static/fb67788fd3d1ebf92e66b295525335af-run';
+const langsUrl = 'https://tio.run/static/3fbdee7a34cd8d340fe2dbd19acd2391-languages.json';
+const runUrl = 'https://tio.run/cgi-bin/static/fb67788fd3d1ebf92e66b295525335af-run';
 const msgTemplate = 'Vlang(0)1(0)(1)(0)VTIO_OPTIONS(0)0(0)F.code.tio(0)(2)F.input.tio(0)0(0)Vargs(0)0(0)R'.
   replace(/\(0\)/g, '\x00');
 
-const main = async () => {
-  const lang = 'javascript-node';
-  const code = `console.log('ok'+(1+2))`;
+const cwd = __dirname;
+const testDir = path.join(cwd, 'test');
+const codeFile = path.join(testDir, 'code.txt');
+const targetFile = path.join(testDir, 'target.txt');
 
-  const msg = msgTemplate.
+const code = O.lf(O.rfs(codeFile, 1));
+const target = O.lf(O.rfs(targetFile, 1));
+
+const main = async () => {
+  const langsInfo = JSON.parse(await download(langsUrl));
+  const langs = O.keys(langsInfo);
+  const langsNum = langs.length;
+
+  for(let i = 0; i !== langsNum; i++){
+    logStatus(i + 1, langsNum, 'language');
+
+    const lang = langs[i];
+    const output = await run(lang, code);
+
+    if(output.trim() === target){
+      O.logb();
+      log(langsInfo[lang].name);
+      return;
+    }
+  }
+};
+
+const run = async (lang, code) => {
+  let msg = msgTemplate.
     replace(/\(1\)/, lang).
     replace(/\(2\)/, `${code.length}\x00${code}`);
 
-  const result = await new Promise((resolve, reject) => {
-    const urlInfo = URL.parse(url);
-    log(urlInfo)
-    return;
+  msg = await apply(msg, zlib.DeflateRaw({level: 9}));
 
-    const req = http.request({
+  let result = await new Promise((res, rej) => {
+    const urlInfo = URL.parse(runUrl);
+
+    const req = https.request({
       host: urlInfo.host,
       path: urlInfo.path,
       port: 443,
       method: 'POST',
-    }, res => {
-      const bufs = [];
+    }, response => {
+      const {statusCode} = response;
 
-      res.on('data', buf => {
-        bufs.push(data);
-      });
+      if(statusCode !== 200)
+        return rej(new Error(`Status code: ${statusCode}`));
 
-      res.on('end', buf => {
-        bufs.push(data);
-      });
+      readAllData(response).then(res);
     });
+
+    req.end(msg);
   });
+
+  result = String(await apply(result, zlib.Gunzip()));
+
+  const sep = result.slice(0, 16);
+  result = result.split(sep)[1];
+
+  return result;
 };
+
+const apply = (str, stream) => {
+  stream.end(str);
+  return readAllData(stream);
+};
+
+const readAllData = stream => new Promise((res, rej) => {
+  const bufs = [];
+
+  stream.on('data', buf => {
+    bufs.push(buf);
+  });
+
+  stream.on('end', buf => {
+    res(Buffer.concat(bufs));
+  });
+
+  stream.on('error', rej);
+});
 
 main();
