@@ -9,7 +9,7 @@ const strs = require('../strs');
 const fsRec = require('../fs-rec');
 
 const VERSION_MAJOR = '1.17';
-const VERSION = '1.18_experimental-snapshot-2';
+const VERSION = '1.17.1';
 
 const EMPTY_SOUND_HASH = '7f31c0bcfab392513ac53c75ac30f18bfc8d18da';
 

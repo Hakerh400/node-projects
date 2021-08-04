@@ -15,7 +15,7 @@ const ffDir = 'C:/Program Files/FFmpeg/bin/latest';
 const wipStr = '[WIP]';
 const fixedStr = '[FIXED]';
 
-const args = process.argv.slice(2);
+const args = ['D:/Videos/Other/Folder/P/X']//process.argv.slice(2);
 
 const exts = O.arr2obj([
   'mp4',

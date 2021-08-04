@@ -2,17 +2,20 @@
 
 const fs = require('fs');
 const path = require('path');
+const assert = require('assert');
 const cp = require('child_process');
 const O = require('../omikron');
 const readline = require('../readline');
 const fsRec = require('../fs-rec-legacy');
 const setPriority = require('../set-priority');
+const format = require('../format');
 
 const SUB_FOLDERS = 0;
 const SHUFFLE = 1;
 const SORT = !SHUFFLE;
 
 const MUSIC_DIR = 'D:/Music';
+const PL_FILE = format.path('-dw/pl.txt');
 
 const args = process.argv.slice(2);
 
@@ -40,11 +43,18 @@ async function main(){
   const dirs = args.join(' ').split('#').map(a => path.join(MUSIC_DIR, a.trim()));
   const files = [];
 
+  let plData = null;
+
+  if(fs.existsSync(PL_FILE))
+    plData = O.sanl(O.rfs(PL_FILE, 1));
+
   for(const dir of dirs){
     if(dir.includes('\x5F'))
       testMode = 1;
 
     if(SUB_FOLDERS){
+      assert.fail();
+
       fsRec.processFilesSync(dir, d => {
         if(d.processed) return;
         if(d.isDir) return;
@@ -60,6 +70,15 @@ async function main(){
         if(file === 'd.bat'){
           fs.unlinkSync(fp);
           continue;
+        }
+
+        if(plData !== null){
+          const {name} = path.parse(fp);
+
+          if(plData.includes(name)){
+            // log(name);
+            continue;
+          }
         }
 
         if(!files.includes(fp))
