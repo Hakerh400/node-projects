@@ -66,10 +66,11 @@ class BitVec extends Type{
     const {size} = this;
     const {b0, b1} = Expr;
     const bs = [b0, b1];
+    const indices = [];
 
     let n = 0n;
 
-    for(let i = 0; i !== size; i++){
+    for(const i of O.shuffle(O.ca(size, i => i))){
       let bit = O.rand(2);
 
       const k = csp.assert(csp.eq(csp.bvext(expr, i, 1), bs[bit]));
@@ -77,8 +78,14 @@ class BitVec extends Type{
       if(!await csp.check(1))
         csp.assert(csp.eq(csp.bvext(expr, i, 1), bs[bit ^= 1]), k);
 
+      indices.push(k);
       n |= BigInt(bit) << BigInt(i);
     }
+
+    for(let i = size - 1; i !== -1; i--)
+      csp.undo(indices[i]);
+
+    csp.assert(csp.eq(expr, csp.bv(size, n)));
 
     return n;
   }

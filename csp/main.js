@@ -29,10 +29,10 @@ const main = async () => {
   let str = '';
 
   for(let y = 0; y !== n; y++){
-    if(y !== 0) str += '\n';
+    if(y !== 0) str += '\n\n';
 
     for(let x = 0; x !== n; x++)
-      str += result[y * n + x];
+      str += String(result[y * n + x]).padEnd(3);
   }
 
   log(str);

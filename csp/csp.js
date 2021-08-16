@@ -7,6 +7,7 @@ const cp = require('child_process');
 const assert = require('assert');
 const O = require('../omikron');
 const logStatus = require('../log-status');
+const format = require('../format');
 const Expr = require('./expr');
 const Type = require('./type');
 const Base = require('./base');
@@ -36,6 +37,8 @@ class CSP extends Base{
     }
 
     vm.runInContext(`result=(()=>{${formula}})()`, ctx);
+
+    // O.wfs(format.path('-dw/csp.txt'), csp.toString());
 
     if(!await csp.check())
       return null;
@@ -205,9 +208,12 @@ class CSP extends Base{
         yield [[type, 'toStr']]})`);
     }
 
-    for(const assertion of assertions)
-      lines.push(`(assert ${yield [[assertion, 'toStr']]})`);
+    lines.push('(assert (and');
 
+    for(const assertion of assertions)
+      lines.push(yield [[assertion, 'toStr']]);
+
+    lines.push('))');
     lines.push(`(check-sat)`);
 
     return lines.join('\n');
