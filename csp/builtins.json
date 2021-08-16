@@ -1,0 +1,40 @@
+{
+  "unProps": [
+    "not"
+  ],
+  "binProps": [
+    "and",
+    "or",
+    ["imp", "=>"]
+  ],
+  "bvRels": [
+    "bvule",
+    "bvult",
+    "bvuge",
+    "bvugt",
+    "bvsle",
+    "bvslt",
+    "bvsge",
+    "bvsgt"
+  ],
+  "bvUnOps": [
+    "bvneg",
+    "bvnot"
+  ],
+  "bvBinOps": [
+    "bvadd",
+    "bvsub",
+    "bvmul",
+    "bvurem",
+    "bvsrem",
+    "bvsmod",
+    "bvshl",
+    "bvlshr",
+    "bvashr",
+    "bvor",
+    "bvand",
+    "bvnand",
+    "bvnor",
+    "bvxnor"
+  ]
+}

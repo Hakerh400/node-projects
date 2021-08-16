@@ -34,7 +34,7 @@ const main = async () => {
     const lang = langs[i - 1];
     const info = langsInfo[lang];
 
-    if(info.encoding !== 'UTF-8')
+    if(info.encoding === 'UTF-8')
       continue;
 
     logStatus(i, langsNum, `language ${O.sf(lang)}`);

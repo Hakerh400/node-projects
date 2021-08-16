@@ -7,17 +7,20 @@ const querystring = require('querystring');
 const O = require('../omikron');
 const readline = require('../readline');
 
-const PORT = 8081;
+const port = 80//8081;
 
 const cwd = __dirname;
-const rootDir = path.join(cwd, '../../browser-projects');
+const rootDir = 'C:/Projects';
 
 let server = null;
 let rl = null;
 
 const main = () => {
   server = http.createServer(onReq);
-  server.listen(PORT);
+
+  server.listen(port, () => {
+    log(`Server is listening on port ${port}`);
+  });
 
   rl = readline.rl();
   rl.on('line', onInput);

@@ -35,6 +35,9 @@
     }, {
       "name": "z3",
       "ext": "z3"
+    }, {
+      "name": "cvc",
+      "ext": "cvc"
     }
   ]
 }

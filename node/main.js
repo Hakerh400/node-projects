@@ -68,6 +68,8 @@ async function processInput(str){
       await spawn('lisp');
     }else if(files.includes(engs.z3.script)){
       await spawn('z3');
+    }else if(files.includes(engs.cvc.script)){
+      await spawn('cvc', ['--lang=smt2']);
     }else{
       str = 't';
       break loadScript;
