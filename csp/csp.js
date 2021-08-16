@@ -6,6 +6,7 @@ const vm = require('vm');
 const cp = require('child_process');
 const assert = require('assert');
 const O = require('../omikron');
+const logStatus = require('../log-status');
 const Expr = require('./expr');
 const Type = require('./type');
 const Base = require('./base');
@@ -21,6 +22,8 @@ class CSP extends Base{
     const csp = new CSP();
     const ctx = vm.createContext(csp);
     const proto = O.proto(csp);
+
+    ctx.O = O;
 
     for(const key of O.keys(proto)){
       const desc = O.desc(proto, key);
@@ -39,8 +42,17 @@ class CSP extends Base{
 
     const {result} = ctx;
     const resultNew = O.obj();
+    const keys = O.shuffle(O.keys(result));
 
-    for(const key of O.shuffle(O.keys(result))){
+    let totalSize = 0;
+
+    for(const key of keys)
+      totalSize += result[key].type.size;
+
+    assert(typeof totalSize === 'number');
+    csp.totalSize = totalSize;
+
+    for(const key of keys){
       const expr = result[key];
       resultNew[key] = await csp.solve(expr);
     }
@@ -52,6 +64,9 @@ class CSP extends Base{
 
   decls = [];
   assertions = [];
+
+  totalSize = 0;
+  currentSize = 0;
 
   constructor(){
     super();
@@ -117,11 +132,11 @@ class CSP extends Base{
     return new Expr.BitVec(size, BigInt(val));
   }
 
-  eq(expr1, expr2){
-    const {type} = expr1;
-    assertType(expr2, type);
+  arr(bvSize, len){
+    const type = new Expr.Array(bvSize, len);
+    const name = this.createDecl(type);
 
-    return new Expr.Call(bool, '=', [expr1, expr2]);
+    return new Expr.Ref(type, name);
   }
 
   bvext(expr, start, len){
@@ -129,7 +144,24 @@ class CSP extends Base{
     return new Expr.Extract(expr, start, len);
   }
 
-  async check(){
+  get(arr, index){
+    assert(arr.isArr);
+
+    const {bvSize, len} = arr;
+    const offset = index * bvSize;
+
+    if(typeof index === 'number'){
+      assert(index >= 0 && index < len);
+      return this.bvext(arr, offset, bvSize);
+    }
+
+    return this.bvext(th.bvasr(arr, offset), 0, bvSize);
+  }
+
+  async check(showStatus=0){
+    if(showStatus)
+      logStatus(++this.currentSize, this.totalSize, 'bit');
+
     if(DEBUG){
       log(this.toString());
       log();
@@ -201,17 +233,42 @@ const initCSPClass = () => {
       return new Expr.Call(bool, name, [a]);
     },
 
-    binProps(name, a, b){
-      assertType(a, bool);
-      assertType(b, bool);
-      return new Expr.Call(bool, name, [a, b]);
+    binProps(name, a, b=null){
+      if(b !== null) a = [a, b];
+      assert(O.isArr(a));
+      assert(a.length >= 2);
+
+      for(const expr of a)
+        assertType(expr, bool);
+
+      return new Expr.Call(bool, name, a);
     },
 
-    bvRels(name, a, b){
-      const {type} = a;
+    binRels(name, a, b=null){
+      if(b !== null) a = [a, b];
+      assert(O.isArr(a));
+      assert(a.length >= 2);
+
+      const {type} = a[0];
+
+      for(const expr of a)
+        assertType(expr, type);
+
+      return new Expr.Call(bool, name, a);
+    },
+
+    bvRels(name, a, b=null){
+      if(b !== null) a = [a, b];
+      assert(O.isArr(a));
+      assert(a.length >= 2);
+
+      const {type} = a[0];
       assert(type.isBv);
-      assertType(b, type);
-      return new Expr.Call(bool, name, [a, b]);
+
+      for(const expr of a)
+        assertType(expr, type);      
+
+      return new Expr.Call(bool, name, a);
     },
 
     bvUnOps(name, a){
@@ -220,11 +277,18 @@ const initCSPClass = () => {
       return new Expr.Call(type, name, [a]);
     },
 
-    bvBinOps(name, a, b){
-      const {type} = a;
+    bvBinOps(name, a, b=null){
+      if(b !== null) a = [a, b];
+      assert(O.isArr(a));
+      assert(a.length >= 2);
+
+      const {type} = a[0];
       assert(type.isBv);
-      assertType(b, type);
-      return new Expr.Call(type, name, [a, b]);
+
+      for(const expr of a)
+        assertType(expr, type);      
+
+      return new Expr.Call(type, name, a);
     },
   };
 

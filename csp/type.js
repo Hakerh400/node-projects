@@ -7,12 +7,16 @@ const O = require('../omikron');
 const Base = require('./base');
 
 class Type extends Base{
-  size = null;
+  constructor(size){
+    super();
+    this.size = size;
+  }
 
+  get baseCtor(){ return this.ctor; }
   *eq1(){ O.virtual('eq1'); }
 
   *eq(type1){
-    if(this.ctor !== type.ctor) return 0;
+    if(this.baseCtor !== type.baseCtor) return 0;
     return O.tco([this, 'eq1'], type);
   }
 
@@ -20,10 +24,13 @@ class Type extends Base{
 
   isBool(){ return 0; }
   isBv(){ return 0; }
+  isArr(){ return 0; }
 }
 
 class Bool extends Type{
-  size = 1;
+  constructor(){
+    super(1);
+  }
 
   *eq(type){
     return 1;
@@ -37,7 +44,7 @@ class Bool extends Type{
 
     const k = csp.assert(csp.eq(expr, vals[index]));
 
-    if(!await csp.check())
+    if(!await csp.check(1))
       csp.assert(csp.eq(expr, vals[index ^= 1]), k);
 
     return index === 1;
@@ -49,11 +56,6 @@ class Bool extends Type{
 }
 
 class BitVec extends Type{
-  constructor(size){
-    super();
-    this.size = size;
-  }
-
   *eq(type){
     return this.size === type.size;
   }
@@ -72,7 +74,7 @@ class BitVec extends Type{
 
       const k = csp.assert(csp.eq(csp.bvext(expr, i, 1), bs[bit]));
 
-      if(!await csp.check())
+      if(!await csp.check(1))
         csp.assert(csp.eq(csp.bvext(expr, i, 1), bs[bit ^= 1]), k);
 
       n |= BigInt(bit) << BigInt(i);
@@ -86,9 +88,22 @@ class BitVec extends Type{
   }
 }
 
+class Array extends BitVec{
+  constructor(bvSize, len){
+    super(bvSize * len);
+    this.bvSize = bvSize;
+    this.len = len;
+  }
+
+  isArr(){ return 1; }
+
+  get baseCtor(){ return BitVec; }
+}
+
 module.exports = Object.assign(Type, {
   Bool,
   BitVec,
+  Array,
 });
 
 const Expr = require('./expr');

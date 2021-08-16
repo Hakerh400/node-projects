@@ -18,15 +18,29 @@ const main = async () => {
   const formula = O.rfs(formulaFile, 1);
   const result = await CSP.solve(formula);
 
+  O.logb();
+
   if(result === null){
     log('unsat');
     return;
   }
 
-  for(const key of O.sortAsc(O.keys(result))){
-    const val = result[key];
-    log(`${key}: ${val}`);
+  const n = 9;
+  let str = '';
+
+  for(let y = 0; y !== n; y++){
+    if(y !== 0) str += '\n';
+
+    for(let x = 0; x !== n; x++)
+      str += result[y * n + x];
   }
+
+  log(str);
+
+  // for(const key of O.sortAsc(O.keys(result))){
+  //   const val = result[key];
+  //   log(`${key}: ${val}`);
+  // }
 };
 
 main().catch(log);
