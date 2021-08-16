@@ -38,7 +38,7 @@ class CSP extends Base{
 
     vm.runInContext(`result=(()=>{${formula}})()`, ctx);
 
-    // O.wfs(format.path('-dw/csp.txt'), csp.toString());
+    O.wfs(format.path('-dw/csp.txt'), csp.toString());
 
     if(!await csp.check())
       return null;
@@ -66,6 +66,7 @@ class CSP extends Base{
   }
 
   decls = [];
+  defs = [];
   assertions = [];
 
   totalSize = 0;
@@ -86,18 +87,16 @@ class CSP extends Base{
   }
 
   createDef(val){
-    const {type} = val;
-    const name = this.createDecl(type);
-
-    this.assert(this.eq(
-      new Expr.Ref(type, name),
-      new Expr.Def(val)));
-
-    return name;
+    const {defs} = this;
+    return this.getDefName(defs.push(val) - 1);
   }
 
   getDeclName(index){
     return `a${index}`;
+  }
+
+  getDefName(index){
+    return `b${index}`;
   }
 
   assert(expr, index=null){
@@ -161,6 +160,25 @@ class CSP extends Base{
     return this.bvext(th.bvasr(arr, offset), 0, bvSize);
   }
 
+  inc(expr){
+    const {type} = expr;
+    assert(type.isBv);
+    return this.bvadd(expr, this.bv(type.size, 1));
+  }
+
+  dec(expr){
+    const {type} = expr;
+    assert(type.isBv);
+    return this.bvsub(expr, this.bv(type.size, 1));
+  }
+
+  ite(cond, expr1, expr2){
+    const {type} = expr1;
+    assertType(cond, bool);
+    assertType(expr2, type);
+    return new Expr.Call(type, 'ite', [cond, expr1, expr2]);
+  }
+
   async check(showStatus=0){
     if(showStatus)
       logStatus(++this.currentSize, this.totalSize, 'bit');
@@ -191,9 +209,9 @@ class CSP extends Base{
 
     lines.push(`(set-logic QF_BV)`);
 
-    for(const assertion of assertions){
+    for(const assertion of [...assertions]){
       for(const expr of O.recg([assertion, 'iterExprs'])){
-        if(expr.refsNum <= 1) continue;
+        if(!expr.allowRefs/*expr.refsNum <= 1*/) continue;
         if(expr.ident !== null) continue;
 
         expr.ident = this.createDef(expr);
@@ -208,12 +226,25 @@ class CSP extends Base{
         yield [[type, 'toStr']]})`);
     }
 
-    lines.push('(assert (and');
+    for(let i = 0; i !== defs.length; i++){
+      const val = defs[i];
+      const {type} = val;
+      const name = this.getDefName(i);
 
-    for(const assertion of assertions)
-      lines.push(yield [[assertion, 'toStr']]);
+      lines.push(`(define-const ${name} ${
+        yield [[type, 'toStr']]} ${
+        yield [[val, 'toStr1']]})`);
+    }
 
-    lines.push('))');
+    if(assertions.length !== 0){
+      lines.push('(assert (and');
+
+      for(const assertion of assertions)
+        lines.push(yield [[assertion, 'toStr']]);
+
+      lines.push('))');
+    }
+
     lines.push(`(check-sat)`);
 
     return lines.join('\n');

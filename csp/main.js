@@ -25,14 +25,15 @@ const main = async () => {
     return;
   }
 
-  const n = 9;
+  const w = 5;
+  const h = 5;
   let str = '';
 
-  for(let y = 0; y !== n; y++){
-    if(y !== 0) str += '\n\n';
+  for(let y = 0; y !== h; y++){
+    if(y !== 0) str += '\n';
 
-    for(let x = 0; x !== n; x++)
-      str += String(result[y * n + x]).padEnd(3);
+    for(let x = 0; x !== w; x++)
+      str += result[y * w + x] ? '#' : '.';
   }
 
   log(str);
