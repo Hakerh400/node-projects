@@ -349,12 +349,21 @@ function spawnProc(file, args=[], options=O.obj(), opts=O.obj(), cb=null){
 }
 
 function onProcExit(code=null, cb=null){
-  if(cb !== null)
+  if(cb !== null){
     cb(code);
-  else if(code !== null && code !== 0 && code !== 1)
-    log(`\n\nEXIT CODE: ${code}`);
+  }
 
   proc = null;
+
+  if(cb !== null && code !== null && code !== 0 && code !== 1){
+    log(`\n\nEXIT CODE: ${code}`);
+
+    if(code !== 1){
+      onInput('');
+      return;
+    }
+  }
+
   askForInput();
 }
 
