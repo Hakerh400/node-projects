@@ -7,10 +7,10 @@ const querystring = require('querystring');
 const O = require('../omikron');
 const readline = require('../readline');
 
-const port = 80//8081;
+const port = 80;
 
 const cwd = __dirname;
-const rootDir = 'C:/Projects';
+const rootDir = path.join(cwd, '../..');
 
 let server = null;
 let rl = null;
