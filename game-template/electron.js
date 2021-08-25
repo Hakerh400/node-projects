@@ -9,7 +9,7 @@ const args = process.argv.slice(2);
 
 const main = () => {
   if(args.length !== 1)
-    O.exit(`Expected exactly one argument`);
+    throw new TypeError(`Expected exactly one argument`);
 
   const project = args[0];
 
@@ -85,6 +85,7 @@ const main = () => {
   Menu.setApplicationMenu(menu);
 
   win.loadURL(`http://localhost/web/?project=${project}`);
+  win.maximize();
   win.show();
 
   // contents.setIgnoreMenuShortcuts(true);
