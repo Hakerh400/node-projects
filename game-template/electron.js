@@ -3,7 +3,7 @@
 const electron = require('electron');
 
 const {log} = console;
-const {app, Menu} = electron;
+const {app, Menu, ipcMain} = electron;
 
 const args = process.argv.slice(2);
 
@@ -15,7 +15,8 @@ const main = () => {
 
   app.commandLine.appendSwitch('disable-http-cache');
 
-  const { BrowserWindow } = require('electron')
+  const {BrowserWindow} = require('electron');
+
   const win = new BrowserWindow({frame: true,
     useContentSize: true,
     webPreferences: {
@@ -23,61 +24,51 @@ const main = () => {
       contextIsolation: false,
     },
     title: 'Magic Lines',
-    icon: 'c:/users/thomas/downloads/untitled.ico'
+    icon: null,
   });
+
   const contents = win.webContents;
 
   const template = [
-    // { role: 'fileMenu' }
     {
       label: 'Game',
       submenu: [
         {
+          label: 'Restart',
+          role: 'reload',
+        }, {
           label: 'Exit',
           click(){
             win.close();
           },
         },
       ],
-    },
-    // { role: 'editMenu' }
-    {
-      label: 'Edit',
+    }, {
+      label: 'Scoreboard',
       submenu: [
-        { role: 'undo' },
-        { role: 'redo' },
-        { type: 'separator' },
-        { role: 'cut' },
-        { role: 'copy' },
-        { role: 'paste' },
-        { role: 'delete' },
-        { type: 'separator' },
-        { role: 'selectAll' },
-      ]
-    },
-    // { role: 'viewMenu' }
-    {
+        {
+          label: 'Clear',
+          click(){
+            contents.send('scoreboard', 'clear');
+          },
+        },
+      ],
+    }, {
       label: 'View',
       submenu: [
-        { role: 'reload' },
-        { role: 'forceReload' },
-        { role: 'toggleDevTools' },
-        { type: 'separator' },
-        { role: 'resetZoom' },
-        { role: 'zoomIn' },
-        { role: 'zoomOut' },
-        { type: 'separator' },
-        { role: 'togglefullscreen' }
-      ]
-    },
-    // { role: 'windowMenu' }
-    {
-      label: 'Window',
+        {
+          label: 'Toggle Fullscreen',
+          role: 'togglefullscreen'
+        },
+      ],
+    }, {
+      label: 'Dev',
       submenu: [
-        { role: 'minimize' },
-        { role: 'zoom' },
-        { role: 'close' },
-      ]
+        {
+          label: 'Open DevTools',
+          role: 'toggleDevTools',
+        },
+      ],
     },
   ]
 
