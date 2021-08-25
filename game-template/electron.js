@@ -17,13 +17,14 @@ const main = () => {
 
   const {BrowserWindow} = require('electron');
 
-  const win = new BrowserWindow({frame: true,
+  const win = new BrowserWindow({
+    frame: true,
     useContentSize: true,
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
     },
-    title: 'Magic Lines',
+    title: '',
     icon: null,
   });
 

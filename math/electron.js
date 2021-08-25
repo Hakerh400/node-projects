@@ -1,36 +1,83 @@
 'use strict';
 
-const HD = 0;
-
-const fs = require('fs');
-const path = require('path');
 const electron = require('electron');
-const O = require('../omikron');
-const media = require('../media');
 
-const w = HD ? 1920 : 640;
-const h = HD ? 1080 : 480;
-const fps = 60;
-const fast = !HD;
+const {log} = console;
+const {app, Menu, ipcMain} = electron;
 
-const [wh, hh] = [w, h].map(a => a >> 1);
+const project = 'math';
 
-const duration = 10;
-const framesNum = fps * duration;
+const main = () => {
+  app.commandLine.appendSwitch('disable-http-cache');
 
-const outputFile = getOutputFile();
+  const {BrowserWindow} = require('electron');
 
-setTimeout(main);
+  const win = new BrowserWindow({
+    frame: true,
+    useContentSize: true,
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false,
+    },
+    title: '',
+    icon: null,
+  });
 
-function main(){
-  media.renderVideo(outputFile, w, h, fps, fast, (w, h, g, f) => {
-    media.logStatus(f, framesNum);
-    return f !== framesNum;
-  }, () => O.exit());
-}
+  const contents = win.webContents;
 
-function getOutputFile(vid=0){
-  if(vid || !HD) return '-vid/1.mp4';
-  const project = path.parse(__dirname).name;
-  return `-render/${project}.mp4`;
-}
+  // const template = [
+  //   {
+  //     label: 'Game',
+  //     submenu: [
+  //       {
+  //         label: 'Restart',
+  //         role: 'reload',
+  //       }, {
+  //         label: 'Exit',
+  //         click(){
+  //           win.close();
+  //         },
+  //       },
+  //     ],
+  //   }, {
+  //     label: 'Scoreboard',
+  //     submenu: [
+  //       {
+  //         label: 'Clear',
+  //         click(){
+  //           contents.send('scoreboard', 'clear');
+  //         },
+  //       },
+  //     ],
+  //   }, {
+  //     label: 'View',
+  //     submenu: [
+  //       {
+  //         label: 'Toggle Fullscreen',
+  //         role: 'togglefullscreen'
+  //       },
+  //     ],
+  //   }, {
+  //     label: 'Dev',
+  //     submenu: [
+  //       {
+  //         label: 'Open DevTools',
+  //         role: 'toggleDevTools',
+  //       },
+  //     ],
+  //   },
+  // ]
+  //
+  // const menu = Menu.buildFromTemplate(template);
+  // Menu.setApplicationMenu(menu);
+
+  Menu.setApplicationMenu(null);
+
+  win.loadURL(`http://localhost/web/?project=${project}`);
+  win.maximize();
+  win.show();
+
+  // contents.setIgnoreMenuShortcuts(true);
+};
+
+app.once('ready', main);
