@@ -5,11 +5,18 @@ const electron = require('electron');
 const {log} = console;
 const {app, Menu} = electron;
 
-app.commandLine.appendSwitch('disable-http-cache');
+const args = process.argv.slice(2);
 
 const main = () => {
+  if(args.length !== 1)
+    O.exit(`Expected exactly one argument`);
+
+  const project = args[0];
+
+  app.commandLine.appendSwitch('disable-http-cache');
+
   const { BrowserWindow } = require('electron')
-  const win = new BrowserWindow({width: 541, height: 541, frame: true,
+  const win = new BrowserWindow({frame: true,
     useContentSize: true,
     webPreferences: {
       nodeIntegration: true,
@@ -74,10 +81,10 @@ const main = () => {
     },
   ]
 
-  const menu = Menu.buildFromTemplate(template)
-  Menu.setApplicationMenu(menu)
+  const menu = Menu.buildFromTemplate(template);
+  Menu.setApplicationMenu(menu);
 
-  win.loadURL('http://localhost/web/?project=magic-lines');
+  win.loadURL(`http://localhost/web/?project=${project}`);
   win.show();
 
   // contents.setIgnoreMenuShortcuts(true);
