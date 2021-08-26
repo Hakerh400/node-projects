@@ -67,18 +67,23 @@ const main = () => {
       submenu: [
         {
           label: 'Open DevTools',
-          role: 'toggleDevTools',
+          click(){
+            win.webContents.openDevTools();
+          },
         },
       ],
     },
-  ]
+  ];
 
   const menu = Menu.buildFromTemplate(template);
   Menu.setApplicationMenu(menu);
 
   win.loadURL(`http://localhost/web/?project=${project}`);
   win.maximize();
-  win.show();
+
+  win.on('ready-to-show', () => {
+    win.show();
+  });
 
   // contents.setIgnoreMenuShortcuts(true);
 };

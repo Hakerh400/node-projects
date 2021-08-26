@@ -1,11 +1,17 @@
 'use strict';
 
+const fs = require('fs');
+const path = require('path');
 const electron = require('electron');
+const O = require('../omikron');
 
 const {log} = console;
 const {app, Menu, ipcMain} = electron;
 
 const project = 'math';
+
+const cwd = __dirname;
+const mainFile = path.join(cwd, 'main.js');
 
 const main = () => {
   app.commandLine.appendSwitch('disable-http-cache');
@@ -25,57 +31,46 @@ const main = () => {
 
   const contents = win.webContents;
 
-  // const template = [
-  //   {
-  //     label: 'Game',
-  //     submenu: [
-  //       {
-  //         label: 'Restart',
-  //         role: 'reload',
-  //       }, {
-  //         label: 'Exit',
-  //         click(){
-  //           win.close();
-  //         },
-  //       },
-  //     ],
-  //   }, {
-  //     label: 'Scoreboard',
-  //     submenu: [
-  //       {
-  //         label: 'Clear',
-  //         click(){
-  //           contents.send('scoreboard', 'clear');
-  //         },
-  //       },
-  //     ],
-  //   }, {
-  //     label: 'View',
-  //     submenu: [
-  //       {
-  //         label: 'Toggle Fullscreen',
-  //         role: 'togglefullscreen'
-  //       },
-  //     ],
-  //   }, {
-  //     label: 'Dev',
-  //     submenu: [
-  //       {
-  //         label: 'Open DevTools',
-  //         role: 'toggleDevTools',
-  //       },
-  //     ],
-  //   },
-  // ]
-  //
-  // const menu = Menu.buildFromTemplate(template);
-  // Menu.setApplicationMenu(menu);
+  const template = [
+    {
+      label: 'File',
+      submenu: [
+        // {
+        //   label: 'Restart',
+        //   role: 'reload',
+        // }, {
+        //   label: 'Exit',
+        //   click(){
+        //     win.close();
+        //   },
+        // },
+      ],
+    }, {
+      label: 'Dev',
+      submenu: [
+        {
+          label: 'Open DevTools',
+          click(){
+            win.webContents.openDevTools();
+          },
+        },
+      ],
+    },
+  ];
 
-  Menu.setApplicationMenu(null);
+  const menu = Menu.buildFromTemplate(template);
+  Menu.setApplicationMenu(menu);
 
-  win.loadURL(`http://localhost/web/?project=${project}`);
+  win.loadURL(`data:text/html;base64,${Buffer.from(`<script>${
+    `window.addEventListener('load',()=>require(${JSON.stringify(mainFile)}))`
+  }</script>`).toString('base64')}`);
+
+  win.webContents.openDevTools();
   win.maximize();
-  win.show();
+
+  win.on('ready-to-show', () => {
+    win.show();
+  });
 
   // contents.setIgnoreMenuShortcuts(true);
 };
