@@ -35,15 +35,15 @@ const main = () => {
     {
       label: 'File',
       submenu: [
-        // {
-        //   label: 'Restart',
-        //   role: 'reload',
-        // }, {
-        //   label: 'Exit',
-        //   click(){
-        //     win.close();
-        //   },
-        // },
+        {
+          label: 'Reload',
+          role: 'reload',
+        }, {
+          label: 'Exit',
+          click(){
+            win.close();
+          },
+        },
       ],
     }, {
       label: 'Dev',

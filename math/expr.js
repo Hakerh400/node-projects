@@ -25,6 +25,24 @@ class Expr{
     return O.last(imps).addImps(ctx, imps.slice(0, -1));
   }
 
+  static *deser1(){ O.virtual('deser1', 1); }
+
+  static *deser(buf){
+    const ser = new O.Serializer(buf);
+    const info = initDeserInfo();
+
+    return O.tco(yield [[this, 'deser2'], ser, info]);
+  }
+
+  static *deser2(ser, info){
+    const type = ser.read(2);
+    const ctor = [Ident, Lambda, Call][type];
+
+    log(type)
+
+    return O.tco([ctor, 'deser1'], ser, info);
+  }
+
   #typeInfo = null;
   #type = null;
 
@@ -71,6 +89,7 @@ class Expr{
   *eq1(){ O.virtual('eq1'); }
   *eqAlpha1(){ O.virtual('eqAlpha1'); }
   *getStrIdents1(){ O.virtual('getStrIdents1'); }
+  *ser1(){ O.virtual('ser1'); }
   *toStr1(){ O.virtual('toStr1'); }
 
   from(...args){
@@ -498,6 +517,15 @@ class Expr{
     return O.tco([exprNew, 'simplify'], ctx);
   }
 
+  *ser(){
+    const ser = new O.Serializer();
+    const info = initSerInfo();
+
+    yield [[this, 'ser1'], ser, info];
+
+    return ser.getOutput();
+  }
+
   *toStr(ctx, idents=util.obj2(), prec=0){
     const [precNew, str] = yield [[this, 'toStr1'], ctx, idents];
 
@@ -509,6 +537,38 @@ class Expr{
 }
 
 class NamedExpr extends Expr{
+  static deserName(ser, info){
+    if(!ser.read()){
+      const {strsObj, strsArr} = info;
+
+      if(!ser.read()){
+        const index = ser.read(strsArr.length - 1);
+        return strsArr[index];
+      }
+
+      const name = ser.readStr();
+
+      strsObj[name] = strsArr.length;
+      strsArr.push(name);
+
+      return name;
+    }
+
+    const {symsObj, symsNum} = info;
+
+    if(!ser.read()){
+      const index = ser.read(symsArr.length - 1);
+      return symsArr[index];
+    }
+
+    const name = util.newSym();
+
+    symsObj[name] = namesArr.length;
+    symsArr.push(sym);
+
+    return name;
+  }
+
   constructor(name, isType){
     super(isType);
 
@@ -540,9 +600,53 @@ class NamedExpr extends Expr{
 
     return name;
   }
+
+  serName(ser, info){
+    const {name} = this;
+
+    if(isStr(name)){
+      ser.write(0);
+
+      const {strsObj, strsNum} = info;
+
+      if(O.has(strsObj, name)){
+        ser.write(0);
+        ser.write(strsObj[name], strsNum - 1);
+        return;
+      }
+
+      ser.write(1);
+      ser.writeStr(name);
+
+      strsObj[name] = strsNum;
+      info.strsNum++;
+
+      return;
+    }
+
+    ser.write(1);
+
+    const {symsObj, symsNum} = info;
+
+    if(O.has(symsObj, name)){
+      ser.write(0);
+      ser.write(symsObj[name], symsNum - 1);
+      return;
+    }
+
+    ser.write(1);
+
+    symsObj[name] = symsNum;
+    info.strsNum++;
+  }
 }
 
 class Ident extends NamedExpr{
+  static *deser1(ser, info){
+    const name = this.deserName(ser, info);
+    return new Ident(name);
+  }
+
   get isIdent(){ return 1; }
 
   *alphaV(ctx, idents=O.obj()){
@@ -654,6 +758,11 @@ class Ident extends NamedExpr{
     return idents;
   }
 
+  *ser1(ser, info){
+    ser.write(0, 2);
+    this.serName(ser, info);
+  }
+
   *toStr1(ctx, idents){
     let name = this.getName(ctx, idents);
     name = ctx.name2str(name, 1);
@@ -669,6 +778,13 @@ class Ident extends NamedExpr{
 }
 
 class Lambda extends NamedExpr{
+  static *deser1(ser, info){
+    const name = this.deserName(ser, info);
+    const expr = yield [[this, 'deser2'], ser, info];
+
+    return new Lambda(name, expr);
+  }
+
   constructor(name, expr, isType){
     super(name, isType);
     this.expr = expr;
@@ -770,6 +886,12 @@ class Lambda extends NamedExpr{
     return O.tco([this.expr, 'getStrIdents'], idents, includeType);
   }
 
+  *ser1(ser, info){
+    ser.write(1, 2);
+    this.serName(ser, info);
+    return O.tco([this.expr, 'ser1'], ser, info);
+  }
+
   *toStr1(ctx, idents){
     const names = [];
     let e = this;
@@ -789,6 +911,13 @@ class Lambda extends NamedExpr{
 }
 
 class Call extends Expr{
+  static *deser1(ser, info){
+    const target = yield [[this, 'deser2'], ser, info];
+    const arg = yield [[this, 'deser2'], ser, info];
+
+    return new Call(target, arg);
+  }
+
   constructor(target, arg, isType){
     super(isType);
     this.target = target;
@@ -894,6 +1023,12 @@ class Call extends Expr{
     return O.tco([this.arg, 'getStrIdents'], idents, includeType);
   }
 
+  *ser1(ser, info){
+    ser.write(2, 2);
+    yield [[this.target, 'ser1'], ser, info];
+    return O.tco([this.arg, 'ser1'], ser, info);
+  }
+
   *toStr1(ctx, idents){
     const {target, arg} = this;
 
@@ -973,6 +1108,28 @@ class Call extends Expr{
       yield [[arg, 'toStr'], ctx, idents, ps[1]]}`];
   }
 }
+
+const initSerInfo = () => {
+  const info = {
+    strsObj: O.obj(),
+    symsObj: O.obj(),
+    strsNum: 0,
+    symsNum: 0,
+  };
+
+  return info;
+};
+
+const initDeserInfo = () => {
+  const info = {
+    strsObj: O.obj(),
+    symsObj: O.obj(),
+    strsArr: [],
+    symsArr: [],
+  };
+
+  return info;
+};
 
 module.exports = Object.assign(Expr, {
   Ident,
