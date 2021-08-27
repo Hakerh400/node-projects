@@ -26,24 +26,29 @@ class Expr extends Base{
     return O.last(imps).addImps(ctx, imps.slice(0, -1));
   }
 
-  static *deser2(){ O.virtual('deser2', 1); }
-
-  static *deser1(ser, info=initDeserInfo()){
-    const type = ser.read(2);
-    const ctor = [Ident, Lambda, Call][type];
-
-    return O.tco([ctor, 'deser2'], ser, info);
-  }
-
   static *deser(ser, info=initDeserInfo()){
     const isType = ser.read();
     let type = null;
 
     if(!isType && ser.read())
-      type = yield [[Expr, 'deser1'], ser, info];
+      type = yield [[Expr, 'deserCtor'], ser, info];
 
-    O.tco([this, 'ser1'], ser, info);
+    const expr = yield [[Expr, 'deserCtor'], ser, info];
+
+    if(type !== null)
+      expr.type = type;
+
+    return expr;
   }
+
+  static *deserCtor(ser, info=initDeserInfo()){
+    const type = ser.read(2);
+    const ctor = [Ident, Lambda, Call][type];
+
+    return O.tco([ctor, 'deser1'], ser, info);
+  }
+
+  static *deser1(){ O.virtual('deser1', 1); }
 
   #typeInfo = null;
   #type = null;
@@ -656,7 +661,7 @@ class NamedExpr extends Expr{
 }
 
 class Ident extends NamedExpr{
-  static *deser2(ser, info){
+  static *deser1(ser, info){
     const name = this.deserName(ser, info);
     return new Ident(name);
   }
@@ -793,7 +798,7 @@ class Ident extends NamedExpr{
 }
 
 class Lambda extends NamedExpr{
-  static *deser2(ser, info){
+  static *deser1(ser, info){
     const name = this.deserName(ser, info);
     const expr = yield [[this, 'deser1'], ser, info];
 
@@ -904,7 +909,7 @@ class Lambda extends NamedExpr{
   *ser1(ser=new O.Serializer(), info=initSerInfo()){
     ser.write(1, 2);
     this.serName(ser, info);
-    return O.tco([this.expr, 'ser1'], ser, info);
+    return O.tco([this.expr, 'ser'], ser, info);
   }
 
   *toStr1(ctx, idents){
@@ -926,7 +931,7 @@ class Lambda extends NamedExpr{
 }
 
 class Call extends Expr{
-  static *deser2(ser, info){
+  static *deser1(ser, info){
     const target = yield [[this, 'deser1'], ser, info];
     const arg = yield [[this, 'deser1'], ser, info];
 
@@ -1040,8 +1045,8 @@ class Call extends Expr{
 
   *ser1(ser=new O.Serializer(), info=initSerInfo()){
     ser.write(2, 2);
-    yield [[this.target, 'ser1'], ser, info];
-    return O.tco([this.arg, 'ser1'], ser, info);
+    yield [[this.target, 'ser'], ser, info];
+    return O.tco([this.arg, 'ser'], ser, info);
   }
 
   *toStr1(ctx, idents){
