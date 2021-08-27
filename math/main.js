@@ -1009,8 +1009,8 @@ const processLine = function*(lineIndex, ctx){
 
         // O.z=-~O.z
 
-        const buf = yield [[prop, 'ser']];
-        const prop1 = yield [[Expr, 'deser'], buf];
+        const buf = (yield [[prop, 'ser']]).getOutput();
+        const prop1 = yield [[Expr, 'deser'], new O.Serializer(buf)];
 
         return O.tco(ret, (yield [[prop, 'toStr'], ctx]) + `\n\n${yield [[prop1, 'toStr'], ctx]}`);
       }
