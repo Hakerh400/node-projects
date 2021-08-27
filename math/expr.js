@@ -31,14 +31,12 @@ class Expr{
     const ser = new O.Serializer(buf);
     const info = initDeserInfo();
 
-    return O.tco(yield [[this, 'deser2'], ser, info]);
+    return O.tco([this, 'deser2'], ser, info);
   }
 
   static *deser2(ser, info){
     const type = ser.read(2);
     const ctor = [Ident, Lambda, Call][type];
-
-    log(type)
 
     return O.tco([ctor, 'deser1'], ser, info);
   }
@@ -554,7 +552,7 @@ class NamedExpr extends Expr{
       return name;
     }
 
-    const {symsObj, symsNum} = info;
+    const {symsObj, symsArr} = info;
 
     if(!ser.read()){
       const index = ser.read(symsArr.length - 1);
@@ -563,8 +561,8 @@ class NamedExpr extends Expr{
 
     const name = util.newSym();
 
-    symsObj[name] = namesArr.length;
-    symsArr.push(sym);
+    symsObj[name] = symsArr.length;
+    symsArr.push(name);
 
     return name;
   }
@@ -637,7 +635,7 @@ class NamedExpr extends Expr{
     ser.write(1);
 
     symsObj[name] = symsNum;
-    info.strsNum++;
+    info.symsNum++;
   }
 }
 
@@ -875,7 +873,7 @@ class Lambda extends NamedExpr{
 
   *eq1(ctx, other){
     if(this.name !== other.name) return 0;
-    return O.tco(yield [[this.expr, 'eq1'], other.expr]);
+    return O.tco([this.expr, 'eq1'], other.expr);
   }
 
   *eqAlpha1(other, idents){

@@ -8,8 +8,7 @@ const identChars = O.chars('a', 'z');
 // let n = 0;
 const newSym = () => {
   // n++;
-  // if(n === 24) debugger;
-  return Symbol();
+  return Symbol(/*n*/);
 };
 
 const copyObj = obj => {

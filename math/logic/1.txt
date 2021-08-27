@@ -59,3 +59,9 @@ lemma arg_cong: ∀f a b. a = b  ⟶  f a = f b
 lemma cong: ∀f g a b. f = g  ⟶  a = b  ⟶  f a = g b
   - fun_cong 1 [c]
   - sub[λx. a c = b x] 1 2 %
+
+lemma r: ∀a. a  ⟶  a
+  - 1 %
+
+lemma t: True
+  - r

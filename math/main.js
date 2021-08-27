@@ -1007,9 +1007,9 @@ const processLine = function*(lineIndex, ctx){
         ctx = ctx.copy();
         ctx.proof = proofNew;
 
+        // O.z=-~O.z
+
         const buf = yield [[prop, 'ser']];
-        O.logb();
-        debugger;
         const prop1 = yield [[Expr, 'deser'], buf];
 
         return O.tco(ret, (yield [[prop, 'toStr'], ctx]) + `\n\n${yield [[prop1, 'toStr'], ctx]}`);
