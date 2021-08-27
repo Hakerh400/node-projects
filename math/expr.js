@@ -43,7 +43,6 @@ class Expr extends Base{
       type = yield [[Expr, 'deser1'], ser, info];
 
     O.tco([this, 'ser1'], ser, info);
-    // HERE
   }
 
   #typeInfo = null;
