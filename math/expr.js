@@ -26,29 +26,19 @@ class Expr extends Base{
     return O.last(imps).addImps(ctx, imps.slice(0, -1));
   }
 
+  static *deser1(){ O.virtual('deser1'); }
+
   static *deser(ser, info=initDeserInfo()){
     const isType = ser.read();
     let type = null;
 
     if(!isType && ser.read())
-      type = yield [[Expr, 'deserCtor'], ser, info];
+      type = yield [[this, 'deser'], ser, info];
 
-    const expr = yield [[Expr, 'deserCtor'], ser, info];
-
-    if(type !== null)
-      expr.type = type;
-
-    return expr;
-  }
-
-  static *deserCtor(ser, info=initDeserInfo()){
-    const type = ser.read(2);
-    const ctor = [Ident, Lambda, Call][type];
+    const ctor = [Ident, Lambda, Call][ser.read(2)];
 
     return O.tco([ctor, 'deser1'], ser, info);
   }
-
-  static *deser1(){ O.virtual('deser1', 1); }
 
   #typeInfo = null;
   #type = null;
@@ -527,19 +517,19 @@ class Expr extends Base{
   }
 
   *ser(ser=new O.Serializer(), info=initSerInfo()){
-    if(!this.isType){
-      const {type} = this;
-
+    if(this.isType){
+      ser.write(1);
+    }else{
       ser.write(0);
 
-      if(type === null){
-        ser.write(0);
-      }else{
+      const {type} = this;
+
+      if(type !== null){
         ser.write(1);
-        yield [[type, 'ser1'], ser, info];
+        yield [[type, 'ser'], ser, info];
+      }else{
+        ser.write(0);
       }
-    }else{
-      ser.write(1);
     }
 
     return O.tco([this, 'ser1'], ser, info);
@@ -777,7 +767,7 @@ class Ident extends NamedExpr{
     return idents;
   }
 
-  *ser1(ser=new O.Serializer(), info=initSerInfo()){
+  *ser1(ser, info){
     ser.write(0, 2);
     this.serName(ser, info);
     return ser;
@@ -800,7 +790,7 @@ class Ident extends NamedExpr{
 class Lambda extends NamedExpr{
   static *deser1(ser, info){
     const name = this.deserName(ser, info);
-    const expr = yield [[this, 'deser1'], ser, info];
+    const expr = yield [[this, 'deser'], ser, info];
 
     return new Lambda(name, expr);
   }
@@ -906,7 +896,7 @@ class Lambda extends NamedExpr{
     return O.tco([this.expr, 'getStrIdents'], idents, includeType);
   }
 
-  *ser1(ser=new O.Serializer(), info=initSerInfo()){
+  *ser1(ser, info){
     ser.write(1, 2);
     this.serName(ser, info);
     return O.tco([this.expr, 'ser'], ser, info);
@@ -932,8 +922,8 @@ class Lambda extends NamedExpr{
 
 class Call extends Expr{
   static *deser1(ser, info){
-    const target = yield [[this, 'deser1'], ser, info];
-    const arg = yield [[this, 'deser1'], ser, info];
+    const target = yield [[this, 'deser'], ser, info];
+    const arg = yield [[this, 'deser'], ser, info];
 
     return new Call(target, arg);
   }
@@ -1043,7 +1033,7 @@ class Call extends Expr{
     return O.tco([this.arg, 'getStrIdents'], idents, includeType);
   }
 
-  *ser1(ser=new O.Serializer(), info=initSerInfo()){
+  *ser1(ser, info){
     ser.write(2, 2);
     yield [[this.target, 'ser'], ser, info];
     return O.tco([this.arg, 'ser'], ser, info);

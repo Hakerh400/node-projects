@@ -6,7 +6,7 @@ const electron = require('electron');
 const O = require('../omikron');
 
 const {log} = console;
-const {app, Menu, ipcMain} = electron;
+const {app, Menu, ipcMain: ipc} = electron;
 
 const project = 'math';
 
@@ -15,6 +15,12 @@ const mainFile = path.join(cwd, 'main.js');
 
 const main = () => {
   app.commandLine.appendSwitch('disable-http-cache');
+
+  ipc.on('log', (evt, args) => console.log.apply(null, args));
+  ipc.on('info', (evt, args) => console.info.apply(null, args));
+  ipc.on('error', (evt, args) => console.error.apply(null, args));
+  ipc.on('logRaw', (evt, data) => logRaw(Buffer.from(data)));
+  ipc.on('getArgs', (evt, data) => evt.sender.send('args', args));
 
   const {BrowserWindow} = require('electron');
 
@@ -68,7 +74,7 @@ const main = () => {
   win.webContents.openDevTools();
   win.maximize();
 
-  win.on('ready-to-show', () => {
+  win.once('ready-to-show', () => {
     win.show();
   });
 

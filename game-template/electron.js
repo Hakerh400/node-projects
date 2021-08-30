@@ -81,7 +81,7 @@ const main = () => {
   win.loadURL(`http://localhost/web/?project=${project}`);
   win.maximize();
 
-  win.on('ready-to-show', () => {
+  win.once('ready-to-show', () => {
     win.show();
   });
 

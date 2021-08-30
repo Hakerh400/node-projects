@@ -983,10 +983,7 @@ const processLine = function*(lineIndex, ctx){
 
   const proofDirectiveFuncs = {
     *'-'(proof){
-      debugger;
-      console.log('ok');
-      window.z
-      // z
+      O.z=-~O.z;
 
       const {subgoal} = proof;
       const {goal} = subgoal;
