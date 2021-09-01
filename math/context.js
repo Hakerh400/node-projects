@@ -15,7 +15,7 @@ const template = {
   binders: newObj,
   spacing: newObj,
   meta:    newObj,
-  rules:   newObj,
+  facts:   newObj,
   proof:   nullf,
 };
 
@@ -64,13 +64,13 @@ class Context extends Base{
     return new Context(this);
   }
 
-  hasRule(name){
-    return O.has(this.rules, name);
+  hasFact(name){
+    return O.has(this.facts, name);
   }
 
-  getRule(name){
-    if(!this.hasRule(name)) return null;
-    return this.rules[name];
+  getFact(name){
+    if(!this.hasFact(name)) return null;
+    return this.facts[name];
   }
 
   hasName(name){

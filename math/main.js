@@ -305,9 +305,9 @@ const processLine = function*(lineIndex, ctx){
     return [1];
   };
 
-  const assertFreeRule = function*(name){
-    if(ctx.hasRule(name))
-      throw `Rule ${O.sf(name)} already exists`;
+  const assertFreeFact = function*(name){
+    if(ctx.hasFact(name))
+      throw `Fact ${O.sf(name)} already exists`;
 
     return [1];
   };
@@ -517,13 +517,13 @@ const processLine = function*(lineIndex, ctx){
     return prop;
   };
 
-  const getRuleName = function*(ruleType){
+  const getFactName = function*(factType){
     const name = yield [getToken];
 
     if(name === null)
-      throw `Missing ${ruleType} name`;
+      throw `Missing ${factType} name`;
 
-    yield [assertFreeRule, name];
+    yield [assertFreeFact, name];
     yield [getExact, ':'];
 
     return name;
@@ -734,18 +734,18 @@ const processLine = function*(lineIndex, ctx){
     },
 
     *axiom(){
-      const name = yield [getRuleName, 'axiom'];
+      const name = yield [getFactName, 'axiom'];
       const prop = yield [getProp];
 
       ctx = ctx.copy();
-      ctx.rules = util.copyObj(ctx.rules);
-      ctx.rules[name] = prop;
+      ctx.facts = util.copyObj(ctx.facts);
+      ctx.facts[name] = prop;
 
       return O.tco(ret, `axiom ${name}: ${yield [[prop, 'toStr'], ctx]}`);
     },
 
     *lemma(){
-      const name = yield [getRuleName, 'lemma'];
+      const name = yield [getFactName, 'lemma'];
       const prop = yield [getProp];
 
       ctx = ctx.copy();
@@ -780,16 +780,16 @@ const processLine = function*(lineIndex, ctx){
       yield [insertIdentSortFuncs[sort], name, [type, info]];
 
       const eqSym = yield [getMeta, 'eq'];
-      const ruleName = `${name}_def`;
-      const rule = yield [[Expr.mkBinOp(eqSym, new Ident(name), val), 'simplify'], ctx];
+      const factName = `${name}_def`;
+      const fact = yield [[Expr.mkBinOp(eqSym, new Ident(name), val), 'simplify'], ctx];
 
-      ctx.rules = util.copyObj(ctx.rules);
-      const {rules} = ctx;
+      ctx.facts = util.copyObj(ctx.facts);
+      const {facts} = ctx;
 
-      if(O.has(rules, ruleName))
-        throw `Rule ${O.sf(ruleName)} already exists`;
+      if(O.has(facts, factName))
+        throw `Fact ${O.sf(factName)} already exists`;
 
-      rules[ruleName] = rule;
+      facts[factName] = fact;
 
       // if(name === '¬'){
       //   for(const name of O.keys(ctx.ops))
@@ -905,14 +905,14 @@ const processLine = function*(lineIndex, ctx){
 
           propNew = premises[premiseIndex];
         }else{
-          // Other rule
+          // Other fact
 
-          const rule = ctx.getRule(tk);
+          const fact = ctx.getFact(tk);
 
-          if(rule === null)
-            throw `Undefined rule ${O.sf(tk)}`;
+          if(fact === null)
+            throw `Undefined fact ${O.sf(tk)}`;
 
-          propNew = rule;
+          propNew = fact;
         }
       }
 
@@ -1049,8 +1049,8 @@ const processLine = function*(lineIndex, ctx){
         ctx.proof = proofNew;
       }else{
         ctx.proof = null;
-        ctx.rules = util.copyObj(ctx.rules);
-        ctx.rules[proof.name] = proof.prop;
+        ctx.facts = util.copyObj(ctx.facts);
+        ctx.facts[proof.name] = proof.prop;
 
         // const ser = new O.Serializer();
         // yield [[ctx, 'ser'], ser];
