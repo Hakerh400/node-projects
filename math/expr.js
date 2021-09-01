@@ -36,8 +36,14 @@ class Expr extends Base{
       type = yield [[this, 'deser'], ser, info];
 
     const ctor = [Ident, Lambda, Call][ser.read(2)];
+    const expr = yield [[ctor, 'deser1'], ser, info];
 
-    return O.tco([ctor, 'deser1'], ser, info);
+    expr.isType = isType;
+
+    if(type !== null)
+      expr.type = type;
+
+    return expr;
   }
 
   #typeInfo = null;
@@ -516,7 +522,7 @@ class Expr extends Base{
     return O.tco([exprNew, 'simplify'], ctx);
   }
 
-  *ser(ser=new O.Serializer(), info=initSerInfo()){
+  *ser(ser, info=initSerInfo()){
     if(this.isType){
       ser.write(1);
     }else{
@@ -770,7 +776,6 @@ class Ident extends NamedExpr{
   *ser1(ser, info){
     ser.write(0, 2);
     this.serName(ser, info);
-    return ser;
   }
 
   *toStr1(ctx, idents){

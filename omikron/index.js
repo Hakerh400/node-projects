@@ -91,7 +91,7 @@ function initElectron(){
 
   console.log = (...args) => {
     log(...args);
-    ipc.send('log', args);
+    // ipc.send('log', args);
   };
 
   console.info = (...args) => {

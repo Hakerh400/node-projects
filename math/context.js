@@ -2,6 +2,7 @@
 
 const assert = require('assert');
 const O = require('../omikron');
+const Base = require('./base');
 const util = require('./util');
 const su = require('./str-util');
 
@@ -20,14 +21,27 @@ const template = {
 
 const templateKeys = O.keys(template);
 
-class Context{
+class Context extends Base{
   static from(ctx){
     return new Context(ctx);
+  }
+
+  static *deser(ser){
+    const obj = O.obj();
+
+    obj.proof = null;
+
+    for(const key of templateKeys)
+      obj[key] = yield [[Base, 'deserMixed'], ser, Expr];
+
+    return new Context(obj);
   }
 
   identsCache = null;
 
   constructor(ctx=null){
+    super();
+
     if(ctx === null){
       for(const key of templateKeys)
         this[key] = template[key](this);
@@ -37,6 +51,13 @@ class Context{
       for(const key of templateKeys)
         this[key] = ctx[key];
     }
+  }
+
+  *ser(ser){
+    assert(!this.hasProof);
+
+    for(const key of templateKeys)
+      yield [[Base, 'serMixed'], ser, this[key]];
   }
 
   copy(){

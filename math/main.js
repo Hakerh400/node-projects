@@ -4,6 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const assert = require('assert');
 const O = require('../omikron');
+const Theory = require('./theory');
 const parser = require('./parser');
 const Expr = require('./expr');
 const Context = require('./context');
@@ -1011,10 +1012,13 @@ const processLine = function*(lineIndex, ctx){
 
         // O.z=-~O.z
 
-        const buf = (yield [[prop, 'ser']]).getOutput();
-        const prop1 = yield [[Expr, 'deser'], new O.Serializer(buf)];
+        // const ser = new O.Serializer();
+        // yield [[prop, 'ser'], ser];
+        //
+        // const buf = ser.getOutput();
+        // const prop1 = yield [[Expr, 'deser'], new O.Serializer(buf)];
 
-        return O.tco(ret, (yield [[prop, 'toStr'], ctx]) + `\n\n${yield [[prop1, 'toStr'], ctx]}`);
+        return O.tco(ret, yield [[prop, 'toStr'], ctx]);
       }
 
       proofNew.subgoals = proofNew.subgoals.slice();
@@ -1047,6 +1051,12 @@ const processLine = function*(lineIndex, ctx){
         ctx.proof = null;
         ctx.rules = util.copyObj(ctx.rules);
         ctx.rules[proof.name] = proof.prop;
+
+        // const ser = new O.Serializer();
+        // yield [[ctx, 'ser'], ser];
+        //
+        // const buf = ser.getOutput();
+        // ctx = yield [[Context, 'deser'], new O.Serializer(buf)];
       }
 
       const finalStr = goalStrs.length !== 0 ?
