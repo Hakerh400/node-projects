@@ -6,6 +6,8 @@ const assert = require('assert');
 const O = require('../omikron');
 
 class Theory{
+  exists = 0;
+
   constructor(parent, name){
     this.parent = parent;
     this.name = name;
@@ -14,7 +16,7 @@ class Theory{
   get isDir(){ return 0; }
   get isFile(){ return 0; }
 
-  hasPranet(){
+  hasParent(){
     return this.parent !== null;
   }
 
