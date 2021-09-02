@@ -6,7 +6,7 @@ const assert = require('assert');
 const O = require('../omikron');
 
 class Theory{
-  exists = 0;
+  saved = 0;
 
   constructor(parent, name){
     this.parent = parent;
@@ -31,12 +31,31 @@ class Theory{
 }
 
 class Dir extends Theory{
-  files = new Set();
+  ths = O.obj();
 
   get isDir(){ return 1; }
 
-  getFileNames(){
-    return O.sortAsc([...this.files].map(a => a.name));
+  getThNames(){
+    return O.sortAsc(O.keys(this.ths));
+  }
+
+  hasTh(name){
+    return O.has(this.ths, name);
+  }
+
+  getThs(){
+    return this.ths;
+  }
+
+  getTh(name){
+    if(!this.hasTh(name)) return null;
+    return this.ths[name];
+  }
+
+  addTh(th){
+    const {name} = th;
+    assert(!this.hasTh(name));
+    this.ths[name] = th;
   }
 }
 
