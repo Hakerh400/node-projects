@@ -8,7 +8,7 @@
     "haskell": "C:/Program Files/GHC/bin/runghc.exe",
     "agda": "C:/Program Files/Agda/bin/agda.exe",
     "lisp": "C:/Program Files/clisp-2.49/clisp.exe",
-    "ffmpeg": "C:/Program Files/FFmpeg/bin/latest/ffmpeg.exe",
+    "ffmpeg": "C:/Program Files/FFmpeg/bin/original/ffmpeg.exe",
     "z3": "C:/Program Files/Z3/bin/z3.exe",
     "cvc": "C:/Program Files/CVC4/cvc4.exe"
   },
