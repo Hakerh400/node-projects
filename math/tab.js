@@ -9,24 +9,37 @@ const util = require('./util');
 const su = require('./str-util');
 
 class Tab{
-  constructor(title){
+  constructor(title, selected=0){
     this.title = title;
+    this.selected = selected;
   }
 
   render(g, x, y, w, h, ws, hs){ O.virtual('render'); }
+
+  select(){
+    assert(!this.selected);
+    this.selected = 1;
+  }
+
+  unselect(){
+    assert(this.selected);
+    this.selected = 0;
+  }
 }
 
 class TheoryTab extends Tab{
   constructor(theory){
-    super(theory.name);
+    super(theory.title);
     this.theory = theory;
   }
 
   render(g, x, y, w, h, ws, hs){
-    const {title} = this;
+    const {title, selected} = this;
 
+    g.fillStyle = selected ? 'white' : '#a9a9a9';
     g.beginPath();
     g.rect(x + 1, y + 1, w - 2, h - 2);
+    g.fill();
     g.stroke();
 
     g.fillStyle = 'black';

@@ -12,7 +12,7 @@ const {Dir, File} = Theory;
 
 class System{
   constructor(){
-    this.root = new Dir(null, 'Root');
+    this.root = new Dir(null, '');
   }
 
   getRoot(){

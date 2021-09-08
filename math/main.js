@@ -56,8 +56,6 @@ const main = () => {
   display.hs = hs;
   display.ofs = ofs;
 
-  display.newTab();
-
   // mainEditor.selected = 1;
   // outputEditor.wrap = 1;
   //
@@ -1369,18 +1367,18 @@ const onKeyDown = evt => {
 
   cases: {
     noFlags: if(flags === 0){
-      if(/^Arrow|^(?:Backspace|Home|End|Delete|Tab)$/.test(code)){
-        O.pd(evt);
-        mainEditor.processKey(code);
-        break cases;
-      }
-
-      if(code === 'F4'){
-        O.pd(evt);
-        if(!hasErr()) break cases;
-        mainEditor.goto(linesData.length - 1);
-        break cases;
-      }
+      // if(/^Arrow|^(?:Backspace|Home|End|Delete|Tab)$/.test(code)){
+      //   O.pd(evt);
+      //   mainEditor.processKey(code);
+      //   break cases;
+      // }
+      //
+      // if(code === 'F4'){
+      //   O.pd(evt);
+      //   if(!hasErr()) break cases;
+      //   mainEditor.goto(linesData.length - 1);
+      //   break cases;
+      // }
 
       break cases;
     }
@@ -1408,6 +1406,21 @@ const onKeyDown = evt => {
     }
 
     ctrl: if(flags === 4){
+      if(code === 'Tab'){
+        display.nextTab(0);
+        break cases;
+      }
+
+      if(code === 'KeyN'){
+        display.newTab();
+        break cases;
+      }
+
+      if(code === 'KeyW'){
+        display.closeTab(0);
+        break cases;
+      }
+
       if(code === 'KeyS'){
         O.pd(evt);
         save();
@@ -1432,6 +1445,11 @@ const onKeyDown = evt => {
     }
 
     ctrlShift: if(flags === 6){
+      if(code === 'Tab'){
+        display.prevTab(0);
+        break cases;
+      }
+
       if(code === 'KeyD'){
         O.pd(evt);
         mainEditor.processKey('Duplicate');
@@ -1456,6 +1474,7 @@ const onKeyDown = evt => {
 };
 
 const onKeyPress = evt => {
+  return;
   const {ctrlKey, altKey, key} = evt;
   if(ctrlKey || altKey) return;
 

@@ -13,6 +13,7 @@ const {TheoryTab} = Tab;
 
 class Display{
   tabs = [];
+  curTabIndex = null;
 
   ws = null;
   hs = null;
@@ -23,8 +24,7 @@ class Display{
   }
 
   render(g, iw, ih, w, h){
-    const {tabs, ws, hs, ofs} = this;
-    const tabsNum = tabs.length;
+    const {tabs, tabsNum, ws, hs, ofs} = this;
 
     const tabW = ws * 20;
     const tabH = hs;
@@ -48,18 +48,107 @@ class Display{
     }
   }
 
+  get tabsNum(){
+    return this.tabs.length;
+  }
+
+  get curTab(){
+    const {curTabIndex} = this;
+
+    if(curTabIndex === null)
+      return null;
+
+    return this.tabs[curTabIndex];
+  }
+
   newTab(index=null){
-    const {system, tabs} = this;
+    const {system, tabs, tabsNum, curTabIndex} = this;
     const theory = system.getRoot();
     const tab = new TheoryTab(theory);
 
     if(index === null){
-      tabs.push(tab);
-    }else{
-      tabs.splice(index, 0, tab);
+      index = curTabIndex !== null ?
+        curTabIndex + 1 : tabsNum;
     }
 
+    if(curTabIndex !== null && index <= curTabIndex)
+      this.curTabIndex++;
+
+    tabs.splice(index, 0, tab);
+    this.selectTabAt(index);
+
     return tab;
+  }
+
+  selectTabAt(index){
+    const {tabs, curTab} = this;
+
+    if(curTab !== null)
+      curTab.unselect();
+
+    this.curTabIndex = index;
+
+    const curTabNew = this.curTab;
+    curTabNew.select();
+
+    return curTabNew;
+  }
+
+  adjTab(dif, force=1){
+    const {tabsNum, curTabIndex} = this;
+
+    if(tabsNum === 0){
+      assert(!force);
+      return;
+    }
+
+    assert(curTabIndex !== null);
+
+    const indexNew = (curTabIndex + dif + tabsNum) % tabsNum;
+    return this.selectTabAt(indexNew);
+  }
+
+  nextTab(force){
+    return this.adjTab(1, force);
+  }
+
+  prevTab(force){
+    return this.adjTab(-1, force);
+  }
+
+  closeTab(force=1){
+    const {tabs, tabsNum, curTabIndex, curTab} = this;
+
+    if(tabsNum === 0){
+      assert(!force);
+      return;
+    }
+
+    assert(curTabIndex !== null);
+    assert(curTab !== null);
+
+    if(tabsNum === 1){
+      curTab.unselect();
+      tabs.length = 0;
+      this.curTabIndex = null;
+      return null;
+    }
+
+    let curTabNew = null;
+
+    if(curTabIndex !== 0){
+      curTabNew = this.prevTab();
+    }else{
+      curTabNew = this.nextTab();
+
+      assert(this.curTabIndex === 1);
+      this.curTabIndex = 0;
+    }
+
+    assert(!curTab.selected);
+    tabs.splice(curTabIndex, 1);
+
+    return curTabNew;
   }
 }
 

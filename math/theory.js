@@ -18,8 +18,16 @@ class Theory{
   get isDir(){ return 0; }
   get isFile(){ return 0; }
 
-  hasParent(){
+  get hasParent(){
     return this.parent !== null;
+  }
+
+  get isRoot(){
+    return !this.hasParent;
+  }
+
+  get title(){
+    return this.name;
   }
 
   getPath(){
@@ -36,6 +44,10 @@ class Dir extends Theory{
   ths = O.obj();
 
   get isDir(){ return 1; }
+
+  get title(){
+    return `${this.name}/`;
+  }
 
   getThNames(){
     return O.sortAsc(O.keys(this.ths));
