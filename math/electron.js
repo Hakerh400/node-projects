@@ -27,12 +27,13 @@ const main = () => {
   const win = new BrowserWindow({
     frame: true,
     useContentSize: true,
+    title: '',
+    icon: null,
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
+      nativeWindowOpen: true,
     },
-    title: '',
-    icon: null,
   });
 
   const contents = win.webContents;

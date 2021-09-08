@@ -1,7 +1,7 @@
 {
   "exe": {
     "node": null,
-    "electron": "%appdata%/npm/node_modules/electron-nightly/dist/electron.exe",
+    "electron": "%appdata%/npm/node_modules/electron/dist/electron.exe",
     "php": "C:/wamp/bin/php/php7.2.4/php.exe",
     "mysql": "C:/wamp/bin/mysql/mysql5.7.21/bin/mysql.exe",
     "python": "C:/Program Files/Python36/python.exe",

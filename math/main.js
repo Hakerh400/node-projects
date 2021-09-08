@@ -4,6 +4,8 @@ const fs = require('fs');
 const path = require('path');
 const assert = require('assert');
 const O = require('../omikron');
+const System = require('./system');
+const Display = require('./display');
 const Theory = require('./theory');
 const parser = require('./parser');
 const Expr = require('./expr');
@@ -32,8 +34,11 @@ const ofs = 15;
 const smallNatMax = 1e3;
 const mediumNatMax = 2 ** 30 - 1;
 
-const mainEditor = new Editor();
-const outputEditor = new Editor();
+const system = new System();
+const display = new Display(system);
+
+// const mainEditor = new Editor();
+// const outputEditor = new Editor();
 
 const linesData = [];
 
@@ -47,12 +52,18 @@ const logicFile = path.join(cwd, './logic/1.txt');
 const logicStr = loadLogic ? O.rfs(logicFile, 1) : null;
 
 const main = () => {
-  mainEditor.selected = 1;
-  outputEditor.wrap = 1;
+  display.ws = ws;
+  display.hs = hs;
+  display.ofs = ofs;
 
-  load();
+  display.newTab();
 
-  mainEditor.updateLine(0);
+  // mainEditor.selected = 1;
+  // outputEditor.wrap = 1;
+  //
+  // load();
+  //
+  // mainEditor.updateLine(0);
 
   initCanvas();
   aels();
@@ -76,30 +87,30 @@ const aels = () => {
 };
 
 const updateDisplay = () => {
-  const {lines, updatedLine} = mainEditor;
-
-  if(updatedLine !== null && linesData.length > updatedLine){
-    linesData.length = updatedLine;
-    mainEditor.updatedLine = null;
-  }
-
-  for(let i = 0; i !== lineProcessSpeed; i++){
-    if(hasErr() || linesData.length === lines.length) break;
-
-    updateNextLine();
-
-    if(displayLineProcess){
-      if(hasErr() || linesData.length === lines.length) break;
-
-      const index = linesData.length;
-      const line = lines[index];
-
-      if(displayLineProcess && line.trim())
-        mainEditor.markedLine = [index, '#f80'];
-    }
-  }
-
-  updateOutput();
+  // const {lines, updatedLine} = mainEditor;
+  //
+  // if(updatedLine !== null && linesData.length > updatedLine){
+  //   linesData.length = updatedLine;
+  //   mainEditor.updatedLine = null;
+  // }
+  //
+  // for(let i = 0; i !== lineProcessSpeed; i++){
+  //   if(hasErr() || linesData.length === lines.length) break;
+  //
+  //   updateNextLine();
+  //
+  //   if(displayLineProcess){
+  //     if(hasErr() || linesData.length === lines.length) break;
+  //
+  //     const index = linesData.length;
+  //     const line = lines[index];
+  //
+  //     if(displayLineProcess && line.trim())
+  //       mainEditor.markedLine = [index, '#f80'];
+  //   }
+  // }
+  //
+  // updateOutput();
   render();
 
   O.raf(updateDisplay);
@@ -107,31 +118,26 @@ const updateDisplay = () => {
 
 const render = () => {
   g.clearCanvas('white');
+  display.render(g, iw, ih, w, h);
 
-  const iwh = iw / 2;
-  const ihh = ih / 2;
-
-  const wh = w >> 1;
-  const hh = h >> 1;
-
-  const ofs2 = ofs * 2;
-  const width = (iw - ofs2) / ws >> 1;
-  const height = (ih - ofs2) / hs | 0;
-
-  g.beginPath();
-  g.moveTo(iwh, 0);
-  g.lineTo(iwh, ih);
-  g.stroke();
-
-  g.translate(ofs, ofs);
-  g.scale(ws, hs);
-  mainEditor.render(g, width, height);
-  g.resetTransform();
-
-  g.translate(iwh + ofs, ofs);
-  g.scale(ws, hs);
-  outputEditor.render(g, width, height);
-  g.resetTransform();
+  // const ofs2 = ofs * 2;
+  // const width = (iw - ofs2) / ws >> 1;
+  // const height = (ih - ofs2) / hs | 0;
+  //
+  // g.beginPath();
+  // g.moveTo(iwh, 0);
+  // g.lineTo(iwh, ih);
+  // g.stroke();
+  //
+  // g.translate(ofs, ofs);
+  // g.scale(ws, hs);
+  // mainEditor.render(g, width, height);
+  // g.resetTransform();
+  //
+  // g.translate(iwh + ofs, ofs);
+  // g.scale(ws, hs);
+  // outputEditor.render(g, width, height);
+  // g.resetTransform();
 };
 
 const updateNextLine = () => {

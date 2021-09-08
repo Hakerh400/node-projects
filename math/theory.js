@@ -4,6 +4,8 @@ const fs = require('fs');
 const path = require('path');
 const assert = require('assert');
 const O = require('../omikron');
+const util = require('./util');
+const su = require('./str-util');
 
 class Theory{
   saved = 0;
@@ -63,4 +65,7 @@ class File extends Theory{
   get isFile(){ return 1; }
 }
 
-module.exports = Theory;
+module.exports = Object.assign(Theory, {
+  Dir,
+  File,
+});
