@@ -1,5 +1,5 @@
 @echo off
 cls
 
-cd GIT^_EXCLUDE
+cd ../Links
 call h.bat
