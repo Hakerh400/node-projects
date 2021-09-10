@@ -18,6 +18,8 @@ class Theory{
   get isDir(){ return 0; }
   get isFile(){ return 0; }
 
+  render(g, x, y, ws, hs){ O.virtual('render'); }
+
   get hasParent(){
     return this.parent !== null;
   }
@@ -47,6 +49,10 @@ class Dir extends Theory{
 
   get title(){
     return `${this.name}/`;
+  }
+
+  render(g, x, y, ws, hs){
+    
   }
 
   getThNames(){

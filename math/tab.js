@@ -34,7 +34,7 @@ class TheoryTab extends Tab{
   }
 
   render(g, x, y, w, h, ws, hs){
-    const {title, selected} = this;
+    const {title, selected, theory} = this;
 
     g.fillStyle = selected ? 'white' : '#a9a9a9';
     g.beginPath();
@@ -44,6 +44,8 @@ class TheoryTab extends Tab{
 
     g.fillStyle = 'black';
     g.fillText(title, x + w / 2, y + h / 2);
+
+    theory.render(g, x, y + h, ws, hs);
   }
 }
 
