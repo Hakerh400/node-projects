@@ -56,6 +56,8 @@ const main = () => {
   display.hs = hs;
   display.ofs = ofs;
 
+  display.newTab();
+
   // mainEditor.selected = 1;
   // outputEditor.wrap = 1;
   //
@@ -1365,130 +1367,61 @@ const onKeyDown = evt => {
   const {ctrlKey, shiftKey, altKey, code} = evt;
   const flags = (ctrlKey << 2) | (shiftKey << 1) | altKey;
 
-  cases: {
-    noFlags: if(flags === 0){
-      // if(/^Arrow|^(?:Backspace|Home|End|Delete|Tab)$/.test(code)){
-      //   O.pd(evt);
-      //   mainEditor.processKey(code);
-      //   break cases;
-      // }
-      //
-      // if(code === 'F4'){
-      //   O.pd(evt);
-      //   if(!hasErr()) break cases;
-      //   mainEditor.goto(linesData.length - 1);
-      //   break cases;
-      // }
-
-      break cases;
-    }
-
-    if(flags === 4 || flags === 1){
-      if(code === 'ArrowUp'){
-        mainEditor.scrollUp(altKey);
-        break cases;
-      }
-
-      if(code === 'ArrowDown'){
-        mainEditor.scrollDown(altKey);
-        break cases;
-      }
-
-      if(code === 'ArrowLeft'){
-        mainEditor.scrollLeft();
-        break cases;
-      }
-
-      if(code === 'ArrowRight'){
-        mainEditor.scrollRight();
-        break cases;
-      }
-    }
-
+  const processKey = () => {
     ctrl: if(flags === 4){
       if(code === 'Tab'){
         display.nextTab(0);
-        break cases;
+        return 1;
       }
 
-      if(code === 'KeyN'){
+      if(code === 'KeyT'){
         display.newTab();
-        break cases;
+        return 1;
       }
 
       if(code === 'KeyW'){
         display.closeTab(0);
-        break cases;
+        return 1;
       }
 
       if(code === 'KeyS'){
         O.pd(evt);
         save();
-        break cases;
+        return 1;
       }
 
-      if(code === 'KeyG'){
-        O.pd(evt);
-
-        const s = prompt();
-        if(s === null) break cases;
-
-        let n = Number(s) - 1;
-        if(isNaN(n)) break cases;
-
-        mainEditor.goto(n);
-
-        break cases;
-      }
-
-      break cases;
+      return 0;
     }
 
     ctrlShift: if(flags === 6){
       if(code === 'Tab'){
         display.prevTab(0);
-        break cases;
+        return 1;
       }
 
-      if(code === 'KeyD'){
-        O.pd(evt);
-        mainEditor.processKey('Duplicate');
-        break cases;
-      }
-
-      if(code === 'ArrowUp'){
-        O.pd(evt);
-        mainEditor.processKey('MoveUp');
-        break cases;
-      }
-
-      if(code === 'ArrowDown'){
-        O.pd(evt);
-        mainEditor.processKey('MoveDown');
-        break cases;
-      }
-
-      break cases;
+      return 0;
     }
-  }
+
+    return 0;
+  };
+
+  if(processKey()) return;
+
+  const {curTab} = display;
+  if(curTab === null) return;
+  if(!curTab.isTh) return;
+
+  const {theory} = curTab;
+  theory.onKeyDown(evt);
 };
 
 const onKeyPress = evt => {
-  return;
-  const {ctrlKey, altKey, key} = evt;
-  if(ctrlKey || altKey) return;
+  const {curTab} = display;
+  if(curTab === null) return;
+  if(!curTab.isTh) return;
 
-  const shouldAddTab = () => {
-    const {cy} = mainEditor;
-    if(linesData.length <= cy) return 0;
-
-    const {ctx} = linesData[cy];
-    return ctx.hasProof;
-  };
-
-  const addTab = shouldAddTab();
-
-  mainEditor.processKey(key, addTab);
+  const {theory} = curTab;
+  theory.onKeyPress(evt);
 };
 
 const save = () => {

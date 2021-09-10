@@ -77,6 +77,108 @@ class Editor{
     g.stroke();
   }
 
+  onKeyDown(evt){
+    const {ctrlKey, shiftKey, altKey, code} = evt;
+    const flags = (ctrlKey << 2) | (shiftKey << 1) | altKey;
+
+    noFlags: if(flags === 0){
+      if(/^Arrow|^(?:Backspace|Home|End|Delete|Tab)$/.test(code)){
+        O.pd(evt);
+        this.processKey(code);
+        return;
+      }
+
+      if(code === 'F4'){
+        O.pd(evt);
+        if(!hasErr()) return;
+        this.goto(linesData.length - 1);
+        return;
+      }
+
+      return;
+    }
+
+    if(flags === 4 || flags === 1){
+      if(code === 'ArrowUp'){
+        this.scrollUp(altKey);
+        return;
+      }
+
+      if(code === 'ArrowDown'){
+        this.scrollDown(altKey);
+        return;
+      }
+
+      if(code === 'ArrowLeft'){
+        this.scrollLeft();
+        return;
+      }
+
+      if(code === 'ArrowRight'){
+        this.scrollRight();
+        return;
+      }
+    }
+
+    ctrl: if(flags === 4){
+      if(code === 'KeyG'){
+        O.pd(evt);
+
+        const s = prompt();
+        if(s === null) return;
+
+        let n = Number(s) - 1;
+        if(isNaN(n)) return;
+
+        this.goto(n);
+
+        return;
+      }
+
+      return;
+    }
+
+    ctrlShift: if(flags === 6){
+      if(code === 'KeyD'){
+        O.pd(evt);
+        this.processKey('Duplicate');
+        return;
+      }
+
+      if(code === 'ArrowUp'){
+        O.pd(evt);
+        this.processKey('MoveUp');
+        return;
+      }
+
+      if(code === 'ArrowDown'){
+        O.pd(evt);
+        this.processKey('MoveDown');
+        return;
+      }
+
+      return;
+    }
+  }
+
+  onKeyPress(evt){
+    const {ctrlKey, altKey, key} = evt;
+    if(ctrlKey || altKey) return;
+
+    const shouldAddTab = () => {
+      return 0;
+      const {cy} = this;
+      if(linesData.length <= cy) return 0;
+
+      const {ctx} = linesData[cy];
+      return ctx.hasProof;
+    };
+
+    const addTab = shouldAddTab();
+
+    this.processKey(key, addTab);
+  }
+
   goto(n){
     n = O.bound(n, 0, this.lines.length - 1);
 

@@ -44,7 +44,7 @@ class Display{
       const x = tabW * i;
       const y = 0;
 
-      tabs[i].render(g, x, y, tabW, tabH, ws, hs);
+      tabs[i].render(g, ofs, x, y, iw, ih, tabW, tabH, ws, hs);
     }
   }
 
@@ -94,11 +94,11 @@ class Display{
     return curTabNew;
   }
 
-  adjTab(dif, force=1){
+  adjTab(dif, strict=1){
     const {tabsNum, curTabIndex} = this;
 
     if(tabsNum === 0){
-      assert(!force);
+      assert(!strict);
       return;
     }
 
@@ -108,19 +108,19 @@ class Display{
     return this.selectTabAt(indexNew);
   }
 
-  nextTab(force){
-    return this.adjTab(1, force);
+  nextTab(strict){
+    return this.adjTab(1, strict);
   }
 
-  prevTab(force){
-    return this.adjTab(-1, force);
+  prevTab(strict){
+    return this.adjTab(-1, strict);
   }
 
-  closeTab(force=1){
+  closeTab(strict=1){
     const {tabs, tabsNum, curTabIndex, curTab} = this;
 
     if(tabsNum === 0){
-      assert(!force);
+      assert(!strict);
       return;
     }
 

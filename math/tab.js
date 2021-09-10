@@ -14,7 +14,9 @@ class Tab{
     this.selected = selected;
   }
 
-  render(g, x, y, w, h, ws, hs){ O.virtual('render'); }
+  get isTh(){ return 0; }
+
+  render(g, ofs, x, y, w, h, tw, th, ws, hs){ O.virtual('render'); }
 
   select(){
     assert(!this.selected);
@@ -33,19 +35,23 @@ class TheoryTab extends Tab{
     this.theory = theory;
   }
 
-  render(g, x, y, w, h, ws, hs){
+  get isTh(){ return 1; }
+
+  render(g, ofs, x, y, w, h, tw, th, ws, hs){
     const {title, selected, theory} = this;
 
     g.fillStyle = selected ? 'white' : '#a9a9a9';
     g.beginPath();
-    g.rect(x + 1, y + 1, w - 2, h - 2);
+    g.rect(x + 1, y + 1, tw - 2, th - 2);
     g.fill();
     g.stroke();
 
     g.fillStyle = 'black';
-    g.fillText(title, x + w / 2, y + h / 2);
+    g.fillText(title, x + tw / 2, y + th / 2);
 
-    theory.render(g, x, y + h, ws, hs);
+    if(!selected) return;
+
+    theory.render(g, ofs, 0, y + th, w, h, ws, hs);
   }
 }
 
