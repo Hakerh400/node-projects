@@ -1,12 +1,12 @@
 {
-  "dw": "C:/Users/Thomas/Downloads",
+  "dw": "C:/Users/User/Downloads",
   "projects": "C:/Projects",
   "node": "C:/Projects/JavaScript",
   "web": "C:/wamp/www/web",
   "O": "C:/wamp/www/web/omikron.js",
   "img": "C:/wamp/www/web/projects/image",
   "vid": "C:/wamp/www/web/projects/video",
-  "temp": "C:/Users/Thomas/AppData/Local/Temp",
+  "temp": "C:/Users/User/AppData/Local/Temp",
   "encrypted": "C:/Projects/Encrypted",
   "render": "D:/Render"
 }
