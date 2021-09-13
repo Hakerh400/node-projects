@@ -53,7 +53,12 @@ class Dir extends Theory{
 
     const editor = new Editor();
 
-    editor.setText(this.pathStr);
+    const lines = [
+      this.pathStr, '',
+      ...this.getThNames(),
+    ];
+
+    editor.setText(lines.join('\n'));
     editor.editable = 1;
 
     this.editor = editor;
