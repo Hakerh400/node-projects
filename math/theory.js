@@ -45,24 +45,24 @@ class Theory{
 }
 
 class Dir extends Theory{
-  thsArr = [];
-  thsObj = O.obj();
-
-  constructor(parent, name){
-    super(parent, name);
-
-    const editor = new Editor();
-
-    const lines = [
-      this.pathStr, '',
-      ...this.getThNames(),
-    ];
-
-    editor.setText(lines.join('\n'));
-    editor.editable = 1;
-
-    this.editor = editor;
-  }
+  // thsArr = [];
+  // thsObj = O.obj();
+  //
+  // constructor(parent, name){
+  //   super(parent, name);
+  //
+  //   const editor = new Editor();
+  //
+  //   const lines = [
+  //     this.pathStr, '',
+  //     ...this.getThNames(),
+  //   ];
+  //
+  //   editor.setText(lines.join('\n'));
+  //   editor.editable = 1;
+  //
+  //   this.editor = editor;
+  // }
 
   get isDir(){ return 1; }
 
