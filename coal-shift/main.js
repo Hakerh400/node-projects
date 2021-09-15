@@ -14,9 +14,10 @@ const main = () => {
   const year = now.getFullYear();
 
   const days = daysDif(day, month, year);
-  const shift = getShift(days);
+  const shift1 = getShift(days);
+  const shift2 = getShift(days + 1);
 
-  log(`${day}.${month}.${year} - ${shift}`);
+  log(`${day}.${month}.${year} - ${shift1} ${shift2}`);
 };
 
 const getShift = days => {

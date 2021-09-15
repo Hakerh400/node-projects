@@ -23,7 +23,7 @@ const {Ident, Call, Lambda} = Expr;
 
 const displayLineProcess = 0;
 const lineProcessSpeed = 50;
-const loadLogic = 1;
+const loadLogic = 0;
 
 const {g} = O.ceCanvas(1);
 

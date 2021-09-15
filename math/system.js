@@ -10,6 +10,9 @@ const su = require('./str-util');
 
 const {Dir, File} = Theory;
 
+const cwd = __dirname;
+const rootDir = path.join(cwd, 'logic');
+
 class System{
   constructor(){
     this.root = new Dir(null, '');
