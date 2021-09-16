@@ -13,12 +13,18 @@ const {Dir, File} = Theory;
 const {rootDir} = config;
 
 class System{
-  constructor(){
-    this.root = null;
-  }
+  #root = null;
+  rootDir = rootDir
 
   initRoot(){
     this.root = this.constructDir(null, rootDir);
+  }
+
+  get root(){
+    if(this.#root === null)
+      this.initRoot();
+
+    return this.#root;
   }
 
   constructDir(parent, pth){
@@ -26,13 +32,6 @@ class System{
       path.parse(pth).name : '';
 
     return new Dir(parent, name);
-  }
-
-  getRoot(){
-    if(this.root === null)
-      this.initRoot();
-
-    return this.root;
   }
 }
 

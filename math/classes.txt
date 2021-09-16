@@ -1,0 +1,43 @@
+System
+  CTOR         :: System
+  rootDir      :: String
+  root         :: Theory
+  exists       :: Dir -> String -> Bool
+  getTh        :: Dir -> String -> Theory
+  reorder      :: Dir -> Theory -> Int -> ()
+  newDir       :: Dir -> String -> Dir
+  newFile      :: Dir -> String -> File
+  remove       :: Theory -> ()
+  readDir      :: Dir -> [Theory]
+  readFile     :: File -> String
+  writeFile    :: File -> String -> ()
+  thExists     :: Theory -> Bool
+  thImports    :: Theory -> [Theory]
+  thImportedBy :: Theory -> [Theory]
+  thVerified   :: Theory -> Bool
+
+Theory
+  CTOR         :: System -> Theory -> String -> Theory
+  system       :: System
+  parent       :: Theory
+  name         :: String
+  S name2title :: String -> String
+  *title       :: String
+  *path        :: [String]
+
+Dir
+  CTOR         :: System -> Theory -> String -> [TheoryInfo] -> Theory
+  thsInfo      :: [TheoryInfo]
+  thsObj       :: Object Theory
+  editor       :: Editor
+
+File
+  CTOR         :: System -> Theory -> String -> String -> Theory
+  mainEditor   :: Editor
+  outputEditor :: Editor
+
+TheoryInfo
+  CTOR         :: String -> Bool
+  name         :: String
+  isDir        :: Bool
+  *title       :: String
