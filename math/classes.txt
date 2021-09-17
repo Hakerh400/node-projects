@@ -1,7 +1,7 @@
-System
-  CTOR         :: System
+System         :: System
   rootDir      :: String
   root         :: Theory
+  getThsInfo   :: String -> [TheoryInfo]
   exists       :: Dir -> String -> Bool
   getTh        :: Dir -> String -> Theory
   reorder      :: Dir -> Theory -> Int -> ()
@@ -16,28 +16,25 @@ System
   thImportedBy :: Theory -> [Theory]
   thVerified   :: Theory -> Bool
 
-Theory
-  CTOR         :: System -> Theory -> String -> Theory
+Theory         :: System -> Theory -> String -> Theory
   system       :: System
   parent       :: Theory
   name         :: String
   S name2title :: String -> String
   *title       :: String
   *path        :: [String]
+  *fsPath      :: String
 
-Dir
-  CTOR         :: System -> Theory -> String -> [TheoryInfo] -> Theory
+Dir            :: System -> Theory -> String -> [TheoryInfo] -> Dir
   thsInfo      :: [TheoryInfo]
   thsObj       :: Object Theory
   editor       :: Editor
 
-File
-  CTOR         :: System -> Theory -> String -> String -> Theory
+File           :: System -> Theory -> String -> String -> File
   mainEditor   :: Editor
   outputEditor :: Editor
 
-TheoryInfo
-  CTOR         :: String -> Bool
+TheoryInfo     :: String -> Bool -> TheoryInfo
   name         :: String
   isDir        :: Bool
   *title       :: String

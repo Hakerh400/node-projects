@@ -12,6 +12,7 @@ const logicDir = path.join(cwd, 'logic');
 
 const config = {
   logicDir,
+  thExt: 'txt',
 };
 
 module.exports = config;

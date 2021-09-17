@@ -10,28 +10,39 @@ const util = require('./util');
 const su = require('./str-util');
 
 const {Dir, File} = Theory;
-const {rootDir} = config;
+const {rootDir, thExt} = config;
 
 class System{
   #root = null;
   rootDir = rootDir
 
-  initRoot(){
-    this.root = this.constructDir(null, rootDir);
+  #initRoot(){
+    const {rootDir} = this;
+    const thsInfo = this.getThsInfo(rootDir);
+
+    this.root = new Dir(this, null, '', thsInfo);
   }
 
   get root(){
     if(this.#root === null)
-      this.initRoot();
+      this.#initRoot();
 
     return this.#root;
   }
 
-  constructDir(parent, pth){
-    const name = parent !== null ?
-      path.parse(pth).name : '';
+  getThsInfo(pth){
+    if(!fs.existsSync(pth))
+      return [];
 
-    return new Dir(parent, name);
+    return fs.readdirSync(pth).map(name => {
+      const isFile = name.endsWith(`.${thExt}`);
+      const isDir = !isFile;
+
+      if(isFile)
+        name = name.slice(0, -(thExt.length + 1));
+
+      const pthNew = path.join(pth, name);
+    });
   }
 }
 
