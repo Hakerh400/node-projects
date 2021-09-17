@@ -69,13 +69,22 @@ class Dir extends Theory{
       lines.push('(empty)');
     }
 
-    editor.setText(lines.join('\n'));
+    editor.setLines(lines);
     editor.editable = 1;
+    editor.selected = 1;
+
+    const offset = this.editorEntriesOffset;
+    editor.cy = offset;
+
 
     this.editor = editor;
   }
 
   get isDir(){ return 1; }
+
+  get editorEntriesOffset(){
+    return 2;
+  }
 
   render(g, ofs, x, y, w, h, ws, hs){
     const {editor} = this;
@@ -91,11 +100,62 @@ class Dir extends Theory{
   }
 
   onKeyDown(evt){
-    this.editor.onKeyDown(evt);
+    const {ctrlKey, shiftKey, altKey, code} = evt;
+    const flags = (ctrlKey << 2) | (shiftKey << 1) | altKey;
+    const {editor} = this;
+
+    if(flags === 0){
+      if(code === 'ArrowUp' || code === 'ArrowLeft'){
+        this.goUp(1);
+        return;
+      }
+
+      if(code === 'ArrowDown' || code === 'ArrowRight'){
+        this.goDown(1);
+        return;
+      }
+
+      return;
+    }
+
+    if(flags === 4){
+      if(code.startsWith('Arrow')){
+        editor.onKeyDown(evt);
+        return;
+      }
+
+      return;
+    }
+
+    // this.editor.onKeyDown(evt);
   }
 
   onKeyPress(evt){
     this.editor.onKeyPress(evt);
+  }
+
+  goVert(dy, wrap=0){
+    const {editor} = this;
+    const offset = this.editorEntriesOffset;
+    const {lines} = editor;
+    const linesNum = lines.length - offset;
+
+    let cy = editor.cy - offset + dy;
+
+    if(cy < 0 || cy >= linesNum){
+      if(!wrap) return;
+      cy = (cy % linesNum + linesNum) % linesNum;
+    }
+
+    editor.cy = cy + offset;
+  }
+
+  goUp(wrap){
+    this.goVert(-1, wrap);
+  }
+
+  goDown(wrap){
+    this.goVert(1, wrap);
   }
 
   // getThNames(){

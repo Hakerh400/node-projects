@@ -1374,7 +1374,7 @@ const onKeyDown = evt => {
         return 1;
       }
 
-      if(code === 'KeyT'){
+      if(code === 'KeyN'){
         display.newTab();
         return 1;
       }
@@ -1384,11 +1384,11 @@ const onKeyDown = evt => {
         return 1;
       }
 
-      if(code === 'KeyS'){
-        O.pd(evt);
-        save();
-        return 1;
-      }
+      // if(code === 'KeyS'){
+      //   O.pd(evt);
+      //   save();
+      //   return 1;
+      // }
 
       return 0;
     }

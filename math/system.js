@@ -54,6 +54,11 @@ class System{
       return new TheoryInfo(nameNew, 1);
     });
   }
+
+  exists(dir, name){
+    const pthNew = path.join(dir.fsPath, name);
+    return fs.existsSync(pthNew);
+  }
 }
 
 module.exports = System;

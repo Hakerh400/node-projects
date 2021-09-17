@@ -440,10 +440,8 @@ class Editor{
     this.setCx(this.cx - 1);
   }
 
-  setText(str){
+  setLines(lines){
     if(this.locked) return;
-
-    let lines = O.sanl(str);
 
     if(this.wrap){
       const {w, h} = this;
@@ -476,6 +474,10 @@ class Editor{
 
     this.lines = lines;
     this.updateLine(0);
+  }
+
+  setText(str){
+    this.setLines(str.split('\n'));
   }
 
   clear(){
