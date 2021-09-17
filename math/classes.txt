@@ -1,7 +1,7 @@
 System         :: System
-  rootDir      :: String
-  root         :: Theory
-  getThsInfo   :: String -> [TheoryInfo]
+| rootDir      :: String
+| root         :: Theory
+| getThsInfo   :: String -> [TheoryInfo]
   exists       :: Dir -> String -> Bool
   getTh        :: Dir -> String -> Theory
   reorder      :: Dir -> Theory -> Int -> ()
@@ -17,13 +17,16 @@ System         :: System
   thVerified   :: Theory -> Bool
 
 Theory         :: System -> Theory -> String -> Theory
-  system       :: System
-  parent       :: Theory
-  name         :: String
-  S name2title :: String -> String
-  *title       :: String
-  *path        :: [String]
-  *fsPath      :: String
+| system       :: System
+| parent       :: Theory
+| name         :: String
+| S name2title :: String -> String
+| *title       :: String
+| *path        :: [String]
+| *pathStr     :: [String]
+| *fsPath      :: String
+| isDir        :: Bool
+| isFile       :: Bool
 
 Dir            :: System -> Theory -> String -> [TheoryInfo] -> Dir
   thsInfo      :: [TheoryInfo]
@@ -34,7 +37,9 @@ File           :: System -> Theory -> String -> String -> File
   mainEditor   :: Editor
   outputEditor :: Editor
 
-TheoryInfo     :: String -> Bool -> TheoryInfo
+TheoryInfo     :: String -> Int -> TheoryInfo
   name         :: String
+  type         :: Int
   isDir        :: Bool
+  isFile       :: Bool
   *title       :: String

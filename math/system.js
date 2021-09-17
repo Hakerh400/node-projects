@@ -5,6 +5,7 @@ const path = require('path');
 const assert = require('assert');
 const O = require('../omikron');
 const Theory = require('./theory');
+const TheoryInfo = require('./theory-info');
 const config = require('./config');
 const util = require('./util');
 const su = require('./str-util');
@@ -14,13 +15,19 @@ const {rootDir, thExt} = config;
 
 class System{
   #root = null;
-  rootDir = rootDir
+
+  #constructDir(parent, name, fsPath){
+    const thsInfo = this.getThsInfo(fsPath);
+    return new Dir(this, parent, name, fsPath, thsInfo);
+  }
 
   #initRoot(){
     const {rootDir} = this;
-    const thsInfo = this.getThsInfo(rootDir);
+    this.#root = this.#constructDir(null, '', rootDir);
+  }
 
-    this.root = new Dir(this, null, '', thsInfo);
+  get rootDir(){
+    return rootDir;
   }
 
   get root(){
@@ -38,10 +45,13 @@ class System{
       const isFile = name.endsWith(`.${thExt}`);
       const isDir = !isFile;
 
-      if(isFile)
-        name = name.slice(0, -(thExt.length + 1));
-
       const pthNew = path.join(pth, name);
+
+      if(isDir)
+        return new TheoryInfo(name, 0);
+
+      const nameNew = name.slice(0, -(thExt.length + 1));
+      return new TheoryInfo(nameNew, 1);
     });
   }
 }

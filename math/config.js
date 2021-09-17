@@ -8,10 +8,10 @@ const util = require('./util');
 const su = require('./str-util');
 
 const cwd = __dirname;
-const logicDir = path.join(cwd, 'logic');
+const rootDir = path.join(cwd, 'logic');
 
 const config = {
-  logicDir,
+  rootDir,
   thExt: 'txt',
 };
 

@@ -9,34 +9,37 @@ const util = require('./util');
 const su = require('./str-util');
 
 class Theory{
-  saved = 0;
+  static name2title(name){ O.virtual('name2title'); }
 
-  constructor(parent, name){
+  constructor(system, parent, name, fsPath=null){
+    this.system = system;
     this.parent = parent;
     this.name = name;
-
-    const path = [];
-
-    for(let t = this; t !== null; t = t.parent)
-      path.push(t.name);
-
-    this.path = path.reverse();
-    this.pathStr = `/${path.join('/')}`;
+    this.fsPath = fsPath;
   }
 
   get isDir(){ return 0; }
   get isFile(){ return 0; }
 
-  get hasParent(){
-    return this.parent !== null;
-  }
-
-  get isRoot(){
-    return !this.hasParent;
+  get ctor(){
+    return this.constructor;
   }
 
   get title(){
-    return this.name;
+    return this.ctor.name2title(this.name);
+  }
+
+  get path(){
+    const pth = [];
+
+    for(let th = this; th !== null; th = th.parent)
+      pth.push(th.name);
+
+    return pth.reverse();
+  }
+
+  get pathStr(){
+    return this.path.join('/');
   }
 
   render(g, ofs, x, y, w, h, ws, hs){ O.virtual('render'); }
@@ -45,30 +48,34 @@ class Theory{
 }
 
 class Dir extends Theory{
-  // thsArr = [];
-  // thsObj = O.obj();
-  //
-  // constructor(parent, name){
-  //   super(parent, name);
-  //
-  //   const editor = new Editor();
-  //
-  //   const lines = [
-  //     this.pathStr, '',
-  //     ...this.getThNames(),
-  //   ];
-  //
-  //   editor.setText(lines.join('\n'));
-  //   editor.editable = 1;
-  //
-  //   this.editor = editor;
-  // }
+  static name2title(name){
+    return `${name}/`;
+  }
+
+  thsObj = O.obj();
+
+  constructor(system, parent, name, fsPath, thsInfo){
+    super(system, parent, name, fsPath);
+
+    this.thsInfo = thsInfo;
+
+    const editor = new Editor();
+    const lines = [`${this.pathStr}/`, ''];
+
+    if(thsInfo.length !== 0){
+      for(const info of this.thsInfo)
+        lines.push(info.title);
+    }else{
+      lines.push('(empty)');
+    }
+
+    editor.setText(lines.join('\n'));
+    editor.editable = 1;
+
+    this.editor = editor;
+  }
 
   get isDir(){ return 1; }
-
-  get title(){
-    return `${this.name}/`;
-  }
 
   render(g, ofs, x, y, w, h, ws, hs){
     const {editor} = this;
@@ -91,42 +98,46 @@ class Dir extends Theory{
     this.editor.onKeyPress(evt);
   }
 
-  getThNames(){
-    return this.ths.map(a => a.name);
-  }
-
-  hasTh(name){
-    return O.has(this.thsObj, name);
-  }
-
-  getTh(name){
-    if(!this.hasTh(name)) return null;
-    return this.thsObj[name];
-  }
-
-  get ths(){
-    return this.thsArr;
-  }
-
-  get thsNum(){
-    return this.thsArr.length;
-  }
-
-  addTh(th, index=null){
-    const {name} = th;
-    assert(!this.hasTh(name));
-
-    const {thsArr, thsObj, thsNum} = this;
-
-    if(index === null)
-      index = thsNum;
-
-    this.thsObj[name] = th;
-    this.thsArr.splice(index, 0, th);
-  }
+  // getThNames(){
+  //   return this.ths.map(a => a.name);
+  // }
+  //
+  // hasTh(name){
+  //   return O.has(this.thsObj, name);
+  // }
+  //
+  // getTh(name){
+  //   if(!this.hasTh(name)) return null;
+  //   return this.thsObj[name];
+  // }
+  //
+  // get ths(){
+  //   return this.thsArr;
+  // }
+  //
+  // get thsNum(){
+  //   return this.thsArr.length;
+  // }
+  //
+  // addTh(th, index=null){
+  //   const {name} = th;
+  //   assert(!this.hasTh(name));
+  //
+  //   const {thsArr, thsObj, thsNum} = this;
+  //
+  //   if(index === null)
+  //     index = thsNum;
+  //
+  //   this.thsObj[name] = th;
+  //   this.thsArr.splice(index, 0, th);
+  // }
 }
 
 class File extends Theory{
+  static name2title(name){
+    return name;
+  }
+
   get isFile(){ return 1; }
 }
 
@@ -134,3 +145,5 @@ module.exports = Object.assign(Theory, {
   Dir,
   File,
 });
+
+const TheoryInfo = require('./theory-info');

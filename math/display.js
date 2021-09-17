@@ -63,7 +63,7 @@ class Display{
 
   newTab(index=null){
     const {system, tabs, tabsNum, curTabIndex} = this;
-    const theory = system.getRoot();
+    const theory = system.root;
     const tab = new TheoryTab(theory);
 
     if(index === null){
