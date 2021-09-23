@@ -7,12 +7,24 @@ const O = require('../omikron');
 const util = require('./util');
 const su = require('./str-util');
 
+const ext = 'txt';
+const indexExt = ext;
+const thExt = ext;
+const indexFileName = 'index'
+const rootDirName = 'logic';
+const thPrefix = 'th-';
+
 const cwd = __dirname;
 const rootDir = path.join(cwd, 'logic');
+const indexFile = `${indexFileName}.${indexExt}`;
 
 const config = {
+  ext,
+  indexExt,
+  thExt,
+  indexFile,
   rootDir,
-  thExt: 'txt',
+  thPrefix,
 };
 
 module.exports = config;

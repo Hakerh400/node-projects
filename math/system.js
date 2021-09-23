@@ -11,7 +11,6 @@ const util = require('./util');
 const su = require('./str-util');
 
 const {Dir, File} = Theory;
-const {rootDir, thExt} = config;
 
 class System{
   #root = null;
@@ -27,7 +26,7 @@ class System{
   }
 
   get rootDir(){
-    return rootDir;
+    return config.rootDir;
   }
 
   get root(){
@@ -41,17 +40,29 @@ class System{
     if(!fs.existsSync(pth))
       return [];
 
-    return fs.readdirSync(pth).map(name => {
-      const isFile = name.endsWith(`.${thExt}`);
-      const isDir = !isFile;
+    const indexFile = path.join(pth, config.indexFile);
 
-      const pthNew = path.join(pth, name);
+    if(!fs.existsSync(indexFile))
+      return [];
 
-      if(isDir)
-        return new TheoryInfo(name, 0);
+    const indexInfo = O.rfs(indexFile, 1);
 
-      const nameNew = name.slice(0, -(thExt.length + 1));
-      return new TheoryInfo(nameNew, 1);
+    return O.sanll(indexInfo).map(infoStr => {
+      const infoLines = O.sanl(infoStr);
+      let name = infoLines.shift();
+
+      const isDir = name.endsWith('/');
+      let fsName;
+
+      if(isDir){
+        name = name.slice(0, -1);
+        fsName = name;
+      }else{
+        fsName = `${config.thPrefix}${name}${config.thExt}`;
+      }
+
+      const pthNew = path.join(pth, fsName);
+      return new TheoryInfo(name, isDir, pthNew);
     });
   }
 

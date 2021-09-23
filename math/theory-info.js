@@ -8,21 +8,19 @@ const util = require('./util');
 const su = require('./str-util');
 
 class TheoryInfo{
-  constructor(name, type){
+  constructor(name, isDir, path){
     this.name = name;
-    this.type = type;
-  }
-
-  get isDir(){
-    return this.type === 0;
+    this.isDir = isDir;
+    this.path = path;
   }
 
   get isFile(){
-    return this.type === 1;
+    return !this.isDir;
   }
 
   get title(){
-    return thCtors[this.type].name2title(this.name);
+    const i = this.isDir ? 1 : 0;
+    return thCtors[i].name2title(this.name);
   }
 }
 
@@ -33,6 +31,6 @@ const Theory = require('./theory');
 const {Dir, File} = Theory;
 
 const thCtors = [
-  Dir,
   File,
+  Dir,
 ];

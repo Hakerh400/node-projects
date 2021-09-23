@@ -39,7 +39,6 @@ File           :: System -> Theory -> String -> String -> File
 
 TheoryInfo     :: String -> Int -> TheoryInfo
 | name         :: String
-| type         :: Int
-| *isDir       :: Bool
+| isDir        :: Bool
 | *isFile      :: Bool
 | *title       :: String

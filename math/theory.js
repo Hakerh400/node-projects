@@ -131,7 +131,7 @@ class Dir extends Theory{
   }
 
   onKeyPress(evt){
-    this.editor.onKeyPress(evt);
+    // this.editor.onKeyPress(evt);
   }
 
   goVert(dy, wrap=0){

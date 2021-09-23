@@ -12,7 +12,7 @@ const nodeFlags = require('./node-flags');
 const DISPLAY_SIGINT = 0;
 const KILL_ON_SECOND_SIGINT = 1;
 const ELECTRON_NIGHTLY = 1;
-const RESTART = 1;
+const RESTART = 0;
 
 const cwd = __dirname;
 const electronAppScript = path.join(cwd, 'electron-app.js');
@@ -303,7 +303,7 @@ function spawnProc(file, args=[], options=O.obj(), opts=O.obj(), cb=null){
 
   proc.on('error', err => {
     log(err);
-    
+
     onEnd();
     onExit();
   });
@@ -360,7 +360,7 @@ function onProcExit(code=null, cb=null){
       onInput('');
       return;
     }
-    
+
     log(`\n\nEXIT CODE: ${code}`);
   }
 
