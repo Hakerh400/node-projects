@@ -8,10 +8,9 @@ const util = require('./util');
 const su = require('./str-util');
 
 class TheoryInfo{
-  constructor(name, isDir, path){
+  constructor(name, isDir){
     this.name = name;
     this.isDir = isDir;
-    this.path = path;
   }
 
   get isFile(){
@@ -21,6 +20,19 @@ class TheoryInfo{
   get title(){
     const i = this.isDir ? 1 : 0;
     return thCtors[i].name2title(this.name);
+  }
+
+  get thCtor(){
+    const i = this.isDir ? 1 : 0;
+    return  thCtors[i];;
+  }
+
+  get title(){
+    return this.thCtor.name2title(this.name);
+  }
+
+  get fsName(){
+    return this.thCtor.name2fs(this.name);
   }
 }
 

@@ -5,13 +5,25 @@ const path = require('path');
 const assert = require('assert');
 const O = require('../omikron');
 const Editor = require('./editor');
+const EventTarget = require('./event-target');
+const config = require('./config');
 const util = require('./util');
 const su = require('./str-util');
 
-class Theory{
+class Theory extends EventTarget{
   static name2title(name){ O.virtual('name2title'); }
+  static name2fs(name){ O.virtual('name2fs'); }
+
+  static title2name(title){
+    if(title.endsWith('/'))
+      return title.slice(0, -1);
+
+    return title;
+  }
 
   constructor(system, parent, name, fsPath=null){
+    super();
+
     this.system = system;
     this.parent = parent;
     this.name = name;
@@ -52,22 +64,32 @@ class Dir extends Theory{
     return `${name}/`;
   }
 
-  thsObj = O.obj();
+  static name2fs(name){
+    return name;
+  }
 
   constructor(system, parent, name, fsPath, thsInfo){
     super(system, parent, name, fsPath);
 
     this.thsInfo = thsInfo;
 
-    const editor = new Editor();
+    const thsObj = O.obj();
     const lines = [`${this.pathStr}/`, ''];
+    const editor = new Editor();
 
     if(thsInfo.length !== 0){
-      for(const info of this.thsInfo)
-        lines.push(info.title);
+      for(const info of this.thsInfo){
+        const {name, title} = info;
+        assert(!O.has(thsObj, name));
+
+        thsObj[name] = info;
+        lines.push(title);
+      }
     }else{
       lines.push('(empty)');
     }
+
+    this.thsObj = thsObj;
 
     editor.setLines(lines);
     editor.editable = 1;
@@ -76,7 +98,6 @@ class Dir extends Theory{
     const offset = this.editorEntriesOffset;
     editor.cy = offset;
 
-
     this.editor = editor;
   }
 
@@ -84,6 +105,53 @@ class Dir extends Theory{
 
   get editorEntriesOffset(){
     return 2;
+  }
+
+  onKeyDown(tab, evt){
+    const {ctrlKey, shiftKey, altKey, code} = evt;
+    const flags = (ctrlKey << 2) | (shiftKey << 1) | altKey;
+    const {system, editor} = this;
+
+    const line = editor.curLine;
+    const subName = Theory.title2name(line);
+
+    if(flags === 0){
+      if(code === 'ArrowUp' || code === 'ArrowLeft'){
+        this.goUp(1);
+        return;
+      }
+
+      if(code === 'ArrowDown' || code === 'ArrowRight'){
+        this.goDown(1);
+        return;
+      }
+
+      if(code === 'Enter'){
+        const th = system.getTh(this, subName);
+        // log(th);
+
+        return;
+      }
+
+      return;
+    }
+
+    if(flags === 4){
+      if(code.startsWith('Arrow')){
+        editor.emit('onKeyDown', evt);
+        return;
+      }
+
+      return;
+    }
+
+    // this.editor.onKeyDown(evt);
+  }
+
+  onKeyPress(tab, evt){
+    const {editor} = this;
+
+    // editor.emit('onKeyPress', evt);
   }
 
   render(g, ofs, x, y, w, h, ws, hs){
@@ -97,41 +165,6 @@ class Dir extends Theory{
     g.scale(ws, hs);
     editor.render(g, width, height);
     g.resetTransform();
-  }
-
-  onKeyDown(evt){
-    const {ctrlKey, shiftKey, altKey, code} = evt;
-    const flags = (ctrlKey << 2) | (shiftKey << 1) | altKey;
-    const {editor} = this;
-
-    if(flags === 0){
-      if(code === 'ArrowUp' || code === 'ArrowLeft'){
-        this.goUp(1);
-        return;
-      }
-
-      if(code === 'ArrowDown' || code === 'ArrowRight'){
-        this.goDown(1);
-        return;
-      }
-
-      return;
-    }
-
-    if(flags === 4){
-      if(code.startsWith('Arrow')){
-        editor.onKeyDown(evt);
-        return;
-      }
-
-      return;
-    }
-
-    // this.editor.onKeyDown(evt);
-  }
-
-  onKeyPress(evt){
-    // this.editor.onKeyPress(evt);
   }
 
   goVert(dy, wrap=0){
@@ -156,6 +189,16 @@ class Dir extends Theory{
 
   goDown(wrap){
     this.goVert(1, wrap);
+  }
+
+  hasTh(name){
+    return O.has(this.thsObj, name);
+  }
+
+  getThInfo(name){
+    const {thsObj} = this;
+    if(!O.has(thsObj, name)) return null;
+    return thsObj[name];
   }
 
   // getThNames(){
@@ -196,6 +239,22 @@ class Dir extends Theory{
 class File extends Theory{
   static name2title(name){
     return name;
+  }
+
+  static name2fs(name){
+    return `${config.thPrefix}${name}.${config.thExt}`;
+  }
+
+  constructor(system, parent, name, fsPath, text){
+    super(system, parent, name, fsPath);
+
+    const mainEditor = new Editor();
+    const outputEditor = new Editor();
+
+    mainEditor.setText(text);
+
+    this.mainEditor = mainEditor;
+    this.outputEditor = outputEditor;
   }
 
   get isFile(){ return 1; }

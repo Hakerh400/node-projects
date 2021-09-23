@@ -2,13 +2,14 @@
 
 const assert = require('assert');
 const O = require('../omikron');
+const EventTarget = require('./event-target');
 const specialChars = require('./special-chars');
 const util = require('./util');
 const su = require('./str-util');
 
 const {min, max} = Math;
 
-class Editor{
+class Editor extends EventTarget{
   selected = 0;
   editable = 1;
   wrap = 0;
@@ -25,6 +26,12 @@ class Editor{
   h = 1;
 
   markedLine = null;
+
+  get curLine(){
+    const {lines, cy} = this;
+    assert(cy < lines.length);
+    return lines[cy];
+  }
 
   render(g, w, h){
     this.w = w;

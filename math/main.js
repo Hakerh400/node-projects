@@ -37,9 +37,6 @@ const mediumNatMax = 2 ** 30 - 1;
 const system = new System();
 const display = new Display(system);
 
-// const mainEditor = new Editor();
-// const outputEditor = new Editor();
-
 const linesData = [];
 
 let dataPrev = null;
@@ -1407,21 +1404,11 @@ const onKeyDown = evt => {
 
   if(processKey()) return;
 
-  const {curTab} = display;
-  if(curTab === null) return;
-  if(!curTab.isTh) return;
-
-  const {theory} = curTab;
-  theory.onKeyDown(evt);
+  display.emit('onKeyDown', evt);
 };
 
 const onKeyPress = evt => {
-  const {curTab} = display;
-  if(curTab === null) return;
-  if(!curTab.isTh) return;
-
-  const {theory} = curTab;
-  theory.onKeyPress(evt);
+  display.emit('onKeyPress', evt);
 };
 
 const save = () => {

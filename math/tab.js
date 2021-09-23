@@ -5,11 +5,15 @@ const path = require('path');
 const assert = require('assert');
 const O = require('../omikron');
 const Theory = require('./theory');
+const EventTarget = require('./event-target');
 const util = require('./util');
 const su = require('./str-util');
 
-class Tab{
-  constructor(title, selected=0){
+class Tab extends EventTarget{
+  constructor(display, title, selected=0){
+    super();
+
+    this.display = display
     this.title = title;
     this.selected = selected;
   }
@@ -30,8 +34,9 @@ class Tab{
 }
 
 class TheoryTab extends Tab{
-  constructor(theory){
-    super(theory.title);
+  constructor(display, theory){
+    super(display, theory.title);
+
     this.theory = theory;
   }
 
@@ -52,6 +57,11 @@ class TheoryTab extends Tab{
     if(!selected) return;
 
     theory.render(g, ofs, 0, y + th, w, h, ws, hs);
+  }
+
+  emit(type, ...args){
+    const {theory} = this;
+    theory.emit(type, this, ...args);
   }
 }
 

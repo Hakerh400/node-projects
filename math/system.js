@@ -20,6 +20,11 @@ class System{
     return new Dir(this, parent, name, fsPath, thsInfo);
   }
 
+  #constructFile(parent, name, fsPath){
+    const text = O.rfs(fsPath);
+    return new Dir(this, parent, name, fsPath, text);
+  }
+
   #initRoot(){
     const {rootDir} = this;
     this.#root = this.#constructDir(null, '', rootDir);
@@ -47,23 +52,28 @@ class System{
 
     const indexInfo = O.rfs(indexFile, 1);
 
-    return O.sanll(indexInfo).map(infoStr => {
+    return O.sanll(indexInfo, 0).map(infoStr => {
       const infoLines = O.sanl(infoStr);
-      let name = infoLines.shift();
+      const nameRaw = infoLines.shift();
 
-      const isDir = name.endsWith('/');
-      let fsName;
+      const isDir = nameRaw.endsWith('/');
+      const name = isDir ? nameRaw.slice(0, -1) : nameRaw;
 
-      if(isDir){
-        name = name.slice(0, -1);
-        fsName = name;
-      }else{
-        fsName = `${config.thPrefix}${name}${config.thExt}`;
-      }
-
-      const pthNew = path.join(pth, fsName);
-      return new TheoryInfo(name, isDir, pthNew);
+      return new TheoryInfo(name, isDir);
     });
+  }
+
+  getTh(dir, name){
+    const thInfo = dir.getThInfo(name);
+    if(thInfo === null) return null;
+
+    const {fsName, isDir} = thInfo;
+    const pthNew = path.join(dir.fsPath, fsName);
+
+    if(isDir)
+      return this.#constructDir(dir, name, pthNew);
+
+    return this.#constructFile(dir, name, pthNew);
   }
 
   exists(dir, name){

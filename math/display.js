@@ -6,12 +6,13 @@ const assert = require('assert');
 const O = require('../omikron');
 const System = require('./system');
 const Tab = require('./tab');
+const EventTarget = require('./event-target');
 const util = require('./util');
 const su = require('./str-util');
 
 const {TheoryTab} = Tab;
 
-class Display{
+class Display extends EventTarget{
   tabs = [];
   curTabIndex = null;
 
@@ -20,7 +21,15 @@ class Display{
   ofs = null;
 
   constructor(system){
+    super();
     this.system = system;
+  }
+
+  emit(type, ...args){
+    const {curTab} = this;
+    if(curTab === null) return;
+
+    curTab.emit(type, ...args);
   }
 
   render(g, iw, ih, w, h){
@@ -64,7 +73,7 @@ class Display{
   newTab(index=null){
     const {system, tabs, tabsNum, curTabIndex} = this;
     const theory = system.root;
-    const tab = new TheoryTab(theory);
+    const tab = new TheoryTab(this, theory);
 
     if(index === null){
       index = curTabIndex !== null ?
