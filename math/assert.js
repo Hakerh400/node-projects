@@ -7,7 +7,7 @@ const su = require('./str-util');
 const assert = b => {
   if(b) return;
 
-  debugger;
+  new Function('debugger')();
   throw new Error('Assertion failed');
 };
 

@@ -10,15 +10,15 @@ const util = require('./util');
 const su = require('./str-util');
 
 class Tab extends EventTarget{
-  constructor(display, title, selected=0){
+  constructor(display, selected=0){
     super();
 
-    this.display = display
-    this.title = title;
+    this.display = display;
     this.selected = selected;
   }
 
   get isTh(){ return 0; }
+  get title(){ O.virtual('title'); }
 
   render(g, ofs, x, y, w, h, tw, th){ O.virtual('render'); }
 
@@ -34,13 +34,17 @@ class Tab extends EventTarget{
 }
 
 class TheoryTab extends Tab{
-  constructor(display, theory){
-    super(display, theory.title);
+  constructor(display, theory, selected){
+    super(display, selected);
 
     this.theory = theory;
   }
 
   get isTh(){ return 1; }
+
+  get title(){
+    return this.theory.title;
+  }
 
   render(g, ofs, x, y, w, h, tw, th){
     const {title, selected, theory} = this;
