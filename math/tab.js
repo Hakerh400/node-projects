@@ -2,7 +2,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const assert = require('assert');
+const assert = require('./assert');
 const O = require('../omikron');
 const Theory = require('./theory');
 const EventTarget = require('./event-target');
@@ -20,7 +20,7 @@ class Tab extends EventTarget{
 
   get isTh(){ return 0; }
 
-  render(g, ofs, x, y, w, h, tw, th, ws, hs){ O.virtual('render'); }
+  render(g, ofs, x, y, w, h, tw, th){ O.virtual('render'); }
 
   select(){
     assert(!this.selected);
@@ -42,7 +42,7 @@ class TheoryTab extends Tab{
 
   get isTh(){ return 1; }
 
-  render(g, ofs, x, y, w, h, tw, th, ws, hs){
+  render(g, ofs, x, y, w, h, tw, th){
     const {title, selected, theory} = this;
 
     g.fillStyle = selected ? 'white' : '#a9a9a9';
@@ -56,12 +56,18 @@ class TheoryTab extends Tab{
 
     if(!selected) return;
 
-    theory.render(g, ofs, 0, y + th, w, h, ws, hs);
+    theory.render(g, ofs, 0, y + th, w, h);
   }
 
   emit(type, ...args){
     const {theory} = this;
     theory.emit(type, this, ...args);
+  }
+
+  setTheory(theory){
+    process.nextTick(() => {
+      this.theory = theory;
+    });
   }
 }
 

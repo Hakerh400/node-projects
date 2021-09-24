@@ -2,7 +2,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const assert = require('assert');
+const assert = require('./assert');
 const O = require('../omikron');
 const util = require('./util');
 const su = require('./str-util');
@@ -13,6 +13,11 @@ const thExt = ext;
 const indexFileName = 'index'
 const rootDirName = 'logic';
 const thPrefix = 'th-';
+const ws = 12;
+const hs = 25;
+const ofs = 15;
+const tabW = ws * 20;
+const tabH = hs;
 
 const cwd = __dirname;
 const rootDir = path.join(cwd, 'logic');
@@ -25,6 +30,11 @@ const config = {
   indexFile,
   rootDir,
   thPrefix,
+  ws,
+  hs,
+  ofs,
+  tabW,
+  tabH,
 };
 
 module.exports = config;

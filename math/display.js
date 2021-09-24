@@ -2,23 +2,21 @@
 
 const fs = require('fs');
 const path = require('path');
-const assert = require('assert');
+const assert = require('./assert');
 const O = require('../omikron');
 const System = require('./system');
 const Tab = require('./tab');
 const EventTarget = require('./event-target');
+const config = require('./config');
 const util = require('./util');
 const su = require('./str-util');
 
 const {TheoryTab} = Tab;
+const {ws, hs, ofs, tabW, tabH} = config;
 
 class Display extends EventTarget{
   tabs = [];
   curTabIndex = null;
-
-  ws = null;
-  hs = null;
-  ofs = null;
 
   constructor(system){
     super();
@@ -33,10 +31,7 @@ class Display extends EventTarget{
   }
 
   render(g, iw, ih, w, h){
-    const {tabs, tabsNum, ws, hs, ofs} = this;
-
-    const tabW = ws * 20;
-    const tabH = hs;
+    const {tabs, tabsNum} = this;
 
     const iwh = iw / 2;
     const ihh = ih / 2;
@@ -53,7 +48,7 @@ class Display extends EventTarget{
       const x = tabW * i;
       const y = 0;
 
-      tabs[i].render(g, ofs, x, y, iw, ih, tabW, tabH, ws, hs);
+      tabs[i].render(g, ofs, x, y, iw, ih, tabW, tabH);
     }
   }
 

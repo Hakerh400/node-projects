@@ -17,20 +17,8 @@ if(isElectron) initElectron();
 
 const cwd = __dirname;
 
-const omikronScript1 = path.join(cwd, '../../browser-projects/omikron.js');
-const omikronScript2 = path.join(cwd, '../../../wamp/www/omikron.js');
-const omikronScript3 = path.join(cwd, '../../../wamp/www/web/omikron.js');
-const omikronScript4 = path.join(cwd, '../../omikron/src/omikron/omikron.js');
-
-const omikronScript = (
-  fs.existsSync(omikronScript1) ? omikronScript1 :
-  fs.existsSync(omikronScript2) ? omikronScript2 :
-  fs.existsSync(omikronScript3) ? omikronScript3 :
-  fs.existsSync(omikronScript4) ? omikronScript4 :
-  assert.fail()
-);
-
-const passwordsFile = path.join(cwd, 'passwords.json');
+const omikronScript = path.join(cwd, '../../omikron/src/omikron/omikron.js');
+// const passwordsFile = path.join(cwd, 'passwords.json');
 
 let O;
 
@@ -73,7 +61,7 @@ function getFramework(){
 function init(O){
   O.dirs = require('./dirs');
 
-  if(fs.existsSync(passwordsFile)){
+  if(0/*fs.existsSync(passwordsFile)*/){
     O.passwords = JSON.parse(O.rfs(passwordsFile, 1));
     O.password = O.passwords[0];
   }else{
@@ -108,22 +96,24 @@ function initElectron(){
     ipc.send('logRaw', data);
   };
 
-  let catched = 0;
-
-  process.on('uncaughtException', err => {
-    if(catched) return;
-    catched = 1;
-
-    if(err === null){
-      err = O.ftext(`
-        \n=== ERROR ===\n
-        An unexpected error has occured somewhere, but we
-        are unable to detect where exactly.
-      `);
-    }
-
-    O.exit(err);
-  });
+  // let caught = 0;
+  //
+  // process.on('uncaughtException', err => {
+  //   if(O.isElectron1) return
+  //
+  //   if(caught) return;
+  //   caught = 1;
+  //
+  //   if(err === null){
+  //     err = O.ftext(`
+  //       \n=== ERROR ===\n
+  //       An unexpected error has occured somewhere, but we
+  //       are unable to detect where exactly.
+  //     `);
+  //   }
+  //
+  //   O.exit(err);
+  // });
 }
 
 function getReq(){

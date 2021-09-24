@@ -1,6 +1,6 @@
 'use strict';
 
-const assert = require('assert');
+const assert = require('./assert');
 const O = require('../omikron');
 const util = require('./util');
 const su = require('./str-util');

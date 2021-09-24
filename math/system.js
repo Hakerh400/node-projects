@@ -2,7 +2,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const assert = require('assert');
+const assert = require('./assert');
 const O = require('../omikron');
 const Theory = require('./theory');
 const TheoryInfo = require('./theory-info');
@@ -21,8 +21,8 @@ class System{
   }
 
   #constructFile(parent, name, fsPath){
-    const text = O.rfs(fsPath);
-    return new Dir(this, parent, name, fsPath, text);
+    const text = O.rfs(fsPath, 1);
+    return new File(this, parent, name, fsPath, text);
   }
 
   #initRoot(){

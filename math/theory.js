@@ -2,13 +2,15 @@
 
 const fs = require('fs');
 const path = require('path');
-const assert = require('assert');
+const assert = require('./assert');
 const O = require('../omikron');
 const Editor = require('./editor');
 const EventTarget = require('./event-target');
 const config = require('./config');
 const util = require('./util');
 const su = require('./str-util');
+
+const {ws, hs, ofs, tabW, tabH} = config;
 
 class Theory extends EventTarget{
   static name2title(name){ O.virtual('name2title'); }
@@ -54,7 +56,7 @@ class Theory extends EventTarget{
     return this.path.join('/');
   }
 
-  render(g, ofs, x, y, w, h, ws, hs){ O.virtual('render'); }
+  render(g, ofs, x, y, w, h){ O.virtual('render'); }
   onKeyDown(evt){ O.virtual('onKeyDown'); }
   onKeyPress(evt){ O.virtual('onKeyPress'); }
 }
@@ -128,7 +130,7 @@ class Dir extends Theory{
 
       if(code === 'Enter'){
         const th = system.getTh(this, subName);
-        // log(th);
+        tab.setTheory(th);
 
         return;
       }
@@ -145,7 +147,7 @@ class Dir extends Theory{
       return;
     }
 
-    // this.editor.onKeyDown(evt);
+    // editor.onKeyDown(evt);
   }
 
   onKeyPress(tab, evt){
@@ -154,7 +156,7 @@ class Dir extends Theory{
     // editor.emit('onKeyPress', evt);
   }
 
-  render(g, ofs, x, y, w, h, ws, hs){
+  render(g, ofs, x, y, w, h){
     const {editor} = this;
 
     const ofs2 = ofs * 2;
@@ -252,12 +254,62 @@ class File extends Theory{
     const outputEditor = new Editor();
 
     mainEditor.setText(text);
+    mainEditor.editable = 1;
+    mainEditor.selected = 1;
 
     this.mainEditor = mainEditor;
     this.outputEditor = outputEditor;
   }
 
   get isFile(){ return 1; }
+
+  render(g){
+    const {mainEditor, outputEditor} = this;
+
+    const iwRaw = O.iw;
+    const ihRaw = O.ih;
+    const iw = iwRaw;
+    const ih = ihRaw - tabH;
+    const iwh = iw / 2;
+    const ihh = ih / 2;
+    const ofsX = ofs;
+    const ofsY = ofs + tabH;
+    const ofs2 = ofs * 2;
+    const width = (iw - ofs2) / ws >> 1;
+    const height = (ih - ofs2) / hs | 0;
+
+    g.beginPath();
+    g.moveTo(iwh, tabH);
+    g.lineTo(iwh, ihRaw);
+    g.stroke();
+
+    g.translate(ofsX, ofsY);
+    g.scale(ws, hs);
+    mainEditor.render(g, width, height);
+    g.resetTransform();
+
+    g.translate(iwh + ofs, ofs);
+    g.scale(ws, hs);
+    outputEditor.render(g, width, height);
+    g.resetTransform();
+  }
+
+  onKeyDown(tab, evt){
+    const {ctrlKey, shiftKey, altKey, code} = evt;
+    const flags = (ctrlKey << 2) | (shiftKey << 1) | altKey;
+    const {system, mainEditor} = this;
+
+    const line = mainEditor.curLine;
+    const subName = Theory.title2name(line);
+
+    mainEditor.onKeyDown(evt);
+  }
+
+  onKeyPress(tab, evt){
+    const {mainEditor} = this;
+
+    mainEditor.emit('onKeyPress', evt);
+  }
 }
 
 module.exports = Object.assign(Theory, {

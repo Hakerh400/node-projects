@@ -2,7 +2,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const assert = require('assert');
+const assert = require('./assert');
 const O = require('../omikron');
 const System = require('./system');
 const Display = require('./display');
@@ -13,6 +13,7 @@ const Context = require('./context');
 const Subgoal = require('./subgoal');
 const Editor = require('./editor');
 const LineData = require('./line-data');
+const config = require('./config');
 const specialChars = require('./special-chars');
 const util = require('./util');
 const su = require('./str-util');
@@ -20,16 +21,13 @@ const su = require('./str-util');
 const {min, max, floor, ceil, round} = Math;
 const {project} = O;
 const {Ident, Call, Lambda} = Expr;
+const {ws, hs, ofs, tabW, tabH} = config;
 
 const displayLineProcess = 0;
 const lineProcessSpeed = 50;
 const loadLogic = 0;
 
 const {g} = O.ceCanvas(1);
-
-const ws = 12;
-const hs = 25;
-const ofs = 15;
 
 const smallNatMax = 1e3;
 const mediumNatMax = 2 ** 30 - 1;
@@ -49,10 +47,6 @@ const logicFile = path.join(cwd, './logic/1.txt');
 const logicStr = loadLogic ? O.rfs(logicFile, 1) : null;
 
 const main = () => {
-  display.ws = ws;
-  display.hs = hs;
-  display.ofs = ofs;
-
   display.newTab();
 
   // mainEditor.selected = 1;
@@ -116,25 +110,6 @@ const updateDisplay = () => {
 const render = () => {
   g.clearCanvas('white');
   display.render(g, iw, ih, w, h);
-
-  // const ofs2 = ofs * 2;
-  // const width = (iw - ofs2) / ws >> 1;
-  // const height = (ih - ofs2) / hs | 0;
-  //
-  // g.beginPath();
-  // g.moveTo(iwh, 0);
-  // g.lineTo(iwh, ih);
-  // g.stroke();
-  //
-  // g.translate(ofs, ofs);
-  // g.scale(ws, hs);
-  // mainEditor.render(g, width, height);
-  // g.resetTransform();
-  //
-  // g.translate(iwh + ofs, ofs);
-  // g.scale(ws, hs);
-  // outputEditor.render(g, width, height);
-  // g.resetTransform();
 };
 
 const updateNextLine = () => {

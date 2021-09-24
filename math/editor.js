@@ -1,6 +1,6 @@
 'use strict';
 
-const assert = require('assert');
+const assert = require('./assert');
 const O = require('../omikron');
 const EventTarget = require('./event-target');
 const specialChars = require('./special-chars');
@@ -105,7 +105,7 @@ class Editor extends EventTarget{
       return;
     }
 
-    if(flags === 4 || flags === 1){
+    if(flags === 4 || flags === 5){
       if(code === 'ArrowUp'){
         this.scrollUp(altKey);
         return;
