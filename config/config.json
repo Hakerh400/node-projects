@@ -13,5 +13,6 @@
     "cvc": "C:/Program Files/CVC4/cvc4.exe"
   },
 
-  "isTravis": null
+  "isTravis": null,
+  "pDir": "C:/Videos/Other/Folder/P"
 }

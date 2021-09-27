@@ -5,6 +5,7 @@ const path = require('path');
 const cp = require('child_process');
 const http = require('http');
 const O = require('../omikron');
+const config = require('../config');
 const DB = require('./db');
 
 const PORT = 12345;
