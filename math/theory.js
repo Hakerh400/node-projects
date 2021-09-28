@@ -133,7 +133,6 @@ class Dir extends Theory{
       if(code === 'Enter'){
         const th = system.getTh(this, subName);
         tab.setTheory(th);
-
         return;
       }
 

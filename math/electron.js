@@ -68,7 +68,7 @@ const main = () => {
   const menu = Menu.buildFromTemplate(template);
   Menu.setApplicationMenu(menu);
 
-  win.loadURL(`data:text/html;base64,${Buffer.from(`<script>${
+  win.loadURL(`data:text/html;base64,${Buffer.from(`<!DOCTYPE html><script>${
     `window.addEventListener('load',()=>require(${JSON.stringify(mainFile)}))`
   }</script>`).toString('base64')}`);
 
