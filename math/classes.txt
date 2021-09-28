@@ -33,6 +33,8 @@ Theory         :: System -> Theory -> String -> Theory
 Dir            :: System -> Theory -> String -> [TheoryInfo] -> Dir
 | thsInfo      :: [TheoryInfo]
 | thsObj       :: Object TheoryInfo
+| dirs         :: Object Dir
+| files        :: Object File
 | editor       :: Editor
 | hasTh        :: String -> Bool
 | getThInfo    :: String -> TheoryInfo

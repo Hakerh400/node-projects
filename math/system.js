@@ -15,19 +15,39 @@ const {Dir, File} = Theory;
 class System{
   #root = null;
 
-  #constructDir(parent, name, fsPath){
+  #getDir(parent, name, fsPath){
+    const dirs = parent !== null ?
+      parent.dirs : null;
+
+    if(dirs !== null && O.has(dirs, name))
+      return dirs[name];
+
     const thsInfo = this.getThsInfo(fsPath);
-    return new Dir(this, parent, name, fsPath, thsInfo);
+    const dir = new Dir(this, parent, name, fsPath, thsInfo);
+
+    if(dirs !== null)
+      dirs[name] = dir;
+
+    return dir;
   }
 
-  #constructFile(parent, name, fsPath){
+  #getFile(parent, name, fsPath){
+    const {files} = parent;
+
+    if(O.has(files, name))
+      return files[name];
+
     const text = O.rfs(fsPath, 1);
-    return new File(this, parent, name, fsPath, text);
+    const file = new File(this, parent, name, fsPath, text);
+
+    files[name] = file;
+
+    return file;
   }
 
   #initRoot(){
     const {rootDir} = this;
-    this.#root = this.#constructDir(null, '', rootDir);
+    this.#root = this.#getDir(null, '', rootDir);
   }
 
   get rootDir(){
@@ -71,9 +91,9 @@ class System{
     const pthNew = path.join(dir.fsPath, fsName);
 
     if(isDir)
-      return this.#constructDir(dir, name, pthNew);
+      return this.#getDir(dir, name, pthNew);
 
-    return this.#constructFile(dir, name, pthNew);
+    return this.#getFile(dir, name, pthNew);
   }
 
   exists(dir, name){

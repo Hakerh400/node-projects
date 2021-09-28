@@ -74,6 +74,8 @@ class Dir extends Theory{
     super(system, parent, name, fsPath);
 
     this.thsInfo = thsInfo;
+    this.dirs = O.obj();
+    this.files = O.obj();
 
     const thsObj = O.obj();
     const lines = [`${this.pathStr}/`, ''];
@@ -118,12 +120,12 @@ class Dir extends Theory{
     const subName = Theory.title2name(line);
 
     if(flags === 0){
-      if(code === 'ArrowUp' || code === 'ArrowLeft'){
+      if(code === 'ArrowUp'){
         this.goUp(1);
         return;
       }
 
-      if(code === 'ArrowDown' || code === 'ArrowRight'){
+      if(code === 'ArrowDown'){
         this.goDown(1);
         return;
       }
@@ -132,6 +134,17 @@ class Dir extends Theory{
         const th = system.getTh(this, subName);
         tab.setTheory(th);
 
+        return;
+      }
+
+      return;
+    }
+
+    if(flags === 1){
+      if(code === 'ArrowUp'){
+        const {parent} = this;
+        if(parent === null) return;
+        tab.setTheory(parent);
         return;
       }
 
