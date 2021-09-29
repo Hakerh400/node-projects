@@ -11,7 +11,6 @@ System         :: System
   readDir      :: Dir -> [Theory]
   readFile     :: File -> String
   writeFile    :: File -> String -> ()
-  thExists     :: Theory -> Bool
   thImports    :: Theory -> [Theory]
   thImportedBy :: Theory -> [Theory]
   thVerified   :: Theory -> Bool
@@ -29,6 +28,9 @@ Theory         :: System -> Theory -> String -> Theory
 | *fsPath      :: String
 | isDir        :: Bool
 | isFile       :: Bool
+| ctx          :: Context
+| *exported    :: Bool
+| invalidate   :: IO Theory
 
 Dir            :: System -> Theory -> String -> [TheoryInfo] -> Dir
 | thsInfo      :: [TheoryInfo]

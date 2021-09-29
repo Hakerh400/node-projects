@@ -30,6 +30,7 @@ class Theory extends EventTarget{
     this.parent = parent;
     this.name = name;
     this.fsPath = fsPath;
+    this.ctx = null;
   }
 
   get isDir(){ return 0; }
@@ -56,9 +57,44 @@ class Theory extends EventTarget{
     return this.path.join('/');
   }
 
+  get exported(){
+    return this.ctx !== null;
+  }
+
+  invalidate(){
+    this.ctx = null;
+    return this;
+  }
+
   render(g, ofs, x, y, w, h){ O.virtual('render'); }
-  onKeyDown(evt){ O.virtual('onKeyDown'); }
-  onKeyPress(evt){ O.virtual('onKeyPress'); }
+  onKeyDown1(tab, evt){ O.virtual('onKeyDown1'); }
+  onKeyPress1(tab, evt){ O.virtual('onKeyPress1'); }
+
+  onKeyDown(tab, evt){
+    if(this.onKeyDown1(tab, evt))
+      return;
+
+    const {ctrlKey, shiftKey, altKey, code} = evt;
+    const flags = (ctrlKey << 2) | (shiftKey << 1) | altKey;
+    const {system} = this;
+
+    if(flags === 1){
+      if(code === 'ArrowUp'){
+        const {parent} = this;
+        if(parent === null) return;
+
+        tab.setTheory(parent);
+        return;
+      }
+
+      return;
+    }
+  }
+
+  onKeyPress(tab, evt){
+    if(this.onKeyPress1(tab, evt))
+      return;
+  }
 }
 
 class Dir extends Theory{
@@ -111,7 +147,7 @@ class Dir extends Theory{
     return 2;
   }
 
-  onKeyDown(tab, evt){
+  onKeyDown1(tab, evt){
     const {ctrlKey, shiftKey, altKey, code} = evt;
     const flags = (ctrlKey << 2) | (shiftKey << 1) | altKey;
     const {system, editor} = this;
@@ -122,50 +158,41 @@ class Dir extends Theory{
     if(flags === 0){
       if(code === 'ArrowUp'){
         this.goUp(1);
-        return;
+        return 1;
       }
 
       if(code === 'ArrowDown'){
         this.goDown(1);
-        return;
+        return 1;
       }
 
       if(code === 'Enter'){
         const th = system.getTh(this, subName);
         tab.setTheory(th);
-        return;
+        return 1;
       }
 
-      return;
-    }
-
-    if(flags === 1){
-      if(code === 'ArrowUp'){
-        const {parent} = this;
-        if(parent === null) return;
-        tab.setTheory(parent);
-        return;
-      }
-
-      return;
+      return 0;
     }
 
     if(flags === 4){
       if(code.startsWith('Arrow')){
         editor.emit('onKeyDown', evt);
-        return;
+        return 1;
       }
 
-      return;
+      return 0;
     }
 
     // editor.onKeyDown(evt);
+    return 0;
   }
 
-  onKeyPress(tab, evt){
+  onKeyPress1(tab, evt){
     const {editor} = this;
 
     // editor.emit('onKeyPress', evt);
+    return 0;
   }
 
   render(g, ofs, x, y, w, h){
@@ -306,7 +333,7 @@ class File extends Theory{
     g.resetTransform();
   }
 
-  onKeyDown(tab, evt){
+  onKeyDown1(tab, evt){
     const {ctrlKey, shiftKey, altKey, code} = evt;
     const flags = (ctrlKey << 2) | (shiftKey << 1) | altKey;
     const {system, mainEditor} = this;
@@ -315,12 +342,14 @@ class File extends Theory{
     const subName = Theory.title2name(line);
 
     mainEditor.onKeyDown(evt);
+    return 0;
   }
 
-  onKeyPress(tab, evt){
+  onKeyPress1(tab, evt){
     const {mainEditor} = this;
 
     mainEditor.emit('onKeyPress', evt);
+    return 1;
   }
 }
 
