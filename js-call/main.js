@@ -115,7 +115,7 @@ const main = () => {
 
   let callsObj = O.obj();
   let table = [null];
-
+  
   const getEntryForName = function*(name){
     if(O.has(namesEntriesObj, name))
       return namesEntriesObj[name];
@@ -148,9 +148,21 @@ const main = () => {
 
     if(O.has(slot, argEntry))
       return slot[argEntry];
-
+    
+    if(table.some(elem => {
+      if(elem === null) return 0;
+      const [a, b] = elem;
+      return a === targetEntry && b === argEntry;
+    })){
+      log(table);
+      log(targetEntry, argEntry);
+      assert.fail();
+    }
+    
     const entry = table.length;
+    
     table.push([targetEntry, argEntry]);
+    slot[argEntry] = entry;
 
     return entry;
   };
@@ -184,14 +196,23 @@ const main = () => {
   let middleDefs = [];
 
   const tableLen = table.length;
-
+  const rhsObj = O.obj();
+  
   for(let i = 1; i !== tableLen; i++){
     const [t, a] = table[i];
     const target = getIdent(t);
     const arg = getIdent(a);
     const name = getIdent(i);
-    const defStr = `, ${name} = ${target}(${arg})`;
-
+    const rhs = `${target}(${arg})`;
+    
+    if(O.has(rhsObj, rhs)){
+      log(rhs);
+      assert.fail();
+    }
+    
+    rhsObj[rhs] = 1;
+    
+    const defStr = `, ${name} = ${rhs}`;
     middleDefs.push(defStr);
 
     if(middleDefs.length === defsPerLine || i === tableLen - 1){
