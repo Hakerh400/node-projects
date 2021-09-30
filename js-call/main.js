@@ -209,7 +209,7 @@ const main = () => {
   middleLines.push(footer);
   const middlePart = middleLines.join('\n');
 
-  const finalStr = [
+  const code = [
     header,
     basePart,
     middlePart,
@@ -222,7 +222,7 @@ const main = () => {
     func();
   }
 
-  O.wfs(outFile, finalStr);
+  O.wfs(outFile, code);
 };
 
 const mkIdentsList = identsNumOrig => {
