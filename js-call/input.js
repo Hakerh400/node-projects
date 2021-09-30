@@ -1,5 +1,5 @@
 (() => {
-  'use strict';
+  'use strict'
 
   const base = a => a
     (a => a => a => a => a => a)

@@ -7,6 +7,7 @@ const O = require('../omikron');
 const kws = require('./kws');
 
 const defsPerLine = 5;
+const evalCode = 1;
 
 const cwd = __dirname;
 const inpFile = path.join(cwd, 'input.js');
@@ -215,6 +216,11 @@ const main = () => {
   ].join('\n\n');
 
   assert(remainingIdents === 0);
+  
+  if(evalCode){
+    const func = new Function(code);
+    func();
+  }
 
   O.wfs(outFile, finalStr);
 };

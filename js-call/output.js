@@ -1,5 +1,5 @@
 (() => {
-  'use strict';
+  'use strict'
 
   const aa = a => a
     (a => a => a => a => a => a)
