@@ -5,8 +5,9 @@ const path = require('path');
 const assert = require('assert');
 const O = require('../omikron');
 
-const kws = O.arr2obj(O.undupe([
+const kws = O.arr2obj([
   'arguments',
+  'async',
   'await',
   'break',
   'case',
@@ -54,7 +55,6 @@ const kws = O.arr2obj(O.undupe([
   'while',
   'with',
   'yield',
-  'async',
-]));
+]);
 
 module.exports = kws;
