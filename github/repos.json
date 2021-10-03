@@ -2,12 +2,6 @@
   "user": "Hakerh400",
 
   "repos": {
-    "node": {
-      "name": "node-projects",
-      "src": "C:/Projects/JavaScript",
-      "dest": "C:/GitHub/node-projects"
-    },
-
     "cpp": {
       "name": "cpp-projects",
       "src": "C:/Projects/cpp-projects",
@@ -86,7 +80,7 @@
 
     "hs": {
       "name": "haskell-projects",
-      "src": "C:/Projects/Haskell",
+      "src": "C:/Projects/haskell-projects",
       "dest": "C:/GitHub/haskell-projects"
     }
   }

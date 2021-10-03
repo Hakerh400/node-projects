@@ -21,6 +21,8 @@ const tabStr = ' '.repeat(tabSize);
 
 const main = () => {
   let str = O.rfs(inpFile, 1);
+  str = O.sanl(str).map(a => a.trimRight()).join('\n');
+  
   let parts = O.sanll(str);
 
   let basePart = parts[1];
@@ -237,6 +239,8 @@ const main = () => {
   ].join('\n\n');
 
   assert(remainingIdents === 0);
+  
+  // log(O.sanl(code).reduce((a, b) => Math.max(a, b.length), 0));
   
   if(evalCode){
     const func = new Function(code);

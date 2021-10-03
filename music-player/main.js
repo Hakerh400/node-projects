@@ -55,20 +55,20 @@ async function main(){
     if(SUB_FOLDERS){
       assert.fail();
 
-      fsRec.processFilesSync(dir, d => {
-        if(d.processed) return;
-        if(d.isDir) return;
-
-        if(!files.includes(d.fullPath))
-          files.push(d.fullPath);
-      });
+      // fsRec.processFilesSync(dir, d => {
+      //   if(d.processed) return;
+      //   if(d.isDir) return;
+      // 
+      //   if(!files.includes(d.fullPath))
+      //     files.push(d.fullPath);
+      // });
     }else{
       for(const file of fs.readdirSync(dir)){
         const fp = path.join(dir, file);
         if(!fs.statSync(fp).isFile()) continue;
 
         if(file === 'd.bat'){
-          fs.unlinkSync(fp);
+          // fs.unlinkSync(fp);
           continue;
         }
 
@@ -141,6 +141,7 @@ function aels(){
 
         case 'R': moveTo('Russian'); break;
         case 'a': moveTo('Arabic'); break;
+        case 'k': moveTo('Kazakh'); break;
       }
     }
   });
