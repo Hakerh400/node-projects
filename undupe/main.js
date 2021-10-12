@@ -14,9 +14,6 @@ const main = () => {
   if(args.length === 0)
     args.push(defaultFile);
   
-  if(args.length === 0)
-    O.exit('Expected a file path as argument');
-  
   const pth = args.join(' ');
   const str = O.rfs(pth, 1);
   
